@@ -1,0 +1,25 @@
+=== Corpus Audit: data/processed/v1 ===
+
+Split Integrity & Lexical Diversity:
+Split                   Docs  Offset%  RelID%  DoubledDocs  NGramDupDocs  UniqEnts   Vocab     TTR
+--------------------------------------------------------------------------------------------------
+test                     121  100.00% 100.00%          121             8       518     551  0.0317
+  [doubled example] synth_en_0006: entity:DATE:'2026-02-26'
+  [doubled example] synth_en_0007: entity:DATE:'2026-05-15'
+  [doubled example] synth_en_0008: entity:DATE:'2026-05-03'
+train                    555  100.00% 100.00%          555            23      1395    1108  0.0139
+  [doubled example] synth_en_0001: entity:DATE:'2026-02-27'
+  [doubled example] synth_en_0002: entity:DATE:'2026-08-18'
+  [doubled example] synth_en_0003: entity:DATE:'2026-07-13'
+val                      124  100.00% 100.00%          124             5       539     565  0.0316
+  [doubled example] synth_en_0005: entity:DATE:'2026-06-11'
+  [doubled example] synth_en_0012: entity:DATE:'2026-10-04'
+  [doubled example] synth_en_0019: entity:DATE:'2026-04-01'
+
+Overlap vs. `train` Split:
+- test: unique_entity_overlap=62.7% | masked_sentence_overlap=94.8% (1936 sentences)
+  by_language (%): {'en': 59.2, 'fr': 61.7}
+  by_type (%):     {'ANATOMY': 100.0, 'DATE': 82.5, 'DIAGNOSIS': 100.0, 'DOSAGE': 100.0, 'DURATION': 100.0, 'FREQUENCY': 100.0, 'LAB_TEST': 100.0, 'LAB_UNIT': 100.0, 'LAB_VALUE': 56.6, 'MEDICATION': 100.0, 'PATIENT_ID': 0.0, 'PROCEDURE': 100.0, 'ROUTE': 100.0, 'SYMPTOM': 100.0}
+- val: unique_entity_overlap=63.5% | masked_sentence_overlap=95.1% (1984 sentences)
+  by_language (%): {'en': 58.7, 'fr': 60.4}
+  by_type (%):     {'ANATOMY': 100.0, 'DATE': 85.6, 'DIAGNOSIS': 100.0, 'DOSAGE': 100.0, 'DURATION': 100.0, 'FREQUENCY': 100.0, 'LAB_TEST': 100.0, 'LAB_UNIT': 100.0, 'LAB_VALUE': 56.6, 'MEDICATION': 100.0, 'PATIENT_ID': 0.0, 'PROCEDURE': 100.0, 'ROUTE': 100.0, 'SYMPTOM': 100.0}

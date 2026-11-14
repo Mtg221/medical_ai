@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-11-14):** Results in this v2 report are **invalid** because of a data-generator bug (doubled TIMEX/date/duration text in 100% of documents) and severe train/test template & term overlap (`94.8%` masked sentence overlap, `100%` lexical overlap on clinical categories). Archived raw JSON and audit output live in [docs/results/archive/2026-11-14_synth_v2_buggy/](results/archive/2026-11-14_synth_v2_buggy/README.md). See Phase 11 for the corrected evaluation.
+
 # Research Report: Bilingual (EN/FR) Medical Information Extraction Platform
 
 **Date:** 2026-11-14  

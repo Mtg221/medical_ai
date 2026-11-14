@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 10 Complete — Hardening & Release Ready (All 10 Phases Complete)
+**Active Phase:** Phase 11 — correction (Step 0 complete: audit reproduced F1/F2, v2 results archived)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -25,11 +25,18 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | Bilingual terminology registry (EN/FR) | **Tested** | Static registry; corpus-scale normalization evaluation pending |
 | Security (Argon2id auth, HMAC tokens, PII scrubber, audit chain) | **Tested** | Hard-coded demo password removed; uses `MEDRESEARCH_DEMO_PASSWORD` env var |
 | Output contract (`extraction/contract.py` & `extraction/schema_models.py`) | **Tested** | Pydantic v2 single-source-of-truth + exported `schema/medical_extraction.schema.json` + `/api/v1/schema/extraction` |
-| Annotated EN/FR corpus (`>= 300 EN + >= 300 FR`) | **Tested (`SYNTH-MED-V2`, 800 synthetic docs: 400 EN + 400 FR)** | `medextract data build --config configs/data/v1.yaml`; 70/15/15 patient-stratified splits (`555/124/121`), MinHash leakage check passed; BRAT & Label Studio converters ready; real clinical corpora (`n2c2`, `DEFT/CAS`) require DUA/agreement |
-| Evaluation harness (CI, McNemar, error taxonomy, profiler) | **Tested** | `medresearch_platform/eval_harness/`; hand-made unit tests + `medextract experiment run configs/exp/dummy.yaml --seeds 1,2,3` (`Strict F1: 0.5249 ± 0.0000` on `SYNTH-MED-V2` val) |
-| 5 Single Approaches (Rule, TF-IDF+ML/CRF, BiLSTM, BiLSTM-CRF, Transformer) | **Evaluated on `SYNTH-MED-V2` `val`, 124 docs (555 train)** | `rule_based` F1 `0.8708`, `classical_ml` F1 `0.8800`, `classical_crf` F1 `0.8800`, `bilstm` F1 `0.8800`, `bilstm_crf` F1 `0.8800`, `transformer` F1 `0.7598 ± 0.0206` (EN `0.8048` / FR `0.7605`); pure NumPy + `sklearn-crfsuite` per amended ADR-0005 |
-| 5-Stage Hybrid Pipeline | **Evaluated on `SYNTH-MED-V2` `val`, 124 docs** | `NER F1 = 0.9362` (EN `0.9362` / FR `0.9362`), `+0.0562` vs `bilstm_crf` (`p = 0.00995`), `Assert = 0.8699`, `Rel F1 = 0.8477`, `Timex F1 = 0.3123`, `DocCls = 1.0000`, `ECE = 0.0258`; 6-variant ablation completed |
+| Annotated EN/FR corpus (`>= 300 EN + >= 300 FR`) | **Invalidated (F1/F2)** (`SYNTH-MED-V2`) | `SYNTH-MED-V2` (800 docs) had doubled TIMEX text in 100% of docs and `94.8%` masked sentence overlap; `SYNTH-MED-V3` planned in Phase 11 Steps 1–2 |
+| Evaluation harness (CI, McNemar, error taxonomy, profiler) | **Tested** | Hand-made unit tests pass; seed/CI/multi-test-set upgrades in Phase 11 Step 3 |
+| 5 Single Approaches (Rule, TF-IDF+ML/CRF, BiLSTM, BiLSTM-CRF, Transformer) | **Invalidated (F1/F2)** | Previous numbers measured memorisation on `SYNTH-MED-V2`; char-level + generalization fixes in Phase 11 Steps 3–4 |
+| 5-Stage Hybrid Pipeline | **Invalidated (F1/F2, F4/F5)** | Previous numbers invalid; Stage 3 hurt assertion/relation scores in ablation and Stage 5 lacked token-level reading (Phase 11 Step 5) |
 | FastAPI backend + SQLite jobs | **Tested** | Migrated from Starlette to FastAPI (`OpenAPI 3.1`), multipart `/api/v1/documents/upload`, SQLite `jobs` table + SSE `/api/v1/jobs/{id}/events` |
-| React + TypeScript + Tailwind + shadcn-style workspace | **Tested** | Migrated from single `App.jsx` to modular TypeScript (`tsc --noEmit` + `vite build`), Tailwind CSS v4, TanStack Query, React Router, Zustand, i18next (EN/FR), source-linked viewer, multipart upload + job tracker |
+| React + TypeScript + Tailwind + shadcn-style workspace | **In progress (5/14 pages)** | Phase 7 partial (login, workspace, upload, benchmark, timeline); remaining pages, pdf.js, charts, Vitest & Playwright in Phase 11 Step 7 |
 | EN/FR traceable reports | **Tested** | `medresearch_platform/reports/generator.py` (Markdown, HTML, PDF with negation badges, source `[doc, p., chars]` citations, EN/FR disclaimer), `/api/v1/documents/{id}/report`, `medextract report` |
-| Final scientific evaluation & `RESEARCH_REPORT.md` | **Evaluated on `SYNTH-MED-V2` locked `test`, 121 docs (seeds 1, 2, 3)** | `hybrid` Strict F1 `0.9362 ± 0.0000` (`+0.0562` vs `bilstm_crf`, `p = 0.003992`), `ECE = 0.0139`; full tables & error analysis in `docs/RESEARCH_REPORT.md` |
+| Final scientific evaluation & `RESEARCH_REPORT.md` | **Invalidated (F1/F2)** | Old report superseded & archived in `docs/results/archive/2026-11-14_synth_v2_buggy/`; new `SYNTH-MED-V3` report in Phase 11 Step 9 |
+
+---
+
+## 3. Questions for the Owner
+
+1. **NumPy vs PyTorch (`DECISIONS/ADR-0009-numpy-vs-pytorch.md`):** Currently the neural models run in pure NumPy because Python 3.13 on macOS `x86_64` has no official `torch` wheel. Installing Python 3.12 (e.g. via `uv python install 3.12` or `pyenv`) enables `torch 2.2.2` CPU on Intel Mac (and newer `torch` on Windows/Linux). Do you want to stay on pure NumPy (zero C++ runtime issues, slower training, smaller models) or switch to Python 3.12 + PyTorch CPU? Keeping NumPy until you decide.
+2. **Realistic Free-Text Evaluation Set (Phase 11 Step 2.6):** After Steps 1–2, will you author/annotate 40 EN + 40 FR free-text notes (using our Label Studio protocol) or provide a licensed public corpus?
