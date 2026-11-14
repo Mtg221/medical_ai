@@ -1,0 +1,527 @@
+{
+  "corpus": "SYNTH-MED-V3",
+  "split": "val",
+  "docs_per_tier": 16,
+  "mean_words_per_doc": 91.6,
+  "tiers": {
+    "clean_scan": {
+      "params": {
+        "skew_deg": 0.5,
+        "noise_std": 3.0,
+        "blur_radius": 0.0,
+        "jpeg_quality": null,
+        "contrast": 1.0
+      },
+      "docs": 16,
+      "mean_cer": 0.0021,
+      "mean_wer": 0.0138,
+      "mean_confidence": 0.9388,
+      "by_language": {
+        "en": {
+          "docs": 8.0,
+          "mean_cer": 0.0011,
+          "mean_wer": 0.0077,
+          "mean_confidence": 0.9436
+        },
+        "fr": {
+          "docs": 8.0,
+          "mean_cer": 0.0031,
+          "mean_wer": 0.0199,
+          "mean_confidence": 0.9339
+        }
+      },
+      "rows": [
+        {
+          "doc_id": "v3_val_en_0001",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0025,
+          "wer": 0.0167,
+          "mean_confidence": 0.9447,
+          "word_box_count": 60
+        },
+        {
+          "doc_id": "v3_val_en_0002",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.947,
+          "word_box_count": 76
+        },
+        {
+          "doc_id": "v3_val_en_0003",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0025,
+          "wer": 0.0161,
+          "mean_confidence": 0.9423,
+          "word_box_count": 62
+        },
+        {
+          "doc_id": "v3_val_en_0004",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0016,
+          "wer": 0.0109,
+          "mean_confidence": 0.9445,
+          "word_box_count": 92
+        },
+        {
+          "doc_id": "v3_val_en_0005",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9516,
+          "word_box_count": 88
+        },
+        {
+          "doc_id": "v3_val_en_0006",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.95,
+          "word_box_count": 73
+        },
+        {
+          "doc_id": "v3_val_en_0007",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9486,
+          "word_box_count": 127
+        },
+        {
+          "doc_id": "v3_val_en_0008",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0024,
+          "wer": 0.0182,
+          "mean_confidence": 0.92,
+          "word_box_count": 55
+        },
+        {
+          "doc_id": "v3_val_fr_0001",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0043,
+          "wer": 0.0217,
+          "mean_confidence": 0.9338,
+          "word_box_count": 138
+        },
+        {
+          "doc_id": "v3_val_fr_0002",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0029,
+          "wer": 0.0206,
+          "mean_confidence": 0.9372,
+          "word_box_count": 97
+        },
+        {
+          "doc_id": "v3_val_fr_0003",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0087,
+          "wer": 0.0545,
+          "mean_confidence": 0.9355,
+          "word_box_count": 55
+        },
+        {
+          "doc_id": "v3_val_fr_0004",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9359,
+          "word_box_count": 85
+        },
+        {
+          "doc_id": "v3_val_fr_0005",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.001,
+          "wer": 0.0065,
+          "mean_confidence": 0.9306,
+          "word_box_count": 154
+        },
+        {
+          "doc_id": "v3_val_fr_0006",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0029,
+          "wer": 0.024,
+          "mean_confidence": 0.936,
+          "word_box_count": 168
+        },
+        {
+          "doc_id": "v3_val_fr_0007",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0017,
+          "wer": 0.0114,
+          "mean_confidence": 0.932,
+          "word_box_count": 88
+        },
+        {
+          "doc_id": "v3_val_fr_0008",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0031,
+          "wer": 0.0204,
+          "mean_confidence": 0.9304,
+          "word_box_count": 49
+        }
+      ]
+    },
+    "mild_scan": {
+      "params": {
+        "skew_deg": 2.5,
+        "noise_std": 12.0,
+        "blur_radius": 0.6,
+        "jpeg_quality": 75,
+        "contrast": 0.95
+      },
+      "docs": 16,
+      "mean_cer": 0.0022,
+      "mean_wer": 0.0119,
+      "mean_confidence": 0.9384,
+      "by_language": {
+        "en": {
+          "docs": 8.0,
+          "mean_cer": 0.0006,
+          "mean_wer": 0.0033,
+          "mean_confidence": 0.944
+        },
+        "fr": {
+          "docs": 8.0,
+          "mean_cer": 0.0038,
+          "mean_wer": 0.0205,
+          "mean_confidence": 0.9329
+        }
+      },
+      "rows": [
+        {
+          "doc_id": "v3_val_en_0001",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9368,
+          "word_box_count": 60
+        },
+        {
+          "doc_id": "v3_val_en_0002",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9446,
+          "word_box_count": 76
+        },
+        {
+          "doc_id": "v3_val_en_0003",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9387,
+          "word_box_count": 62
+        },
+        {
+          "doc_id": "v3_val_en_0004",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9458,
+          "word_box_count": 92
+        },
+        {
+          "doc_id": "v3_val_en_0005",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9499,
+          "word_box_count": 88
+        },
+        {
+          "doc_id": "v3_val_en_0006",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9471,
+          "word_box_count": 73
+        },
+        {
+          "doc_id": "v3_val_en_0007",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0022,
+          "wer": 0.0079,
+          "mean_confidence": 0.9502,
+          "word_box_count": 128
+        },
+        {
+          "doc_id": "v3_val_en_0008",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0024,
+          "wer": 0.0182,
+          "mean_confidence": 0.9389,
+          "word_box_count": 55
+        },
+        {
+          "doc_id": "v3_val_fr_0001",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0108,
+          "wer": 0.0435,
+          "mean_confidence": 0.9229,
+          "word_box_count": 139
+        },
+        {
+          "doc_id": "v3_val_fr_0002",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0015,
+          "wer": 0.0103,
+          "mean_confidence": 0.9375,
+          "word_box_count": 97
+        },
+        {
+          "doc_id": "v3_val_fr_0003",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9407,
+          "word_box_count": 55
+        },
+        {
+          "doc_id": "v3_val_fr_0004",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0,
+          "wer": 0.0,
+          "mean_confidence": 0.9333,
+          "word_box_count": 85
+        },
+        {
+          "doc_id": "v3_val_fr_0005",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0039,
+          "wer": 0.0195,
+          "mean_confidence": 0.9263,
+          "word_box_count": 155
+        },
+        {
+          "doc_id": "v3_val_fr_0006",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0058,
+          "wer": 0.0359,
+          "mean_confidence": 0.9364,
+          "word_box_count": 169
+        },
+        {
+          "doc_id": "v3_val_fr_0007",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0051,
+          "wer": 0.0341,
+          "mean_confidence": 0.9326,
+          "word_box_count": 88
+        },
+        {
+          "doc_id": "v3_val_fr_0008",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.0031,
+          "wer": 0.0204,
+          "mean_confidence": 0.9333,
+          "word_box_count": 49
+        }
+      ]
+    },
+    "heavy_scan": {
+      "params": {
+        "skew_deg": 4.5,
+        "noise_std": 22.0,
+        "blur_radius": 1.2,
+        "jpeg_quality": 40,
+        "contrast": 0.78
+      },
+      "docs": 16,
+      "mean_cer": 0.1615,
+      "mean_wer": 0.5471,
+      "mean_confidence": 0.7343,
+      "by_language": {
+        "en": {
+          "docs": 8.0,
+          "mean_cer": 0.1624,
+          "mean_wer": 0.5675,
+          "mean_confidence": 0.728
+        },
+        "fr": {
+          "docs": 8.0,
+          "mean_cer": 0.1607,
+          "mean_wer": 0.5267,
+          "mean_confidence": 0.7406
+        }
+      },
+      "rows": [
+        {
+          "doc_id": "v3_val_en_0001",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1662,
+          "wer": 0.6167,
+          "mean_confidence": 0.708,
+          "word_box_count": 86
+        },
+        {
+          "doc_id": "v3_val_en_0002",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1803,
+          "wer": 0.5921,
+          "mean_confidence": 0.7369,
+          "word_box_count": 113
+        },
+        {
+          "doc_id": "v3_val_en_0003",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.198,
+          "wer": 0.6129,
+          "mean_confidence": 0.6804,
+          "word_box_count": 93
+        },
+        {
+          "doc_id": "v3_val_en_0004",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1648,
+          "wer": 0.5435,
+          "mean_confidence": 0.7245,
+          "word_box_count": 132
+        },
+        {
+          "doc_id": "v3_val_en_0005",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1408,
+          "wer": 0.4886,
+          "mean_confidence": 0.718,
+          "word_box_count": 122
+        },
+        {
+          "doc_id": "v3_val_en_0006",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1414,
+          "wer": 0.4932,
+          "mean_confidence": 0.7862,
+          "word_box_count": 102
+        },
+        {
+          "doc_id": "v3_val_en_0007",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1565,
+          "wer": 0.5748,
+          "mean_confidence": 0.742,
+          "word_box_count": 182
+        },
+        {
+          "doc_id": "v3_val_en_0008",
+          "language": "en",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1509,
+          "wer": 0.6182,
+          "mean_confidence": 0.7277,
+          "word_box_count": 79
+        },
+        {
+          "doc_id": "v3_val_fr_0001",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1688,
+          "wer": 0.5942,
+          "mean_confidence": 0.6923,
+          "word_box_count": 193
+        },
+        {
+          "doc_id": "v3_val_fr_0002",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1408,
+          "wer": 0.433,
+          "mean_confidence": 0.7614,
+          "word_box_count": 138
+        },
+        {
+          "doc_id": "v3_val_fr_0003",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1908,
+          "wer": 0.6364,
+          "mean_confidence": 0.7546,
+          "word_box_count": 79
+        },
+        {
+          "doc_id": "v3_val_fr_0004",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1386,
+          "wer": 0.4941,
+          "mean_confidence": 0.7597,
+          "word_box_count": 119
+        },
+        {
+          "doc_id": "v3_val_fr_0005",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1551,
+          "wer": 0.474,
+          "mean_confidence": 0.7127,
+          "word_box_count": 211
+        },
+        {
+          "doc_id": "v3_val_fr_0006",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.1717,
+          "wer": 0.479,
+          "mean_confidence": 0.7111,
+          "word_box_count": 238
+        },
+        {
+          "doc_id": "v3_val_fr_0007",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.118,
+          "wer": 0.4091,
+          "mean_confidence": 0.7871,
+          "word_box_count": 116
+        },
+        {
+          "doc_id": "v3_val_fr_0008",
+          "language": "fr",
+          "extraction_mode": "TESSERACT_OCR",
+          "cer": 0.2019,
+          "wer": 0.6939,
+          "mean_confidence": 0.7459,
+          "word_box_count": 74
+        }
+      ]
+    }
+  }
+}

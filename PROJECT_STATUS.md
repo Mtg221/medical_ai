@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11 — correction (Step 4 complete: Hybrid Stage 3 F4 + text-reading Stage 5 F5 fixed & tested; Step 5 OCR stress benchmark F6 next)
+**Active Phase:** Phase 11 — correction (Step 5 complete: 3-tier OCR stress benchmark F6 recorded; Step 6 CI/pytest fresh-clone fix F8 next)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -21,7 +21,7 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | Component | Status | Notes |
 |---|---|---|
 | Packaging, CI, ADRs 0005–0008, `extras/` isolation | **Implemented / Tested** | `pyproject.toml` fixed, hard-coded password removed, dermatology/vision isolated to `extras/` |
-| Document parsers & OCR (TXT, digital/scanned PDF, DOCX, PNG/JPEG/TIFF/WEBP) | **Tested (EN/FR scan benchmark: CER 0.0, WER 0.0)** | Page-by-page `pdfplumber` word boxes & lab tables, `pypdfium2` 300 dpi render, OpenCV preprocessing (upscale, deskew, denoise, adaptive threshold), Tesseract 5.5.4 (`eng+fra`), mixed-page `HYBRID` mode |
+| Document parsers & OCR (TXT, digital/scanned PDF, DOCX, PNG/JPEG/TIFF/WEBP) | **Evaluated on `SYNTH-MED-V3` `val` (16 docs × 3 tiers = 48 scans)** | `clean_scan` CER `0.0021`/WER `0.0138`; `mild_scan` CER `0.0022`/WER `0.0119`; `heavy_scan` CER `0.1615`/WER `0.5471` (`docs/results/ocr_stress_benchmark.json`) |
 | Bilingual terminology registry (EN/FR) | **Tested** | Static registry; corpus-scale normalization evaluation pending |
 | Security (Argon2id auth, HMAC tokens, PII scrubber, audit chain) | **Tested** | Hard-coded demo password removed; uses `MEDRESEARCH_DEMO_PASSWORD` env var |
 | Output contract (`extraction/contract.py` & `extraction/schema_models.py`) | **Tested** | Pydantic v2 single-source-of-truth + exported `schema/medical_extraction.schema.json` + `/api/v1/schema/extraction` |

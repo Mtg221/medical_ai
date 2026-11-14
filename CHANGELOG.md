@@ -37,3 +37,11 @@
   - `PiecewiseCNNRelationClassifier` now covers all schema relation pairs (`_PAIR_TO_REL_TYPES`) and masks impossible cross-type relation logits during inference.
 - Fixed Stage 5 (`medresearch_platform/hybrid/stage5_integration.py` + `pipeline.py`): `TransformerCandidateReranker` now reads document text via learned token embeddings (`E` with full backprop) over candidate span tokens, 3-token left/right context windows, and 32-dim char morphology (`99` input features per candidate instead of `19` scalar-only features).
 - Added `tests/test_hybrid_stage3_stage5_fixes.py` verifying Stage 3 relation pair coverage, Stage 5 context-dependent scoring, and end-to-end `HybridPipeline` execution on `SYNTH-MED-V3`.
+
+### Step 5 — Realistic OCR Stress Benchmark (F6) (2026-11-14)
+- Extended `render_noisy_scan_image` and `parse_and_benchmark_scan` in `medresearch_platform/documents/ocr_benchmark.py` with line wrapping, Gaussian blur, JPEG compression artifacts, and contrast degradation.
+- Added `scripts/run_ocr_benchmark.py` evaluating 16 `SYNTH-MED-V3` `val` documents (8 EN + 8 FR, avg `91.6` words/doc) across 3 degradation tiers (`clean_scan`, `mild_scan`, `heavy_scan` = 48 scanned PDFs), saving `docs/results/ocr_stress_benchmark.json`:
+  - `clean_scan`: CER `0.0021`, WER `0.0138`, conf `0.9388` (EN CER `0.0011`, FR CER `0.0031`)
+  - `mild_scan`: CER `0.0022`, WER `0.0119`, conf `0.9384` (EN CER `0.0006`, FR CER `0.0038`)
+  - `heavy_scan`: CER `0.1615`, WER `0.5471`, conf `0.7343` (EN CER `0.1624`, FR CER `0.1607`)
+- Added `tests/test_ocr_stress_benchmark.py` verifying non-zero CER degradation under heavy scan noise/blur/JPEG compression.

@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import io
+import textwrap
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
@@ -64,9 +65,13 @@ def render_noisy_scan_image(
     height: int = 2339,
     skew_deg: float = 2.0,
     noise_std: float = 8.0,
+    blur_radius: float = 0.0,
+    jpeg_quality: int | None = None,
+    contrast: float = 1.0,
+    wrap_chars: int = 72,
     seed: int = 42,
 ) -> Image.Image:
-    """Render clinical text onto a realistic skewed, lightly noisy 200-DPI-like scan image."""
+    """Render clinical text onto a realistic skewed, degraded 200-DPI-like scan image."""
     img = Image.new("RGB", (width, height), color=(252, 251, 248))
     draw = ImageDraw.Draw(img)
 
@@ -77,22 +82,30 @@ def render_noisy_scan_image(
         "/Library/Fonts/Arial.ttf",
     ):
         try:
-            font = ImageFont.truetype(candidate, size=34)
+            font = ImageFont.truetype(candidate, size=30)
             break
         except Exception:
             continue
     else:
         font = ImageFont.load_default()
 
-    y = 110
-    for line in text.splitlines():
-        if y > height - 100:
-            break
-        draw.text((100, y), line, fill=(20, 20, 24), font=font)
-        y += 50
+    y = 90
+    for raw_line in text.splitlines():
+        wrapped = textwrap.wrap(raw_line, width=wrap_chars) if raw_line.strip() else [""]
+        for line in wrapped:
+            if y > height - 90:
+                break
+            draw.text((90, y), line, fill=(20, 20, 24), font=font)
+            y += 42
 
     if abs(skew_deg) > 0.01:
         img = img.rotate(skew_deg, resample=Image.Resampling.BICUBIC, fillcolor=(252, 251, 248))
+
+    if blur_radius > 0.0:
+        img = img.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+
+    if abs(contrast - 1.0) > 0.01:
+        img = ImageEnhance.Contrast(img).enhance(contrast)
 
     if noise_std > 0:
         rng = np.random.default_rng(seed)
@@ -100,6 +113,12 @@ def render_noisy_scan_image(
         arr += rng.normal(0.0, noise_std, size=arr.shape).astype(np.float32)
         arr = np.clip(arr, 0, 255).astype(np.uint8)
         img = Image.fromarray(arr)
+
+    if jpeg_quality is not None:
+        qbuf = io.BytesIO()
+        img.save(qbuf, format="JPEG", quality=int(jpeg_quality))
+        qbuf.seek(0)
+        img = Image.open(qbuf).convert("RGB")
 
     return img
 
@@ -187,10 +206,20 @@ def parse_and_benchmark_scan(
     *,
     skew_deg: float = 2.0,
     noise_std: float = 8.0,
+    blur_radius: float = 0.0,
+    jpeg_quality: int | None = None,
+    contrast: float = 1.0,
     as_pdf: bool = True,
 ) -> OCRBenchmarkRow:
     """Render a synthetic scan (PNG or image-only PDF), parse it, and score CER/WER."""
-    img = render_noisy_scan_image(reference_text, skew_deg=skew_deg, noise_std=noise_std)
+    img = render_noisy_scan_image(
+        reference_text,
+        skew_deg=skew_deg,
+        noise_std=noise_std,
+        blur_radius=blur_radius,
+        jpeg_quality=jpeg_quality,
+        contrast=contrast,
+    )
     if as_pdf:
         raw_bytes = build_scanned_pdf_bytes([img])
         bundle = parse_document_bytes(raw_bytes, "PDF")
