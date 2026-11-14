@@ -1,20 +1,20 @@
-# ADR-0005: PyTorch (CPU Build) with Strict Random Initialization for Neural Models
+# ADR-0005: Pure-NumPy Random-Init Neural Models + `sklearn-crfsuite` on Python 3.13 (macOS `x86_64`)
 
-- **Status:** Accepted
+- **Status:** Amended (2026-11-14)
 - **Date:** 2026-11-14
 - **References:** `docs/MASTER_PROMPT.md` Parts B.1, C.1; `docs/AUDIT.md`
 
 ## Context
 
-The initial implementation built BiLSTM, BiLSTM-CRF, and Transformer encoders in pure NumPy with manual backprop. On CPU, hand-written NumPy training loops are slow, fragile, and produced `F1 = 0.00` for BiLSTM and Transformer on the baseline benchmark.
+The initial ADR-0005 proposed PyTorch (CPU build) for primary neural models. Upon attempting installation on the target workstation (`macOS x86_64`, `Python 3.13.12`), `pip install torch` failed because PyTorch dropped macOS `x86_64` binary wheels after `torch 2.2.2` (which only supports up to Python 3.12), and neither Python 3.11 nor 3.12 is installed.
 
 ## Decision
 
-1. **PyTorch (CPU Build) as Primary Deep Learning Engine:** Use `torch` (CPU-only) for all primary neural architectures (BiLSTM, BiLSTM-CRF, Transformer encoder, BiLSTM assertion classifier, CNN relation extractor) starting in Phase 3.
-2. **Strict Random Initialization:** All neural models in the primary research track must be initialized strictly from random weights (`torch.nn.init` / fixed seeds). Zero pretrained weights, zero pretrained word vectors, and zero pretrained tokenizers are permitted.
-3. **Educational Reference Retained:** Keep the existing NumPy BiLSTM/CRF modules and their finite-difference gradient-check tests as a verified educational reference.
+1. **Pure-NumPy Random-Init Neural Engines:** Rebuild and fix the pure-NumPy random-initialized `BiLSTM`, `BiLSTM-CRF`, and `Transformer` encoders directly on Python 3.13 + `numpy 2.4.2`, fixing class-weighted loss, masking, char/shape features, AdamW learning rates, and `val` early stopping so all three converge cleanly on CPU.
+2. **Classical CRF Baseline:** Use `sklearn-crfsuite` (`python-crfsuite 0.9.12`, compiled cleanly on Python 3.13 `x86_64`) + `scikit-learn` for classical ML baselines.
+3. **Strict Random Initialization:** Zero pretrained weights, zero pretrained word vectors, and zero pretrained tokenizers are permitted.
 
 ## Consequences
 
-- **Positive:** Correct autograd, 10–50× faster CPU training, clean batching/masking/early stopping, and reliable convergence on real-sized corpora (≥ 600 documents).
-- **Negative / Limitations:** Adds `torch` (CPU wheel) as a project dependency; training configs must remain sized for 6-core Intel CPU / 32 GB RAM.
+- **Positive:** Zero external deep-learning binary wheel issues; 100% reproducible CPU execution on Python 3.13 `x86_64`; complete transparency of every gradient and forward pass.
+- **Negative / Limitations:** Training throughput is lower than PyTorch C++ kernels, so hidden dimensions and sequence windows are sized for fast CPU convergence.

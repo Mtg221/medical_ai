@@ -13,6 +13,16 @@ from typing import Any
 
 import yaml
 
+from medresearch_platform.approaches.classical_ml import (
+    predict_classical_crf,
+    predict_classical_ml,
+)
+from medresearch_platform.approaches.neural_seq import (
+    predict_bilstm,
+    predict_bilstm_crf,
+    predict_transformer,
+)
+from medresearch_platform.approaches.rule_based import predict_rule_based
 from medresearch_platform.data.schema import AnnotatedDocument
 from medresearch_platform.eval_harness.error_taxonomy import classify_corpus_errors
 from medresearch_platform.eval_harness.metrics import (
@@ -80,6 +90,12 @@ def _dummy_predictor(
 
 APPROACH_REGISTRY: dict[str, PredictorFn] = {
     "dummy": _dummy_predictor,
+    "rule_based": predict_rule_based,
+    "classical_ml": predict_classical_ml,
+    "classical_crf": predict_classical_crf,
+    "bilstm": predict_bilstm,
+    "bilstm_crf": predict_bilstm_crf,
+    "transformer": predict_transformer,
 }
 
 
