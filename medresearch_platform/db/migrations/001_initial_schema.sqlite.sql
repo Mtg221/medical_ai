@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS documents (
     detected_language TEXT NOT NULL CHECK (detected_language IN ('en', 'fr', 'mixed_en_fr', 'unknown')),
     document_type TEXT NOT NULL,
     specialty TEXT NOT NULL,
-    extraction_mode TEXT NOT NULL CHECK (extraction_mode IN ('NATIVE_TEXT', 'CUSTOM_OCR', 'HYBRID')),
+    extraction_mode TEXT NOT NULL CHECK (extraction_mode IN ('NATIVE_TEXT', 'TESSERACT_OCR', 'CUSTOM_OCR', 'HYBRID')),
     untrusted_flags_json TEXT NOT NULL DEFAULT '[]',
     deidentified_preview TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS document_pages (
     width_px INTEGER NOT NULL DEFAULT 600,
     height_px INTEGER NOT NULL DEFAULT 800,
     raw_text TEXT NOT NULL,
-    extraction_source TEXT NOT NULL CHECK (extraction_source IN ('NATIVE_PARSER', 'CUSTOM_OCR_MODEL')),
+    extraction_source TEXT NOT NULL CHECK (extraction_source IN ('NATIVE_PARSER', 'TESSERACT_OCR', 'CUSTOM_OCR_MODEL')),
     mean_confidence REAL NOT NULL DEFAULT 1.0,
     mean_uncertainty REAL NOT NULL DEFAULT 0.0,
     UNIQUE (document_id, page_number)

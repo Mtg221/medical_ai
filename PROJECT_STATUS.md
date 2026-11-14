@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 4 Complete — 5-Stage Hybrid Pipeline Evaluated on `SYNTH-MED-V2` `val` (124 docs)
+**Active Phase:** Phase 5 Complete — Real-World Document Processing & EN/FR Scan OCR (`Tesseract 5` + `OpenCV` + `pdfplumber` + `pypdfium2`)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -21,7 +21,7 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | Component | Status | Notes |
 |---|---|---|
 | Packaging, CI, ADRs 0005–0008, `extras/` isolation | **Implemented / Tested** | `pyproject.toml` fixed, hard-coded password removed, dermatology/vision isolated to `extras/` |
-| Document parsers (TXT, digital PDF, DOCX, image) | **Tested** | Digital extraction works; real scan OCR (Tesseract + PyMuPDF) planned in Phase 5 |
+| Document parsers & OCR (TXT, digital/scanned PDF, DOCX, PNG/JPEG/TIFF/WEBP) | **Tested (EN/FR scan benchmark: CER 0.0, WER 0.0)** | Page-by-page `pdfplumber` word boxes & lab tables, `pypdfium2` 300 dpi render, OpenCV preprocessing (upscale, deskew, denoise, adaptive threshold), Tesseract 5.5.4 (`eng+fra`), mixed-page `HYBRID` mode |
 | Bilingual terminology registry (EN/FR) | **Tested** | Static registry; corpus-scale normalization evaluation pending |
 | Security (Argon2id auth, HMAC tokens, PII scrubber, audit chain) | **Tested** | Hard-coded demo password removed; uses `MEDRESEARCH_DEMO_PASSWORD` env var |
 | Output contract (`extraction/contract.py`) | **Implemented** | Pydantic v2 single-source-of-truth + JSON Schema export planned in Phase 6 |
