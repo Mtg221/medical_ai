@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11 — correction (Step 1 complete: doubled TIMEX bug F1 fixed & verified; Step 2 generalization corpus next)
+**Active Phase:** Phase 11 — correction (Step 2 complete: `SYNTH-MED-V3` 1,240-doc generalization corpus built & audited; Step 3 seed/charset/eval upgrades next)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -25,7 +25,7 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | Bilingual terminology registry (EN/FR) | **Tested** | Static registry; corpus-scale normalization evaluation pending |
 | Security (Argon2id auth, HMAC tokens, PII scrubber, audit chain) | **Tested** | Hard-coded demo password removed; uses `MEDRESEARCH_DEMO_PASSWORD` env var |
 | Output contract (`extraction/contract.py` & `extraction/schema_models.py`) | **Tested** | Pydantic v2 single-source-of-truth + exported `schema/medical_extraction.schema.json` + `/api/v1/schema/extraction` |
-| Annotated EN/FR corpus (`>= 300 EN + >= 300 FR`) | **Invalidated (F1/F2)** (`SYNTH-MED-V2`) | `SYNTH-MED-V2` (800 docs) had doubled TIMEX text in 100% of docs and `94.8%` masked sentence overlap; `SYNTH-MED-V3` planned in Phase 11 Steps 1–2 |
+| Annotated EN/FR corpus (`>= 300 EN + >= 300 FR`) | **Implemented / Audited (`SYNTH-MED-V3`, 1,240 docs)** | `SYNTH-MED-V3` built with 640+ templates, expanded EN/FR lexicon, `train` (600), `val` (160), `test_iid` (160), `test_unseen_terms` (160, 0% clinical term overlap), `test_unseen_templates` (160, 0.6% masked sentence overlap); `0` doubled docs |
 | Evaluation harness (CI, McNemar, error taxonomy, profiler) | **Tested** | Hand-made unit tests pass; seed/CI/multi-test-set upgrades in Phase 11 Step 3 |
 | 5 Single Approaches (Rule, TF-IDF+ML/CRF, BiLSTM, BiLSTM-CRF, Transformer) | **Invalidated (F1/F2)** | Previous numbers measured memorisation on `SYNTH-MED-V2`; char-level + generalization fixes in Phase 11 Steps 3–4 |
 | 5-Stage Hybrid Pipeline | **Invalidated (F1/F2, F4/F5)** | Previous numbers invalid; Stage 3 hurt assertion/relation scores in ablation and Stage 5 lacked token-level reading (Phase 11 Step 5) |

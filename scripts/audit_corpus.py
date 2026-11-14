@@ -13,7 +13,7 @@ from medresearch_platform.data.schema import AnnotatedDocument
 
 _DIGIT_RE = re.compile(r"\d+(?:[.,]\d+)?")
 _SENT_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n+")
-_TOKEN_RE = re.compile(r"\d{4}-\d{2}-\d{2}|PAT-[A-Za-z]{2}-\d+|\w+|[^\w\s]", re.UNICODE)
+_TOKEN_RE = re.compile(r"\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4}|PAT-[A-Za-z]{2}-\d+|\w+|[^\w\s]", re.UNICODE)
 
 
 def _load_split(path: Path) -> list[AnnotatedDocument]:

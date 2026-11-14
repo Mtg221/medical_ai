@@ -16,6 +16,7 @@ from medresearch_platform.data.synthetic_v2 import (
     generate_synthetic_corpus,
     render_document_artifacts,
 )
+from medresearch_platform.data.synthetic_v3 import generate_v3_flat_list
 
 
 def _sha256_file(path: Path) -> str:
@@ -74,19 +75,29 @@ def build_corpus_from_config(config_path: Path) -> dict[str, Any]:
     out_dir = Path(cfg.get("output_dir", "data/processed/v1"))
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    docs = generate_synthetic_corpus(
-        en_count=int(langs.get("en", 400)),
-        fr_count=int(langs.get("fr", 400)),
-        seed=seed,
-        typo_rate=float(render_cfg.get("typo_rate", 0.05)),
-    )
-    assign_stratified_splits(
-        docs,
-        train_ratio=float(splits_cfg.get("train", 0.70)),
-        val_ratio=float(splits_cfg.get("val", 0.15)),
-        test_ratio=float(splits_cfg.get("test", 0.15)),
-        seed=seed,
-    )
+    generator_ver = str(cfg.get("generator", "v2"))
+    if generator_ver == "v3":
+        v3_counts = {str(k): int(v) for k, v in cfg.get("v3_splits_per_language", {}).items()}
+        docs = generate_v3_flat_list(
+            split_counts_per_lang=v3_counts or None,
+            seed=seed,
+        )
+        split_names = sorted({d.split for d in docs if d.split})
+    else:
+        docs = generate_synthetic_corpus(
+            en_count=int(langs.get("en", 400)),
+            fr_count=int(langs.get("fr", 400)),
+            seed=seed,
+            typo_rate=float(render_cfg.get("typo_rate", 0.05)),
+        )
+        assign_stratified_splits(
+            docs,
+            train_ratio=float(splits_cfg.get("train", 0.70)),
+            val_ratio=float(splits_cfg.get("val", 0.15)),
+            test_ratio=float(splits_cfg.get("test", 0.15)),
+            seed=seed,
+        )
+        split_names = ["train", "val", "test"]
 
     leakage = verify_no_split_leakage(
         docs,
@@ -99,7 +110,7 @@ def build_corpus_from_config(config_path: Path) -> dict[str, Any]:
 
     split_files: dict[str, str] = {}
     split_hashes: dict[str, str] = {}
-    for sp in ("train", "val", "test"):
+    for sp in split_names:
         sp_path = out_dir / f"{sp}.jsonl"
         sp_docs = [d for d in docs if d.split == sp]
         with sp_path.open("w", encoding="utf-8") as f:

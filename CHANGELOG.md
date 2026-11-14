@@ -14,3 +14,11 @@
 - Updated `scripts/audit_corpus.py` tokenization so ISO dates (`YYYY-MM-DD`) and `PAT-XX-NNN` IDs remain atomic tokens (avoiding false-positive `- DD` duplicates when month == day).
 - Added regression test `tests/test_synthetic_generator_integrity.py` (400 docs: 200 EN + 200 FR) checking zero doubled spans, zero duplicate n-grams, 100% offset match, normalized TIMEX values, and token-boundary alignment.
 - Built `SYNTH-MED-V3` (`configs/data/v3.yaml`, `data/processed/v3`) and verified 0 doubled docs; re-ran `rule_based` (`val`: strict F1 `0.9623`, lenient F1 `0.9623`, TIMEX F1 `1.0000`, TIMEX norm acc `0.2500`) and `bilstm_crf` (`val`: strict F1 `1.0000`, lenient F1 `1.0000`, TIMEX F1 `1.0000`, TIMEX norm acc `0.2500`).
+
+
+### Step 2 — Generalization Corpus `SYNTH-MED-V3` (F2) (2026-11-14)
+- Authored bilingual clinical lexicon (`medresearch_platform/data/lexicon_v3.py`): 85 diagnoses, 62 symptoms, 82 medications, 52 lab tests, 41 procedures, and 31 anatomy concepts per language (EN + FR) with abbreviations, synonyms, surface variants, and ICD-10/ATC/LOINC/SNOMED codes, partitioned 70/30 at the concept level.
+- Authored 640 independent EN/FR clinical sentence patterns (`medresearch_platform/data/templates_v3.py`: 40 per section × 8 sections × 2 languages) covering varied section orderings, missing sections, bullet lists, lab tables, harder assertion scope (negation termination, double negation, rule-out, uncertainty, hypothetical, family/historical), and multi-format/relative/partial TIMEX normalized to ISO-8601, partitioned 70/30 per `(language, section)`.
+- Implemented `medresearch_platform/data/synthetic_v3.py` and wired `generator: v3` in `medresearch_platform/data/builder.py` and `configs/data/v3.yaml` to build 5 locked splits (`train` 600, `val` 160, `test_iid` 160, `test_unseen_terms` 160, `test_unseen_templates` 160 = 1,240 docs).
+- Verified via `scripts/audit_corpus.py`: `0` doubled docs, `0` duplicate n-gram docs, `100.00%` offset/relation integrity, `0.0%` unseen clinical term overlap in `test_unseen_terms`, and `0.6%` masked sentence overlap in `test_unseen_templates` (`12.0%` in `test_iid`).
+- Added `tests/test_v3_corpus.py` verifying lexicon/template minimums, integrity, token alignment, and split isolation.
