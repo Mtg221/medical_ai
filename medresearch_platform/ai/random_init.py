@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import hashlib
+from dataclasses import asdict, dataclass
 from typing import Any, Literal
+
 import numpy as np
 
 InitMethod = Literal["he_normal", "xavier_uniform", "normal_small", "zeros"]

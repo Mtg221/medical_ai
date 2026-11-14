@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+
 import numpy as np
 from scipy import sparse
 from sklearn.feature_extraction import DictVectorizer

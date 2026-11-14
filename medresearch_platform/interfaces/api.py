@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import base64
 import json
-from typing import Any
+from pathlib import Path
+
 from starlette.applications import Starlette
 from starlette.requests import Request
-from pathlib import Path
 from starlette.responses import FileResponse, JSONResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
@@ -24,7 +24,6 @@ from medresearch_platform.security.auth import (
 )
 from medresearch_platform.workflows.pipeline import MedicalResearchPlatformService
 from medresearch_platform.workflows.review import submit_entity_human_review
-
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -365,74 +364,6 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
         report = run_six_approach_benchmark(epochs=epochs, seed=seed)
         return JSONResponse(report)
 
-    async def run_derm_benchmark_endpoint(request: Request) -> JSONResponse:
-        try:
-            principal = _extract_principal(request, service)
-            principal.assert_permission("training:execute")
-        except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
-
-        from medresearch_platform.dermatology.pipeline import run_derm_benchmark
-
-        try:
-            body = await request.json()
-        except Exception:
-            body = {}
-        epochs = max(5, min(40, int(body.get("epochs", 15)))) if isinstance(body, dict) else 15
-        per_class = max(10, min(300, int(body.get("per_class_limit", 150)))) if isinstance(body, dict) else 150
-        seed = int(body.get("seed", 42)) if isinstance(body, dict) else 42
-        report = run_derm_benchmark(per_class_limit=per_class, epochs=epochs, seed=seed)
-        return JSONResponse(report)
-
-    async def analyze_vision_endpoint(request: Request) -> JSONResponse:
-        try:
-            principal = _extract_principal(request, service)
-            principal.assert_permission("medical_data:read")
-        except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
-
-        import io
-        import numpy as np
-        from PIL import Image
-        from medresearch_platform.dermatology.catalog import MALIGNANCY_CLASSES
-        from medresearch_platform.dermatology.vision_classifier import RandomInitDermConvNet
-        from medresearch_platform.extraction.nn_utils import softmax
-
-        body = await request.json()
-        raw_b64 = str(body.get("content_base64", ""))
-        if not raw_b64:
-            return JSONResponse({"error": "content_base64 is required"}, status_code=400)
-        try:
-            raw_bytes = base64.b64decode(raw_b64)
-            with Image.open(io.BytesIO(raw_bytes)) as img:
-                rgb_img = img.convert("RGB")
-                vision_report = service.vision_model.analyze_image(rgb_img)
-                arr = np.asarray(rgb_img.resize((32, 32)), dtype=np.float64) / 255.0
-        except Exception as exc:
-            return JSONResponse({"error": f"Invalid image payload: {exc}"}, status_code=400)
-
-        derm_net = RandomInitDermConvNet(seed=service.config.default_random_seed)
-        logits, _ = derm_net.forward(arr[None, ...])
-        probs = softmax(logits[0], axis=-1)
-        pred_idx = int(np.argmax(probs))
-
-        return JSONResponse({
-            "vision_model": vision_report.model_id,
-            "width": vision_report.width,
-            "height": vision_report.height,
-            "quality_score": vision_report.quality_score,
-            "predicted_modality": vision_report.predicted_modality,
-            "roi_bbox": vision_report.roi_bbox,
-            "vision_confidence": vision_report.confidence,
-            "derm_model": f"{derm_net.architecture_name}-{derm_net.architecture_version}",
-            "derm_predicted_group": MALIGNANCY_CLASSES[pred_idx],
-            "derm_probabilities": {
-                cls_name: round(float(probs[i]), 4) for i, cls_name in enumerate(MALIGNANCY_CLASSES)
-            },
-            "pretrained_weights_used": False,
-            "disclaimer": "Research-only random-initialized model output; NOT a clinical diagnosis.",
-        })
-
     async def verify_audit_endpoint(request: Request) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
@@ -461,7 +392,7 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
 
     REACT_DIST_DIR = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
-    async def react_workspace_endpoint(request: Request) -> FileResponse:
+    async def react_workspace_endpoint(request: Request) -> FileResponse | JSONResponse:
         """Serve the React + Vite workspace bundle if built."""
         index_file = REACT_DIST_DIR / "index.html"
         if not index_file.exists():
@@ -497,8 +428,6 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
         Route("/api/v1/experiments", list_experiments_endpoint, methods=["GET"]),
         Route("/api/v1/experiments/run", run_experiments_endpoint, methods=["POST"]),
         Route("/api/v1/extraction/benchmark", run_six_extraction_benchmark_endpoint, methods=["POST"]),
-        Route("/api/v1/dermatology/benchmark", run_derm_benchmark_endpoint, methods=["POST"]),
-        Route("/api/v1/vision/analyze", analyze_vision_endpoint, methods=["POST"]),
         Route("/api/v1/audit/verify", verify_audit_endpoint, methods=["GET"]),
         Mount("/static", app=StaticFiles(directory=str(STATIC_DIR)), name="static"),
     ]

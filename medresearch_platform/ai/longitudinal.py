@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
 import sqlite3
-from typing import Any
 import uuid
+from dataclasses import dataclass
+from typing import Any
+
 import numpy as np
 
 from medresearch_platform.ai.random_init import (

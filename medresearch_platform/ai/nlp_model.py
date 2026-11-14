@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
-import re
-from typing import Any
+from typing import Any, cast
+
 import numpy as np
 
 from medresearch_platform.ai.random_init import (
@@ -249,7 +250,7 @@ def encode_span_and_context_features(
     vec[68] = 1.0 if any(d in clean_span for d in ("hypertension", "diabetes", "diabète", "pneumonia", "pneumopathie", "pneumonie", "embolism", "embolie", "fibrillation")) else 0.0
     vec[69] = 1.0 if any(s in clean_span for s in ("dyspnea", "dyspnée", "essoufflement", "pain", "douleur", "fever", "fièvre", "cough", "toux")) else 0.0
     vec[70] = 1.0 if any(m in clean_span for m in ("metformin", "metformine", "amlodipine", "amoxicillin", "amoxicilline", "apixaban")) else 0.0
-    vec[71] = 1.0 if any(l in clean_span for l in ("hba1c", "glyquée", "crp", "reactive", "réactive", "creatinine", "créatinine", "créatininémie")) else 0.0
+    vec[71] = 1.0 if any(lab in clean_span for lab in ("hba1c", "glyquée", "crp", "reactive", "réactive", "creatinine", "créatinine", "créatininémie")) else 0.0
     vec[72] = 1.0 if any(p in clean_span for p in ("computed tomography", "chest ct", "angioscanner", "scanner", "tdm")) else 0.0
     vec[73] = 1.0 if any(a in clean_span for a in ("thorax", "chest", "lungs", "poitrine", "poumons")) else 0.0
     vec[74] = 1.0 if any(t in clean_span for t in ("days", "jours", "ans", "202", "201", "depuis", "since")) else 0.0
@@ -644,7 +645,7 @@ class CustomMedicalNLPNet:
 
     def save_checkpoint(self, path: Path) -> str:
         path.parent.mkdir(parents=True, exist_ok=True)
-        np.savez(str(path), **self.params)
+        np.savez(str(path), **cast(Any, self.params))
         return compute_weights_sha256(self.params)
 
     def load_checkpoint(self, path: Path) -> None:

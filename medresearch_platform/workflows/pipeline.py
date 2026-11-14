@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict
-from datetime import datetime, timezone
 import hashlib
 import json
 import os
-from pathlib import Path
+import secrets
 import time
-from typing import Any
 import uuid
+from dataclasses import asdict
+from datetime import datetime, timezone
+from typing import Any
+
 import psutil
 
 from medresearch_platform.ai.evaluation import (
@@ -37,10 +38,6 @@ from medresearch_platform.ai.ocr_model import (
 )
 from medresearch_platform.ai.random_init import verify_random_init_provenance
 from medresearch_platform.ai.terminology import BilingualTerminologyRegistry
-from medresearch_platform.ai.vision_multimodal import (
-    CustomMedicalVisionNet,
-    CustomMultimodalFusionNet,
-)
 from medresearch_platform.config import PlatformConfig
 from medresearch_platform.db.engine import DatabaseEngine
 from medresearch_platform.diagnostics import capture_hardware_snapshot
@@ -77,8 +74,6 @@ class MedicalResearchPlatformService:
         self.terminology = BilingualTerminologyRegistry()
         self.ocr_model = CustomOCRConvNet(seed=self.config.default_random_seed)
         self.nlp_model = CustomMedicalNLPNet(seed=self.config.default_random_seed)
-        self.vision_model = CustomMedicalVisionNet(seed=self.config.default_random_seed)
-        self.multimodal_model = CustomMultimodalFusionNet(seed=self.config.default_random_seed)
         self.retrieval_model = CustomNeuralRetrievalScorer(seed=self.config.default_random_seed)
         self._models_trained = False
         self._training_summary: dict[str, Any] = {}
@@ -112,7 +107,8 @@ class MedicalResearchPlatformService:
                 ("usr_ml_01", "inst_dakar_primary", "ml_engineer", "ML_ENGINEER", "ML_ARCHITECT"),
                 ("usr_partner_01", "inst_paris_partner", "researcher_paris", "RESEARCHER", "PARTNER_INVESTIGATOR"),
             ]
-            default_pw_hash = hash_password("MedResearch!2026")
+            demo_pw = os.environ.get("MEDRESEARCH_DEMO_PASSWORD") or secrets.token_urlsafe(24)
+            default_pw_hash = hash_password(demo_pw)
             for uid, inst_id, uname, role, qual in default_users:
                 perms = list(ROLE_DEFAULT_PERMISSIONS[role])
                 conn.execute(
@@ -232,44 +228,6 @@ class MedicalResearchPlatformService:
                     "Bilingual (EN/FR) medical entity, assertion/negation, temporality, and relation extraction.",
                     "Prohibited for autonomous clinical diagnosis, prescribing, or replacing medical review.",
                     "Evaluated on synthetic bilingual internal medicine/cardiology/pulmonology notes.",
-                ),
-                (
-                    "mdl_vision_roi_v1",
-                    self.vision_model.architecture_name,
-                    self.vision_model.architecture_version,
-                    "MEDICAL_CV",
-                    "PRIMARY_RANDOM_INIT",
-                    self.vision_model.architecture_name,
-                    self.vision_model.init_manifest.parameter_count,
-                    self.vision_model.init_manifest.init_method,
-                    self.vision_model.init_manifest.seed,
-                    self.vision_model.init_manifest.initial_weights_sha256,
-                    self.vision_model.init_manifest.initial_weights_sha256,
-                    0,
-                    str(self.config.storage_dir / "checkpoints" / "custom_vision_v1.npz"),
-                    "EXPERIMENTAL",
-                    "Image quality check, modality verification, and foreground ROI bounding box estimation.",
-                    "Not a radiological diagnostic detector.",
-                    "Experimental baseline for document scan and phantom quality verification.",
-                ),
-                (
-                    "mdl_multimodal_fusion_v1",
-                    self.multimodal_model.architecture_name,
-                    self.multimodal_model.architecture_version,
-                    "MULTIMODAL",
-                    "PRIMARY_RANDOM_INIT",
-                    self.multimodal_model.architecture_name,
-                    self.multimodal_model.init_manifest.parameter_count,
-                    self.multimodal_model.init_manifest.init_method,
-                    self.multimodal_model.init_manifest.seed,
-                    self.multimodal_model.init_manifest.initial_weights_sha256,
-                    self.multimodal_model.init_manifest.initial_weights_sha256,
-                    0,
-                    str(self.config.storage_dir / "checkpoints" / "custom_multimodal_v1.npz"),
-                    "EXPERIMENTAL",
-                    "Cross-modal disagreement detection on explicitly verified text-image pairs.",
-                    "Never infers pairing from folder co-location; not for clinical diagnosis.",
-                    "Requires explicit verified_pair_id.",
                 ),
                 (
                     "mdl_hybrid_retrieval_v1",

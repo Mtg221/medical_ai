@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
 
 from medresearch_platform.config import PlatformConfig
@@ -10,7 +11,6 @@ from medresearch_platform.db.engine import DatabaseEngine
 from medresearch_platform.documents.parsers import (
     detect_document_language,
     parse_document_bytes,
-    segment_page_sections,
 )
 from medresearch_platform.documents.synthetic_generator import (
     SYNTHETIC_CLINICAL_CORPUS,

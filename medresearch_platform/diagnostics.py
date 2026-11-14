@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
 import importlib.metadata
 import os
-from pathlib import Path
 import platform
 import shutil
 import sqlite3
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
+
 import psutil
 
 

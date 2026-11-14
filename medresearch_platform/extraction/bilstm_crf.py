@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+
 import numpy as np
 
 from medresearch_platform.ai.random_init import build_random_init_manifest, initialize_tensor
@@ -16,7 +17,7 @@ from medresearch_platform.extraction.nn_utils import (
     pad_sequence_batch,
     softmax,
 )
-from medresearch_platform.extraction.text import TAGS, TAG_TO_ID, Token, Vocabulary, spans_to_bio, tokenize
+from medresearch_platform.extraction.text import TAG_TO_ID, TAGS, Token, Vocabulary, spans_to_bio, tokenize
 
 
 def _logsumexp(a: np.ndarray, axis: int = -1) -> np.ndarray:

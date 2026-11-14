@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 from starlette.testclient import TestClient
 
 from medresearch_platform.config import PlatformConfig
@@ -27,7 +28,8 @@ def _build_test_config(tmp_path: Path) -> PlatformConfig:
     )
 
 
-def test_full_api_lifecycle_rbac_and_institution_isolation(tmp_path: Path) -> None:
+def test_full_api_lifecycle_rbac_and_institution_isolation(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("MEDRESEARCH_DEMO_PASSWORD", "test-demo-pw-2026")
     cfg = _build_test_config(tmp_path)
     app = create_app(config=cfg)
     client = TestClient(app)
@@ -52,17 +54,17 @@ def test_full_api_lifecycle_rbac_and_institution_isolation(tmp_path: Path) -> No
     # 3. Issue tokens for Admin (Dakar), Annotator (Dakar), and Partner Researcher (Paris)
     tok_admin = client.post(
         "/api/v1/auth/token",
-        json={"username": "admin_dakar", "password": "MedResearch!2026"},
+        json={"username": "admin_dakar", "password": "test-demo-pw-2026"},
     ).json()["access_token"]
 
     tok_annotator = client.post(
         "/api/v1/auth/token",
-        json={"username": "annotator_clinical", "password": "MedResearch!2026"},
+        json={"username": "annotator_clinical", "password": "test-demo-pw-2026"},
     ).json()["access_token"]
 
     tok_paris = client.post(
         "/api/v1/auth/token",
-        json={"username": "researcher_paris", "password": "MedResearch!2026"},
+        json={"username": "researcher_paris", "password": "test-demo-pw-2026"},
     ).json()["access_token"]
 
     # 4. Annotator cannot trigger model training/experiments (RBAC separation)
@@ -144,7 +146,7 @@ def test_full_api_lifecycle_rbac_and_institution_isolation(tmp_path: Path) -> No
 
     r_models = client.get("/api/v1/models")
     assert r_models.status_code == 200
-    assert r_models.json()["count"] == 5
+    assert r_models.json()["count"] == 3
 
     r_audit = client.get(
         "/api/v1/audit/verify",

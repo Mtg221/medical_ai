@@ -7,8 +7,8 @@ module to fill the negation / assertion / temporal fields of the common output c
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 
 from medresearch_platform.ai.nlp_model import (
     _FAMILY_CUES,

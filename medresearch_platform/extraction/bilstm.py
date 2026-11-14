@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+
 import numpy as np
 
 from medresearch_platform.ai.random_init import (
@@ -21,7 +22,7 @@ from medresearch_platform.extraction.nn_utils import (
     sigmoid,
     softmax,
 )
-from medresearch_platform.extraction.text import TAGS, TAG_TO_ID, Token, Vocabulary, spans_to_bio, tokenize
+from medresearch_platform.extraction.text import TAG_TO_ID, TAGS, Token, Vocabulary, spans_to_bio, tokenize
 
 
 class BiLSTMEncoder:

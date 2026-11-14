@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
@@ -365,7 +366,7 @@ class CustomOCRConvNet:
 
     def save_checkpoint(self, path: Path) -> str:
         path.parent.mkdir(parents=True, exist_ok=True)
-        np.savez(str(path), **self.params)
+        np.savez(str(path), **cast(Any, self.params))
         return compute_weights_sha256(self.params)
 
     def load_checkpoint(self, path: Path) -> None:

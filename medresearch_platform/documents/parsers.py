@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import io
 import re
-from typing import Any, Literal
+from dataclasses import dataclass
+from typing import Literal
+
 import docx
 from PIL import Image
 from pypdf import PdfReader

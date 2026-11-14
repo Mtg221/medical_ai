@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import io
 import re
 import zipfile
+from dataclasses import dataclass
 
 SUPPORTED_FORMATS = frozenset({"TXT", "PDF", "DOCX", "PNG", "JPEG", "TIFF", "WEBP"})
 

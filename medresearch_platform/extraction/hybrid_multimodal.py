@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
-import numpy as np
+from typing import Any, Literal
 
+import numpy as np
 from PIL import Image
 
-from medresearch_platform.ai.vision_multimodal import CustomMedicalVisionNet
 from medresearch_platform.extraction.bilstm_crf import BiLSTMCRFExtractor
 from medresearch_platform.extraction.classical_ml import ClassicalMLExtractor
 from medresearch_platform.extraction.contract import (
@@ -30,7 +29,7 @@ class HybridMultimodalExtractor:
     rule_extractor: RuleBasedMedicalExtractor
     classical_extractor: ClassicalMLExtractor | None = None
     neural_extractor: BiLSTMCRFExtractor | None = None
-    vision_model: CustomMedicalVisionNet | None = None
+    vision_model: Any | None = None
     model_name: str = "HybridMultimodalPipeline"
     model_version: str = "1.0.0"
 
@@ -122,9 +121,8 @@ class HybridMultimodalExtractor:
                     )
                 )
 
-        if image_aligned and image_rgb is not None:
-            vmodel = self.vision_model or CustomMedicalVisionNet(seed=42)
-            v_pred = vmodel.analyze_image(Image.fromarray(image_rgb))
+        if image_aligned and image_rgb is not None and self.vision_model is not None:
+            v_pred = self.vision_model.analyze_image(Image.fromarray(image_rgb))
             image_summary = {
                 "vision_model": "CustomMedicalVisionNet-v1",
                 "predicted_modality": v_pred.predicted_modality,
@@ -153,7 +151,9 @@ class HybridMultimodalExtractor:
             primary = votes[0][2]
             agreeing_branches = [b for b, _, _ in votes]
             # Stage 7: Human validation readiness flagging
-            review_status = "flagged" if (len(votes) == 1 and weighted_conf < 0.75) else "unreviewed"
+            review_status: Literal["unreviewed", "approved", "corrected", "rejected", "flagged"] = (
+                "flagged" if (len(votes) == 1 and weighted_conf < 0.75) else "unreviewed"
+            )
 
             fused_records.append(
                 build_extracted_record(

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from medresearch_platform.ai.evaluation import (
     compute_calibration_and_selective_risk,
     compute_span_f1_metrics,
@@ -18,10 +16,6 @@ from medresearch_platform.ai.ocr_model import (
 )
 from medresearch_platform.ai.random_init import verify_random_init_provenance
 from medresearch_platform.ai.terminology import BilingualTerminologyRegistry
-from medresearch_platform.ai.vision_multimodal import (
-    CustomMedicalVisionNet,
-    CustomMultimodalFusionNet,
-)
 from medresearch_platform.documents.synthetic_generator import generate_nlp_training_samples
 from medresearch_platform.workflows.review import compute_inter_annotator_agreement
 
@@ -121,37 +115,6 @@ def test_bilingual_terminology_mapping_preservation_of_unmapped() -> None:
     unmapped = reg.map_mention("rare unindexed syndrome xyz", category_hint="DIAGNOSIS")
     assert unmapped.match_type == "UNMAPPED"
     assert unmapped.concept_id is None
-
-
-def test_vision_and_multimodal_verified_pair_guard() -> None:
-    img, _ = render_scanned_document_image(["CRP 12.0 MG/L"], seed=42)
-    vis = CustomMedicalVisionNet(seed=42)
-    rep = vis.analyze_image(img)
-    assert rep.width > 0 and rep.height > 0
-    assert 0.0 <= rep.confidence <= 1.0
-
-    mm = CustomMultimodalFusionNet(seed=42)
-    # Must reject unverified pair (Section 11)
-    with pytest.raises(ValueError, match="Section 11 violation prevented"):
-        mm.evaluate_verified_pair(
-            verified_pair_id=None,
-            document_id="doc_1",
-            image_id="img_1",
-            extracted_entities=[],
-            image_finding_flag="NORMAL_THORAX",
-        )
-
-    # Detect disagreement when text affirms pneumonia but verified image is normal
-    dis_rep = mm.evaluate_verified_pair(
-        verified_pair_id="pair_verified_001",
-        document_id="doc_1",
-        image_id="img_1",
-        extracted_entities=[
-            {"entity_type": "DIAGNOSIS", "normalized_text": "pneumonia", "assertion_status": "AFFIRMED"}
-        ],
-        image_finding_flag="NORMAL_THORAX",
-    )
-    assert dis_rep.disagreement_detected is True
 
 
 def test_inter_annotator_agreement_and_federated_quarantine() -> None:

@@ -193,7 +193,7 @@ export default function App() {
 
 function LoginCard({ t, onSuccess, onError }) {
   const [username, setUsername] = useState("ml_engineer");
-  const [password, setPassword] = useState("MedResearch!2026");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   const submit = async (e) => {
@@ -225,7 +225,7 @@ function LoginCard({ t, onSuccess, onError }) {
   return (
     <section className="card">
       <h2>{t.signIn}</h2>
-      <p className="muted">Demo accounts (password <code>MedResearch!2026</code>): <code>ml_engineer</code>, <code>admin_dakar</code>, <code>researcher_bilingual</code>, <code>annotator_clinical</code>, <code>researcher_paris</code></p>
+      <p className="muted">Enter your institutional credentials (demo accounts seeded via <code>MEDRESEARCH_DEMO_PASSWORD</code>).</p>
       <form onSubmit={submit}>
         <div className="form-field">
           <label htmlFor="login-user">{t.username}</label>

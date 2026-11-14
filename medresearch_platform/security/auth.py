@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 import json
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from typing import Iterable
 
 from argon2 import PasswordHasher

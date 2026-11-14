@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 import sqlite3
+from dataclasses import dataclass
 from typing import Literal
 
 MatchType = Literal["EXACT", "SYNONYM", "APPROXIMATE", "AMBIGUOUS", "UNMAPPED"]
