@@ -71,6 +71,8 @@ Every entity carries:
 | `FREQUENCY` | Recurrence | `twice daily`, `deux fois par jour` |
 | `RELATIVE` | Relative to document date | `3 days ago`, `il y a 3 jours` |
 
+**Dual-layer scoring rule (Entity + TIMEX):** Temporal expressions (`DATE`, `DURATION`, `FREQUENCY`, `RELATIVE`) are emitted once in the document text and annotated with both an `EntitySpan` (`DATE`, `DURATION`, or `FREQUENCY`) and a `TimexSpan` sharing the exact same `[start, end)` character offsets. During evaluation, NER metrics score the `EntitySpan` predictions against gold `EntitySpan` annotations, and TIMEX metrics score the `TimexSpan` predictions (and normalized values) independently against gold `TimexSpan` annotations on those same offsets.
+
 ---
 
 ## 5. Document Types (6 Classes)

@@ -186,6 +186,47 @@ class _DocBuilder:
         self.timex.append(tx)
         return tx
 
+    def add_entity_with_timex(
+        self,
+        text: str,
+        *,
+        etype: str,
+        ttype: str,
+        normalized: str | None = None,
+        assertion: str = "present",
+        temporality: str = "current",
+        code: str | None = None,
+        system: str | None = None,
+    ) -> tuple[EntitySpan, TimexSpan]:
+        """Write `text` once and attach both an EntitySpan and a TimexSpan on identical offsets."""
+        self._ent_seq += 1
+        self._timex_seq += 1
+        start = self._cursor
+        self.add_text(text)
+        end = self._cursor
+        ent = EntitySpan(
+            id=f"e{self._ent_seq}",
+            type=etype,
+            start=start,
+            end=end,
+            text=text,
+            assertion=assertion,
+            temporality=temporality,
+            normalized_code=code,
+            normalized_system=system,
+        )
+        tx = TimexSpan(
+            id=f"t{self._timex_seq}",
+            type=ttype,
+            start=start,
+            end=end,
+            text=text,
+            normalized=normalized,
+        )
+        self.entities.append(ent)
+        self.timex.append(tx)
+        return ent, tx
+
     def add_relation(self, rtype: str, head: EntitySpan, tail: EntitySpan) -> None:
         self._rel_seq += 1
         self.relations.append(RelationSpan(id=f"r{self._rel_seq}", type=rtype, head=head.id, tail=tail.id))
@@ -246,9 +287,7 @@ def generate_synthetic_document(
     b.add_text(f"{hdr['header']} ({doc_type.replace('_', ' ').upper()}) | ID: ")
     b.add_entity(patient_id, etype="PATIENT_ID")
     b.add_text(" | Date: ")
-    b.add_entity(doc_date_iso, etype="DATE")
-    b.add_timex(doc_date_iso, ttype="DATE", normalized=doc_date_iso)
-    # Note: keep DATE entity and Timex without overlapping duplicate if needed; both share exact offsets cleanly.
+    b.add_entity_with_timex(doc_date_iso, etype="DATE", ttype="DATE", normalized=doc_date_iso)
     b.add_text("\n")
 
     # Build sections and optionally shuffle middle sections for structural variety
@@ -261,8 +300,7 @@ def generate_synthetic_document(
             b.add_entity(_pick_lex(sym2, language), etype="SYMPTOM", code=sym2.code, system=sym2.system)
             b.add_text(" starting ")
             rel_txt = f"{rel_days} days ago"
-            b.add_entity(rel_txt, etype="DURATION")
-            b.add_timex(rel_txt, ttype="RELATIVE", normalized=rel_date_iso)
+            b.add_entity_with_timex(rel_txt, etype="DURATION", ttype="RELATIVE", normalized=rel_date_iso)
             b.add_text(" affecting the ")
             a_ent = b.add_entity(_pick_lex(anat, language), etype="ANATOMY", code=anat.code, system=anat.system)
             b.add_relation("LOCATED_IN", s1, a_ent)
@@ -274,8 +312,7 @@ def generate_synthetic_document(
             b.add_entity(_pick_lex(sym2, language), etype="SYMPTOM", code=sym2.code, system=sym2.system)
             b.add_text(" évoluant depuis ")
             rel_txt = f"il y a {rel_days} jours"
-            b.add_entity(rel_txt, etype="DURATION")
-            b.add_timex(rel_txt, ttype="RELATIVE", normalized=rel_date_iso)
+            b.add_entity_with_timex(rel_txt, etype="DURATION", ttype="RELATIVE", normalized=rel_date_iso)
             b.add_text(" au niveau des ")
             a_ent = b.add_entity(_pick_lex(anat, language), etype="ANATOMY", code=anat.code, system=anat.system)
             b.add_relation("LOCATED_IN", s1, a_ent)
@@ -336,13 +373,11 @@ def generate_synthetic_document(
         b.add_text(" ")
         d_ent = b.add_entity(dose, etype="DOSAGE")
         b.add_text(" ")
-        f_ent = b.add_entity(freq, etype="FREQUENCY")
-        b.add_timex(freq, ttype="FREQUENCY")
+        f_ent, _ = b.add_entity_with_timex(freq, etype="FREQUENCY", ttype="FREQUENCY", normalized=freq)
         b.add_text(" ")
         r_ent = b.add_entity(route, etype="ROUTE")
         b.add_text(" ")
-        b.add_entity(dur, etype="DURATION")
-        b.add_timex(dur, ttype="DURATION", normalized="P7D")
+        b.add_entity_with_timex(dur, etype="DURATION", ttype="DURATION", normalized="P7D")
         b.add_relation("HAS_DOSAGE", m_ent, d_ent)
         b.add_relation("HAS_FREQUENCY", m_ent, f_ent)
         b.add_relation("HAS_ROUTE", m_ent, r_ent)

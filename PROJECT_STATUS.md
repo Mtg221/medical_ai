@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11 — correction (Step 0 complete: audit reproduced F1/F2, v2 results archived)
+**Active Phase:** Phase 11 — correction (Step 1 complete: doubled TIMEX bug F1 fixed & verified; Step 2 generalization corpus next)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
