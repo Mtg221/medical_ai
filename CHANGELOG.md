@@ -57,3 +57,8 @@
 - Added `recharts`, `pdfjs-dist`, `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, and `jsdom` to `frontend/package.json`.
 - Added `frontend/vitest.config.ts` and `frontend/src/__tests__/pages.test.tsx` (7/7 Vitest component tests passing).
 - Added `npm --prefix frontend test` to `.github/workflows/ci.yml`.
+
+### Step 8 — Multi-Seed `SYNTH-MED-V3` Validation, Ablation & Locked Test Evaluation (2026-11-14)
+- Added committed `SYNTH-MED-V3` experiment configs in `configs/exp/v3/` (`rule_based.yaml`, `classical_ml.yaml`, `classical_crf.yaml`, `bilstm.yaml`, `bilstm_crf.yaml`, `transformer.yaml`, `hybrid.yaml`) with `seeds: [1, 2, 3]`.
+- Added `scripts/run_v3_val_and_ablation.py` and executed multi-seed `val` benchmark (`docs/results/v3_val_benchmark.json`) and 5-variant hybrid ablation (`docs/results/v3_val_ablation.json`), confirming Stage 3 Assertion BiLSTM (`0.5500` vs `0.4851` without) and Stage 3 Relation CNN (`0.9050` vs `0.7056` without) now improve performance.
+- Added `scripts/run_v3_locked_test_eval.py` and executed the one-time locked test evaluation across `test_iid`, `test_unseen_terms`, and `test_unseen_templates` (160 docs each, seeds 1–3) with paired significance tests, saving `docs/results/v3_locked_test_evaluation.json` and logging the run in `docs/results/TEST_SET_LOG.md`.
