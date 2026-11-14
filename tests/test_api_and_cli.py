@@ -171,10 +171,15 @@ def test_frontend_assets_and_security_headers(tmp_path: Path) -> None:
     assert client.get("/static/app.css").status_code == 200
     assert client.get("/static/does_not_exist.js").status_code == 404
 
+    react_dist_index = Path(__file__).resolve().parents[1] / "frontend" / "dist" / "index.html"
     react_page = client.get("/react")
-    assert react_page.status_code == 200
-    assert "script-src 'self'" in react_page.headers["content-security-policy"]
-    assert "/react/assets/" in react_page.text
+    if react_dist_index.exists():
+        assert react_page.status_code == 200
+        assert "script-src 'self'" in react_page.headers["content-security-policy"]
+        assert "/react/assets/" in react_page.text
+    else:
+        assert react_page.status_code == 404
+        assert "React frontend not built" in react_page.json()["error"]
 
 
 def test_cli_commands_execution(capsys) -> None:

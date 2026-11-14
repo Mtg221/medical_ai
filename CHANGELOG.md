@@ -45,3 +45,7 @@
   - `mild_scan`: CER `0.0022`, WER `0.0119`, conf `0.9384` (EN CER `0.0006`, FR CER `0.0038`)
   - `heavy_scan`: CER `0.1615`, WER `0.5471`, conf `0.7343` (EN CER `0.1624`, FR CER `0.1607`)
 - Added `tests/test_ocr_stress_benchmark.py` verifying non-zero CER degradation under heavy scan noise/blur/JPEG compression.
+
+### Step 6 — Fresh-Clone CI & `test_frontend_assets_and_security_headers` Fix (F8) (2026-11-14)
+- Updated `tests/test_api_and_cli.py` (`test_frontend_assets_and_security_headers`) to handle fresh-clone environments where `frontend/dist` has not been built yet (`404` JSON message) while still verifying `200`, CSP headers, and `/react/assets/` when `frontend/dist/index.html` is present.
+- Updated `.github/workflows/ci.yml`: added `actions/setup-node@v4` (Node 22), added `scripts/` to `ruff check`, and added `medextract data build --config configs/data/v3.yaml && python scripts/audit_corpus.py --data-dir data/processed/v3 --fail-on-doubled` to CI.

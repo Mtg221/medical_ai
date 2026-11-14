@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11 — correction (Step 5 complete: 3-tier OCR stress benchmark F6 recorded; Step 6 CI/pytest fresh-clone fix F8 next)
+**Active Phase:** Phase 11 — correction (Step 6 complete: fresh-clone CI & `test_frontend_assets_and_security_headers` F8 fixed; Step 7 frontend pages/charts/pdf.js/Vitest F7 next)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 

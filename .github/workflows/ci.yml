@@ -14,6 +14,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Install Tesseract OCR (EN/FR)
         run: |
           sudo apt-get update
@@ -27,8 +30,12 @@ jobs:
           npm --prefix frontend ci
           npm --prefix frontend run build
       - name: Lint with ruff
-        run: ruff check medresearch_platform tests
+        run: ruff check medresearch_platform tests scripts
       - name: Type check with mypy
         run: mypy medresearch_platform
+      - name: Build & audit SYNTH-MED-V3 corpus
+        run: |
+          medextract data build --config configs/data/v3.yaml
+          python scripts/audit_corpus.py --data-dir data/processed/v3 --fail-on-doubled
       - name: Run pytest with coverage
         run: pytest --cov=medresearch_platform --cov-report=term-missing
