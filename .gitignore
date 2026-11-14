@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+npm-debug.log*
+
+# Runtime data & local databases
+var/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+
+# Environment & secrets
+.env
+.env.*
+*.pem
+*.key
+
+# macOS / IDE
+.DS_Store
+.vscode/
+.idea/
