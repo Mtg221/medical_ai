@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, Query, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from medresearch_platform import __spec_coverage__, __version__
@@ -28,6 +28,7 @@ from medresearch_platform.interfaces.schemas import (
     TokenRequest,
     TokenResponse,
 )
+from medresearch_platform.reports import ReportFormat, ReportLanguage, generate_report_bytes
 from medresearch_platform.security.audit import verify_audit_chain
 from medresearch_platform.security.auth import (
     AuthenticatedPrincipal,
@@ -205,6 +206,52 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
                 "They are NOT verified clinical diagnoses or treatment orders."
             ),
         })
+
+    @app.get("/api/v1/documents/{document_id}/report")
+    async def document_report_endpoint(
+        document_id: str,
+        request: Request,
+        format: ReportFormat = Query("markdown"),
+        lang: ReportLanguage = Query("en"),
+    ) -> Response:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+
+        with service.db.connect() as conn:
+            doc = conn.execute("SELECT * FROM documents WHERE document_id = ?", (document_id,)).fetchone()
+            if doc is None:
+                return JSONResponse({"error": "Document not found"}, status_code=404)
+            try:
+                principal.assert_institution_access(str(doc["institution_id"]))
+            except PermissionError as exc:
+                return JSONResponse({"error": str(exc)}, status_code=403)
+
+            entities = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM extracted_entities WHERE document_id = ? ORDER BY char_start ASC",
+                    (document_id,),
+                ).fetchall()
+            ]
+            relations = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM extracted_relations WHERE document_id = ?",
+                    (document_id,),
+                ).fetchall()
+            ]
+
+        payload, media_type = generate_report_bytes(
+            dict(doc),
+            entities,
+            relations,
+            lang=lang,
+            fmt=format,
+        )
+        return Response(content=payload, media_type=media_type)
 
     @app.post("/api/v1/documents/ingest")
     async def ingest_document_endpoint(body: IngestDocumentRequest, request: Request) -> JSONResponse:
