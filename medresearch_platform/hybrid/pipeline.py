@@ -1,0 +1,254 @@
+"""Orchestrator for the 5-stage Hybrid Medical Extraction Pipeline + ablation & JSON contract export."""
+
+from __future__ import annotations
+
+import time
+from typing import Any
+
+from medresearch_platform.approaches.context_negex import (
+    apply_context_and_relations,
+    classify_assertion_context,
+)
+from medresearch_platform.data.schema import AnnotatedDocument
+from medresearch_platform.eval_harness.metrics import (
+    DocumentPrediction,
+    PredictedEntity,
+)
+from medresearch_platform.hybrid.stage1_doc_understanding import Stage1DocumentUnderstanding
+from medresearch_platform.hybrid.stage2_ner import CandidateEntity, Stage2EntityExtractor
+from medresearch_platform.hybrid.stage3_context_relations import (
+    BiLSTMAssertionClassifier,
+    PiecewiseCNNRelationClassifier,
+)
+from medresearch_platform.hybrid.stage4_temporal import CRFTemporalTagger
+from medresearch_platform.hybrid.stage5_integration import (
+    TemperatureScaler,
+    TransformerCandidateReranker,
+    check_consistency,
+    detect_missing_sections,
+)
+
+
+class HybridPipeline:
+    """5-stage, >=6-technique Hybrid Medical Extraction Pipeline with ablation toggles."""
+
+    def __init__(self, *, seed: int = 42, cfg: dict[str, Any] | None = None) -> None:
+        self.seed = seed
+        self.cfg = cfg or {}
+        self.stage1 = Stage1DocumentUnderstanding(seed=seed)
+        self.stage2 = Stage2EntityExtractor(
+            hidden_dim=int(self.cfg.get("hidden_dim", 32)),
+            epochs=int(self.cfg.get("epochs", 10)),
+            lr=float(self.cfg.get("lr", 0.018)),
+            max_train_docs=int(self.cfg.get("max_train_docs", 160)),
+            seed=seed,
+        )
+        self.assertion_model: BiLSTMAssertionClassifier | None = None
+        self.relation_model: PiecewiseCNNRelationClassifier | None = None
+        self.temporal_crf = CRFTemporalTagger(seed=seed)
+        self.reranker = TransformerCandidateReranker(seed=seed)
+        self.scaler = TemperatureScaler()
+        self._fitted = False
+
+    def fit(self, train_docs: list[AnnotatedDocument]) -> HybridPipeline:
+        self.stage1.fit(train_docs)
+        self.stage2.fit(train_docs)
+        vocab = self.stage2.vocab
+
+        self.assertion_model = BiLSTMAssertionClassifier(len(vocab), seed=self.seed).fit(
+            train_docs, vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
+        )
+        self.relation_model = PiecewiseCNNRelationClassifier(len(vocab), seed=self.seed).fit(
+            train_docs, vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
+        )
+        self.temporal_crf.fit(train_docs)
+
+        # Fit Transformer reranker on Stage 2 candidates from a subset of train_docs
+        cand_pairs = [(d, self.stage2.predict(d, use_rules_layer=True)) for d in train_docs[:80]]
+        self.reranker.fit_on_candidates(cand_pairs, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed)
+
+        # Fit temperature scaler on held-out slice of train_docs
+        cal_confs: list[float] = []
+        cal_hits: list[int] = []
+        for d in train_docs[80:120]:
+            gold_keys = {(e.type, e.start, e.end) for e in d.entities}
+            for c in self.stage2.predict(d, use_rules_layer=True):
+                cal_confs.append(c.entity.confidence)
+                cal_hits.append(1 if (c.entity.type, c.entity.start, c.entity.end) in gold_keys else 0)
+        self.scaler.fit(cal_confs, cal_hits)
+        self._fitted = True
+        return self
+
+    def extract_document(
+        self,
+        doc: AnnotatedDocument,
+        *,
+        use_rules_layer: bool = True,
+        use_assertion_bilstm: bool = True,
+        use_relation_cnn: bool = True,
+        use_temporal_crf: bool = True,
+        use_transformer_fusion: bool = True,
+    ) -> tuple[DocumentPrediction, dict[str, Any]]:
+        if not self._fitted or self.assertion_model is None or self.relation_model is None:
+            raise RuntimeError("HybridPipeline must be fitted before extract_document()")
+
+        timings: list[dict[str, Any]] = []
+
+        # Stage 1: Document Understanding
+        t0 = time.perf_counter()
+        s1 = self.stage1.predict(doc.text)
+        timings.append({"name": "stage1_doc_understanding", "ms": round((time.perf_counter() - t0) * 1000, 2)})
+
+        # Stage 2: Entity Extraction
+        t0 = time.perf_counter()
+        cands = self.stage2.predict(doc, use_rules_layer=use_rules_layer)
+        timings.append({"name": "stage2_ner", "ms": round((time.perf_counter() - t0) * 1000, 2)})
+
+        # Stage 5a (optional Transformer reranker) or simple union
+        t0 = time.perf_counter()
+        if use_transformer_fusion:
+            fused_cands = self.reranker.rerank(cands, threshold=float(self.cfg.get("rerank_threshold", 0.25)))
+        else:
+            fused_cands = cands
+        rerank_ms = (time.perf_counter() - t0) * 1000
+
+        # Stage 3: Context (Assertion BiLSTM or ConText fallback) & Relations (CNN or proximity fallback)
+        t0 = time.perf_counter()
+        vocab = self.stage2.vocab
+        enriched_cands: list[CandidateEntity] = []
+        for c in fused_cands:
+            if use_assertion_bilstm:
+                assert_lbl = self.assertion_model.predict(doc.text, c.entity.start, c.entity.end, vocab)
+            else:
+                assert_lbl = classify_assertion_context(doc.text, c.entity.start, c.entity.end, language=s1.language)
+            cal_conf = self.scaler.calibrate(c.entity.confidence)
+            enriched_cands.append(
+                CandidateEntity(
+                    entity=PredictedEntity(
+                        type=c.entity.type,
+                        start=c.entity.start,
+                        end=c.entity.end,
+                        text=c.entity.text,
+                        assertion=assert_lbl,
+                        confidence=cal_conf,
+                    ),
+                    source_stage=c.source_stage,
+                )
+            )
+        final_entities = [c.entity for c in enriched_cands]
+
+        if use_relation_cnn:
+            relations = self.relation_model.predict_relations(doc.text, final_entities, vocab)
+        else:
+            _, relations, _ = apply_context_and_relations(doc, final_entities)
+        timings.append({"name": "stage3_context_relations", "ms": round((time.perf_counter() - t0) * 1000, 2)})
+
+        # Stage 4: Temporal Analysis (CRF or regex fallback)
+        t0 = time.perf_counter()
+        if use_temporal_crf:
+            timex = self.temporal_crf.predict(doc.text, doc.document_date)
+        else:
+            _, _, timex = apply_context_and_relations(doc, final_entities)
+        timings.append({"name": "stage4_temporal", "ms": round((time.perf_counter() - t0) * 1000, 2)})
+
+        # Stage 5b: Consistency checks & contract payload
+        t0 = time.perf_counter()
+        warnings = check_consistency(final_entities, relations, timex, doc.document_date)
+        missing = detect_missing_sections(doc.text, s1.language)
+        timings.append(
+            {"name": "stage5_integration_validation", "ms": round(rerank_ms + (time.perf_counter() - t0) * 1000, 2)}
+        )
+
+        pred = DocumentPrediction(
+            doc_id=doc.doc_id,
+            language=doc.language,
+            doc_type=doc.doc_type,
+            predicted_doc_type=s1.doc_type,
+            entities=final_entities,
+            relations=relations,
+            timex=timex,
+        )
+
+        ent_id_by_span = {(c.entity.type, c.entity.start, c.entity.end): f"e{i+1}" for i, c in enumerate(enriched_cands)}
+        contract_json = {
+            "schema_version": "1.0",
+            "document": {
+                "id": doc.doc_id,
+                "language": s1.language,
+                "language_confidence": s1.language_confidence,
+                "doc_type": s1.doc_type,
+                "doc_type_confidence": s1.doc_type_confidence,
+                "document_date": doc.document_date,
+                "sections": s1.sections,
+            },
+            "entities": [
+                {
+                    "id": f"e{i+1}",
+                    "type": c.entity.type,
+                    "text": c.entity.text,
+                    "assertion": c.entity.assertion,
+                    "confidence": c.entity.confidence,
+                    "source": {"page": 1, "start": c.entity.start, "end": c.entity.end},
+                    "produced_by": {"approach": "hybrid", "stage": c.source_stage, "model_version": "2.0.0"},
+                    "review": {"status": "flagged" if c.entity.confidence < 0.65 else "unreviewed", "by": None},
+                }
+                for i, c in enumerate(enriched_cands)
+            ],
+            "relations": [
+                {
+                    "id": f"r{i+1}",
+                    "type": r.type,
+                    "head": next(
+                        (eid for (et, s, e), eid in ent_id_by_span.items() if s == r.head_start and e == r.head_end),
+                        None,
+                    ),
+                    "tail": next(
+                        (eid for (et, s, e), eid in ent_id_by_span.items() if s == r.tail_start and e == r.tail_end),
+                        None,
+                    ),
+                    "confidence": r.confidence,
+                    "evidence": {"start": min(r.head_start, r.tail_start), "end": max(r.head_end, r.tail_end)},
+                }
+                for i, r in enumerate(relations)
+            ],
+            "temporal": [
+                {
+                    "id": f"t{i+1}",
+                    "type": tx.type,
+                    "text": tx.text,
+                    "normalized": tx.normalized,
+                    "anchor": "document_date",
+                    "source": {"start": tx.start, "end": tx.end},
+                }
+                for i, tx in enumerate(timex)
+            ],
+            "missing_information": missing,
+            "validation": {"passed": len(warnings) == 0, "warnings": warnings},
+            "processing": {
+                "pipeline": "hybrid-v2",
+                "duration_ms": round(sum(t["ms"] for t in timings), 2),
+                "stages": timings,
+            },
+        }
+        return pred, contract_json
+
+
+def predict_hybrid(
+    train_docs: list[AnnotatedDocument],
+    eval_docs: list[AnnotatedDocument],
+    seed: int,
+    cfg: dict[str, Any],
+) -> list[DocumentPrediction]:
+    """Runner-compatible entrypoint for the 5-stage Hybrid pipeline."""
+    pipe = HybridPipeline(seed=seed, cfg=cfg).fit(train_docs)
+    return [
+        pipe.extract_document(
+            d,
+            use_rules_layer=bool(cfg.get("use_rules_layer", True)),
+            use_assertion_bilstm=bool(cfg.get("use_assertion_bilstm", True)),
+            use_relation_cnn=bool(cfg.get("use_relation_cnn", True)),
+            use_temporal_crf=bool(cfg.get("use_temporal_crf", True)),
+            use_transformer_fusion=bool(cfg.get("use_transformer_fusion", True)),
+        )[0]
+        for d in eval_docs
+    ]

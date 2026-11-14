@@ -32,6 +32,7 @@ from medresearch_platform.eval_harness.metrics import (
     bootstrap_f1_ci,
 )
 from medresearch_platform.eval_harness.profiler import ResourceProfiler
+from medresearch_platform.hybrid.pipeline import predict_hybrid
 
 PredictorFn = Callable[[list[AnnotatedDocument], list[AnnotatedDocument], int, dict[str, Any]], list[DocumentPrediction]]
 
@@ -96,6 +97,7 @@ APPROACH_REGISTRY: dict[str, PredictorFn] = {
     "bilstm": predict_bilstm,
     "bilstm_crf": predict_bilstm_crf,
     "transformer": predict_transformer,
+    "hybrid": predict_hybrid,
 }
 
 

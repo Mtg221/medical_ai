@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import argparse
+import json
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 from medresearch_platform.data.builder import build_corpus_from_config
-from medresearch_platform.eval_harness.runner import run_experiment
+from medresearch_platform.data.schema import AnnotatedDocument
+from medresearch_platform.data.synthetic_v2 import generate_synthetic_corpus
+from medresearch_platform.documents.parsers import parse_document_bytes
+from medresearch_platform.eval_harness.runner import _load_jsonl, run_experiment
+from medresearch_platform.hybrid.pipeline import HybridPipeline
 
 
 def _print_stats_table(manifest: dict[str, Any]) -> None:
@@ -40,6 +46,11 @@ def main(argv: list[str] | None = None) -> int:
     run_parser.add_argument("config", help="Path to experiment YAML config")
     run_parser.add_argument("--seeds", default=None, help="Comma-separated seeds, e.g. 1,2,3")
 
+    ext_parser = sub.add_parser("extract", help="Extract structured medical JSON from a document")
+    ext_parser.add_argument("file", help="Path to input document (TXT, PDF, DOCX, PNG)")
+    ext_parser.add_argument("--pipeline", default="hybrid", help="Pipeline name (default: hybrid)")
+    ext_parser.add_argument("--train-jsonl", default="data/processed/v1/train.jsonl", help="Training corpus JSONL")
+
     args = parser.parse_args(argv)
     if args.group == "data" and args.action == "build":
         manifest = build_corpus_from_config(Path(args.config))
@@ -51,6 +62,30 @@ def main(argv: list[str] | None = None) -> int:
         sf1 = res["summary"]["strict_f1"]
         print(f"Run {res['run_id']} | Strict F1: {sf1['mean']:.4f} ± {sf1['std']:.4f}")
         print(f"Error counts: {res['error_counts']}")
+        return 0
+    if args.group == "extract":
+        fpath = Path(args.file)
+        fmt = fpath.suffix.lstrip(".").upper() or "TXT"
+        parsed = parse_document_bytes(fpath.read_bytes(), file_format=fmt)
+        text = "\n".join(p.raw_text for p in parsed.pages)
+        train_path = Path(args.train_jsonl)
+        train_docs = (
+            _load_jsonl(train_path)
+            if train_path.exists()
+            else generate_synthetic_corpus(en_count=24, fr_count=24, seed=42)
+        )
+        doc = AnnotatedDocument(
+            doc_id=fpath.stem,
+            patient_id="PAT-CLI",
+            language=parsed.detected_language if parsed.detected_language in ("en", "fr") else "en",
+            doc_type="discharge_summary",
+            document_date=date.today().isoformat(),
+            source=fpath.name,
+            text=text,
+        )
+        pipe = HybridPipeline(seed=42, cfg={"epochs": 6, "aux_epochs": 4, "max_train_docs": 60}).fit(train_docs)
+        _, payload = pipe.extract_document(doc)
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
         return 0
     return 1
 

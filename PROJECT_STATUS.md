@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 3 Complete — Five Single Approaches Rebuilt & Evaluated on `SYNTH-MED-V2` `val` (124 docs, EN+FR)
+**Active Phase:** Phase 4 Complete — 5-Stage Hybrid Pipeline Evaluated on `SYNTH-MED-V2` `val` (124 docs)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -28,7 +28,7 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | Annotated EN/FR corpus (`>= 300 EN + >= 300 FR`) | **Tested (`SYNTH-MED-V2`, 800 synthetic docs: 400 EN + 400 FR)** | `medextract data build --config configs/data/v1.yaml`; 70/15/15 patient-stratified splits (`555/124/121`), MinHash leakage check passed; BRAT & Label Studio converters ready; real clinical corpora (`n2c2`, `DEFT/CAS`) require DUA/agreement |
 | Evaluation harness (CI, McNemar, error taxonomy, profiler) | **Tested** | `medresearch_platform/eval_harness/`; hand-made unit tests + `medextract experiment run configs/exp/dummy.yaml --seeds 1,2,3` (`Strict F1: 0.5249 ± 0.0000` on `SYNTH-MED-V2` val) |
 | 5 Single Approaches (Rule, TF-IDF+ML/CRF, BiLSTM, BiLSTM-CRF, Transformer) | **Evaluated on `SYNTH-MED-V2` `val`, 124 docs (555 train)** | `rule_based` F1 `0.8708`, `classical_ml` F1 `0.8800`, `classical_crf` F1 `0.8800`, `bilstm` F1 `0.8800`, `bilstm_crf` F1 `0.8800`, `transformer` F1 `0.7598 ± 0.0206` (EN `0.8048` / FR `0.7605`); pure NumPy + `sklearn-crfsuite` per amended ADR-0005 |
-| 5-Stage Hybrid Pipeline | **Planned** | Current `HybridMultimodalExtractor` is a weighted vote (F1 = 0.60 on 1 test doc); Phase 4 |
+| 5-Stage Hybrid Pipeline | **Evaluated on `SYNTH-MED-V2` `val`, 124 docs** | `NER F1 = 0.9362` (EN `0.9362` / FR `0.9362`), `+0.0562` vs `bilstm_crf` (`p = 0.00995`), `Assert = 0.8699`, `Rel F1 = 0.8477`, `Timex F1 = 0.3123`, `DocCls = 1.0000`, `ECE = 0.0258`; 6-variant ablation completed |
 | FastAPI backend + SQLite jobs | **Planned** | Currently Starlette prototype; Phase 6 |
 | React + TypeScript + Tailwind + shadcn/ui workspace | **Planned** | Currently single-file `App.jsx` prototype; Phase 7 |
 | EN/FR traceable reports | **Planned** | Phase 8 |
