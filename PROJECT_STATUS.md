@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 6 Complete — FastAPI + Pydantic v2 Single-Source Schema + SQLite Jobs & SSE
+**Active Phase:** Phase 7 Complete — React + TypeScript + Tailwind CSS v4 + i18next + TanStack Query Workspace Built
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -30,6 +30,6 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | 5 Single Approaches (Rule, TF-IDF+ML/CRF, BiLSTM, BiLSTM-CRF, Transformer) | **Evaluated on `SYNTH-MED-V2` `val`, 124 docs (555 train)** | `rule_based` F1 `0.8708`, `classical_ml` F1 `0.8800`, `classical_crf` F1 `0.8800`, `bilstm` F1 `0.8800`, `bilstm_crf` F1 `0.8800`, `transformer` F1 `0.7598 ± 0.0206` (EN `0.8048` / FR `0.7605`); pure NumPy + `sklearn-crfsuite` per amended ADR-0005 |
 | 5-Stage Hybrid Pipeline | **Evaluated on `SYNTH-MED-V2` `val`, 124 docs** | `NER F1 = 0.9362` (EN `0.9362` / FR `0.9362`), `+0.0562` vs `bilstm_crf` (`p = 0.00995`), `Assert = 0.8699`, `Rel F1 = 0.8477`, `Timex F1 = 0.3123`, `DocCls = 1.0000`, `ECE = 0.0258`; 6-variant ablation completed |
 | FastAPI backend + SQLite jobs | **Tested** | Migrated from Starlette to FastAPI (`OpenAPI 3.1`), multipart `/api/v1/documents/upload`, SQLite `jobs` table + SSE `/api/v1/jobs/{id}/events` |
-| React + TypeScript + Tailwind + shadcn/ui workspace | **Planned** | Currently single-file `App.jsx` prototype; Phase 7 |
+| React + TypeScript + Tailwind + shadcn-style workspace | **Tested** | Migrated from single `App.jsx` to modular TypeScript (`tsc --noEmit` + `vite build`), Tailwind CSS v4, TanStack Query, React Router, Zustand, i18next (EN/FR), source-linked viewer, multipart upload + job tracker |
 | EN/FR traceable reports | **Planned** | Phase 8 |
 | Final scientific evaluation & `RESEARCH_REPORT.md` | **Planned** | Phase 9 |
