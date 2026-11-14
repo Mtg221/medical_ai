@@ -22,7 +22,7 @@ from medresearch_platform.data.schema import AnnotatedDocument
 from medresearch_platform.eval_harness.metrics import DocumentPrediction
 
 NUM_TAGS = len(BIO_TAGS)
-CHAR_FEAT_DIM = 16
+CHAR_FEAT_DIM = 32
 
 
 def _sigmoid(x: np.ndarray) -> np.ndarray:
@@ -37,7 +37,7 @@ def _softmax(logits: np.ndarray) -> np.ndarray:
 
 
 def _ortho_features(tokens: list[Token]) -> np.ndarray:
-    """16-dim deterministic character/orthographic feature vector per token."""
+    """32-dim deterministic character/orthographic + prefix/suffix morphology vector per token."""
     feats = np.zeros((len(tokens), CHAR_FEAT_DIM), dtype=np.float64)
     for i, tok in enumerate(tokens):
         w = tok.text
@@ -49,11 +49,19 @@ def _ortho_features(tokens: list[Token]) -> np.ndarray:
         feats[i, 4] = 1.0 if "-" in w else 0.0
         feats[i, 5] = 1.0 if "/" in w or "%" in w else 0.0
         feats[i, 6] = min(len(w), 20) / 20.0
-        feats[i, 7] = 1.0 if wl in ("mg", "mcg", "g", "ml", "l", "%") else 0.0
-        # Deterministic character n-gram hash buckets (no pretrained embeddings)
-        for ch_idx, ch in enumerate(wl[:4]):
-            bucket = 8 + ((ord(ch) * (ch_idx + 1)) % 8)
-            feats[i, bucket] += 0.5
+        feats[i, 7] = 1.0 if wl in ("mg", "mcg", "g", "ml", "l", "%", "ui", "mmol", "umol") else 0.0
+        # Prefix n-gram hash buckets (dims 8..15)
+        for n in (2, 3):
+            if len(wl) >= n:
+                pref = wl[:n]
+                h_p = sum((idx + 1) * ord(ch) for idx, ch in enumerate(pref))
+                feats[i, 8 + (h_p % 8)] += 0.5
+        # Suffix n-gram hash buckets (dims 16..31) — captures medical suffixes (-itis, -statin, -émie, ...)
+        for n in (2, 3, 4):
+            if len(wl) >= n:
+                suff = wl[-n:]
+                h_s = sum((idx + 3) * ord(ch) for idx, ch in enumerate(suff))
+                feats[i, 16 + (h_s % 16)] += 0.5
     return feats
 
 
@@ -526,11 +534,20 @@ def _train_and_predict_neural(
     best_params = {k: v.copy() for k, v in model.params.items()}
     stale = 0
 
+    dropout_p = float(cfg.get("dropout", 0.15))
     for _epoch in range(epochs):
         order = rng.permutation(len(tr_seqs))
         for idx in order:
             w_ids, c_feats, y_ids = tr_seqs[int(idx)]
-            model.step_sequence(w_ids, c_feats, y_ids, cw, opt)
+            if dropout_p > 0.0:
+                # Seeded word-dropout (<UNK>=1) + inverted char-feature dropout for generalization
+                keep_w = rng.random(len(w_ids)) >= (dropout_p * 0.5)
+                w_step = np.where(keep_w, w_ids, 1)
+                c_mask = (rng.random(c_feats.shape) >= dropout_p).astype(np.float64)
+                c_step = (c_feats * c_mask) / max(1.0 - dropout_p, 1e-6)
+            else:
+                w_step, c_step = w_ids, c_feats
+            model.step_sequence(w_step, c_step, y_ids, cw, opt)
 
         # Check early stopping on train-internal val slice
         es_losses: list[float] = []

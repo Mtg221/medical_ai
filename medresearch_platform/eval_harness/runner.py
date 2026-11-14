@@ -35,6 +35,7 @@ from medresearch_platform.eval_harness.profiler import ResourceProfiler
 from medresearch_platform.hybrid.pipeline import predict_hybrid
 
 PredictorFn = Callable[[list[AnnotatedDocument], list[AnnotatedDocument], int, dict[str, Any]], list[DocumentPrediction]]
+VALID_EVAL_SPLITS: tuple[str, ...] = ("val", "test", "test_iid", "test_unseen_terms", "test_unseen_templates")
 
 
 def _load_jsonl(path: Path) -> list[AnnotatedDocument]:
@@ -119,8 +120,8 @@ def run_experiment(
     cfg = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     approach = str(cfg.get("approach", "dummy"))
     eval_split = str(cfg.get("eval_split", "val"))
-    if eval_split not in ("val", "test"):
-        raise ValueError(f"eval_split must be 'val' or 'test', got {eval_split!r}")
+    if eval_split not in VALID_EVAL_SPLITS:
+        raise ValueError(f"eval_split must be one of {VALID_EVAL_SPLITS}, got {eval_split!r}")
 
     data_dir = Path(cfg.get("data_dir", "data/processed/v1"))
     train_docs = _load_jsonl(data_dir / "train.jsonl")

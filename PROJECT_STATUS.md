@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11 — correction (Step 2 complete: `SYNTH-MED-V3` 1,240-doc generalization corpus built & audited; Step 3 seed/charset/eval upgrades next)
+**Active Phase:** Phase 11 — correction (Step 3 complete: seeds F3 + 32-dim char morphology + v3 eval splits verified; Step 4 Stage 3/5 hybrid fixes next)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -26,8 +26,8 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | Security (Argon2id auth, HMAC tokens, PII scrubber, audit chain) | **Tested** | Hard-coded demo password removed; uses `MEDRESEARCH_DEMO_PASSWORD` env var |
 | Output contract (`extraction/contract.py` & `extraction/schema_models.py`) | **Tested** | Pydantic v2 single-source-of-truth + exported `schema/medical_extraction.schema.json` + `/api/v1/schema/extraction` |
 | Annotated EN/FR corpus (`>= 300 EN + >= 300 FR`) | **Implemented / Audited (`SYNTH-MED-V3`, 1,240 docs)** | `SYNTH-MED-V3` built with 640+ templates, expanded EN/FR lexicon, `train` (600), `val` (160), `test_iid` (160), `test_unseen_terms` (160, 0% clinical term overlap), `test_unseen_templates` (160, 0.6% masked sentence overlap); `0` doubled docs |
-| Evaluation harness (CI, McNemar, error taxonomy, profiler) | **Tested** | Hand-made unit tests pass; seed/CI/multi-test-set upgrades in Phase 11 Step 3 |
-| 5 Single Approaches (Rule, TF-IDF+ML/CRF, BiLSTM, BiLSTM-CRF, Transformer) | **Invalidated (F1/F2)** | Previous numbers measured memorisation on `SYNTH-MED-V2`; char-level + generalization fixes in Phase 11 Steps 3–4 |
+| Evaluation harness (CI, McNemar, error taxonomy, profiler) | **Tested (`SYNTH-MED-V3` multi-split ready)** | Supports `val`, `test`, `test_iid`, `test_unseen_terms`, `test_unseen_templates` |
+| 5 Single Approaches (Rule, TF-IDF+ML/CRF, BiLSTM, BiLSTM-CRF, Transformer) | **Tested on `SYNTH-MED-V3` `val` (`bilstm_crf`: `0.9604 ± 0.0017`)** | 32-dim char prefix/suffix morphology + seeded word/feature dropout (`F3` fixed); full 5-approach benchmark in Step 8 |
 | 5-Stage Hybrid Pipeline | **Invalidated (F1/F2, F4/F5)** | Previous numbers invalid; Stage 3 hurt assertion/relation scores in ablation and Stage 5 lacked token-level reading (Phase 11 Step 5) |
 | FastAPI backend + SQLite jobs | **Tested** | Migrated from Starlette to FastAPI (`OpenAPI 3.1`), multipart `/api/v1/documents/upload`, SQLite `jobs` table + SSE `/api/v1/jobs/{id}/events` |
 | React + TypeScript + Tailwind + shadcn-style workspace | **In progress (5/14 pages)** | Phase 7 partial (login, workspace, upload, benchmark, timeline); remaining pages, pdf.js, charts, Vitest & Playwright in Phase 11 Step 7 |

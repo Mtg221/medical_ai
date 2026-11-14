@@ -22,3 +22,10 @@
 - Implemented `medresearch_platform/data/synthetic_v3.py` and wired `generator: v3` in `medresearch_platform/data/builder.py` and `configs/data/v3.yaml` to build 5 locked splits (`train` 600, `val` 160, `test_iid` 160, `test_unseen_terms` 160, `test_unseen_templates` 160 = 1,240 docs).
 - Verified via `scripts/audit_corpus.py`: `0` doubled docs, `0` duplicate n-gram docs, `100.00%` offset/relation integrity, `0.0%` unseen clinical term overlap in `test_unseen_terms`, and `0.6%` masked sentence overlap in `test_unseen_templates` (`12.0%` in `test_iid`).
 - Added `tests/test_v3_corpus.py` verifying lexicon/template minimums, integrity, token alignment, and split isolation.
+
+### Step 3 — Seed Sensitivity (F3), Char Morphology & Eval Split Upgrades (2026-11-14)
+- Upgraded `_ortho_features` in `medresearch_platform/approaches/neural_seq.py` (`CHAR_FEAT_DIM = 32`) with orthographic/shape flags, 8 prefix n-gram hash buckets, and 16 suffix n-gram hash buckets to support unseen medical morphology.
+- Added seeded word-dropout (`<UNK>`) and inverted char-feature dropout in `_train_and_predict_neural` driven by `np.random.default_rng(seed)` (`dropout`, default `0.15`), ensuring seeds reach weight initialization, epoch shuffling, and regularization.
+- Extended `medresearch_platform/eval_harness/runner.py` (`VALID_EVAL_SPLITS`) to support `test_iid`, `test_unseen_terms`, and `test_unseen_templates` alongside `val` and `test`.
+- Added `tests/test_seed_sensitivity_and_eval_splits.py` verifying v3 eval split support, char morphology similarity on unseen `-statin` terms, and distinct predictions across seeds.
+- Verified 3-seed `bilstm_crf` on `SYNTH-MED-V3` `val` (160 docs): `Strict F1 = 0.9604 ± 0.0017` (non-zero cross-seed std, realistic error profile).
