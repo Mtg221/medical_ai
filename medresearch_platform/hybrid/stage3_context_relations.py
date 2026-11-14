@@ -24,17 +24,22 @@ REL_LABELS: tuple[str, ...] = ("NO_REL",) + RELATION_TYPES
 REL_TO_ID: dict[str, int] = {r: i for i, r in enumerate(REL_LABELS)}
 ASSERT_TO_ID: dict[str, int] = {a: i for i, a in enumerate(ASSERTION_CLASSES)}
 
-_REL_ALLOWED_PAIRS: set[tuple[str, str]] = {
-    ("MEDICATION", "DOSAGE"),
-    ("MEDICATION", "FREQUENCY"),
-    ("MEDICATION", "ROUTE"),
-    ("MEDICATION", "DIAGNOSIS"),
-    ("LAB_TEST", "LAB_VALUE"),
-    ("LAB_VALUE", "LAB_UNIT"),
-    ("PROCEDURE", "DIAGNOSIS"),
-    ("SYMPTOM", "ANATOMY"),
-    ("DIAGNOSIS", "SYMPTOM"),
+_PAIR_TO_REL_TYPES: dict[tuple[str, str], tuple[str, ...]] = {
+    ("MEDICATION", "DOSAGE"): ("HAS_DOSAGE",),
+    ("MEDICATION", "FREQUENCY"): ("HAS_FREQUENCY",),
+    ("MEDICATION", "ROUTE"): ("HAS_ROUTE",),
+    ("MEDICATION", "DURATION"): ("TREATS",),
+    ("MEDICATION", "DIAGNOSIS"): ("TREATS",),
+    ("LAB_TEST", "LAB_VALUE"): ("HAS_VALUE",),
+    ("LAB_TEST", "LAB_UNIT"): ("HAS_UNIT",),
+    ("LAB_VALUE", "LAB_UNIT"): ("HAS_UNIT",),
+    ("PROCEDURE", "DIAGNOSIS"): ("REVEALS",),
+    ("DIAGNOSIS", "PROCEDURE"): ("REVEALS",),
+    ("DIAGNOSIS", "ANATOMY"): ("LOCATED_IN",),
+    ("SYMPTOM", "ANATOMY"): ("LOCATED_IN",),
+    ("DIAGNOSIS", "SYMPTOM"): ("CAUSES",),
 }
+_REL_ALLOWED_PAIRS: set[tuple[str, str]] = set(_PAIR_TO_REL_TYPES.keys())
 
 
 class BiLSTMAssertionClassifier:
@@ -60,9 +65,15 @@ class BiLSTMAssertionClassifier:
         }
 
     def _window_inputs(
-        self, text: str, start: int, end: int, vocab: TrainOnlyVocabulary
+        self,
+        text: str,
+        start: int,
+        end: int,
+        vocab: TrainOnlyVocabulary,
+        toks: list[Any] | None = None,
     ) -> tuple[np.ndarray, np.ndarray, int]:
-        toks = tokenize_with_offsets(text)
+        if toks is None:
+            toks = tokenize_with_offsets(text)
         ent_idxs = [i for i, t in enumerate(toks) if max(t.start, start) < min(t.end, end)]
         if not ent_idxs:
             return np.array([1], dtype=np.int64), np.ones((1, 2), dtype=np.float64), 0
@@ -131,22 +142,29 @@ class BiLSTMAssertionClassifier:
         vocab: TrainOnlyVocabulary,
         *,
         epochs: int = 8,
-        max_examples: int = 700,
+        max_examples: int = 1400,
         seed: int = 42,
     ) -> BiLSTMAssertionClassifier:
         rng = np.random.default_rng(seed)
-        examples: list[tuple[np.ndarray, np.ndarray, int, int]] = []
-        counts = np.ones(len(ASSERTION_CLASSES), dtype=np.float64)
-        for d in train_docs[:180]:
+        non_present: list[tuple[np.ndarray, np.ndarray, int, int]] = []
+        present: list[tuple[np.ndarray, np.ndarray, int, int]] = []
+        for d in train_docs:
+            toks = tokenize_with_offsets(d.text)
             for e in d.entities:
-                w_ids, flags, pidx = self._window_inputs(d.text, e.start, e.end, vocab)
                 y = ASSERT_TO_ID[e.assertion]
-                examples.append((w_ids, flags, pidx, y))
-                counts[y] += 1.0
-                if len(examples) >= max_examples:
-                    break
-            if len(examples) >= max_examples:
-                break
+                if y == 0 and len(present) >= max_examples // 2:
+                    continue
+                w_ids, flags, pidx = self._window_inputs(d.text, e.start, e.end, vocab, toks=toks)
+                if y == 0:
+                    present.append((w_ids, flags, pidx, y))
+                else:
+                    non_present.append((w_ids, flags, pidx, y))
+        rng.shuffle(present)
+        keep_present = present[: max(200, min(len(present), max_examples - len(non_present)))]
+        examples = non_present + keep_present
+        counts = np.ones(len(ASSERTION_CLASSES), dtype=np.float64)
+        for _, _, _, y in examples:
+            counts[y] += 1.0
 
         weights = np.clip(np.sqrt(len(examples) / (len(ASSERTION_CLASSES) * counts)), 0.5, 4.0)
         opt = _AdamW(self.params, lr=0.015)
@@ -156,10 +174,28 @@ class BiLSTMAssertionClassifier:
                 self.step_example(w_ids, flags, pidx, y, float(weights[y]), opt)
         return self
 
-    def predict(self, text: str, start: int, end: int, vocab: TrainOnlyVocabulary) -> str:
-        w_ids, flags, pidx = self._window_inputs(text, start, end, vocab)
+    def predict_proba(
+        self,
+        text: str,
+        start: int,
+        end: int,
+        vocab: TrainOnlyVocabulary,
+        toks: list[Any] | None = None,
+    ) -> np.ndarray:
+        w_ids, flags, pidx = self._window_inputs(text, start, end, vocab, toks=toks)
         logits, _ = self.forward(w_ids, flags, pidx)
-        return ASSERTION_CLASSES[int(np.argmax(logits))]
+        return _softmax(logits)
+
+    def predict(
+        self,
+        text: str,
+        start: int,
+        end: int,
+        vocab: TrainOnlyVocabulary,
+        toks: list[Any] | None = None,
+    ) -> str:
+        probs = self.predict_proba(text, start, end, vocab, toks=toks)
+        return ASSERTION_CLASSES[int(np.argmax(probs))]
 
 
 class PiecewiseCNNRelationClassifier:
@@ -316,9 +352,14 @@ class PiecewiseCNNRelationClassifier:
                     continue
                 w_ids, p1, p2 = self._pair_inputs(text, head.start, head.end, tail.start, tail.end, vocab)
                 logits, _ = self.forward(w_ids, p1, p2)
-                probs = _softmax(logits)
+                allowed_names = ("NO_REL",) + _PAIR_TO_REL_TYPES[(head.type, tail.type)]
+                allowed_ids = [REL_TO_ID[n] for n in allowed_names]
+                masked_logits = np.full_like(logits, -1e9)
+                for aid in allowed_ids:
+                    masked_logits[aid] = logits[aid]
+                probs = _softmax(masked_logits)
                 pred_id = int(np.argmax(probs))
-                if pred_id != 0:
+                if pred_id != 0 and float(probs[pred_id]) >= 0.50:
                     rels.append(
                         PredictedRelation(
                             type=REL_LABELS[pred_id],

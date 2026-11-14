@@ -29,3 +29,11 @@
 - Extended `medresearch_platform/eval_harness/runner.py` (`VALID_EVAL_SPLITS`) to support `test_iid`, `test_unseen_terms`, and `test_unseen_templates` alongside `val` and `test`.
 - Added `tests/test_seed_sensitivity_and_eval_splits.py` verifying v3 eval split support, char morphology similarity on unseen `-statin` terms, and distinct predictions across seeds.
 - Verified 3-seed `bilstm_crf` on `SYNTH-MED-V3` `val` (160 docs): `Strict F1 = 0.9604 ± 0.0017` (non-zero cross-seed std, realistic error profile).
+
+### Step 4 — Hybrid Stage 3 (F4) & Text-Reading Stage 5 Fusion (F5) (2026-11-14)
+- Fixed `medresearch_platform/data/synthetic_v3.py` assertion labels (`absent`, `possible`) and relation types (`REVEALS`, `LOCATED_IN`) to strictly match `ASSERTION_CLASSES`, `TEMPORALITY_CLASSES`, and `RELATION_TYPES` in `schema.py`; rebuilt `SYNTH-MED-V3` (`data/processed/v3`).
+- Fixed Stage 3 (`medresearch_platform/hybrid/stage3_context_relations.py`):
+  - `BiLSTMAssertionClassifier.fit` now balances all non-`present` examples (preventing rare-class starvation) and exposes `predict_proba` fused with ConText fallback in `pipeline.py` (using BiLSTM when `max_prob >= 0.75`, ConText otherwise).
+  - `PiecewiseCNNRelationClassifier` now covers all schema relation pairs (`_PAIR_TO_REL_TYPES`) and masks impossible cross-type relation logits during inference.
+- Fixed Stage 5 (`medresearch_platform/hybrid/stage5_integration.py` + `pipeline.py`): `TransformerCandidateReranker` now reads document text via learned token embeddings (`E` with full backprop) over candidate span tokens, 3-token left/right context windows, and 32-dim char morphology (`99` input features per candidate instead of `19` scalar-only features).
+- Added `tests/test_hybrid_stage3_stage5_fixes.py` verifying Stage 3 relation pair coverage, Stage 5 context-dependent scoring, and end-to-end `HybridPipeline` execution on `SYNTH-MED-V3`.

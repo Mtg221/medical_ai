@@ -8,7 +8,14 @@ from typing import Any
 
 import numpy as np
 
-from medresearch_platform.approaches.neural_seq import _AdamW, _sigmoid, _softmax
+from medresearch_platform.approaches.neural_seq import (
+    CHAR_FEAT_DIM,
+    _AdamW,
+    _ortho_features,
+    _sigmoid,
+    _softmax,
+)
+from medresearch_platform.approaches.tokenizer import TrainOnlyVocabulary, tokenize_with_offsets
 from medresearch_platform.data.schema import ENTITY_TYPES, AnnotatedDocument
 from medresearch_platform.eval_harness.metrics import (
     PredictedEntity,
@@ -21,15 +28,19 @@ _TYPE_TO_IDX: dict[str, int] = {t: i for i, t in enumerate(ENTITY_TYPES)}
 
 
 class TransformerCandidateReranker:
-    """Random-init self-attention reranker over candidate entities in a document."""
+    """Text-reading random-init self-attention reranker over candidate entities in a document."""
 
-    def __init__(self, *, d_model: int = 24, seed: int = 42) -> None:
+    def __init__(self, *, vocab_size: int = 6000, emb_dim: int = 16, d_model: int = 24, seed: int = 42) -> None:
         rng = np.random.default_rng(seed)
-        # Input features per candidate: 14 entity-type one-hot + 3 source flags + raw_conf + norm_len = 19
-        in_dim = len(ENTITY_TYPES) + 5
-        self.in_dim = in_dim
+        self.vocab_size = vocab_size
+        self.emb_dim = emb_dim
         self.d_model = d_model
+        # Per-candidate input: span_emb + left_ctx_emb + right_ctx_emb + char_ortho + 19 metadata
+        self.meta_dim = len(ENTITY_TYPES) + 5
+        in_dim = 3 * emb_dim + CHAR_FEAT_DIM + self.meta_dim
+        self.in_dim = in_dim
         self.params: dict[str, np.ndarray] = {
+            "E": rng.normal(0.0, 0.1, size=(vocab_size, emb_dim)),
             "W_in": rng.normal(0.0, np.sqrt(1.0 / in_dim), size=(in_dim, d_model)),
             "W_q": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, d_model)),
             "W_k": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, d_model)),
@@ -38,19 +49,58 @@ class TransformerCandidateReranker:
             "b_out": np.zeros(1, dtype=np.float64),
         }
 
-    def _featurize(self, candidates: list[CandidateEntity]) -> np.ndarray:
+    def _featurize(
+        self,
+        candidates: list[CandidateEntity],
+        *,
+        doc_text: str = "",
+        vocab: TrainOnlyVocabulary | None = None,
+    ) -> tuple[np.ndarray, list[tuple[np.ndarray, np.ndarray, np.ndarray]]]:
         mat = np.zeros((len(candidates), self.in_dim), dtype=np.float64)
-        base = len(ENTITY_TYPES)
+        tok_groups: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
+        toks = tokenize_with_offsets(doc_text) if doc_text else []
+        ortho = _ortho_features(toks) if toks else np.zeros((0, CHAR_FEAT_DIM), dtype=np.float64)
+
+        def _enc(idxs: list[int]) -> np.ndarray:
+            if not idxs:
+                return np.array([1], dtype=np.int64)
+            if vocab is None:
+                return np.array([1 for _ in idxs], dtype=np.int64)
+            return np.array([min(self.vocab_size - 1, vocab.encode_token(toks[j].text)) for j in idxs], dtype=np.int64)
+
+        e_mat = self.params["E"]
+        ortho_offset = 3 * self.emb_dim
+        meta_offset = ortho_offset + CHAR_FEAT_DIM
+        base = meta_offset + len(ENTITY_TYPES)
+
         for i, c in enumerate(candidates):
+            if toks:
+                ent_idxs = [j for j, t in enumerate(toks) if max(t.start, c.entity.start) < min(t.end, c.entity.end)]
+                if not ent_idxs:
+                    nearest = min(range(len(toks)), key=lambda j: abs(toks[j].start - c.entity.start))
+                    ent_idxs = [nearest]
+                left_idxs = list(range(max(0, ent_idxs[0] - 3), ent_idxs[0]))
+                right_idxs = list(range(ent_idxs[-1] + 1, min(len(toks), ent_idxs[-1] + 4)))
+                span_ids = _enc(ent_idxs)
+                left_ids = _enc(left_idxs)
+                right_ids = _enc(right_idxs)
+                mat[i, 0 : self.emb_dim] = np.mean(e_mat[span_ids], axis=0)
+                mat[i, self.emb_dim : 2 * self.emb_dim] = np.mean(e_mat[left_ids], axis=0)
+                mat[i, 2 * self.emb_dim : 3 * self.emb_dim] = np.mean(e_mat[right_ids], axis=0)
+                mat[i, ortho_offset:meta_offset] = np.mean(ortho[ent_idxs], axis=0)
+            else:
+                span_ids = left_ids = right_ids = np.array([1], dtype=np.int64)
+            tok_groups.append((span_ids, left_ids, right_ids))
+
             t_idx = _TYPE_TO_IDX.get(c.entity.type)
             if t_idx is not None:
-                mat[i, t_idx] = 1.0
+                mat[i, meta_offset + t_idx] = 1.0
             mat[i, base + 0] = 1.0 if "bilstm_crf" in c.source_stage else 0.0
             mat[i, base + 1] = 1.0 if "rule_layer" in c.source_stage else 0.0
             mat[i, base + 2] = 1.0 if c.source_stage == "bilstm_crf+rule_layer" else 0.0
             mat[i, base + 3] = float(c.entity.confidence)
             mat[i, base + 4] = min(len(c.entity.text), 40) / 40.0
-        return mat
+        return mat, tok_groups
 
     def forward(self, x_raw: np.ndarray) -> tuple[np.ndarray, dict[str, Any]]:
         x = x_raw @ self.params["W_in"]
@@ -63,8 +113,16 @@ class TransformerCandidateReranker:
         logits = (h @ self.params["W_out"] + self.params["b_out"]).squeeze(-1)
         return logits, {"x_raw": x_raw, "x": x, "q": q, "k": k, "v": v, "attn": attn, "h": h, "scale": scale}
 
-    def step_doc(self, candidates: list[CandidateEntity], labels: np.ndarray, opt: _AdamW) -> float:
-        x_raw = self._featurize(candidates)
+    def step_doc(
+        self,
+        candidates: list[CandidateEntity],
+        labels: np.ndarray,
+        opt: _AdamW,
+        *,
+        doc_text: str = "",
+        vocab: TrainOnlyVocabulary | None = None,
+    ) -> float:
+        x_raw, tok_groups = self._featurize(candidates, doc_text=doc_text, vocab=vocab)
         logits, cache = self.forward(x_raw)
         probs = _sigmoid(logits)
         n = len(labels)
@@ -90,6 +148,13 @@ class TransformerCandidateReranker:
         grads["W_v"] = x.T @ dv
         dx = d_pre_h + dq @ self.params["W_q"].T + dk @ self.params["W_k"].T + dv @ self.params["W_v"].T
         grads["W_in"] = cache["x_raw"].T @ dx
+        dx_raw = dx @ self.params["W_in"].T
+
+        for i, (span_ids, left_ids, right_ids) in enumerate(tok_groups):
+            np.add.at(grads["E"], span_ids, dx_raw[i, 0 : self.emb_dim] / max(1, len(span_ids)))
+            np.add.at(grads["E"], left_ids, dx_raw[i, self.emb_dim : 2 * self.emb_dim] / max(1, len(left_ids)))
+            np.add.at(grads["E"], right_ids, dx_raw[i, 2 * self.emb_dim : 3 * self.emb_dim] / max(1, len(right_ids)))
+
         opt.step(self.params, grads)
         return loss
 
@@ -97,6 +162,7 @@ class TransformerCandidateReranker:
         self,
         doc_candidates: list[tuple[AnnotatedDocument, list[CandidateEntity]]],
         *,
+        vocab: TrainOnlyVocabulary | None = None,
         epochs: int = 8,
         seed: int = 42,
     ) -> TransformerCandidateReranker:
@@ -111,14 +177,33 @@ class TransformerCandidateReranker:
                     [1.0 if (c.entity.type, c.entity.start, c.entity.end) in gold_keys else 0.0 for c in cands],
                     dtype=np.float64,
                 )
-                self.step_doc(cands, y, opt)
+                self.step_doc(cands, y, opt, doc_text=doc.text, vocab=vocab)
         return self
 
-    def rerank(self, candidates: list[CandidateEntity], *, threshold: float = 0.25) -> list[CandidateEntity]:
+    def score_candidates(
+        self,
+        candidates: list[CandidateEntity],
+        *,
+        doc_text: str = "",
+        vocab: TrainOnlyVocabulary | None = None,
+    ) -> list[float]:
         if not candidates:
             return []
-        logits, _ = self.forward(self._featurize(candidates))
-        scores = _sigmoid(logits)
+        x_raw, _ = self._featurize(candidates, doc_text=doc_text, vocab=vocab)
+        logits, _ = self.forward(x_raw)
+        return [float(s) for s in _sigmoid(logits)]
+
+    def rerank(
+        self,
+        candidates: list[CandidateEntity],
+        *,
+        doc_text: str = "",
+        vocab: TrainOnlyVocabulary | None = None,
+        threshold: float = 0.25,
+    ) -> list[CandidateEntity]:
+        if not candidates:
+            return []
+        scores = self.score_candidates(candidates, doc_text=doc_text, vocab=vocab)
         kept: list[CandidateEntity] = []
         for c, sc in zip(candidates, scores, strict=True):
             # Keep high-agreement rule/neural spans or candidates scoring >= threshold

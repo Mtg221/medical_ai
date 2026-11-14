@@ -9,7 +9,8 @@ from medresearch_platform.approaches.context_negex import (
     apply_context_and_relations,
     classify_assertion_context,
 )
-from medresearch_platform.data.schema import AnnotatedDocument
+from medresearch_platform.approaches.tokenizer import tokenize_with_offsets
+from medresearch_platform.data.schema import ASSERTION_CLASSES, AnnotatedDocument
 from medresearch_platform.eval_harness.metrics import (
     DocumentPrediction,
     PredictedEntity,
@@ -64,8 +65,11 @@ class HybridPipeline:
         self.temporal_crf.fit(train_docs)
 
         # Fit Transformer reranker on Stage 2 candidates from a subset of train_docs
+        self.reranker = TransformerCandidateReranker(vocab_size=len(vocab), seed=self.seed)
         cand_pairs = [(d, self.stage2.predict(d, use_rules_layer=True)) for d in train_docs[:80]]
-        self.reranker.fit_on_candidates(cand_pairs, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed)
+        self.reranker.fit_on_candidates(
+            cand_pairs, vocab=vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
+        )
 
         # Fit temperature scaler on held-out slice of train_docs
         cal_confs: list[float] = []
@@ -104,23 +108,31 @@ class HybridPipeline:
         cands = self.stage2.predict(doc, use_rules_layer=use_rules_layer)
         timings.append({"name": "stage2_ner", "ms": round((time.perf_counter() - t0) * 1000, 2)})
 
-        # Stage 5a (optional Transformer reranker) or simple union
+        # Stage 5a (optional text-reading Transformer reranker) or simple union
         t0 = time.perf_counter()
+        vocab = self.stage2.vocab
         if use_transformer_fusion:
-            fused_cands = self.reranker.rerank(cands, threshold=float(self.cfg.get("rerank_threshold", 0.25)))
+            fused_cands = self.reranker.rerank(
+                cands, doc_text=doc.text, vocab=vocab, threshold=float(self.cfg.get("rerank_threshold", 0.25))
+            )
         else:
             fused_cands = cands
         rerank_ms = (time.perf_counter() - t0) * 1000
 
-        # Stage 3: Context (Assertion BiLSTM or ConText fallback) & Relations (CNN or proximity fallback)
+        # Stage 3: Context (Assertion BiLSTM + ConText fusion) & Relations (CNN or proximity fallback)
         t0 = time.perf_counter()
-        vocab = self.stage2.vocab
+        doc_toks = tokenize_with_offsets(doc.text)
         enriched_cands: list[CandidateEntity] = []
         for c in fused_cands:
+            ctx_lbl = classify_assertion_context(doc.text, c.entity.start, c.entity.end, language=s1.language)
             if use_assertion_bilstm:
-                assert_lbl = self.assertion_model.predict(doc.text, c.entity.start, c.entity.end, vocab)
+                probs = self.assertion_model.predict_proba(
+                    doc.text, c.entity.start, c.entity.end, vocab, toks=doc_toks
+                )
+                best_idx = int(probs.argmax())
+                assert_lbl = ASSERTION_CLASSES[best_idx] if float(probs[best_idx]) >= 0.75 else ctx_lbl
             else:
-                assert_lbl = classify_assertion_context(doc.text, c.entity.start, c.entity.end, language=s1.language)
+                assert_lbl = ctx_lbl
             cal_conf = self.scaler.calibrate(c.entity.confidence)
             enriched_cands.append(
                 CandidateEntity(

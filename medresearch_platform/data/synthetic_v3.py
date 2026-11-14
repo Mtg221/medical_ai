@@ -203,9 +203,7 @@ def _render_template(
             b.add_entity_with_timex(txt, etype="DATE", ttype="RELATIVE", normalized=norm)
         elif slot == "DUR":
             txt, norm = _sample_duration(lang, rng)
-            ent, _ = b.add_entity_with_timex(txt, etype="DURATION", ttype="DURATION", normalized=norm)
-            if med1_ent is not None:
-                b.add_relation("HAS_DURATION", med1_ent, ent)
+            b.add_entity_with_timex(txt, etype="DURATION", ttype="DURATION", normalized=norm)
         elif slot == "FREQ":
             txt, norm = _sample_frequency(lang, rng)
             ent, _ = b.add_entity_with_timex(txt, etype="FREQUENCY", ttype="FREQUENCY", normalized=norm)
@@ -221,7 +219,7 @@ def _render_template(
             b.add_entity(_surface_variant(rng.choice(sx.variants), rng), etype="SYMPTOM", assertion="present", code=sx.code, system=sx.system)
         elif slot in {"SX_NEG", "SX_NEG2"}:
             sx = rng.choice(pool.symptoms)
-            b.add_entity(_surface_variant(rng.choice(sx.variants), rng), etype="SYMPTOM", assertion="negated", code=sx.code, system=sx.system)
+            b.add_entity(_surface_variant(rng.choice(sx.variants), rng), etype="SYMPTOM", assertion="absent", code=sx.code, system=sx.system)
         elif slot == "SX_HYP":
             sx = rng.choice(pool.symptoms)
             b.add_entity(_surface_variant(rng.choice(sx.variants), rng), etype="SYMPTOM", assertion="hypothetical", code=sx.code, system=sx.system)
@@ -229,16 +227,16 @@ def _render_template(
             dx_pos_ent = b.add_entity(_surface_variant(rng.choice(dx_pos.variants), rng), etype="DIAGNOSIS", assertion="present", code=dx_pos.code, system=dx_pos.system)
         elif slot == "DX_NEG":
             dx = rng.choice(pool.diagnoses)
-            b.add_entity(_surface_variant(rng.choice(dx.variants), rng), etype="DIAGNOSIS", assertion="negated", code=dx.code, system=dx.system)
+            b.add_entity(_surface_variant(rng.choice(dx.variants), rng), etype="DIAGNOSIS", assertion="absent", code=dx.code, system=dx.system)
         elif slot == "DX_UNC":
             dx = rng.choice(pool.diagnoses)
-            b.add_entity(_surface_variant(rng.choice(dx.variants), rng), etype="DIAGNOSIS", assertion="uncertain", code=dx.code, system=dx.system)
+            b.add_entity(_surface_variant(rng.choice(dx.variants), rng), etype="DIAGNOSIS", assertion="possible", code=dx.code, system=dx.system)
         elif slot in {"DX_HIST", "DX_HIST2"}:
             dx = rng.choice(pool.diagnoses)
-            b.add_entity(_surface_variant(rng.choice(dx.variants), rng), etype="DIAGNOSIS", assertion="historical", temporality="historical", code=dx.code, system=dx.system)
+            b.add_entity(_surface_variant(rng.choice(dx.variants), rng), etype="DIAGNOSIS", assertion="historical", temporality="past", code=dx.code, system=dx.system)
         elif slot == "DX_FAM":
             dx = rng.choice(pool.diagnoses)
-            b.add_entity(_surface_variant(rng.choice(dx.variants), rng), etype="DIAGNOSIS", assertion="family", temporality="historical", code=dx.code, system=dx.system)
+            b.add_entity(_surface_variant(rng.choice(dx.variants), rng), etype="DIAGNOSIS", assertion="family", temporality="past", code=dx.code, system=dx.system)
         elif slot == "MED":
             med1_ent = b.add_entity(rng.choice(med1.variants), etype="MEDICATION", assertion="present", code=med1.code, system=med1.system)
         elif slot == "MED2":
@@ -286,7 +284,7 @@ def _render_template(
         elif slot == "PROC":
             ent = b.add_entity(_surface_variant(rng.choice(proc1.variants), rng), etype="PROCEDURE", assertion="present", code=proc1.code, system=proc1.system)
             if dx_pos_ent is not None:
-                b.add_relation("DIAGNOSED_BY", dx_pos_ent, ent)
+                b.add_relation("REVEALS", ent, dx_pos_ent)
         elif slot == "ANAT":
             ent = b.add_entity(_surface_variant(rng.choice(anat1.variants), rng), etype="ANATOMY", assertion="present", code=anat1.code, system=anat1.system)
             if dx_pos_ent is not None:

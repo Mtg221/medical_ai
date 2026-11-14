@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11 — correction (Step 3 complete: seeds F3 + 32-dim char morphology + v3 eval splits verified; Step 4 Stage 3/5 hybrid fixes next)
+**Active Phase:** Phase 11 — correction (Step 4 complete: Hybrid Stage 3 F4 + text-reading Stage 5 F5 fixed & tested; Step 5 OCR stress benchmark F6 next)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -28,7 +28,7 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | Annotated EN/FR corpus (`>= 300 EN + >= 300 FR`) | **Implemented / Audited (`SYNTH-MED-V3`, 1,240 docs)** | `SYNTH-MED-V3` built with 640+ templates, expanded EN/FR lexicon, `train` (600), `val` (160), `test_iid` (160), `test_unseen_terms` (160, 0% clinical term overlap), `test_unseen_templates` (160, 0.6% masked sentence overlap); `0` doubled docs |
 | Evaluation harness (CI, McNemar, error taxonomy, profiler) | **Tested (`SYNTH-MED-V3` multi-split ready)** | Supports `val`, `test`, `test_iid`, `test_unseen_terms`, `test_unseen_templates` |
 | 5 Single Approaches (Rule, TF-IDF+ML/CRF, BiLSTM, BiLSTM-CRF, Transformer) | **Tested on `SYNTH-MED-V3` `val` (`bilstm_crf`: `0.9604 ± 0.0017`)** | 32-dim char prefix/suffix morphology + seeded word/feature dropout (`F3` fixed); full 5-approach benchmark in Step 8 |
-| 5-Stage Hybrid Pipeline | **Invalidated (F1/F2, F4/F5)** | Previous numbers invalid; Stage 3 hurt assertion/relation scores in ablation and Stage 5 lacked token-level reading (Phase 11 Step 5) |
+| 5-Stage Hybrid Pipeline | **Tested on `SYNTH-MED-V3` (F4/F5 fixed)** | Stage 3 balanced assertion BiLSTM+ConText fusion & type-masked CNN relations; Stage 5 text-reading Transformer reranker (`99`-dim span+left/right ctx+char+meta); full benchmark in Step 8 |
 | FastAPI backend + SQLite jobs | **Tested** | Migrated from Starlette to FastAPI (`OpenAPI 3.1`), multipart `/api/v1/documents/upload`, SQLite `jobs` table + SSE `/api/v1/jobs/{id}/events` |
 | React + TypeScript + Tailwind + shadcn-style workspace | **In progress (5/14 pages)** | Phase 7 partial (login, workspace, upload, benchmark, timeline); remaining pages, pdf.js, charts, Vitest & Playwright in Phase 11 Step 7 |
 | EN/FR traceable reports | **Tested** | `medresearch_platform/reports/generator.py` (Markdown, HTML, PDF with negation badges, source `[doc, p., chars]` citations, EN/FR disclaimer), `/api/v1/documents/{id}/report`, `medextract report` |
