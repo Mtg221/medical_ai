@@ -1,0 +1,12 @@
+approach: classical_crf
+eval_split: val
+data_dir: data/processed/v3_1
+output_root: experiments/runs/v3_1
+max_train_docs: null
+c1: 0.1
+c2: 0.1
+max_iterations: 80
+seeds:
+  - 1
+  - 2
+  - 3

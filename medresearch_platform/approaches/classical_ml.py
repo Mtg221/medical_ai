@@ -82,6 +82,18 @@ def _doc_classifier_fit_predict(
     return [str(p) for p in clf.predict(x_ev)]
 
 
+def _select_train_docs(
+    train_docs: list[AnnotatedDocument], seed: int, cfg: dict[str, Any]
+) -> list[AnnotatedDocument]:
+    raw_max = cfg.get("max_train_docs", None)
+    if raw_max is None:
+        return train_docs
+    rng = np.random.default_rng(seed)
+    shuffled = list(train_docs)
+    rng.shuffle(shuffled)
+    return shuffled[: int(raw_max)]
+
+
 def predict_classical_ml(
     train_docs: list[AnnotatedDocument],
     eval_docs: list[AnnotatedDocument],
@@ -89,9 +101,10 @@ def predict_classical_ml(
     cfg: dict[str, Any],
 ) -> list[DocumentPrediction]:
     """Approach 2a: Token window features + LinearSVC BIO tagger + TF-IDF doc classifier."""
+    tr_subset = _select_train_docs(train_docs, seed, cfg)
     x_feats: list[dict[str, Any]] = []
     y_tags: list[str] = []
-    for d in train_docs:
+    for d in tr_subset:
         toks = tokenize_with_offsets(d.text)
         tags = align_entities_to_bio(toks, d.entities)
         for i in range(len(toks)):
@@ -104,7 +117,7 @@ def predict_classical_ml(
     clf = LinearSVC(C=c_val, random_state=seed)
     clf.fit(x_mat, y_tags)
 
-    pred_doc_types = _doc_classifier_fit_predict(train_docs, eval_docs, seed)
+    pred_doc_types = _doc_classifier_fit_predict(tr_subset, eval_docs, seed)
     preds: list[DocumentPrediction] = []
     for d, dt_pred in zip(eval_docs, pred_doc_types, strict=True):
         toks = tokenize_with_offsets(d.text)
@@ -142,9 +155,10 @@ def predict_classical_crf(
     cfg: dict[str, Any],
 ) -> list[DocumentPrediction]:
     """Approach 2b: Linear-chain CRF baseline (sklearn-crfsuite) with window features."""
+    tr_subset = _select_train_docs(train_docs, seed, cfg)
     x_train = []
     y_train = []
-    for d in train_docs:
+    for d in tr_subset:
         toks = tokenize_with_offsets(d.text)
         tags = align_entities_to_bio(toks, d.entities)
         x_train.append([_token_window_features(toks, i) for i in range(len(toks))])
@@ -159,7 +173,7 @@ def predict_classical_crf(
     )
     crf.fit(x_train, y_train)
 
-    pred_doc_types = _doc_classifier_fit_predict(train_docs, eval_docs, seed)
+    pred_doc_types = _doc_classifier_fit_predict(tr_subset, eval_docs, seed)
     preds: list[DocumentPrediction] = []
     for d, dt_pred in zip(eval_docs, pred_doc_types, strict=True):
         toks = tokenize_with_offsets(d.text)

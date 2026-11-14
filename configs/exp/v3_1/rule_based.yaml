@@ -1,0 +1,9 @@
+approach: rule_based
+eval_split: val
+data_dir: data/processed/v3_1
+output_root: experiments/runs/v3_1
+max_train_docs: null
+seeds:
+  - 1
+  - 2
+  - 3

@@ -5,6 +5,8 @@ from __future__ import annotations
 import time
 from typing import Any
 
+import numpy as np
+
 from medresearch_platform.approaches.context_negex import (
     apply_context_and_relations,
     classify_assertion_context,
@@ -37,11 +39,12 @@ class HybridPipeline:
         self.seed = seed
         self.cfg = cfg or {}
         self.stage1 = Stage1DocumentUnderstanding(seed=seed)
+        raw_max = self.cfg.get("max_train_docs", None)
         self.stage2 = Stage2EntityExtractor(
             hidden_dim=int(self.cfg.get("hidden_dim", 32)),
             epochs=int(self.cfg.get("epochs", 10)),
             lr=float(self.cfg.get("lr", 0.018)),
-            max_train_docs=int(self.cfg.get("max_train_docs", 160)),
+            max_train_docs=int(raw_max) if raw_max is not None else None,
             seed=seed,
         )
         self.assertion_model: BiLSTMAssertionClassifier | None = None
@@ -64,9 +67,12 @@ class HybridPipeline:
         )
         self.temporal_crf.fit(train_docs)
 
-        # Fit Transformer reranker on Stage 2 candidates from a subset of train_docs
+        # Fit Transformer reranker & temperature scaler on shuffled EN+FR slices of train_docs
+        rng = np.random.default_rng(self.seed)
+        shuffled_docs = list(train_docs)
+        rng.shuffle(shuffled_docs)
         self.reranker = TransformerCandidateReranker(vocab_size=len(vocab), seed=self.seed)
-        cand_pairs = [(d, self.stage2.predict(d, use_rules_layer=True)) for d in train_docs[:80]]
+        cand_pairs = [(d, self.stage2.predict(d, use_rules_layer=True)) for d in shuffled_docs[:80]]
         self.reranker.fit_on_candidates(
             cand_pairs, vocab=vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
         )
@@ -74,7 +80,7 @@ class HybridPipeline:
         # Fit temperature scaler on held-out slice of train_docs
         cal_confs: list[float] = []
         cal_hits: list[int] = []
-        for d in train_docs[80:120]:
+        for d in shuffled_docs[80:120]:
             gold_keys = {(e.type, e.start, e.end) for e in d.entities}
             for c in self.stage2.predict(d, use_rules_layer=True):
                 cal_confs.append(c.entity.confidence)

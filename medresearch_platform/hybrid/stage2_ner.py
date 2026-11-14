@@ -33,7 +33,15 @@ class CandidateEntity:
 class Stage2EntityExtractor:
     """Trains BiLSTM-CRF on train_docs and merges spans with the rule/lexicon layer."""
 
-    def __init__(self, *, hidden_dim: int = 32, epochs: int = 10, lr: float = 0.018, max_train_docs: int = 160, seed: int = 42) -> None:
+    def __init__(
+        self,
+        *,
+        hidden_dim: int = 32,
+        epochs: int = 10,
+        lr: float = 0.018,
+        max_train_docs: int | None = None,
+        seed: int = 42,
+    ) -> None:
         self.hidden_dim = hidden_dim
         self.epochs = epochs
         self.lr = lr
@@ -47,7 +55,7 @@ class Stage2EntityExtractor:
         rng = np.random.default_rng(self.seed)
         shuffled = list(train_docs)
         rng.shuffle(shuffled)
-        subset = shuffled[: self.max_train_docs]
+        subset = shuffled if self.max_train_docs is None else shuffled[: self.max_train_docs]
         n_es = max(1, int(0.12 * len(subset)))
         es_docs = subset[:n_es]
         tr_docs = subset[n_es:] if len(subset) > n_es else subset
