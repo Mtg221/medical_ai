@@ -1,4 +1,21 @@
-import { AlertTriangle, FileText, FlaskConical, Globe, History, LogOut, Upload } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  Braces,
+  CheckSquare,
+  Database,
+  FileCheck,
+  FileSearch,
+  FileText,
+  FlaskConical,
+  GitBranch,
+  Globe,
+  History,
+  Layers,
+  LogOut,
+  Settings,
+  Upload,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
@@ -19,8 +36,17 @@ export function Layout() {
   const navItems = [
     { to: "/", label: t("nav.workspace"), icon: FileText },
     { to: "/upload", label: t("nav.upload"), icon: Upload },
+    { to: "/pdf", label: "PDF.js", icon: FileSearch },
+    { to: "/relations", label: "Relations", icon: GitBranch },
+    { to: "/review", label: "Review", icon: CheckSquare },
     { to: "/benchmark", label: t("nav.benchmark"), icon: FlaskConical },
+    { to: "/ablation", label: "Ablation", icon: Layers },
+    { to: "/errors", label: "Errors", icon: Activity },
+    { to: "/corpus", label: "Corpus", icon: Database },
+    { to: "/reports", label: "Reports", icon: FileCheck },
     { to: "/timeline", label: t("nav.timeline"), icon: History },
+    { to: "/schema", label: "Schema", icon: Braces },
+    { to: "/settings", label: "Settings", icon: Settings },
   ];
 
   return (
@@ -53,7 +79,7 @@ export function Layout() {
             </div>
 
             {user && (
-              <nav aria-label="Primary navigation" className="flex items-center gap-1">
+              <nav aria-label="Primary navigation" className="flex flex-wrap items-center gap-1">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (

@@ -49,3 +49,11 @@
 ### Step 6 — Fresh-Clone CI & `test_frontend_assets_and_security_headers` Fix (F8) (2026-11-14)
 - Updated `tests/test_api_and_cli.py` (`test_frontend_assets_and_security_headers`) to handle fresh-clone environments where `frontend/dist` has not been built yet (`404` JSON message) while still verifying `200`, CSP headers, and `/react/assets/` when `frontend/dist/index.html` is present.
 - Updated `.github/workflows/ci.yml`: added `actions/setup-node@v4` (Node 22), added `scripts/` to `ruff check`, and added `medextract data build --config configs/data/v3.yaml && python scripts/audit_corpus.py --data-dir data/processed/v3 --fail-on-doubled` to CI.
+
+### Step 7 — Complete React Frontend (F7) (2026-11-14)
+- Completed all 14 React pages in `frontend/src/pages/` and wired routes + navigation in `App.tsx` and `Layout.tsx`:
+  - Existing: `LoginPage`, `WorkspacePage`, `UploadJobsPage`, `BenchmarkPage` (upgraded with Recharts bar chart), `TimelineAuditPage`.
+  - Added 9 new pages: `RelationGraphPage`, `ReviewQueuePage`, `PdfViewerPage` (using `pdfjs-dist`), `AblationPage` (Recharts), `ErrorTaxonomyPage` (Recharts), `CorpusExplorerPage` (Recharts), `ReportsPage`, `SchemaExplorerPage`, `SettingsDiagnosticsPage`.
+- Added `recharts`, `pdfjs-dist`, `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, and `jsdom` to `frontend/package.json`.
+- Added `frontend/vitest.config.ts` and `frontend/src/__tests__/pages.test.tsx` (7/7 Vitest component tests passing).
+- Added `npm --prefix frontend test` to `.github/workflows/ci.yml`.

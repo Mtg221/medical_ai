@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11 — correction (Step 6 complete: fresh-clone CI & `test_frontend_assets_and_security_headers` F8 fixed; Step 7 frontend pages/charts/pdf.js/Vitest F7 next)
+**Active Phase:** Phase 11 — correction (Step 7 complete: 14-page React UI, Recharts, pdf.js, Vitest F7 fixed; Step 8 multi-seed `SYNTH-MED-V3` evaluation next)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -30,7 +30,7 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | 5 Single Approaches (Rule, TF-IDF+ML/CRF, BiLSTM, BiLSTM-CRF, Transformer) | **Tested on `SYNTH-MED-V3` `val` (`bilstm_crf`: `0.9604 ± 0.0017`)** | 32-dim char prefix/suffix morphology + seeded word/feature dropout (`F3` fixed); full 5-approach benchmark in Step 8 |
 | 5-Stage Hybrid Pipeline | **Tested on `SYNTH-MED-V3` (F4/F5 fixed)** | Stage 3 balanced assertion BiLSTM+ConText fusion & type-masked CNN relations; Stage 5 text-reading Transformer reranker (`99`-dim span+left/right ctx+char+meta); full benchmark in Step 8 |
 | FastAPI backend + SQLite jobs | **Tested** | Migrated from Starlette to FastAPI (`OpenAPI 3.1`), multipart `/api/v1/documents/upload`, SQLite `jobs` table + SSE `/api/v1/jobs/{id}/events` |
-| React + TypeScript + Tailwind + shadcn-style workspace | **In progress (5/14 pages)** | Phase 7 partial (login, workspace, upload, benchmark, timeline); remaining pages, pdf.js, charts, Vitest & Playwright in Phase 11 Step 7 |
+| React + TypeScript + Tailwind + shadcn-style workspace | **Implemented / Tested (14/14 pages)** | All 14 pages (`Workspace`, `Upload`, `Benchmark`, `Timeline`, `RelationGraph`, `ReviewQueue`, `PdfViewer`, `Ablation`, `ErrorTaxonomy`, `CorpusExplorer`, `Reports`, `SchemaExplorer`, `SettingsDiagnostics`, `Login`), Recharts, `pdfjs-dist`, Vitest (7/7 passing) |
 | EN/FR traceable reports | **Tested** | `medresearch_platform/reports/generator.py` (Markdown, HTML, PDF with negation badges, source `[doc, p., chars]` citations, EN/FR disclaimer), `/api/v1/documents/{id}/report`, `medextract report` |
 | Final scientific evaluation & `RESEARCH_REPORT.md` | **Invalidated (F1/F2)** | Old report superseded & archived in `docs/results/archive/2026-11-14_synth_v2_buggy/`; new `SYNTH-MED-V3` report in Phase 11 Step 9 |
 
