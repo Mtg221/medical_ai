@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11 — correction (Step 8 complete: multi-seed `SYNTH-MED-V3` `val`, ablations & locked test evaluation on `test_iid`, `test_unseen_terms`, `test_unseen_templates`; Step 9 honest `RESEARCH_REPORT.md` next)
+**Active Phase:** Phase 11 — complete (F1–F9 resolved; `SYNTH-MED-V3` audited, evaluated across `val` and locked test splits, and documented in `docs/RESEARCH_REPORT.md`)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -32,7 +32,7 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | FastAPI backend + SQLite jobs | **Tested** | Migrated from Starlette to FastAPI (`OpenAPI 3.1`), multipart `/api/v1/documents/upload`, SQLite `jobs` table + SSE `/api/v1/jobs/{id}/events` |
 | React + TypeScript + Tailwind + shadcn-style workspace | **Implemented / Tested (14/14 pages)** | All 14 pages (`Workspace`, `Upload`, `Benchmark`, `Timeline`, `RelationGraph`, `ReviewQueue`, `PdfViewer`, `Ablation`, `ErrorTaxonomy`, `CorpusExplorer`, `Reports`, `SchemaExplorer`, `SettingsDiagnostics`, `Login`), Recharts, `pdfjs-dist`, Vitest (7/7 passing) |
 | EN/FR traceable reports | **Tested** | `medresearch_platform/reports/generator.py` (Markdown, HTML, PDF with negation badges, source `[doc, p., chars]` citations, EN/FR disclaimer), `/api/v1/documents/{id}/report`, `medextract report` |
-| Final scientific evaluation & `RESEARCH_REPORT.md` | **Invalidated (F1/F2)** | Old report superseded & archived in `docs/results/archive/2026-11-14_synth_v2_buggy/`; new `SYNTH-MED-V3` report in Phase 11 Step 9 |
+| Final scientific evaluation & `RESEARCH_REPORT.md` | **Evaluated on `SYNTH-MED-V3` (1,240 docs; 480 locked test docs)** | Honest `docs/RESEARCH_REPORT.md` published from `docs/results/v3_*.json`; v2 report archived in `docs/results/archive/2026-11-14_synth_v2_buggy/` |
 
 ---
 
