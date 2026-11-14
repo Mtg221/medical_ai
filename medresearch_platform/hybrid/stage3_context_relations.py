@@ -154,11 +154,13 @@ class BiLSTMAssertionClassifier:
         rng = np.random.default_rng(seed)
         non_present: list[tuple[np.ndarray, np.ndarray, int, int]] = []
         present: list[tuple[np.ndarray, np.ndarray, int, int]] = []
-        for d in train_docs:
+        docs_shuffled = list(train_docs)
+        rng.shuffle(docs_shuffled)
+        for d in docs_shuffled:
             toks = tokenize_with_offsets(d.text)
             for e in d.entities:
                 y = ASSERT_TO_ID[e.assertion]
-                if y == 0 and len(present) >= max_examples // 2:
+                if y == 0 and len(present) >= max_examples:
                     continue
                 w_ids, flags, pidx = self._window_inputs(d.text, e.start, e.end, vocab, toks=toks)
                 if y == 0:
@@ -172,7 +174,7 @@ class BiLSTMAssertionClassifier:
         for _, _, _, y in examples:
             counts[y] += 1.0
 
-        weights = np.clip(np.sqrt(len(examples) / (len(ASSERTION_CLASSES) * counts)), 0.5, 4.0)
+        weights = np.clip((len(examples) / (len(ASSERTION_CLASSES) * counts)) ** 0.75, 0.5, 8.0)
         opt = _AdamW(self.params, lr=0.015)
         for _ in range(epochs):
             for idx in rng.permutation(len(examples)):

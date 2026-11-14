@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11B — Step 3 complete (legacy models isolated to `extras/legacy/`, 6/6 gradient checks G6, stacked multi-head BPE Transformer tuned to `0.8192` on `val` G5); Step 4 (make every hybrid stage earn its place G4/G8) next
+**Active Phase:** Phase 11B — Step 4 complete (5-seed `SYNTH-MED-V3.1` hybrid ablations on `val`, `test_unseen_terms`, `test_unseen_templates`; Stage 4 TIMEX F1 `1.0000`/`0.9969` & norm `1.0000`, Relation CNN `+0.1735` on `val`, Context/NegEx cues upgraded, Stage 5 fusion documented as `0.0000` negative result); Step 5 (5-seed paired bootstrap >= 10k + Holm-Bonferroni G7) next
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 

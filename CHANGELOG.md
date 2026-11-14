@@ -2,6 +2,17 @@
 
 ## [Unreleased] — Phase 11 ("Make the results true")
 
+### Phase 11B Step 4 — Make Every Hybrid Stage Earn Its Place (G4, G8) (2026-11-14)
+- Upgraded `normalize_timex` in `medresearch_platform/hybrid/stage4_temporal.py` to handle all EN/FR `DATE` (`YYYY-MM-DD`, `DD/MM/YYYY`, `Month DD, YYYY`, `DD mois YYYY`, `Month DDth`, `DD mois`, `Month YYYY`), `RELATIVE` (`yesterday`/`la veille`, `today`/`aujourd'hui`, `POD N`/`J N post-op`, `in/dans N days/weeks/months`, `N ... ago`/`il y a`/`depuis`), `DURATION` (`P{n}D/W/M/Y`), and `FREQUENCY` (`QD`/`BID`/`TID`/`PRN`) expressions anchored to `doc.document_date`; updated `CRFTemporalTagger.fit` to train on all 600 EN+FR train docs instead of `train_docs[:250]` (EN-only).
+- Expanded EN/FR `CONTEXT_CUES` and enabled `post_window` checking for `possible` cues in `medresearch_platform/approaches/context_negex.py`; fixed `BiLSTMAssertionClassifier.fit` in `medresearch_platform/hybrid/stage3_context_relations.py` to shuffle `train_docs` before `present` capping (so FR `present` examples are included) and strengthened minority class weights.
+- Added `tests/test_hybrid_stage4_and_assertion_fixes.py` (35 parametrized regression tests; 28 failed before fixes, 35/35 pass after).
+- Ran 5-seed (`1..5`) ablations via `scripts/run_v3_1_step4_ablations.py` on `SYNTH-MED-V3.1` `val`, `test_unseen_terms`, and `test_unseen_templates` (`docs/results/v3_1_step4_ablations.json`, logged in `docs/results/TEST_SET_LOG.md`):
+  - Temporal CRF (`stage4`): TIMEX F1 `1.0000` (`val` & `unseen_terms`) / `0.9969` (`unseen_templates`) and TIMEX norm accuracy `1.0000` across all 3 splits (+0.8738 to +0.8969 over `no_temporal_crf`).
+  - Relation CNN (`stage3`): `+0.1735` (`val`), `+0.1086` (`unseen_terms`), `+0.1168` (`unseen_templates`) relation F1.
+  - Assertion (`stage3`): `full_hybrid` assertion macro-F1 `0.7350` (`val`), `0.6672` (`unseen_terms`), `0.5283` (`unseen_templates`); upgraded ConText/NegEx alone (`no_assertion_bilstm`) reaches `0.7536` / `0.7041` / `0.6405`.
+  - Rules layer (`stage2`): `0.0000` delta on `val`, `+0.0010` on `unseen_terms`, `-0.0006` on `unseen_templates`.
+  - Transformer fusion (`stage5`): `0.0000` delta across all 3 splits (documented negative result).
+
 ### Step 0 — Audit & Honesty Reset (2026-11-14)
 - Added `scripts/audit_corpus.py` to detect doubled span text, adjacent duplicate n-grams, offset mismatches, lexical overlap, and digit-masked sentence/template overlap.
 - Audited `SYNTH-MED-V2` (`data/processed/v1`): confirmed 100% of docs had doubled TIMEX/date/duration spans (F1) and `94.8%` masked test sentence / `62.7%` unique entity overlap (`100%` across clinical entity types) (F2).
