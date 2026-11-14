@@ -1,0 +1,327 @@
+{
+  "$defs": {
+    "ExtractedRecordSchema": {
+      "description": "Common structured output contract for all extraction approaches.",
+      "properties": {
+        "source_record_id": {
+          "title": "Source Record Id",
+          "type": "string"
+        },
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "original_text": {
+          "title": "Original Text",
+          "type": "string"
+        },
+        "extracted_value": {
+          "title": "Extracted Value",
+          "type": "string"
+        },
+        "entity_type": {
+          "title": "Entity Type",
+          "type": "string"
+        },
+        "normalized_concept": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normalized Concept"
+        },
+        "char_start": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Char Start"
+        },
+        "char_end": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Char End"
+        },
+        "page_number": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 1,
+          "title": "Page Number"
+        },
+        "region_coordinates": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RegionCoordinatesSchema"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "language": {
+          "title": "Language",
+          "type": "string"
+        },
+        "negation_status": {
+          "enum": [
+            "affirmed",
+            "negated",
+            "uncertain"
+          ],
+          "title": "Negation Status",
+          "type": "string"
+        },
+        "assertion_status": {
+          "enum": [
+            "present",
+            "absent",
+            "uncertain",
+            "hypothetical",
+            "family_history",
+            "historical"
+          ],
+          "title": "Assertion Status",
+          "type": "string"
+        },
+        "uncertainty": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Uncertainty",
+          "type": "number"
+        },
+        "temporal_information": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temporal Information"
+        },
+        "relationships": {
+          "items": {
+            "$ref": "#/$defs/ExtractedRelationshipSchema"
+          },
+          "title": "Relationships",
+          "type": "array"
+        },
+        "confidence_score": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence Score",
+          "type": "number"
+        },
+        "model_name": {
+          "title": "Model Name",
+          "type": "string"
+        },
+        "model_version": {
+          "title": "Model Version",
+          "type": "string"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "review_status": {
+          "default": "unreviewed",
+          "enum": [
+            "unreviewed",
+            "approved",
+            "corrected",
+            "rejected",
+            "flagged"
+          ],
+          "title": "Review Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_record_id",
+        "document_id",
+        "original_text",
+        "extracted_value",
+        "entity_type",
+        "language",
+        "negation_status",
+        "assertion_status",
+        "uncertainty",
+        "confidence_score",
+        "model_name",
+        "model_version"
+      ],
+      "title": "ExtractedRecordSchema",
+      "type": "object"
+    },
+    "ExtractedRelationshipSchema": {
+      "description": "Typed relationship between two extracted medical mentions.",
+      "properties": {
+        "relation_type": {
+          "title": "Relation Type",
+          "type": "string"
+        },
+        "target_value": {
+          "title": "Target Value",
+          "type": "string"
+        },
+        "target_entity_type": {
+          "title": "Target Entity Type",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "evidence_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Text"
+        }
+      },
+      "required": [
+        "relation_type",
+        "target_value",
+        "target_entity_type",
+        "confidence"
+      ],
+      "title": "ExtractedRelationshipSchema",
+      "type": "object"
+    },
+    "RegionCoordinatesSchema": {
+      "description": "Normalized page bounding box in [0, 1] coordinates.",
+      "properties": {
+        "x0": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X0",
+          "type": "number"
+        },
+        "y0": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y0",
+          "type": "number"
+        },
+        "x1": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X1",
+          "type": "number"
+        },
+        "y1": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y1",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x0",
+        "y0",
+        "x1",
+        "y1"
+      ],
+      "title": "RegionCoordinatesSchema",
+      "type": "object"
+    }
+  },
+  "description": "Top-level validated extraction output bundle.",
+  "properties": {
+    "source_record_id": {
+      "title": "Source Record Id",
+      "type": "string"
+    },
+    "document_id": {
+      "title": "Document Id",
+      "type": "string"
+    },
+    "language": {
+      "title": "Language",
+      "type": "string"
+    },
+    "model_name": {
+      "title": "Model Name",
+      "type": "string"
+    },
+    "model_version": {
+      "title": "Model Version",
+      "type": "string"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/ExtractedRecordSchema"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "modality_status": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Modality Status",
+      "type": "object"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    },
+    "clinical_notice": {
+      "default": "Research tool only \u2014 NOT for clinical diagnosis or treatment. Human clinician review required before any clinical use.",
+      "title": "Clinical Notice",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_record_id",
+    "document_id",
+    "language",
+    "model_name",
+    "model_version"
+  ],
+  "title": "ExtractionResultSchema",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

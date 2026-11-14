@@ -316,9 +316,24 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS jobs (
+    job_id TEXT PRIMARY KEY,
+    institution_id TEXT NOT NULL,
+    actor_user_id TEXT NOT NULL,
+    job_type TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('PENDING', 'RUNNING', 'SUCCEEDED', 'FAILED')),
+    progress_pct INTEGER NOT NULL DEFAULT 0,
+    current_stage TEXT NOT NULL DEFAULT 'QUEUED',
+    result_json TEXT,
+    error_message TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_documents_institution ON documents(institution_id);
 CREATE INDEX IF NOT EXISTS idx_documents_subject ON documents(subject_id);
 CREATE INDEX IF NOT EXISTS idx_entities_document ON extracted_entities(document_id);
 CREATE INDEX IF NOT EXISTS idx_entities_type ON extracted_entities(entity_type);
 CREATE INDEX IF NOT EXISTS idx_events_subject_date ON longitudinal_events(subject_id, event_date_iso);
 CREATE INDEX IF NOT EXISTS idx_audit_seq ON audit_logs(sequence_num);
+CREATE INDEX IF NOT EXISTS idx_jobs_institution ON jobs(institution_id, created_at);

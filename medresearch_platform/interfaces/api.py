@@ -1,20 +1,33 @@
-"""Starlette ASGI REST API, OpenAPI 3.1 schema, and Accessible Bilingual (EN/FR) Web Workspace."""
+"""FastAPI ASGI REST API, OpenAPI 3.1 schema, SQLite background jobs with SSE, and web workspace."""
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
+from collections.abc import AsyncIterator
 from pathlib import Path
+from typing import Any
 
-from starlette.applications import Starlette
-from starlette.requests import Request
-from starlette.responses import FileResponse, JSONResponse
-from starlette.routing import Mount, Route
-from starlette.staticfiles import StaticFiles
+from fastapi import BackgroundTasks, FastAPI, File, Form, Query, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from medresearch_platform import __spec_coverage__, __version__
 from medresearch_platform.config import PlatformConfig
 from medresearch_platform.diagnostics import generate_readiness_report
+from medresearch_platform.extraction.schema_models import (
+    CLINICAL_RESEARCH_NOTICE,
+    ExtractionResultSchema,
+)
+from medresearch_platform.interfaces.schemas import (
+    BenchmarkRequest,
+    IngestDocumentRequest,
+    JobStatusResponse,
+    ReviewEntityRequest,
+    TokenRequest,
+    TokenResponse,
+)
 from medresearch_platform.security.audit import verify_audit_chain
 from medresearch_platform.security.auth import (
     AuthenticatedPrincipal,
@@ -22,6 +35,7 @@ from medresearch_platform.security.auth import (
     verify_access_token,
     verify_password,
 )
+from medresearch_platform.workflows.jobs import JobManager, execute_document_upload_job
 from medresearch_platform.workflows.pipeline import MedicalResearchPlatformService
 from medresearch_platform.workflows.review import submit_entity_human_review
 
@@ -36,60 +50,52 @@ def _extract_principal(request: Request, service: MedicalResearchPlatformService
     raise PermissionError("Missing or invalid Authorization: Bearer <token> header.")
 
 
-def create_app(config: PlatformConfig | None = None) -> Starlette:
-    """Create the Starlette ASGI application for the medical research platform."""
+def create_app(config: PlatformConfig | None = None) -> FastAPI:
+    """Create the FastAPI ASGI application for the medical research platform."""
     service = MedicalResearchPlatformService(config=config)
     service.initialize_platform()
+    jobs = JobManager(service.db)
 
-    async def health_endpoint(request: Request) -> JSONResponse:
+    app = FastAPI(
+        title="Medical Information Intelligence & Research Platform API",
+        version=__version__,
+        description=(
+            "Research-grade bilingual (EN/FR) medical document extraction, from-scratch neural & "
+            "hybrid NLP models, OCR, and longitudinal knowledge API. "
+            f"{CLINICAL_RESEARCH_NOTICE}"
+        ),
+        openapi_url="/api/v1/openapi.json",
+        docs_url="/api/v1/docs",
+        debug=(service.config.profile == "development"),
+    )
+    app.state.service = service
+    app.state.jobs = jobs
+
+    @app.get("/api/v1/health")
+    async def health_endpoint() -> JSONResponse:
         report = generate_readiness_report(service.config.workspace_dir)
         return JSONResponse({
             "status": "ok",
             "version": __version__,
             "specification_coverage": __spec_coverage__,
             "readiness": report.to_dict(),
+            "clinical_notice": CLINICAL_RESEARCH_NOTICE,
         })
 
-    async def openapi_endpoint(request: Request) -> JSONResponse:
-        return JSONResponse({
-            "openapi": "3.1.0",
-            "info": {
-                "title": "Medical Information Intelligence & Federated Scientific Research Platform API",
-                "version": __version__,
-                "description": (
-                    "Research-grade bilingual (EN/FR) medical document extraction, custom random-initialized "
-                    "neural models, longitudinal knowledge graph, and federated research API. "
-                    "NOT FOR AUTONOMOUS CLINICAL DIAGNOSIS OR TREATMENT."
-                ),
-            },
-            "paths": {
-                "/api/v1/health": {"get": {"summary": "System readiness and hardware diagnostics"}},
-                "/api/v1/auth/token": {"post": {"summary": "Issue scoped HMAC access token"}},
-                "/api/v1/documents": {"get": {"summary": "List institution-scoped documents"}},
-                "/api/v1/documents/{document_id}": {"get": {"summary": "Inspect document, OCR blocks, entities, and relations"}},
-                "/api/v1/documents/ingest": {"post": {"summary": "Ingest and extract an authorized document"}},
-                "/api/v1/entities/{entity_id}/review": {"post": {"summary": "Submit human review or correction"}},
-                "/api/v1/subjects/{subject_id}/timeline": {"get": {"summary": "Retrieve longitudinal subject timeline and contradictions"}},
-                "/api/v1/search": {"get": {"summary": "Permission-aware hybrid lexical, structured, and neural search"}},
-                "/api/v1/terminology/map": {"get": {"summary": "Map English or French clinical mention to controlled vocabulary"}},
-                "/api/v1/models": {"get": {"summary": "List registered custom models and random-init verification hashes"}},
-                "/api/v1/experiments": {"get": {"summary": "List experiment manifests, calibration, fairness, and federated rounds"}},
-                "/api/v1/experiments/run": {"post": {"summary": "Execute Phase 1 CPU-only reproducible benchmark"}},
-                "/api/v1/audit/verify": {"get": {"summary": "Verify tamper-evident SHA-256 audit log chain"}},
-            },
-        })
+    @app.get("/api/v1/schema/extraction")
+    async def extraction_schema_endpoint() -> JSONResponse:
+        schema = ExtractionResultSchema.model_json_schema()
+        schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+        return JSONResponse(schema)
 
-    async def issue_token_endpoint(request: Request) -> JSONResponse:
-        body = await request.json()
-        username = str(body.get("username", ""))
-        password = str(body.get("password", ""))
-
+    @app.post("/api/v1/auth/token", response_model=TokenResponse)
+    async def issue_token_endpoint(body: TokenRequest) -> JSONResponse:
         with service.db.connect() as conn:
             row = conn.execute(
                 "SELECT * FROM users WHERE username = ? AND is_active = 1",
-                (username,),
+                (body.username,),
             ).fetchone()
-            if row is None or not verify_password(str(row["password_hash"]), password):
+            if row is None or not verify_password(str(row["password_hash"]), body.password):
                 return JSONResponse({"error": "Invalid credentials"}, status_code=401)
 
             perms = json.loads(str(row["permissions_json"]))
@@ -110,6 +116,7 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
                 "permissions": perms,
             })
 
+    @app.get("/api/v1/documents")
     async def list_documents_endpoint(request: Request) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
@@ -133,16 +140,16 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
             docs = [dict(r) for r in rows]
         return JSONResponse({"documents": docs, "count": len(docs)})
 
-    async def get_document_detail_endpoint(request: Request) -> JSONResponse:
+    @app.get("/api/v1/documents/{document_id}")
+    async def get_document_detail_endpoint(document_id: str, request: Request) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
             return JSONResponse({"error": str(exc)}, status_code=403)
 
-        doc_id = request.path_params["document_id"]
         with service.db.connect() as conn:
-            doc = conn.execute("SELECT * FROM documents WHERE document_id = ?", (doc_id,)).fetchone()
+            doc = conn.execute("SELECT * FROM documents WHERE document_id = ?", (document_id,)).fetchone()
             if doc is None:
                 return JSONResponse({"error": "Document not found"}, status_code=404)
             try:
@@ -154,35 +161,35 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
                 dict(r)
                 for r in conn.execute(
                     "SELECT * FROM document_pages WHERE document_id = ? ORDER BY page_number ASC",
-                    (doc_id,),
+                    (document_id,),
                 ).fetchall()
             ]
             sections = [
                 dict(r)
                 for r in conn.execute(
                     "SELECT * FROM document_sections WHERE document_id = ? ORDER BY page_number ASC, char_start ASC",
-                    (doc_id,),
+                    (document_id,),
                 ).fetchall()
             ]
             ocr_blocks = [
                 dict(r)
                 for r in conn.execute(
                     "SELECT * FROM ocr_blocks WHERE document_id = ? ORDER BY block_index ASC",
-                    (doc_id,),
+                    (document_id,),
                 ).fetchall()
             ]
             entities = [
                 dict(r)
                 for r in conn.execute(
                     "SELECT * FROM extracted_entities WHERE document_id = ? ORDER BY char_start ASC",
-                    (doc_id,),
+                    (document_id,),
                 ).fetchall()
             ]
             relations = [
                 dict(r)
                 for r in conn.execute(
                     "SELECT * FROM extracted_relations WHERE document_id = ?",
-                    (doc_id,),
+                    (document_id,),
                 ).fetchall()
             ]
 
@@ -199,58 +206,161 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
             ),
         })
 
-    async def ingest_document_endpoint(request: Request) -> JSONResponse:
+    @app.post("/api/v1/documents/ingest")
+    async def ingest_document_endpoint(body: IngestDocumentRequest, request: Request) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:write")
         except PermissionError as exc:
             return JSONResponse({"error": str(exc)}, status_code=403)
 
-        body = await request.json()
-        filename = str(body.get("filename", "uploaded_note.txt"))
-        if "content_base64" in body:
-            raw_bytes = base64.b64decode(str(body["content_base64"]))
+        if body.content_base64 is not None:
+            raw_bytes = base64.b64decode(body.content_base64)
         else:
-            raw_bytes = str(body.get("text", "")).encode("utf-8")
+            raw_bytes = body.text.encode("utf-8")
 
         try:
             result = service.ingest_document(
                 principal=principal,
                 raw_bytes=raw_bytes,
-                filename=filename,
-                dataset_id=str(body.get("dataset_id", "ds_synth_bilingual_v1")),
-                subject_raw_id=str(body.get("subject_id", "subj_synth_001")),
-                family_id=str(body.get("family_id", "fam_synth_upload")),
-                split_assignment=str(body.get("split_assignment", "unassigned")),
-                encounter_date_iso=str(body.get("encounter_date_iso", "2026-06-01")),
-                specialty=str(body.get("specialty", "INTERNAL_MEDICINE")),
-                document_type=str(body.get("document_type", "CLINICAL_NOTE")),
+                filename=body.filename,
+                dataset_id=body.dataset_id,
+                subject_raw_id=body.subject_id,
+                family_id=body.family_id,
+                split_assignment=body.split_assignment,
+                encounter_date_iso=body.encounter_date_iso,
+                specialty=body.specialty,
+                document_type=body.document_type,
             )
             return JSONResponse(result, status_code=201)
         except ValueError as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
-    async def review_entity_endpoint(request: Request) -> JSONResponse:
+    @app.post("/api/v1/documents/upload", response_model=JobStatusResponse, status_code=202)
+    async def upload_document_endpoint(
+        request: Request,
+        background_tasks: BackgroundTasks,
+        file: UploadFile = File(...),
+        dataset_id: str = Form("ds_synth_bilingual_v1"),
+        subject_id: str = Form("subj_synth_001"),
+        family_id: str = Form("fam_synth_upload"),
+        split_assignment: str = Form("unassigned"),
+        encounter_date_iso: str = Form("2026-06-01"),
+        specialty: str = Form("INTERNAL_MEDICINE"),
+        document_type: str = Form("CLINICAL_NOTE"),
+    ) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:write")
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+
+        raw_bytes = await file.read()
+        filename = file.filename or "uploaded_document.bin"
+        job = jobs.create_job(
+            institution_id=principal.institution_id,
+            actor_user_id=principal.user_id,
+            job_type="DOCUMENT_INGEST_AND_EXTRACT",
+            initial_stage="QUEUED",
+        )
+        background_tasks.add_task(
+            execute_document_upload_job,
+            service,
+            jobs,
+            job_id=job.job_id,
+            principal=principal,
+            raw_bytes=raw_bytes,
+            filename=filename,
+            dataset_id=dataset_id,
+            subject_id=subject_id,
+            family_id=family_id,
+            split_assignment=split_assignment,
+            encounter_date_iso=encounter_date_iso,
+            specialty=specialty,
+            document_type=document_type,
+        )
+        return JSONResponse(job.to_dict(), status_code=202)
+
+    @app.get("/api/v1/jobs")
+    async def list_jobs_endpoint(request: Request) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+
+        records = jobs.list_jobs(principal.institution_id)
+        return JSONResponse({"jobs": [r.to_dict() for r in records], "count": len(records)})
+
+    @app.get("/api/v1/jobs/{job_id}", response_model=JobStatusResponse)
+    async def get_job_endpoint(job_id: str, request: Request) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+
+        rec = jobs.get_job(job_id)
+        if rec is None:
+            return JSONResponse({"error": "Job not found"}, status_code=404)
+        try:
+            principal.assert_institution_access(rec.institution_id)
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+        return JSONResponse(rec.to_dict())
+
+    @app.get("/api/v1/jobs/{job_id}/events")
+    async def job_events_sse_endpoint(job_id: str, request: Request) -> Any:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+
+        rec = jobs.get_job(job_id)
+        if rec is None:
+            return JSONResponse({"error": "Job not found"}, status_code=404)
+        try:
+            principal.assert_institution_access(rec.institution_id)
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+
+        async def event_stream() -> AsyncIterator[str]:
+            last_payload: str | None = None
+            for _ in range(120):
+                current = jobs.get_job(job_id)
+                if current is None:
+                    break
+                payload = json.dumps(current.to_dict())
+                if payload != last_payload:
+                    yield f"event: job_update\ndata: {payload}\n\n"
+                    last_payload = payload
+                if current.status in ("SUCCEEDED", "FAILED"):
+                    break
+                await asyncio.sleep(0.1)
+
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+    @app.post("/api/v1/entities/{entity_id}/review")
+    async def review_entity_endpoint(entity_id: str, body: ReviewEntityRequest, request: Request) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
             principal.assert_permission("annotation:review")
         except PermissionError as exc:
             return JSONResponse({"error": str(exc)}, status_code=403)
 
-        entity_id = request.path_params["entity_id"]
-        body = await request.json()
         try:
             with service.db.transaction() as conn:
                 res = submit_entity_human_review(
                     conn,
                     principal=principal,
                     entity_id=entity_id,
-                    review_decision=str(body.get("review_decision", "CORRECT_AND_APPROVE")),
-                    corrected_entity_type=body.get("corrected_entity_type"),
-                    corrected_assertion_status=body.get("corrected_assertion_status"),
-                    corrected_temporal_status=body.get("corrected_temporal_status"),
-                    corrected_normalized_text=body.get("corrected_normalized_text"),
-                    rationale=str(body.get("rationale", "Clinical annotator review")),
+                    review_decision=body.review_decision,
+                    corrected_entity_type=body.corrected_entity_type,
+                    corrected_assertion_status=body.corrected_assertion_status,
+                    corrected_temporal_status=body.corrected_temporal_status,
+                    corrected_normalized_text=body.corrected_normalized_text,
+                    rationale=body.rationale,
                 )
             return JSONResponse(res)
         except KeyError as exc:
@@ -258,14 +368,14 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
         except (PermissionError, ValueError) as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
-    async def subject_timeline_endpoint(request: Request) -> JSONResponse:
+    @app.get("/api/v1/subjects/{subject_id}/timeline")
+    async def subject_timeline_endpoint(subject_id: str, request: Request) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
             return JSONResponse({"error": str(exc)}, status_code=403)
 
-        subject_id = request.path_params["subject_id"]
         with service.db.connect() as conn:
             subj = conn.execute("SELECT * FROM subjects WHERE subject_id = ?", (subject_id,)).fetchone()
             if subj is None:
@@ -288,14 +398,19 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
             "contradictions_count": sum(1 for e in events if int(e["contradiction_flag"]) == 1),
         })
 
-    async def search_endpoint(request: Request) -> JSONResponse:
+    @app.get("/api/v1/search")
+    async def search_endpoint(
+        request: Request,
+        q: str = Query(""),
+        top_k: int = Query(5, ge=1, le=50),
+    ) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
             principal.assert_permission("search:query")
         except PermissionError as exc:
             return JSONResponse({"error": str(exc)}, status_code=403)
 
-        query = request.query_params.get("q", "").strip()
+        query = q.strip()
         if not query:
             return JSONResponse({"error": "Query parameter 'q' is required."}, status_code=400)
 
@@ -304,14 +419,16 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
                 conn,
                 institution_id=principal.institution_id,
                 query=query,
-                top_k=int(request.query_params.get("top_k", "5")),
+                top_k=top_k,
             )
         return JSONResponse({"query": query, "results": hits, "count": len(hits)})
 
-    async def terminology_map_endpoint(request: Request) -> JSONResponse:
-        term = request.query_params.get("term", "").strip()
-        category = request.query_params.get("category")
-        res = service.terminology.map_mention(term, category_hint=category)
+    @app.get("/api/v1/terminology/map")
+    async def terminology_map_endpoint(
+        term: str = Query(""),
+        category: str | None = Query(None),
+    ) -> JSONResponse:
+        res = service.terminology.map_mention(term.strip(), category_hint=category)
         return JSONResponse({
             "source_text": res.source_text,
             "normalized_text": res.normalized_text,
@@ -324,18 +441,21 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
             "disclaimer": "A mapped terminology code is a normalized research concept, not an approved clinical diagnosis.",
         })
 
-    async def list_models_endpoint(request: Request) -> JSONResponse:
+    @app.get("/api/v1/models")
+    async def list_models_endpoint() -> JSONResponse:
         service.ensure_models_trained_and_registered()
         with service.db.connect() as conn:
             rows = [dict(r) for r in conn.execute("SELECT * FROM models ORDER BY model_id ASC").fetchall()]
         return JSONResponse({"models": rows, "count": len(rows)})
 
-    async def list_experiments_endpoint(request: Request) -> JSONResponse:
+    @app.get("/api/v1/experiments")
+    async def list_experiments_endpoint() -> JSONResponse:
         with service.db.connect() as conn:
             exps = [dict(r) for r in conn.execute("SELECT * FROM experiments ORDER BY created_at DESC").fetchall()]
             rounds = [dict(r) for r in conn.execute("SELECT * FROM federated_rounds ORDER BY round_number ASC").fetchall()]
         return JSONResponse({"experiments": exps, "federated_rounds": rounds})
 
+    @app.post("/api/v1/experiments/run")
     async def run_experiments_endpoint(request: Request) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
@@ -346,7 +466,11 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
         manifest = service.run_phase1_experiments()
         return JSONResponse(manifest)
 
-    async def run_six_extraction_benchmark_endpoint(request: Request) -> JSONResponse:
+    @app.post("/api/v1/extraction/benchmark")
+    async def run_six_extraction_benchmark_endpoint(
+        request: Request,
+        body: BenchmarkRequest | None = None,
+    ) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
             principal.assert_permission("training:execute")
@@ -355,15 +479,12 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
 
         from medresearch_platform.extraction.benchmark import run_six_approach_benchmark
 
-        try:
-            body = await request.json()
-        except Exception:
-            body = {}
-        epochs = max(5, min(40, int(body.get("epochs", 15)))) if isinstance(body, dict) else 15
-        seed = int(body.get("seed", 42)) if isinstance(body, dict) else 42
+        epochs = body.epochs if body is not None else 15
+        seed = body.seed if body is not None else 42
         report = run_six_approach_benchmark(epochs=epochs, seed=seed)
         return JSONResponse(report)
 
+    @app.get("/api/v1/audit/verify")
     async def verify_audit_endpoint(request: Request) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
@@ -375,7 +496,8 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
             result = verify_audit_chain(conn)
         return JSONResponse(result)
 
-    async def web_workspace_endpoint(request: Request) -> FileResponse:
+    @app.get("/")
+    async def web_workspace_endpoint() -> FileResponse:
         """Serve the accessible (WCAG 2.2 AA target) bilingual EN/FR single-page workspace."""
         return FileResponse(
             STATIC_DIR / "index.html",
@@ -390,13 +512,16 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
             },
         )
 
-    REACT_DIST_DIR = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+    react_dist_dir = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
-    async def react_workspace_endpoint(request: Request) -> FileResponse | JSONResponse:
+    async def react_workspace_endpoint() -> FileResponse | JSONResponse:
         """Serve the React + Vite workspace bundle if built."""
-        index_file = REACT_DIST_DIR / "index.html"
+        index_file = react_dist_dir / "index.html"
         if not index_file.exists():
-            return JSONResponse({"error": "React frontend not built. Run: npm --prefix frontend run build"}, status_code=404)
+            return JSONResponse(
+                {"error": "React frontend not built. Run: npm --prefix frontend run build"},
+                status_code=404,
+            )
         return FileResponse(
             index_file,
             headers={
@@ -410,30 +535,10 @@ def create_app(config: PlatformConfig | None = None) -> Starlette:
             },
         )
 
-    routes = [
-        Route("/", web_workspace_endpoint, methods=["GET"]),
-        Route("/react", react_workspace_endpoint, methods=["GET"]),
-        Route("/react/", react_workspace_endpoint, methods=["GET"]),
-        Route("/api/v1/health", health_endpoint, methods=["GET"]),
-        Route("/api/v1/openapi.json", openapi_endpoint, methods=["GET"]),
-        Route("/api/v1/auth/token", issue_token_endpoint, methods=["POST"]),
-        Route("/api/v1/documents", list_documents_endpoint, methods=["GET"]),
-        Route("/api/v1/documents/ingest", ingest_document_endpoint, methods=["POST"]),
-        Route("/api/v1/documents/{document_id}", get_document_detail_endpoint, methods=["GET"]),
-        Route("/api/v1/entities/{entity_id}/review", review_entity_endpoint, methods=["POST"]),
-        Route("/api/v1/subjects/{subject_id}/timeline", subject_timeline_endpoint, methods=["GET"]),
-        Route("/api/v1/search", search_endpoint, methods=["GET"]),
-        Route("/api/v1/terminology/map", terminology_map_endpoint, methods=["GET"]),
-        Route("/api/v1/models", list_models_endpoint, methods=["GET"]),
-        Route("/api/v1/experiments", list_experiments_endpoint, methods=["GET"]),
-        Route("/api/v1/experiments/run", run_experiments_endpoint, methods=["POST"]),
-        Route("/api/v1/extraction/benchmark", run_six_extraction_benchmark_endpoint, methods=["POST"]),
-        Route("/api/v1/audit/verify", verify_audit_endpoint, methods=["GET"]),
-        Mount("/static", app=StaticFiles(directory=str(STATIC_DIR)), name="static"),
-    ]
-    if (REACT_DIST_DIR / "assets").exists():
-        routes.append(Mount("/react/assets", app=StaticFiles(directory=str(REACT_DIST_DIR / "assets")), name="react_assets"))
+    app.add_api_route("/react", react_workspace_endpoint, methods=["GET"], response_model=None)
+    app.add_api_route("/react/", react_workspace_endpoint, methods=["GET"], response_model=None)
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    if (react_dist_dir / "assets").exists():
+        app.mount("/react/assets", StaticFiles(directory=str(react_dist_dir / "assets")), name="react_assets")
 
-    app = Starlette(debug=(service.config.profile == "development"), routes=routes)
-    app.state.service = service
     return app
