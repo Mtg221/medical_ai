@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 1 Complete — Data Foundation (`SYNTH-MED-V2`, 800 EN/FR synthetic docs)
+**Active Phase:** Phase 2 Complete — Evaluation Harness (`Evaluator`, `ResourceProfiler`, `error_taxonomy`, multi-seed runner)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -26,7 +26,7 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | Security (Argon2id auth, HMAC tokens, PII scrubber, audit chain) | **Tested** | Hard-coded demo password removed; uses `MEDRESEARCH_DEMO_PASSWORD` env var |
 | Output contract (`extraction/contract.py`) | **Implemented** | Pydantic v2 single-source-of-truth + JSON Schema export planned in Phase 6 |
 | Annotated EN/FR corpus (`>= 300 EN + >= 300 FR`) | **Tested (`SYNTH-MED-V2`, 800 synthetic docs: 400 EN + 400 FR)** | `medextract data build --config configs/data/v1.yaml`; 70/15/15 patient-stratified splits (`555/124/121`), MinHash leakage check passed; BRAT & Label Studio converters ready; real clinical corpora (`n2c2`, `DEFT/CAS`) require DUA/agreement |
-| Evaluation harness (CI, McNemar, error taxonomy, profiler) | **Planned** | Phase 2 |
+| Evaluation harness (CI, McNemar, error taxonomy, profiler) | **Tested** | `medresearch_platform/eval_harness/`; hand-made unit tests + `medextract experiment run configs/exp/dummy.yaml --seeds 1,2,3` (`Strict F1: 0.5249 ± 0.0000` on `SYNTH-MED-V2` val) |
 | 5 Single Approaches (Rule, TF-IDF+ML/CRF, BiLSTM, BiLSTM-CRF, Transformer) | **Evaluated on `SYNTH-MED-EN-FR`, 4 docs** | BiLSTM & Transformer currently F1 = 0.00; FR F1 = 0.00; PyTorch rebuild in Phase 3 |
 | 5-Stage Hybrid Pipeline | **Planned** | Current `HybridMultimodalExtractor` is a weighted vote (F1 = 0.60 on 1 test doc); Phase 4 |
 | FastAPI backend + SQLite jobs | **Planned** | Currently Starlette prototype; Phase 6 |
