@@ -1,0 +1,23 @@
+dataset_name: SYNTH-MED-V2
+version: "1.0.0"
+seed: 42
+output_dir: data/processed/v1
+languages:
+  en: 400
+  fr: 400
+splits:
+  train: 0.70
+  val: 0.15
+  test: 0.15
+leakage_check:
+  minhash_threshold: 0.85
+  num_perm: 64
+  shingle_size: 5
+render_samples:
+  enabled: true
+  count_per_language: 6
+  formats:
+    - pdf
+    - docx
+    - degraded_scan
+  typo_rate: 0.08

@@ -18,8 +18,12 @@ node_modules/
 frontend/dist/
 npm-debug.log*
 
-# Runtime data & local databases
+# Runtime data, raw/processed datasets, trained weights & local databases
 var/
+data/raw/
+data/processed/
+models/
+experiments/runs/
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm
