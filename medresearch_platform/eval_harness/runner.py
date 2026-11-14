@@ -83,7 +83,7 @@ def _dummy_predictor(
                 doc_id=d.doc_id,
                 language=d.language,
                 doc_type=d.doc_type,
-                predicted_doc_type=d.doc_type,
+                predicted_doc_type=None,
                 entities=ents,
             )
         )

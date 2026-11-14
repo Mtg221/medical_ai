@@ -34,9 +34,11 @@ jobs:
         run: ruff check medresearch_platform tests scripts
       - name: Type check with mypy
         run: mypy medresearch_platform
-      - name: Build & audit SYNTH-MED-V3 corpus
+      - name: Build & audit SYNTH-MED-V3 / V3.1 corpus
         run: |
           medextract data build --config configs/data/v3.yaml
           python scripts/audit_corpus.py --data-dir data/processed/v3 --fail-on-doubled
+          medextract data build --config configs/data/v3_1.yaml
+          python scripts/audit_corpus.py --data-dir data/processed/v3_1 --fail-on-doubled
       - name: Run pytest with coverage
         run: pytest --cov=medresearch_platform --cov-report=term-missing

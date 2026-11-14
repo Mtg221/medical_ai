@@ -76,11 +76,12 @@ def build_corpus_from_config(config_path: Path) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     generator_ver = str(cfg.get("generator", "v2"))
-    if generator_ver == "v3":
+    if generator_ver in {"v3", "v3_1"}:
         v3_counts = {str(k): int(v) for k, v in cfg.get("v3_splits_per_language", {}).items()}
         docs = generate_v3_flat_list(
             split_counts_per_lang=v3_counts or None,
             seed=seed,
+            version=generator_ver,
         )
         split_names = sorted({d.split for d in docs if d.split})
     else:

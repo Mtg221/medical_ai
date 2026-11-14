@@ -568,11 +568,34 @@ def _train_and_predict_neural(
 
     model.params = best_params
 
+    # Train-only document type classifier (never reads eval doc.doc_type)
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.svm import LinearSVC
+
+    train_dtypes = [d.doc_type for d in train_docs]
+    if len(set(train_dtypes)) >= 2:
+        doc_vec = TfidfVectorizer(ngram_range=(1, 2), max_features=3000, sublinear_tf=True)
+        x_doc_tr = doc_vec.fit_transform([d.text for d in train_docs])
+        x_doc_tr.indices = x_doc_tr.indices.astype(np.int32, copy=False)
+        x_doc_tr.indptr = x_doc_tr.indptr.astype(np.int32, copy=False)
+        doc_clf = LinearSVC(random_state=seed, class_weight="balanced").fit(x_doc_tr, train_dtypes)
+        x_doc_ev = doc_vec.transform([d.text for d in eval_docs])
+        x_doc_ev.indices = x_doc_ev.indices.astype(np.int32, copy=False)
+        x_doc_ev.indptr = x_doc_ev.indptr.astype(np.int32, copy=False)
+        eval_doc_preds = [str(p) for p in doc_clf.predict(x_doc_ev)]
+    else:
+        fallback_dt = train_dtypes[0] if train_dtypes else "discharge_summary"
+        eval_doc_preds = [fallback_dt for _ in eval_docs]
+
     preds: list[DocumentPrediction] = []
-    for d in eval_docs:
+    for d, pred_doc_type in zip(eval_docs, eval_doc_preds, strict=True):
         toks = tokenize_with_offsets(d.text)
         if not toks:
-            preds.append(DocumentPrediction(d.doc_id, d.language, d.doc_type))
+            preds.append(
+                DocumentPrediction(
+                    d.doc_id, d.language, d.doc_type, predicted_doc_type=pred_doc_type
+                )
+            )
             continue
         w_ids = np.array([vocab.encode_token(t.text) for t in toks], dtype=np.int64)
         c_feats = _ortho_features(toks)
@@ -584,7 +607,7 @@ def _train_and_predict_neural(
                 doc_id=d.doc_id,
                 language=d.language,
                 doc_type=d.doc_type,
-                predicted_doc_type=d.doc_type,
+                predicted_doc_type=pred_doc_type,
                 entities=enriched,
                 relations=relations,
                 timex=timex,

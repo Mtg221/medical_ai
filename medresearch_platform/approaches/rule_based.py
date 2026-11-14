@@ -86,6 +86,104 @@ def _build_lexicon_patterns() -> list[tuple[str, str, re.Pattern[str], float]]:
 _LEXICON_PATTERNS = _build_lexicon_patterns()
 
 
+_DOC_TYPE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "discharge_summary",
+        (
+            "discharge summary",
+            "hospital discharge",
+            "hospital course",
+            "discharge medications",
+            "compte rendu d'hospitalisation",
+            "lettre de sortie",
+            "synthèse d'hospitalisation",
+            "traitement de sortie",
+            "bilan de sortie",
+        ),
+    ),
+    (
+        "lab_report",
+        (
+            "laboratory results",
+            "biochemistry panel",
+            "hematology & chemistry",
+            "laboratory panel",
+            "biologie médicale",
+            "bilan biologique",
+            "résultats de laboratoire",
+            "résultats biologiques",
+            "interprétation biologique",
+        ),
+    ),
+    (
+        "prescription",
+        (
+            "medical prescription",
+            "medication order",
+            "pharmacy prescription",
+            "prescribed medications",
+            "ordonnance médicale",
+            "prescription médicamenteuse",
+            "ordonnance de sortie",
+            "traitement prescrit",
+        ),
+    ),
+    (
+        "radiology_report",
+        (
+            "radiology imaging",
+            "diagnostic imaging",
+            "radiology findings",
+            "radiologist recommendation",
+            "imagerie médicale",
+            "rapport de radiologie",
+            "interprétation radiologique",
+            "résultats radiologiques",
+        ),
+    ),
+    (
+        "operative_note",
+        (
+            "operative procedure",
+            "surgical intervention",
+            "post-operative summary",
+            "operating room",
+            "operative findings",
+            "compte rendu opératoire",
+            "intervention chirurgicale",
+            "protocole opératoire",
+            "geste opératoire",
+        ),
+    ),
+    (
+        "consultation",
+        (
+            "outpatient consultation",
+            "specialist consultation",
+            "ambulatory clinic",
+            "follow-up consultation",
+            "reason for consultation",
+            "compte rendu de consultation",
+            "avis spécialisé",
+            "consultation externe",
+            "motif de consultation",
+        ),
+    ),
+)
+
+
+def _predict_doc_type_rules(text: str) -> str:
+    lowered = text.lower()
+    best_type = "discharge_summary"
+    best_hits = 0
+    for dtype, keywords in _DOC_TYPE_RULES:
+        hits = sum(1 for kw in keywords if kw in lowered)
+        if hits > best_hits:
+            best_hits = hits
+            best_type = dtype
+    return best_type
+
+
 def predict_rule_based(
     train_docs: list[AnnotatedDocument],
     eval_docs: list[AnnotatedDocument],
@@ -127,7 +225,7 @@ def predict_rule_based(
                 doc_id=doc.doc_id,
                 language=doc.language,
                 doc_type=doc.doc_type,
-                predicted_doc_type=doc.doc_type,
+                predicted_doc_type=_predict_doc_type_rules(doc.text),
                 entities=enriched,
                 relations=relations,
                 timex=timex,

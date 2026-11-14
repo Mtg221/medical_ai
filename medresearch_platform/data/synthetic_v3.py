@@ -298,6 +298,253 @@ def _render_template(
         b.add_text(pattern[pos:])
 
 
+_V3_1_HEADERS: dict[str, dict[str, tuple[str, ...]]] = {
+    "discharge_summary": {
+        "en": (
+            "DISCHARGE SUMMARY",
+            "HOSPITAL DISCHARGE REPORT",
+            "INPATIENT DISCHARGE NOTE",
+            "SUMMARY OF HOSPITALIZATION",
+        ),
+        "fr": (
+            "COMPTE RENDU D'HOSPITALISATION",
+            "LETTRE DE SORTIE",
+            "SYNTHÈSE D'HOSPITALISATION",
+            "BILAN DE SORTIE",
+        ),
+    },
+    "consultation": {
+        "en": (
+            "OUTPATIENT CONSULTATION NOTE",
+            "SPECIALIST CONSULTATION",
+            "AMBULATORY CLINIC VISIT",
+            "FOLLOW-UP CONSULTATION",
+        ),
+        "fr": (
+            "COMPTE RENDU DE CONSULTATION",
+            "AVIS SPÉCIALISÉ",
+            "CONSULTATION EXTERNE",
+            "SUIVI AMBULATOIRE",
+        ),
+    },
+    "lab_report": {
+        "en": (
+            "LABORATORY RESULTS REPORT",
+            "CLINICAL BIOCHEMISTRY PANEL",
+            "HEMATOLOGY & CHEMISTRY REPORT",
+            "DIAGNOSTIC LAB SUMMARY",
+        ),
+        "fr": (
+            "COMPTE RENDU DE BIOLOGIE MÉDICALE",
+            "BILAN BIOLOGIQUE",
+            "RÉSULTATS DE LABORATOIRE",
+            "ANALYSES HÉMATOLOGIQUES ET BIOCHIMIQUES",
+        ),
+    },
+    "prescription": {
+        "en": (
+            "MEDICAL PRESCRIPTION",
+            "OUTPATIENT MEDICATION ORDER",
+            "PHARMACY PRESCRIPTION",
+            "TREATMENT ORDER",
+        ),
+        "fr": (
+            "ORDONNANCE MÉDICALE",
+            "PRESCRIPTION MÉDICAMENTEUSE",
+            "ORDONNANCE DE SORTIE",
+            "TRAITEMENT PRESCRIT",
+        ),
+    },
+    "radiology_report": {
+        "en": (
+            "RADIOLOGY IMAGING REPORT",
+            "DIAGNOSTIC IMAGING STUDY",
+            "CT / MRI RADIOLOGY NOTE",
+            "MEDICAL IMAGING INTERPRETATION",
+        ),
+        "fr": (
+            "COMPTE RENDU D'IMAGERIE MÉDICALE",
+            "RAPPORT DE RADIOLOGIE",
+            "EXAMEN TOMODENSITOMÉTRIQUE / IRM",
+            "INTERPRÉTATION RADIOLOGIQUE",
+        ),
+    },
+    "operative_note": {
+        "en": (
+            "OPERATIVE PROCEDURE NOTE",
+            "SURGICAL INTERVENTION REPORT",
+            "POST-OPERATIVE SUMMARY",
+            "OPERATING ROOM RECORD",
+        ),
+        "fr": (
+            "COMPTE RENDU OPÉRATOIRE",
+            "RAPPORT D'INTERVENTION CHIRURGICALE",
+            "NOTE POST-OPÉRATOIRE",
+            "PROTOCOLE OPÉRATOIRE",
+        ),
+    },
+}
+
+_V3_1_AMBIGUOUS_HEADERS: dict[str, tuple[str, ...]] = {
+    "en": ("CLINICAL RECORD", "MEDICAL REPORT", "DIAGNOSTIC NOTE"),
+    "fr": ("DOSSIER CLINIQUE", "RAPPORT MÉDICAL", "NOTE DIAGNOSTIQUE"),
+}
+
+_V3_1_SECTION_LABELS: dict[str, dict[str, dict[str, str]]] = {
+    "discharge_summary": {
+        "en": {
+            "chief_complaint": "ADMISSION REASON:",
+            "history": "PAST MEDICAL HISTORY:",
+            "hpi": "HOSPITAL COURSE:",
+            "labs": "DISCHARGE LABS:",
+            "medications": "DISCHARGE MEDICATIONS:",
+            "assessment": "DISCHARGE DIAGNOSES:",
+            "plan": "DISCHARGE PLAN:",
+        },
+        "fr": {
+            "chief_complaint": "MOTIF D'HOSPITALISATION :",
+            "history": "ANTÉCÉDENTS :",
+            "hpi": "ÉVOLUTION EN HOSPITALISATION :",
+            "labs": "BIOLOGIE DE SORTIE :",
+            "medications": "TRAITEMENT DE SORTIE :",
+            "assessment": "DIAGNOSTICS DE SORTIE :",
+            "plan": "CONDUITE À TENIR À LA SORTIE :",
+        },
+    },
+    "consultation": {
+        "en": {
+            "chief_complaint": "REASON FOR CONSULTATION:",
+            "history": "MEDICAL HISTORY:",
+            "hpi": "CLINICAL EXAMINATION:",
+            "medications": "CURRENT MEDICATIONS:",
+            "assessment": "CLINICAL ASSESSMENT:",
+            "plan": "FOLLOW-UP PLAN:",
+        },
+        "fr": {
+            "chief_complaint": "MOTIF DE CONSULTATION :",
+            "history": "ANTÉCÉDENTS :",
+            "hpi": "EXAMEN CLINIQUE :",
+            "medications": "TRAITEMENT EN COURS :",
+            "assessment": "AVIS ET DIAGNOSTIC :",
+            "plan": "SUIVI PROPOSÉ :",
+        },
+    },
+    "lab_report": {
+        "en": {"labs": "LABORATORY PANEL RESULTS:", "assessment": "BIOLOGICAL INTERPRETATION:"},
+        "fr": {"labs": "RÉSULTATS BIOLOGIQUES :", "assessment": "INTERPRÉTATION BIOLOGIQUE :"},
+    },
+    "prescription": {
+        "en": {"medications": "PRESCRIBED MEDICATIONS (RX):", "plan": "PHARMACY INSTRUCTIONS:"},
+        "fr": {"medications": "PRESCRIPTION MÉDICAMENTEUSE (RP) :", "plan": "CONSIGNES DE DÉLIVRANCE :"},
+    },
+    "radiology_report": {
+        "en": {
+            "chief_complaint": "IMAGING INDICATION & TECHNIQUE:",
+            "assessment": "RADIOLOGY FINDINGS & IMPRESSION:",
+            "plan": "RADIOLOGIST RECOMMENDATION:",
+        },
+        "fr": {
+            "chief_complaint": "INDICATION ET TECHNIQUE D'IMAGERIE :",
+            "assessment": "RÉSULTATS RADIOLOGIQUES ET CONCLUSION :",
+            "plan": "RECOMMANDATION RADIOLOGIQUE :",
+        },
+    },
+    "operative_note": {
+        "en": {
+            "chief_complaint": "PREOPERATIVE INDICATION:",
+            "hpi": "OPERATIVE FINDINGS:",
+            "assessment": "PROCEDURE PERFORMED & COMPLICATIONS:",
+            "plan": "POSTOPERATIVE ORDERS:",
+        },
+        "fr": {
+            "chief_complaint": "INDICATION OPÉRATOIRE :",
+            "hpi": "CONSTATATIONS PER-OPÉRATOIRES :",
+            "assessment": "GESTE OPÉRATOIRE ET SUITES :",
+            "plan": "CONSIGNES POST-OPÉRATOIRES :",
+        },
+    },
+}
+
+
+def _add_v3_1_header(
+    b: _DocBuilder,
+    *,
+    doc_type: str,
+    language: str,
+    patient_id: str,
+    doc_date: date,
+    rng: random.Random,
+) -> None:
+    if rng.random() < 0.12:
+        title = rng.choice(_V3_1_AMBIGUOUS_HEADERS[language])
+    else:
+        title = rng.choice(_V3_1_HEADERS[doc_type][language])
+    date_txt, date_norm = _format_date_with_norm(doc_date, language, rng)
+    b.add_text(f"{title} — Patient ")
+    b.add_entity(patient_id, etype="PATIENT_ID", assertion="present")
+    b.add_text(" — Date: " if language == "en" else " — Date : ")
+    b.add_entity_with_timex(
+        date_txt,
+        etype="DATE",
+        ttype="DATE",
+        normalized=date_norm,
+        assertion="present",
+    )
+
+
+def _v3_1_sections_for_doc_type(doc_type: str, rng: random.Random) -> list[tuple[str, int]]:
+    """Return [(section_name, n_sentences), ...] tailored to each document type."""
+    if doc_type == "discharge_summary":
+        secs: list[tuple[str, int]] = [
+            ("chief_complaint", 1),
+            ("history", 1),
+            ("hpi", rng.choice([2, 3])),
+            ("labs", rng.choice([1, 2])),
+            ("medications", rng.choice([2, 3])),
+            ("assessment", rng.choice([1, 2])),
+            ("plan", rng.choice([1, 2])),
+        ]
+        if rng.random() < 0.3:
+            mid = secs[1:-1]
+            rng.shuffle(mid)
+            secs = [secs[0]] + mid + [secs[-1]]
+        return secs
+    if doc_type == "consultation":
+        secs = [
+            ("chief_complaint", 1),
+            ("history", 1),
+            ("hpi", rng.choice([1, 2])),
+            ("assessment", rng.choice([1, 2])),
+            ("plan", 1),
+        ]
+        if rng.random() < 0.35:
+            secs.insert(3, ("medications", 1))
+        return secs
+    if doc_type == "lab_report":
+        secs = [("labs", rng.choice([3, 4, 5]))]
+        if rng.random() < 0.4:
+            secs.append(("assessment", 1))
+        return secs
+    if doc_type == "prescription":
+        secs = [("medications", rng.choice([3, 4, 5]))]
+        if rng.random() < 0.4:
+            secs.append(("plan", 1))
+        return secs
+    if doc_type == "radiology_report":
+        return [
+            ("chief_complaint", 1),
+            ("assessment", rng.choice([2, 3])),
+            ("plan", 1),
+        ]
+    # operative_note
+    return [
+        ("chief_complaint", 1),
+        ("hpi", rng.choice([1, 2])),
+        ("assessment", rng.choice([2, 3])),
+        ("plan", 1),
+    ]
+
+
 def _generate_v3_document(
     *,
     doc_id: str,
@@ -308,9 +555,46 @@ def _generate_v3_document(
     pool: _LexiconPool,
     tpl_map: dict[tuple[str, str], list[TemplateSpec]],
     rng: random.Random,
+    version: str = "v3",
 ) -> AnnotatedDocument:
     b = _DocBuilder()
     doc_date = date(2025, 1, 1) + timedelta(days=rng.randint(0, 480))
+
+    if version == "v3_1":
+        _add_v3_1_header(
+            b,
+            doc_type=doc_type,
+            language=language,
+            patient_id=patient_id,
+            doc_date=doc_date,
+            rng=rng,
+        )
+        labels_map = _V3_1_SECTION_LABELS[doc_type][language]
+        for sec, n_sents in _v3_1_sections_for_doc_type(doc_type, rng):
+            b.add_text("\n\n" if rng.random() < 0.7 else "\n")
+            label = labels_map.get(sec)
+            if label:
+                b.add_text(f"{label} ")
+            candidates = tpl_map[(language, sec)]
+            chosen_tpls = rng.sample(candidates, k=min(n_sents, len(candidates)))
+            for s_i, tpl in enumerate(chosen_tpls):
+                if s_i > 0:
+                    b.add_text("\n" if sec in {"medications", "labs"} else " ")
+                _render_template(b, tpl.pattern, pool, language, patient_id, doc_date, rng)
+        return AnnotatedDocument(
+            doc_id=doc_id,
+            patient_id=patient_id,
+            language=language,
+            doc_type=doc_type,
+            document_date=doc_date.isoformat(),
+            source="synthetic_v3_1",
+            text=b.build_text(),
+            entities=b.entities,
+            relations=b.relations,
+            timex=b.timex,
+            split=split_name,
+            metadata={"doc_date": doc_date.isoformat(), "generator": "v3_1"},
+        )
 
     # Pick structure: short note (missing optional sections) vs standard vs long multi-sentence note
     length_mode = rng.choices(["short", "standard", "long"], weights=[0.25, 0.50, 0.25])[0]
@@ -357,8 +641,9 @@ def generate_v3_corpus_splits(
     *,
     split_counts_per_lang: dict[str, int] | None = None,
     seed: int = 42,
+    version: str = "v3",
 ) -> dict[str, list[AnnotatedDocument]]:
-    """Generate SYNTH-MED-V3 splits: train, val, test_iid, test_unseen_terms, test_unseen_templates."""
+    """Generate SYNTH-MED-V3 / V3.1 splits: train, val, test_iid, test_unseen_terms, test_unseen_templates."""
     counts = split_counts_per_lang or {
         "train": 300,
         "val": 80,
@@ -391,7 +676,7 @@ def generate_v3_corpus_splits(
             for i in range(1, n_per_lang + 1):
                 patient_counter += 1
                 pid = f"PAT-{lang.upper()}-{patient_counter:05d}"
-                doc_id = f"v3_{split_name}_{lang}_{i:04d}"
+                doc_id = f"{version}_{split_name}_{lang}_{i:04d}"
                 doc_type = DOC_TYPES[(i - 1) % len(DOC_TYPES)]
                 docs.append(
                     _generate_v3_document(
@@ -403,6 +688,7 @@ def generate_v3_corpus_splits(
                         pool=pool,
                         tpl_map=tpl_map,
                         rng=rng,
+                        version=version,
                     )
                 )
         out[split_name] = docs
@@ -414,8 +700,9 @@ def generate_v3_flat_list(
     *,
     split_counts_per_lang: dict[str, int] | None = None,
     seed: int = 42,
+    version: str = "v3",
 ) -> list[AnnotatedDocument]:
-    splits = generate_v3_corpus_splits(split_counts_per_lang=split_counts_per_lang, seed=seed)
+    splits = generate_v3_corpus_splits(split_counts_per_lang=split_counts_per_lang, seed=seed, version=version)
     flat: list[AnnotatedDocument] = []
     for docs in splits.values():
         flat.extend(docs)

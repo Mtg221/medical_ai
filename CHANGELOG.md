@@ -66,3 +66,11 @@
 ### Step 9 — Honest Research Report & Final Phase 11 Status (2026-11-14)
 - Rewrote `docs/RESEARCH_REPORT.md` from committed `SYNTH-MED-V3` JSON outputs (`v3_locked_test_evaluation.json`, `v3_val_ablation.json`, `ocr_stress_benchmark.json`), reporting all Strict/Lenient NER F1, EN/FR F1, Assertion Macro-F1, Relation F1, TIMEX F1/normalization, paired significance, OCR stress metrics, and honest limitations.
 - Finalized `PROJECT_STATUS.md` with Phase 11 complete.
+
+## [Unreleased] — Phase 11B ("Finish Phase 11 properly")
+
+### 11B Step 1 — Fix Document-Type Labels (G1) & Remove Gold `doc_type` Copying (G2) (2026-11-14)
+- Added `tests/test_hidden_doc_type_and_learnability.py` first: verified `dummy`, `rule_based`, `bilstm`, `bilstm_crf`, and `transformer` leaked `__hidden__` before fixing.
+- Added `SYNTH-MED-V3.1` (`configs/data/v3_1.yaml`, `version="v3_1"` in `medresearch_platform/data/synthetic_v3.py`, wired in `builder.py`): each of the 6 `DOC_TYPES` now has its own EN/FR header pool (with 12% ambiguous headers), section set, section order, and section labels. Audited `data/processed/v3_1`: `0` doubled docs, `100.00%` offset/relation integrity, `0.0%` unseen clinical term overlap on `test_unseen_terms`, `6.4%` masked sentence overlap on `test_unseen_templates`.
+- Removed `predicted_doc_type=d.doc_type` from `medresearch_platform/eval_harness/runner.py` (`_dummy_predictor` returns `None`), `medresearch_platform/approaches/rule_based.py` (added `_predict_doc_type_rules`), and `medresearch_platform/approaches/neural_seq.py` (added train-only TF-IDF + `LinearSVC` document classifier).
+- Verified all 9 tests in `tests/test_hidden_doc_type_and_learnability.py` pass (`21.52s`) and all 7 approaches achieve `1.0000` doc-type accuracy on `SYNTH-MED-V3.1` `val` (160 docs).

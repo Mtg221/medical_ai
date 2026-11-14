@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11 — complete (F1–F9 resolved; `SYNTH-MED-V3` audited, evaluated across `val` and locked test splits, and documented in `docs/RESEARCH_REPORT.md`)
+**Active Phase:** Phase 11B — Step 1 complete (`SYNTH-MED-V3.1` learnable `doc_type` labels G1 + hidden-label invariance G2); Step 2 (equal 600-doc training budget G3 + learning curves) next
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
