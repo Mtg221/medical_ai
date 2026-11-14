@@ -177,6 +177,120 @@ def _lstm_backward_seq(
     return dx, dw_x, dw_h, db
 
 
+def _layernorm_forward(
+    x: np.ndarray, gamma: np.ndarray, beta: np.ndarray, eps: float = 1e-5
+) -> tuple[np.ndarray, dict[str, Any]]:
+    mean = np.mean(x, axis=-1, keepdims=True)
+    var = np.var(x, axis=-1, keepdims=True)
+    inv_std = 1.0 / np.sqrt(var + eps)
+    x_hat = (x - mean) * inv_std
+    out = x_hat * gamma + beta
+    return out, {"x_hat": x_hat, "inv_std": inv_std, "gamma": gamma}
+
+
+def _layernorm_backward(
+    dout: np.ndarray, cache: dict[str, Any]
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    x_hat = cache["x_hat"]
+    inv_std = cache["inv_std"]
+    gamma = cache["gamma"]
+    dgamma = np.sum(dout * x_hat, axis=0)
+    dbeta = np.sum(dout, axis=0)
+    dx_hat = dout * gamma
+    d_dim = float(dout.shape[-1])
+    dx = (
+        inv_std
+        / d_dim
+        * (
+            d_dim * dx_hat
+            - np.sum(dx_hat, axis=-1, keepdims=True)
+            - x_hat * np.sum(dx_hat * x_hat, axis=-1, keepdims=True)
+        )
+    )
+    return dx, dgamma, dbeta
+
+
+class TrainOnlyBPETokenizer:
+    """Sub-word BPE tokenizer learned strictly on train_docs without external vocabularies."""
+
+    def __init__(self, num_merges: int = 256) -> None:
+        self.num_merges = num_merges
+        self.merges: list[tuple[str, str]] = []
+        self.sym_to_id: dict[str, int] = {"<PAD>": 0, "<UNK>": 1}
+
+    def fit(self, train_docs: list[AnnotatedDocument]) -> TrainOnlyBPETokenizer:
+        from collections import Counter
+
+        word_counts: Counter[tuple[str, ...]] = Counter()
+        chars: set[str] = set()
+        for doc in train_docs:
+            for tok in tokenize_with_offsets(doc.text):
+                w = tok.text.lower()
+                if not w:
+                    continue
+                chars.update(w)
+                word_counts[tuple(w) + ("</w>",)] += 1
+
+        for ch in sorted(chars):
+            if ch not in self.sym_to_id:
+                self.sym_to_id[ch] = len(self.sym_to_id)
+        if "</w>" not in self.sym_to_id:
+            self.sym_to_id["</w>"] = len(self.sym_to_id)
+
+        vocab_words = dict(word_counts)
+        for _ in range(self.num_merges):
+            pair_counts: Counter[tuple[str, str]] = Counter()
+            for syms, freq in vocab_words.items():
+                for i in range(len(syms) - 1):
+                    pair_counts[(syms[i], syms[i + 1])] += freq
+            if not pair_counts:
+                break
+            best_pair, best_freq = pair_counts.most_common(1)[0]
+            if best_freq < 2:
+                break
+            self.merges.append(best_pair)
+            merged = best_pair[0] + best_pair[1]
+            if merged not in self.sym_to_id:
+                self.sym_to_id[merged] = len(self.sym_to_id)
+            new_vocab: dict[tuple[str, ...], int] = {}
+            a, b = best_pair
+            for syms, freq in vocab_words.items():
+                out_syms: list[str] = []
+                i = 0
+                while i < len(syms):
+                    if i < len(syms) - 1 and syms[i] == a and syms[i + 1] == b:
+                        out_syms.append(merged)
+                        i += 2
+                    else:
+                        out_syms.append(syms[i])
+                        i += 1
+                new_vocab[tuple(out_syms)] = freq
+            vocab_words = new_vocab
+        return self
+
+    def encode_token_subwords(self, text: str) -> list[int]:
+        w = text.lower()
+        if not w:
+            return [1]
+        syms = list(w) + ["</w>"]
+        for a, b in self.merges:
+            merged = a + b
+            i = 0
+            nxt: list[str] = []
+            while i < len(syms):
+                if i < len(syms) - 1 and syms[i] == a and syms[i + 1] == b:
+                    nxt.append(merged)
+                    i += 2
+                else:
+                    nxt.append(syms[i])
+                    i += 1
+            syms = nxt
+        return [self.sym_to_id.get(s, 1) for s in syms]
+
+    def __len__(self) -> int:
+        return len(self.sym_to_id)
+
+
 class NeuralBiLSTMTagger:
     """Random-initialized PyTorch-style BiLSTM sequence tagger implemented in NumPy."""
 
@@ -205,14 +319,13 @@ class NeuralBiLSTMTagger:
         logits = h @ self.params["W_out"] + self.params["b_out"]
         return logits, {"w_ids": w_ids, "h": h, "cf": cf, "cb": cb, "h_dim": hf.shape[1]}
 
-    def step_sequence(
+    def loss_and_grads(
         self,
         w_ids: np.ndarray,
         c_feats: np.ndarray,
         y_ids: np.ndarray,
         class_weights: np.ndarray,
-        opt: _AdamW,
-    ) -> float:
+    ) -> tuple[float, dict[str, np.ndarray]]:
         logits, cache = self.forward_logits(w_ids, c_feats)
         probs = _softmax(logits)
         n = len(y_ids)
@@ -237,6 +350,17 @@ class NeuralBiLSTMTagger:
         )
         dx = dx_f + dx_b
         np.add.at(grads["E"], w_ids, dx[:, : self.emb_dim])
+        return loss, grads
+
+    def step_sequence(
+        self,
+        w_ids: np.ndarray,
+        c_feats: np.ndarray,
+        y_ids: np.ndarray,
+        class_weights: np.ndarray,
+        opt: _AdamW,
+    ) -> float:
+        loss, grads = self.loss_and_grads(w_ids, c_feats, y_ids, class_weights)
         opt.step(self.params, grads)
         return loss
 
@@ -278,14 +402,13 @@ class NeuralBiLSTMCRFTagger(NeuralBiLSTMTagger):
         best.reverse()
         return best
 
-    def step_sequence(
+    def loss_and_grads(
         self,
         w_ids: np.ndarray,
         c_feats: np.ndarray,
         y_ids: np.ndarray,
         class_weights: np.ndarray,
-        opt: _AdamW,
-    ) -> float:
+    ) -> tuple[float, dict[str, np.ndarray]]:
         emit, cache = self.forward_logits(w_ids, c_feats)
         seq_len = emit.shape[0]
         trans = self.params["T"]
@@ -339,6 +462,17 @@ class NeuralBiLSTMCRFTagger(NeuralBiLSTMTagger):
             dh[:, hd:], cache["cb"], self.params["Wb_x"], self.params["Wb_h"], reverse=True
         )
         np.add.at(grads["E"], w_ids, (dx_f + dx_b)[:, : self.emb_dim])
+        return nll, grads
+
+    def step_sequence(
+        self,
+        w_ids: np.ndarray,
+        c_feats: np.ndarray,
+        y_ids: np.ndarray,
+        class_weights: np.ndarray,
+        opt: _AdamW,
+    ) -> float:
+        nll, grads = self.loss_and_grads(w_ids, c_feats, y_ids, class_weights)
         opt.step(self.params, grads)
         return nll
 
@@ -350,13 +484,30 @@ class NeuralBiLSTMCRFTagger(NeuralBiLSTMTagger):
 
 
 class NeuralTransformerTagger:
-    """Random-initialized single-block Transformer encoder (self-attention + FFN) in NumPy."""
+    """Stacked Pre-LayerNorm Multi-Head Transformer encoder (with BPE + char features) in NumPy."""
 
-    def __init__(self, vocab_size: int, *, d_model: int = 32, max_len: int = 256, seed: int = 42) -> None:
+    def __init__(
+        self,
+        vocab_size: int,
+        *,
+        d_model: int = 32,
+        num_layers: int = 2,
+        num_heads: int = 4,
+        bpe_vocab_size: int = 0,
+        max_len: int = 256,
+        seed: int = 42,
+    ) -> None:
+        if d_model % num_heads != 0:
+            raise ValueError(f"d_model ({d_model}) must be divisible by num_heads ({num_heads})")
         rng = np.random.default_rng(seed)
-        in_dim = d_model + CHAR_FEAT_DIM
         self.d_model = d_model
+        self.num_layers = num_layers
+        self.num_heads = num_heads
+        self.head_dim = d_model // num_heads
+        self.bpe_vocab_size = bpe_vocab_size
         self.max_len = max_len
+
+        in_dim = d_model + (d_model if bpe_vocab_size > 0 else 0) + CHAR_FEAT_DIM
         pos = np.zeros((max_len, d_model), dtype=np.float64)
         positions = np.arange(max_len)[:, None]
         div = np.exp(np.arange(0, d_model, 2) * (-np.log(10000.0) / d_model))
@@ -367,48 +518,216 @@ class NeuralTransformerTagger:
         self.params: dict[str, np.ndarray] = {
             "E": rng.normal(0.0, 0.1, size=(vocab_size, d_model)),
             "W_in": rng.normal(0.0, np.sqrt(1.0 / in_dim), size=(in_dim, d_model)),
-            "W_q": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, d_model)),
-            "W_k": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, d_model)),
-            "W_v": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, d_model)),
-            "W_ff1": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, 2 * d_model)),
-            "b_ff1": np.zeros(2 * d_model, dtype=np.float64),
-            "W_ff2": rng.normal(0.0, np.sqrt(1.0 / (2 * d_model)), size=(2 * d_model, d_model)),
-            "b_ff2": np.zeros(d_model, dtype=np.float64),
+            "b_in": np.zeros(d_model, dtype=np.float64),
+            "lnf_g": np.ones(d_model, dtype=np.float64),
+            "lnf_b": np.zeros(d_model, dtype=np.float64),
             "W_out": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, NUM_TAGS)),
             "b_out": np.zeros(NUM_TAGS, dtype=np.float64),
         }
+        if bpe_vocab_size > 0:
+            self.params["E_bpe"] = rng.normal(0.0, 0.1, size=(bpe_vocab_size, d_model))
 
-    def forward_logits(self, w_ids: np.ndarray, c_feats: np.ndarray) -> tuple[np.ndarray, dict[str, Any]]:
+        for layer_idx in range(num_layers):
+            p = f"L{layer_idx}_"
+            self.params.update(
+                {
+                    f"{p}ln1_g": np.ones(d_model, dtype=np.float64),
+                    f"{p}ln1_b": np.zeros(d_model, dtype=np.float64),
+                    f"{p}W_q": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, d_model)),
+                    f"{p}W_k": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, d_model)),
+                    f"{p}W_v": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, d_model)),
+                    f"{p}W_o": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, d_model)),
+                    f"{p}ln2_g": np.ones(d_model, dtype=np.float64),
+                    f"{p}ln2_b": np.zeros(d_model, dtype=np.float64),
+                    f"{p}W_ff1": rng.normal(0.0, np.sqrt(1.0 / d_model), size=(d_model, 2 * d_model)),
+                    f"{p}b_ff1": np.zeros(2 * d_model, dtype=np.float64),
+                    f"{p}W_ff2": rng.normal(0.0, np.sqrt(1.0 / (2 * d_model)), size=(2 * d_model, d_model)),
+                    f"{p}b_ff2": np.zeros(d_model, dtype=np.float64),
+                }
+            )
+
+    def forward_logits(
+        self,
+        w_ids: np.ndarray,
+        c_feats: np.ndarray,
+        bpe_ids: list[list[int]] | None = None,
+        valid_mask: np.ndarray | None = None,
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         n = min(len(w_ids), self.max_len)
         w_sl = w_ids[:n]
         c_sl = c_feats[:n]
-        x_raw = np.concatenate([self.params["E"][w_sl], c_sl], axis=1)
-        x = x_raw @ self.params["W_in"] + self.pos_enc[:n]
-        scale = np.sqrt(float(self.d_model))
-        q = x @ self.params["W_q"]
-        k = x @ self.params["W_k"]
-        v = x @ self.params["W_v"]
-        attn_scores = (q @ k.T) / scale
-        attn = _softmax(attn_scores)
-        h_attn = x + attn @ v
-        ff_pre = h_attn @ self.params["W_ff1"] + self.params["b_ff1"]
-        ff_act = np.maximum(0.0, ff_pre)
-        h_out = h_attn + ff_act @ self.params["W_ff2"] + self.params["b_ff2"]
-        logits = h_out @ self.params["W_out"] + self.params["b_out"]
+        parts = [self.params["E"][w_sl]]
+        bpe_sl: list[list[int]] = []
+        if self.bpe_vocab_size > 0:
+            if bpe_ids is not None:
+                bpe_sl = [ids if ids else [1] for ids in bpe_ids[:n]]
+            else:
+                bpe_sl = [[1] for _ in range(n)]
+            e_bpe = self.params["E_bpe"]
+            bpe_emb = np.vstack([np.mean(e_bpe[ids], axis=0) for ids in bpe_sl])
+            parts.append(bpe_emb)
+        parts.append(c_sl)
+
+        x_raw = np.concatenate(parts, axis=1)
+        h = x_raw @ self.params["W_in"] + self.params["b_in"] + self.pos_enc[:n]
+        scale = np.sqrt(float(self.head_dim))
+
+        mask_sl = valid_mask[:n] if valid_mask is not None else None
+        layer_caches: list[dict[str, Any]] = []
+        for layer_idx in range(self.num_layers):
+            p = f"L{layer_idx}_"
+            ln1, ln1_cache = _layernorm_forward(h, self.params[f"{p}ln1_g"], self.params[f"{p}ln1_b"])
+            q = ln1 @ self.params[f"{p}W_q"]
+            k = ln1 @ self.params[f"{p}W_k"]
+            v = ln1 @ self.params[f"{p}W_v"]
+
+            # Reshape (n, d_model) -> (num_heads, n, head_dim)
+            qh = q.reshape(n, self.num_heads, self.head_dim).transpose(1, 0, 2)
+            kh = k.reshape(n, self.num_heads, self.head_dim).transpose(1, 0, 2)
+            vh = v.reshape(n, self.num_heads, self.head_dim).transpose(1, 0, 2)
+
+            scores = (qh @ kh.transpose(0, 2, 1)) / scale  # (H, n, n)
+            if mask_sl is not None:
+                pad_bias = np.where(mask_sl[None, None, :] > 0.5, 0.0, -1e9)
+                scores = scores + pad_bias
+            attn = _softmax(scores)  # (H, n, n)
+            ctx_h = attn @ vh  # (H, n, head_dim)
+            ctx = ctx_h.transpose(1, 0, 2).reshape(n, self.d_model)
+            h1 = h + ctx @ self.params[f"{p}W_o"]
+
+            ln2, ln2_cache = _layernorm_forward(h1, self.params[f"{p}ln2_g"], self.params[f"{p}ln2_b"])
+            ff_pre = ln2 @ self.params[f"{p}W_ff1"] + self.params[f"{p}b_ff1"]
+            ff_act = np.maximum(0.0, ff_pre)
+            h2 = h1 + ff_act @ self.params[f"{p}W_ff2"] + self.params[f"{p}b_ff2"]
+
+            layer_caches.append(
+                {
+                    "ln1": ln1,
+                    "ln1_cache": ln1_cache,
+                    "qh": qh,
+                    "kh": kh,
+                    "vh": vh,
+                    "attn": attn,
+                    "ctx": ctx,
+                    "ln2": ln2,
+                    "ln2_cache": ln2_cache,
+                    "ff_pre": ff_pre,
+                    "ff_act": ff_act,
+                }
+            )
+            h = h2
+
+        h_final, lnf_cache = _layernorm_forward(h, self.params["lnf_g"], self.params["lnf_b"])
+        logits = h_final @ self.params["W_out"] + self.params["b_out"]
         return logits, {
             "w_sl": w_sl,
+            "bpe_sl": bpe_sl,
             "x_raw": x_raw,
-            "x": x,
-            "q": q,
-            "k": k,
-            "v": v,
-            "attn": attn,
-            "h_attn": h_attn,
-            "ff_pre": ff_pre,
-            "ff_act": ff_act,
-            "h_out": h_out,
+            "layer_caches": layer_caches,
+            "h_final": h_final,
+            "lnf_cache": lnf_cache,
             "scale": scale,
+            "n": n,
+            "mask_sl": mask_sl,
         }
+
+    def loss_and_grads(
+        self,
+        w_ids: np.ndarray,
+        c_feats: np.ndarray,
+        y_ids: np.ndarray,
+        class_weights: np.ndarray,
+        bpe_ids: list[list[int]] | None = None,
+        valid_mask: np.ndarray | None = None,
+    ) -> tuple[float, dict[str, np.ndarray]]:
+        logits, cache = self.forward_logits(w_ids, c_feats, bpe_ids=bpe_ids, valid_mask=valid_mask)
+        n = int(cache["n"])
+        y_sl = y_ids[:n]
+        probs = _softmax(logits)
+        cw = class_weights[y_sl]
+        if cache["mask_sl"] is not None:
+            m = cache["mask_sl"].astype(np.float64)
+            denom = max(float(np.sum(m)), 1.0)
+            loss = float(-np.sum(m * cw * np.log(np.maximum(probs[np.arange(n), y_sl], 1e-12))) / denom)
+            dlogits = probs.copy()
+            dlogits[np.arange(n), y_sl] -= 1.0
+            dlogits *= ((m * cw)[:, None] / denom)
+        else:
+            loss = float(-np.mean(cw * np.log(np.maximum(probs[np.arange(n), y_sl], 1e-12))))
+            dlogits = probs.copy()
+            dlogits[np.arange(n), y_sl] -= 1.0
+            dlogits *= (cw[:, None] / max(1, n))
+
+        grads: dict[str, np.ndarray] = {k: np.zeros_like(v) for k, v in self.params.items()}
+        grads["W_out"] = cache["h_final"].T @ dlogits
+        grads["b_out"] = np.sum(dlogits, axis=0)
+        dh_final = dlogits @ self.params["W_out"].T
+        dh, grads["lnf_g"], grads["lnf_b"] = _layernorm_backward(dh_final, cache["lnf_cache"])
+
+        scale = float(cache["scale"])
+        for layer_idx in range(self.num_layers - 1, -1, -1):
+            p = f"L{layer_idx}_"
+            lc = cache["layer_caches"][layer_idx]
+            dh2 = dh
+
+            # FFN residual branch
+            dff_act = dh2 @ self.params[f"{p}W_ff2"].T
+            grads[f"{p}W_ff2"] = lc["ff_act"].T @ dh2
+            grads[f"{p}b_ff2"] = np.sum(dh2, axis=0)
+
+            dff_pre = dff_act * (lc["ff_pre"] > 0.0)
+            grads[f"{p}W_ff1"] = lc["ln2"].T @ dff_pre
+            grads[f"{p}b_ff1"] = np.sum(dff_pre, axis=0)
+            dln2 = dff_pre @ self.params[f"{p}W_ff1"].T
+
+            dh1_from_ln2, grads[f"{p}ln2_g"], grads[f"{p}ln2_b"] = _layernorm_backward(
+                dln2, lc["ln2_cache"]
+            )
+            dh1 = dh2 + dh1_from_ln2
+
+            # MHA residual branch
+            dctx = dh1 @ self.params[f"{p}W_o"].T
+            grads[f"{p}W_o"] = lc["ctx"].T @ dh1
+            dctx_h = dctx.reshape(n, self.num_heads, self.head_dim).transpose(1, 0, 2)
+
+            d_attn = dctx_h @ lc["vh"].transpose(0, 2, 1)  # (H, n, n)
+            d_vh = lc["attn"].transpose(0, 2, 1) @ dctx_h  # (H, n, head_dim)
+
+            dot = np.sum(d_attn * lc["attn"], axis=-1, keepdims=True)
+            d_scores = lc["attn"] * (d_attn - dot) / scale
+            d_qh = d_scores @ lc["kh"]
+            d_kh = d_scores.transpose(0, 2, 1) @ lc["qh"]
+
+            dq = d_qh.transpose(1, 0, 2).reshape(n, self.d_model)
+            dk = d_kh.transpose(1, 0, 2).reshape(n, self.d_model)
+            dv = d_vh.transpose(1, 0, 2).reshape(n, self.d_model)
+
+            ln1 = lc["ln1"]
+            grads[f"{p}W_q"] = ln1.T @ dq
+            grads[f"{p}W_k"] = ln1.T @ dk
+            grads[f"{p}W_v"] = ln1.T @ dv
+            dln1 = (
+                dq @ self.params[f"{p}W_q"].T
+                + dk @ self.params[f"{p}W_k"].T
+                + dv @ self.params[f"{p}W_v"].T
+            )
+            dh_from_ln1, grads[f"{p}ln1_g"], grads[f"{p}ln1_b"] = _layernorm_backward(
+                dln1, lc["ln1_cache"]
+            )
+            dh = dh1 + dh_from_ln1
+
+        grads["W_in"] = cache["x_raw"].T @ dh
+        grads["b_in"] = np.sum(dh, axis=0)
+        dx_raw = dh @ self.params["W_in"].T
+        np.add.at(grads["E"], cache["w_sl"], dx_raw[:, : self.d_model])
+        if self.bpe_vocab_size > 0:
+            dbpe_tok = dx_raw[:, self.d_model : 2 * self.d_model]
+            e_bpe_grad = grads["E_bpe"]
+            for i, ids in enumerate(cache["bpe_sl"]):
+                share = dbpe_tok[i] / float(len(ids))
+                for sid in ids:
+                    e_bpe_grad[sid] += share
+        return loss, grads
 
     def step_sequence(
         self,
@@ -417,65 +736,35 @@ class NeuralTransformerTagger:
         y_ids: np.ndarray,
         class_weights: np.ndarray,
         opt: _AdamW,
+        bpe_ids: list[list[int]] | None = None,
+        valid_mask: np.ndarray | None = None,
     ) -> float:
-        logits, cache = self.forward_logits(w_ids, c_feats)
-        n = logits.shape[0]
-        y_sl = y_ids[:n]
-        probs = _softmax(logits)
-        cw = class_weights[y_sl]
-        loss = float(-np.mean(cw * np.log(np.maximum(probs[np.arange(n), y_sl], 1e-12))))
-
-        dlogits = probs.copy()
-        dlogits[np.arange(n), y_sl] -= 1.0
-        dlogits *= (cw[:, None] / max(1, n))
-
-        grads: dict[str, np.ndarray] = {k: np.zeros_like(v) for k, v in self.params.items()}
-        grads["W_out"] = cache["h_out"].T @ dlogits
-        grads["b_out"] = np.sum(dlogits, axis=0)
-
-        dh_out = dlogits @ self.params["W_out"].T
-        dff_act = dh_out @ self.params["W_ff2"].T
-        grads["W_ff2"] = cache["ff_act"].T @ dh_out
-        grads["b_ff2"] = np.sum(dh_out, axis=0)
-
-        dff_pre = dff_act * (cache["ff_pre"] > 0.0)
-        grads["W_ff1"] = cache["h_attn"].T @ dff_pre
-        grads["b_ff1"] = np.sum(dff_pre, axis=0)
-
-        dh_attn = dh_out + dff_pre @ self.params["W_ff1"].T
-        d_attn_v = dh_attn
-        d_attn = d_attn_v @ cache["v"].T
-        dv = cache["attn"].T @ dh_attn
-
-        # Softmax Jacobian per row
-        dot = np.sum(d_attn * cache["attn"], axis=-1, keepdims=True)
-        d_scores = cache["attn"] * (d_attn - dot) / cache["scale"]
-        dq = d_scores @ cache["k"]
-        dk = d_scores.T @ cache["q"]
-
-        x = cache["x"]
-        grads["W_q"] = x.T @ dq
-        grads["W_k"] = x.T @ dk
-        grads["W_v"] = x.T @ dv
-        dx = dh_attn + dq @ self.params["W_q"].T + dk @ self.params["W_k"].T + dv @ self.params["W_v"].T
-
-        grads["W_in"] = cache["x_raw"].T @ dx
-        dx_raw = dx @ self.params["W_in"].T
-        np.add.at(grads["E"], cache["w_sl"], dx_raw[:, : self.d_model])
+        loss, grads = self.loss_and_grads(
+            w_ids, c_feats, y_ids, class_weights, bpe_ids=bpe_ids, valid_mask=valid_mask
+        )
         opt.step(self.params, grads)
         return loss
 
-    def predict(self, w_ids: np.ndarray, c_feats: np.ndarray) -> tuple[list[str], list[float]]:
+    def predict(
+        self,
+        w_ids: np.ndarray,
+        c_feats: np.ndarray,
+        bpe_ids: list[list[int]] | None = None,
+    ) -> tuple[list[str], list[float]]:
         if len(w_ids) <= self.max_len:
-            logits, _ = self.forward_logits(w_ids, c_feats)
+            logits, _ = self.forward_logits(w_ids, c_feats, bpe_ids=bpe_ids)
             probs = _softmax(logits)
             pred_ids = np.argmax(probs, axis=-1)
             return [ID_TO_TAG[int(i)] for i in pred_ids], [float(probs[t, pred_ids[t]]) for t in range(len(pred_ids))]
-        # Sliding non-overlapping windows for long documents
         all_tags: list[str] = []
         all_confs: list[float] = []
         for start in range(0, len(w_ids), self.max_len):
-            logits, _ = self.forward_logits(w_ids[start : start + self.max_len], c_feats[start : start + self.max_len])
+            bpe_sl = bpe_ids[start : start + self.max_len] if bpe_ids is not None else None
+            logits, _ = self.forward_logits(
+                w_ids[start : start + self.max_len],
+                c_feats[start : start + self.max_len],
+                bpe_ids=bpe_sl,
+            )
             probs = _softmax(logits)
             pred_ids = np.argmax(probs, axis=-1)
             all_tags.extend(ID_TO_TAG[int(i)] for i in pred_ids)
@@ -520,13 +809,32 @@ def _train_and_predict_neural(
     epochs = int(cfg.get("epochs", 10))
     patience = int(cfg.get("patience", 3))
 
+    bpe_tok: TrainOnlyBPETokenizer | None = None
+    tr_bpe: list[list[list[int]]] = []
+    es_bpe: list[list[list[int]]] = []
     model: NeuralBiLSTMTagger | NeuralBiLSTMCRFTagger | NeuralTransformerTagger
     if model_kind == "bilstm":
         model = NeuralBiLSTMTagger(len(vocab), emb_dim=24, hidden_dim=h_dim, seed=seed)
     elif model_kind == "bilstm_crf":
         model = NeuralBiLSTMCRFTagger(len(vocab), emb_dim=24, hidden_dim=h_dim, seed=seed)
     elif model_kind == "transformer":
-        model = NeuralTransformerTagger(len(vocab), d_model=h_dim, seed=seed)
+        bpe_tok = TrainOnlyBPETokenizer(num_merges=int(cfg.get("bpe_merges", 256))).fit(train_docs)
+        tr_bpe = [
+            [bpe_tok.encode_token_subwords(t.text) for t in tokenize_with_offsets(d.text)]
+            for d in tr_docs
+        ]
+        es_bpe = [
+            [bpe_tok.encode_token_subwords(t.text) for t in tokenize_with_offsets(d.text)]
+            for d in es_docs
+        ]
+        model = NeuralTransformerTagger(
+            len(vocab),
+            d_model=h_dim,
+            num_layers=int(cfg.get("num_layers", 2)),
+            num_heads=int(cfg.get("num_heads", 4)),
+            bpe_vocab_size=len(bpe_tok),
+            seed=seed,
+        )
     else:
         raise ValueError(f"Unknown neural model_kind {model_kind!r}")
 
@@ -536,10 +844,15 @@ def _train_and_predict_neural(
     stale = 0
 
     dropout_p = float(cfg.get("dropout", 0.15))
+    total_steps = max(1, epochs * len(tr_seqs))
+    warmup_steps = max(1, int(0.10 * total_steps))
+    global_step = 0
+
     for _epoch in range(epochs):
         order = rng.permutation(len(tr_seqs))
         for idx in order:
-            w_ids, c_feats, y_ids = tr_seqs[int(idx)]
+            idx_i = int(idx)
+            w_ids, c_feats, y_ids = tr_seqs[idx_i]
             if dropout_p > 0.0:
                 # Seeded word-dropout (<UNK>=1) + inverted char-feature dropout for generalization
                 keep_w = rng.random(len(w_ids)) >= (dropout_p * 0.5)
@@ -548,12 +861,25 @@ def _train_and_predict_neural(
                 c_step = (c_feats * c_mask) / max(1.0 - dropout_p, 1e-6)
             else:
                 w_step, c_step = w_ids, c_feats
-            model.step_sequence(w_step, c_step, y_ids, cw, opt)
+
+            if isinstance(model, NeuralTransformerTagger):
+                global_step += 1
+                if global_step <= warmup_steps:
+                    opt.lr = lr * (global_step / float(warmup_steps))
+                else:
+                    prog = (global_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+                    opt.lr = lr * 0.5 * (1.0 + float(np.cos(np.pi * min(1.0, prog))))
+                model.step_sequence(w_step, c_step, y_ids, cw, opt, bpe_ids=tr_bpe[idx_i])
+            else:
+                model.step_sequence(w_step, c_step, y_ids, cw, opt)
 
         # Check early stopping on train-internal val slice
         es_losses: list[float] = []
-        for w_ids, c_feats, y_ids in es_seqs:
-            logits, _ = model.forward_logits(w_ids, c_feats)
+        for es_i, (w_ids, c_feats, y_ids) in enumerate(es_seqs):
+            if isinstance(model, NeuralTransformerTagger):
+                logits, _ = model.forward_logits(w_ids, c_feats, bpe_ids=es_bpe[es_i])
+            else:
+                logits, _ = model.forward_logits(w_ids, c_feats)
             probs = _softmax(logits[: len(y_ids)])
             y_sl = y_ids[: len(probs)]
             es_losses.append(float(-np.mean(cw[y_sl] * np.log(np.maximum(probs[np.arange(len(y_sl)), y_sl], 1e-12)))))
@@ -600,7 +926,11 @@ def _train_and_predict_neural(
             continue
         w_ids = np.array([vocab.encode_token(t.text) for t in toks], dtype=np.int64)
         c_feats = _ortho_features(toks)
-        pred_tags, confs = model.predict(w_ids, c_feats)
+        if isinstance(model, NeuralTransformerTagger) and bpe_tok is not None:
+            ev_bpe = [bpe_tok.encode_token_subwords(t.text) for t in toks]
+            pred_tags, confs = model.predict(w_ids, c_feats, bpe_ids=ev_bpe)
+        else:
+            pred_tags, confs = model.predict(w_ids, c_feats)
         ents = decode_bio_to_entities(d.text, toks, pred_tags, confs)
         enriched, relations, timex = apply_context_and_relations(d, ents)
         preds.append(

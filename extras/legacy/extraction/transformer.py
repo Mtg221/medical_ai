@@ -10,7 +10,7 @@ import numpy as np
 from medresearch_platform.ai.random_init import build_random_init_manifest, initialize_tensor
 from medresearch_platform.ai.terminology import BilingualTerminologyRegistry
 from medresearch_platform.extraction.contract import ExtractionResult, records_from_bio_tags
-from medresearch_platform.extraction.nn_utils import (
+from extras.legacy.extraction.nn_utils import (
     AdamWOptimizer,
     masked_cross_entropy_and_grad,
     numerical_gradient_check,

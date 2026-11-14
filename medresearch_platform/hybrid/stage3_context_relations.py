@@ -105,9 +105,9 @@ class BiLSTMAssertionClassifier:
         logits = pooled @ self.params["W_cls"] + self.params["b_cls"]
         return logits, {"w_ids": w_ids, "h_seq": h_seq, "pooled": pooled, "pool_idx": min(pool_idx, len(h_seq) - 1), "cf": cf, "cb": cb}
 
-    def step_example(
-        self, w_ids: np.ndarray, flags: np.ndarray, pool_idx: int, target_id: int, weight: float, opt: _AdamW
-    ) -> float:
+    def loss_and_grads(
+        self, w_ids: np.ndarray, flags: np.ndarray, pool_idx: int, target_id: int, weight: float
+    ) -> tuple[float, dict[str, np.ndarray]]:
         logits, cache = self.forward(w_ids, flags, pool_idx)
         probs = _softmax(logits)
         loss = float(-weight * np.log(max(probs[target_id], 1e-12)))
@@ -133,6 +133,12 @@ class BiLSTMAssertionClassifier:
             dh[:, hd:], cache["cb"], self.params["Wb_x"], self.params["Wb_h"], reverse=True
         )
         np.add.at(grads["E"], w_ids, (dx_f + dx_b)[:, : self.emb_dim])
+        return loss, grads
+
+    def step_example(
+        self, w_ids: np.ndarray, flags: np.ndarray, pool_idx: int, target_id: int, weight: float, opt: _AdamW
+    ) -> float:
+        loss, grads = self.loss_and_grads(w_ids, flags, pool_idx, target_id, weight)
         opt.step(self.params, grads)
         return loss
 
@@ -256,9 +262,9 @@ class PiecewiseCNNRelationClassifier:
             "pooled": pooled,
         }
 
-    def step_example(
-        self, w_ids: np.ndarray, p1: np.ndarray, p2: np.ndarray, target_id: int, weight: float, opt: _AdamW
-    ) -> float:
+    def loss_and_grads(
+        self, w_ids: np.ndarray, p1: np.ndarray, p2: np.ndarray, target_id: int, weight: float
+    ) -> tuple[float, dict[str, np.ndarray]]:
         logits, cache = self.forward(w_ids, p1, p2)
         probs = _softmax(logits)
         loss = float(-weight * np.log(max(probs[target_id], 1e-12)))
@@ -288,6 +294,12 @@ class PiecewiseCNNRelationClassifier:
         np.add.at(grads["E"], w_ids, dx[:, : self.emb_dim])
         np.add.at(grads["P1"], p1, dx[:, self.emb_dim : self.emb_dim + self.pos_dim])
         np.add.at(grads["P2"], p2, dx[:, self.emb_dim + self.pos_dim :])
+        return loss, grads
+
+    def step_example(
+        self, w_ids: np.ndarray, p1: np.ndarray, p2: np.ndarray, target_id: int, weight: float, opt: _AdamW
+    ) -> float:
+        loss, grads = self.loss_and_grads(w_ids, p1, p2, target_id, weight)
         opt.step(self.params, grads)
         return loss
 

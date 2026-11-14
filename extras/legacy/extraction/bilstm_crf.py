@@ -9,9 +9,9 @@ import numpy as np
 
 from medresearch_platform.ai.random_init import build_random_init_manifest, initialize_tensor
 from medresearch_platform.ai.terminology import BilingualTerminologyRegistry
-from medresearch_platform.extraction.bilstm import BiLSTMEncoder
+from extras.legacy.extraction.bilstm import BiLSTMEncoder
 from medresearch_platform.extraction.contract import ExtractionResult, records_from_bio_tags
-from medresearch_platform.extraction.nn_utils import (
+from extras.legacy.extraction.nn_utils import (
     AdamWOptimizer,
     numerical_gradient_check,
     pad_sequence_batch,

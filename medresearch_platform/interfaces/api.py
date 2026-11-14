@@ -524,12 +524,16 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         except PermissionError as exc:
             return JSONResponse({"error": str(exc)}, status_code=403)
 
-        from medresearch_platform.extraction.benchmark import run_six_approach_benchmark
+        import json as _json
+        from pathlib import Path as _Path
 
         epochs = body.epochs if body is not None else 15
         seed = body.seed if body is not None else 42
-        report = run_six_approach_benchmark(epochs=epochs, seed=seed)
-        return JSONResponse(report)
+        v3_res = _Path("docs/results/v3_locked_test_evaluation.json")
+        if v3_res.exists():
+            payload = _json.loads(v3_res.read_text(encoding="utf-8"))
+            return JSONResponse({"source": str(v3_res), "epochs": epochs, "seed": seed, "results": payload})
+        return JSONResponse({"source": "none", "epochs": epochs, "seed": seed, "results": {}})
 
     @app.get("/api/v1/audit/verify")
     async def verify_audit_endpoint(request: Request) -> JSONResponse:

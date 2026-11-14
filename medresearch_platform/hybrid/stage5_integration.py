@@ -113,15 +113,14 @@ class TransformerCandidateReranker:
         logits = (h @ self.params["W_out"] + self.params["b_out"]).squeeze(-1)
         return logits, {"x_raw": x_raw, "x": x, "q": q, "k": k, "v": v, "attn": attn, "h": h, "scale": scale}
 
-    def step_doc(
+    def loss_and_grads(
         self,
         candidates: list[CandidateEntity],
         labels: np.ndarray,
-        opt: _AdamW,
         *,
         doc_text: str = "",
         vocab: TrainOnlyVocabulary | None = None,
-    ) -> float:
+    ) -> tuple[float, dict[str, np.ndarray]]:
         x_raw, tok_groups = self._featurize(candidates, doc_text=doc_text, vocab=vocab)
         logits, cache = self.forward(x_raw)
         probs = _sigmoid(logits)
@@ -155,6 +154,18 @@ class TransformerCandidateReranker:
             np.add.at(grads["E"], left_ids, dx_raw[i, self.emb_dim : 2 * self.emb_dim] / max(1, len(left_ids)))
             np.add.at(grads["E"], right_ids, dx_raw[i, 2 * self.emb_dim : 3 * self.emb_dim] / max(1, len(right_ids)))
 
+        return loss, grads
+
+    def step_doc(
+        self,
+        candidates: list[CandidateEntity],
+        labels: np.ndarray,
+        opt: _AdamW,
+        *,
+        doc_text: str = "",
+        vocab: TrainOnlyVocabulary | None = None,
+    ) -> float:
+        loss, grads = self.loss_and_grads(candidates, labels, doc_text=doc_text, vocab=vocab)
         opt.step(self.params, grads)
         return loss
 

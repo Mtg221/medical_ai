@@ -8,14 +8,14 @@ from typing import Any, Literal
 import numpy as np
 from PIL import Image
 
-from medresearch_platform.extraction.bilstm_crf import BiLSTMCRFExtractor
-from medresearch_platform.extraction.classical_ml import ClassicalMLExtractor
+from extras.legacy.extraction.bilstm_crf import BiLSTMCRFExtractor
+from extras.legacy.extraction.classical_ml import ClassicalMLExtractor
 from medresearch_platform.extraction.contract import (
     ExtractedRecord,
     ExtractionResult,
     build_extracted_record,
 )
-from medresearch_platform.extraction.rule_based import RuleBasedMedicalExtractor
+from extras.legacy.extraction.rule_based import RuleBasedMedicalExtractor
 
 
 @dataclass

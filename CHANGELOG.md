@@ -83,3 +83,9 @@
   - `bilstm_crf`: `0.8898` (`100`) -> `0.9439` (`200`) -> `0.9832` (`400`) -> `0.9888` (`600`, `95.6s`, `402.5 MB`)
   - `transformer`: `0.5262` (`100`) -> `0.5509` (`200`) -> `0.5742` (`400`) -> `0.5765` (`600`, `18.4s`, `431.7 MB`)
   - `hybrid`: `0.8891` (`100`) -> `0.9540` (`200`) -> `0.9885` (`400`) -> `0.9961` (`600`, `168.8s`, `474.3 MB`)
+
+### 11B Step 3 — Model Consolidation, Gradient Checks (G6) & Stacked Multi-Head Transformer (G5) (2026-11-14)
+- Isolated duplicate legacy `medresearch_platform/extraction/` models (`bilstm.py`, `bilstm_crf.py`, `transformer.py`, `classical_ml.py`, `rule_based.py`, `hybrid_multimodal.py`, `nn_utils.py`, `benchmark.py`) to `extras/legacy/extraction/` and moved `tests/test_six_extraction_approaches.py` to `extras/tests/`; updated `/api/v1/benchmark` in `medresearch_platform/interfaces/api.py` to serve evaluated `v3_locked_test_evaluation.json` results.
+- Exposed `loss_and_grads` on all 6 evaluated neural models (`NeuralBiLSTMTagger`, `NeuralBiLSTMCRFTagger`, `NeuralTransformerTagger`, `BiLSTMAssertionClassifier`, `PiecewiseCNNRelationClassifier`, `TransformerCandidateReranker`) and added finite-difference gradient checks (`float64`, `rel_err < 1e-4`) in `tests/test_evaluated_neural_gradients.py` (6/6 passing in `0.78s`).
+- Upgraded `NeuralTransformerTagger` in `medresearch_platform/approaches/neural_seq.py` to a stacked multi-layer (`num_layers=2..3`), multi-head (`num_heads=4`), pre-LayerNorm Transformer with residual connections, sinusoidal positional encoding, padding mask, train-only `TrainOnlyBPETokenizer` sub-word embeddings, 32-dim char morphology features, and linear warm-up + cosine LR decay.
+- Tuned on `SYNTH-MED-V3.1` `val` (600 train docs, `scripts/tune_v3_1_transformer.py`, `docs/results/v3_1_transformer_tuning.json`): `L2_H4_D64_ep18` improved Strict F1 from `0.5765` to **`0.8192`** (`Lenient = 0.9073`, `222.8s`); updated `configs/exp/v3_1/transformer.yaml`.

@@ -11,14 +11,14 @@ from medresearch_platform.documents.synthetic_generator import (
     SYNTHETIC_CLINICAL_CORPUS,
     SyntheticDocumentSpec,
 )
-from medresearch_platform.extraction.bilstm import BiLSTMExtractor
-from medresearch_platform.extraction.bilstm_crf import BiLSTMCRFExtractor
-from medresearch_platform.extraction.classical_ml import ClassicalMLExtractor
+from extras.legacy.extraction.bilstm import BiLSTMExtractor
+from extras.legacy.extraction.bilstm_crf import BiLSTMCRFExtractor
+from extras.legacy.extraction.classical_ml import ClassicalMLExtractor
 from medresearch_platform.extraction.contract import ExtractionResult
-from medresearch_platform.extraction.hybrid_multimodal import HybridMultimodalExtractor
-from medresearch_platform.extraction.rule_based import RuleBasedMedicalExtractor
+from extras.legacy.extraction.hybrid_multimodal import HybridMultimodalExtractor
+from extras.legacy.extraction.rule_based import RuleBasedMedicalExtractor
 from medresearch_platform.extraction.text import ENTITY_TYPES
-from medresearch_platform.extraction.transformer import TransformerExtractor
+from extras.legacy.extraction.transformer import TransformerExtractor
 
 
 @dataclass(frozen=True)

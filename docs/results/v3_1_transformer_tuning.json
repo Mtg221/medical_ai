@@ -1,0 +1,84 @@
+{
+  "dataset": "SYNTH-MED-V3.1",
+  "split": "val",
+  "num_train_docs": 600,
+  "seed": 1,
+  "baseline_single_block_strict_f1": 0.5765,
+  "trials": [
+    {
+      "name": "L2_H4_D32_ep15",
+      "config": {
+        "num_layers": 2,
+        "num_heads": 4,
+        "hidden_dim": 32,
+        "lr": 0.015,
+        "epochs": 15,
+        "patience": 5,
+        "dropout": 0.1
+      },
+      "strict_f1": 0.7734,
+      "lenient_f1": 0.874,
+      "wall_seconds": 111.94
+    },
+    {
+      "name": "L2_H4_D48_ep18",
+      "config": {
+        "num_layers": 2,
+        "num_heads": 4,
+        "hidden_dim": 48,
+        "lr": 0.012,
+        "epochs": 18,
+        "patience": 5,
+        "dropout": 0.1
+      },
+      "strict_f1": 0.8095,
+      "lenient_f1": 0.9012,
+      "wall_seconds": 168.96
+    },
+    {
+      "name": "L3_H4_D48_ep18",
+      "config": {
+        "num_layers": 3,
+        "num_heads": 4,
+        "hidden_dim": 48,
+        "lr": 0.01,
+        "epochs": 18,
+        "patience": 5,
+        "dropout": 0.1
+      },
+      "strict_f1": 0.7983,
+      "lenient_f1": 0.8977,
+      "wall_seconds": 200.84
+    },
+    {
+      "name": "L2_H4_D64_ep18",
+      "config": {
+        "num_layers": 2,
+        "num_heads": 4,
+        "hidden_dim": 64,
+        "lr": 0.01,
+        "epochs": 18,
+        "patience": 5,
+        "dropout": 0.1
+      },
+      "strict_f1": 0.8192,
+      "lenient_f1": 0.9073,
+      "wall_seconds": 222.75
+    }
+  ],
+  "best": {
+    "name": "L2_H4_D64_ep18",
+    "config": {
+      "num_layers": 2,
+      "num_heads": 4,
+      "hidden_dim": 64,
+      "lr": 0.01,
+      "epochs": 18,
+      "patience": 5,
+      "dropout": 0.1
+    },
+    "strict_f1": 0.8192,
+    "lenient_f1": 0.9073,
+    "wall_seconds": 222.75
+  }
+}

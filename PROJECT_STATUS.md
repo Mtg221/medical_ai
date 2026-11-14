@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11B — Step 2 complete (equal 600-doc training budget G3 + learning curves `100/200/400/600` on `SYNTH-MED-V3.1` `val`); Step 3 (model consolidation, gradient checks G6, real multi-layer Transformer G5) next
+**Active Phase:** Phase 11B — Step 3 complete (legacy models isolated to `extras/legacy/`, 6/6 gradient checks G6, stacked multi-head BPE Transformer tuned to `0.8192` on `val` G5); Step 4 (make every hybrid stage earn its place G4/G8) next
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
