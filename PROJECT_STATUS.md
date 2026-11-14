@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 9 Complete — Locked Test-Split Evaluation (121 Docs, Seeds 1–3) & `docs/RESEARCH_REPORT.md`
+**Active Phase:** Phase 10 Complete — Hardening & Release Ready (All 10 Phases Complete)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 

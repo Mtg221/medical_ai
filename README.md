@@ -1,6 +1,6 @@
 # Multilingual Medical Information Extraction AI (`medical_ai`)
 
-**Version:** `0.1.0` (Phase 0 — Foundation & Honesty Reset)  
+**Version:** `0.1.0` (Phases 0–10 Complete)  
 **Primary Languages:** English (`en`) & French (`fr`)  
 **Execution Profile:** CPU-Only Native (`Intel Core i7-9750H`, 32 GB RAM, macOS Darwin `x86_64`)  
 **Primary AI Track:** Models trained strictly from scratch (random initialization, zero pretrained weights)
@@ -10,22 +10,21 @@
 
 ---
 
-## 1. Current Baseline Reality (Audited 2026-11-14)
+## 1. Architecture & Verified Results (`SYNTH-MED-V2` Locked Test Split, 121 Docs, Seeds 1–3)
 
-The repository is undergoing a structured rebuild (see [docs/AUDIT.md](docs/AUDIT.md) and [docs/MASTER_PROMPT.md](docs/MASTER_PROMPT.md)).
+All primary models are trained from scratch on `train` (555 docs: EN + FR) and evaluated once on the locked `test` split (121 docs). Full methodology, ablations, OCR benchmarks, and limitations are documented in [docs/RESEARCH_REPORT.md](docs/RESEARCH_REPORT.md).
 
-Current six-approach extraction benchmark (`run_six_approach_benchmark(epochs=20)` on `SYNTH-MED-EN-FR`, **3 train documents / 1 English test document**):
+| Approach | Strict F1 (mean ± std) | EN F1 | FR F1 | Assert Acc | Rel F1 | TIMEX F1 | ECE |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1. `rule_based` | `0.8583 ± 0.0000` | `0.8673` | `0.8491` | `0.9936` | `0.8233` | `0.0000` | `0.0300` |
+| 2. `classical_ml` (TF-IDF + LinearSVC) | `0.8800 ± 0.0000` | `0.8800` | `0.8800` | `0.9944` | `0.8696` | `0.0000` | `0.1441` |
+| 3. `classical_crf` (`sklearn-crfsuite`) | `0.8800 ± 0.0000` | `0.8800` | `0.8800` | `0.9944` | `0.8696` | `0.0000` | `0.1188` |
+| 4. `bilstm` (from-scratch NumPy) | `0.8798 ± 0.0003` | `0.8800` | `0.8800` | `0.9944` | `0.8696` | `0.0000` | `0.1198` |
+| 5. `bilstm_crf` (from-scratch NumPy) | `0.8799 ± 0.0002` | `0.8800` | `0.8800` | `0.9944` | `0.8696` | `0.0000` | `0.0656` |
+| 6. `transformer` (from-scratch NumPy) | `0.7634 ± 0.0180` | `0.8131` | `0.7473` | `0.9945` | `0.7537` | `0.1823` | `0.2058` |
+| **7. `hybrid` (5-stage, 6-technique)** | **`0.9362 ± 0.0000`** | **`0.9362`** | **`0.9362`** | `0.8103` | `0.8329` | **`0.3071`** | **`0.0139`** |
 
-| Approach | Precision | Recall | F1 | FR F1 | Notes |
-|---|---:|---:|---:|---:|---|
-| 1. Rule-based | 0.53 | 1.00 | 0.69 | 0.00 | Shared cue-lexicon assertions |
-| 2. TF-IDF + LogReg | 0.75 | 0.33 | 0.46 | 0.00 | Token baseline |
-| 3. BiLSTM (NumPy) | 0.00 | 0.00 | **0.00** | 0.00 | Underperforming on 3-doc train |
-| 4. BiLSTM-CRF (NumPy) | 0.57 | 0.44 | 0.50 | 0.00 | |
-| 5. Transformer (NumPy) | 0.00 | 0.00 | **0.00** | 0.00 | Underperforming on 3-doc train |
-| 6. Hybrid | 0.43 | 1.00 | 0.60 | 0.00 | Currently weighted vote, not 5-stage pipeline |
-
-These numbers reflect a **4-document synthetic prototype** and are **not** a validated scientific result. Expanding the corpus (Phase 1), building a rigorous evaluation harness (Phase 2), and rebuilding the 5 single approaches + 5-stage Hybrid pipeline in PyTorch CPU (Phases 3–4) are the next milestones.
+Paired significance (`hybrid` vs `bilstm_crf`, seed 1): `ΔF1 = +0.05617`, `bootstrap_p_value = 0.003992`.
 
 ---
 
@@ -35,25 +34,33 @@ These numbers reflect a **4-document synthetic prototype** and are **not** a val
 # 1. Install package (editable) and dev tools
 pip install -e ".[dev]"
 
-# 2. Build frontend assets (required for /react workspace route)
+# 2. Build React + TypeScript + Tailwind frontend (served at /react)
 npm --prefix frontend ci && npm --prefix frontend run build
 
-# 3. Seed demo users (set an explicit password via environment variable)
-export MEDRESEARCH_DEMO_PASSWORD="change-me-local-only"
-python3 -m medresearch_platform.interfaces.cli init-db
+# 3. Build dataset splits & run an experiment
+medextract data build --config configs/data/v1.yaml
+medextract experiment run configs/exp/hybrid.yaml --seeds 1,2,3
 
-# 4. Run tests
-pytest -q
+# 4. Extract structured JSON or EN/FR report from a document (TXT, PDF, DOCX, PNG)
+medextract extract path/to/note.pdf --pipeline hybrid
+medextract report path/to/note.pdf --lang fr --format html -o report_fr.html
+
+# 5. Start the FastAPI server (set an explicit demo password for seeded local users)
+export MEDRESEARCH_DEMO_PASSWORD="change-me-local-only"
+uvicorn medresearch_platform.interfaces.api:create_app --factory --host 127.0.0.1 --port 8000
+
+# 6. Run lint, type check, and tests
+ruff check medresearch_platform tests && mypy medresearch_platform && pytest -q
 ```
 
 ---
 
 ## 3. Documentation & ADRs
 
+- [docs/RESEARCH_REPORT.md](docs/RESEARCH_REPORT.md) — Locked test-split evaluation, ablations, OCR benchmark, and error analysis
 - [docs/MASTER_PROMPT.md](docs/MASTER_PROMPT.md) — Project roadmap, constraints, and phase definitions
-- [docs/AUDIT.md](docs/AUDIT.md) — Verified baseline audit (2026-11-14)
-- [docs/EXTERNAL_COMPONENTS.md](docs/EXTERNAL_COMPONENTS.md) — Allowed non-model utilities (Tesseract, PyMuPDF, pypdf, python-docx)
+- [docs/EXTERNAL_COMPONENTS.md](docs/EXTERNAL_COMPONENTS.md) — Allowed non-model utilities (`Tesseract`, `pypdfium2`, `pdfplumber`, `OpenCV`, `pypdf`, `python-docx`)
+- [schema/medical_extraction.schema.json](schema/medical_extraction.schema.json) — Pydantic v2 JSON Schema contract
 - [PROJECT_STATUS.md](PROJECT_STATUS.md) — Honest phase & capability status
-- [ARCHITECTURE.md](ARCHITECTURE.md) — System architecture overview
 - [DECISIONS/](DECISIONS/) — Architecture Decision Records (`ADR-0001` to `ADR-0008`)
-- [extras/](extras/) — Frozen non-core modules (dermatology CV, multimodal vision fusion) isolated per `ADR-0008`
+- [extras/](extras/) — Frozen non-core modules isolated per `ADR-0008`

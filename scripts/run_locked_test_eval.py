@@ -9,9 +9,9 @@ from typing import Any
 
 import yaml
 
+from medresearch_platform.approaches.neural_seq import predict_bilstm_crf
 from medresearch_platform.eval_harness.metrics import paired_significance_test
 from medresearch_platform.eval_harness.runner import _load_jsonl, run_experiment
-from medresearch_platform.approaches.neural_seq import predict_bilstm_crf
 from medresearch_platform.hybrid.pipeline import predict_hybrid
 
 CONFIG_NAMES = [
