@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-14  
-**Active Phase:** Phase 8 Complete — Bilingual (EN/FR) Traceable Reports (Markdown, HTML, PDF)
+**Active Phase:** Phase 9 Complete — Locked Test-Split Evaluation (121 Docs, Seeds 1–3) & `docs/RESEARCH_REPORT.md`
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
@@ -32,4 +32,4 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 | FastAPI backend + SQLite jobs | **Tested** | Migrated from Starlette to FastAPI (`OpenAPI 3.1`), multipart `/api/v1/documents/upload`, SQLite `jobs` table + SSE `/api/v1/jobs/{id}/events` |
 | React + TypeScript + Tailwind + shadcn-style workspace | **Tested** | Migrated from single `App.jsx` to modular TypeScript (`tsc --noEmit` + `vite build`), Tailwind CSS v4, TanStack Query, React Router, Zustand, i18next (EN/FR), source-linked viewer, multipart upload + job tracker |
 | EN/FR traceable reports | **Tested** | `medresearch_platform/reports/generator.py` (Markdown, HTML, PDF with negation badges, source `[doc, p., chars]` citations, EN/FR disclaimer), `/api/v1/documents/{id}/report`, `medextract report` |
-| Final scientific evaluation & `RESEARCH_REPORT.md` | **Planned** | Phase 9 |
+| Final scientific evaluation & `RESEARCH_REPORT.md` | **Evaluated on `SYNTH-MED-V2` locked `test`, 121 docs (seeds 1, 2, 3)** | `hybrid` Strict F1 `0.9362 ± 0.0000` (`+0.0562` vs `bilstm_crf`, `p = 0.003992`), `ECE = 0.0139`; full tables & error analysis in `docs/RESEARCH_REPORT.md` |
