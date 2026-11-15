@@ -1,6 +1,17 @@
 # Changelog
 
-## [Unreleased] — Phase 12 (Hybrid v2, OCR Layout Segmentation & Realistic 80-Note Eval)
+## [Unreleased] — Correction Prompt 12B (H1–H9 Repair & Verification)
+
+### Correction Prompt 12B (2026-11-15)
+- **Step 1 (H4 — Fresh-clone & Cross-Platform Tests):** Added session-scoped corpus fixture in `tests/conftest.py` (`build_corpus_from_config` when `data/processed/{v3,v3_1}` is absent), fixed `detect_column_split` active-row threshold and cross-platform font loading (`ocr_benchmark.py`), and added `.github/workflows/ci.yml` matrix (`ubuntu-latest`, `windows-latest`, `macos-13` × Python `3.12`/`3.13`).
+- **Step 2 (H3 — Character-Level OCR Span Mapping):** Rewrote `map_ocr_spans_to_reference` using character-level `difflib.SequenceMatcher` (`100%` exact identity across 400 docs in `tests/test_ocr_span_mapping.py`); archived buggy OCR outputs to `docs/results/archive/2026-11-15_ocr_h3_buggy/` and re-ran 120-page Tesseract benchmark (`docs/results/v3_1_ocr_full_benchmark.json`, `549.87s`): `classical_crf` OCR Strict F1 moved `0.5655 -> 0.9128` (`tier_1` `0.6110 -> 0.9961`, `tier_4` `0.4173 -> 0.9049`).
+- **Step 3 (H1, H2 — Archive Fake Realistic Set & Prepare Owner Tooling):** Archived template-generated `realistic_v1` and its invalid `PROBLEM`/`TEST` results to `docs/results/archive/2026-11-15_realistic_v1_invalid/`; added `configs/label_studio_medical_en_fr.xml`, `scripts/import_label_studio_realistic.py` (strict label validation), `scripts/eval_realistic.py`, `docs/REALISTIC_SET_OWNER_CHECKLIST.md`, and `tests/test_realistic_import_and_labels.py`.
+- **Step 4 (H5 — Val-Only Hybrid v2 Selection):** Ran 5-seed `val`-only selection (`scripts/run_v3_2_hybrid_v2_val_selection.py`, `4265.71s`) picking `crf_on_ctx_nofusion` (`0.9966` `val` Strict F1), followed by one logged locked test run (`docs/results/v3_2_hybrid_v2_locked_eval.json`: `0.9972` `test_iid`, `0.9204` `test_unseen_terms`, `0.9310` `test_unseen_templates`) with per-task winners reported.
+- **Step 5 (H6, H7, H9 — Statistics, TIMEX Caveat & Doc Links):** Reported 10,000-resample document-level bootstrap 95% CIs for all approaches (with separate seed-std column), added TIMEX circularity caveat + 40-expression out-of-format test (`tests/test_timex_out_of_format.py`: `4/40 = 0.1000`), replaced all `file:///` doc links with relative paths, and added `tests/test_no_file_uri_in_docs.py` in CI.
+- **Step 6 (H8 — Full E2E, 28 Screenshots & Lighthouse):** Added full EN+FR Playwright E2E (`login -> upload PDF -> highlights -> review persists after reload -> download report`), fixed `frontend/src/pages/ReportsPage.tsx` `?lang=` & plain-text download, generated 28 screenshots (14 pages × light/dark) in `docs/screenshots/`, and verified `100/100` Lighthouse accessibility (`docs/results/lighthouse_accessibility_report.json`).
+- **Step 7 — Report & Status:** Regenerated `docs/RESEARCH_REPORT.md` from verified JSONs with "Changes since the 11B report" (H1–H9) and updated `PROJECT_STATUS.md`.
+
+## [Unreleased] — Phase 12 (Hybrid v2, OCR Layout Segmentation & Realistic 80-Note Eval — Superseded/Archived by 12B)
 
 ### Phase 12 — Model, OCR & Realistic Free-Text Upgrades (2026-11-15)
 - Added column-aware OCR layout segmentation (`detect_column_split` in `medresearch_platform/documents/ocr_engine.py`, `tests/test_ocr_layout_segmentation.py`): reduces `tier_4_two_col_table_stamps` CER `0.6670 -> 0.1474` and WER `0.7620 -> 0.2338`, lifting `classical_crf` OCR F1 `0.4173 -> 0.5950` (`docs/results/v3_2_ocr_layout_benchmark.json`).

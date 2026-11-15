@@ -21,30 +21,51 @@ export function ReportsPage() {
 
   const reportQuery = useQuery({
     queryKey: ["report-preview", activeDocId, lang],
-    queryFn: () =>
-      apiRequest<{ markdown?: string; report_markdown?: string }>(
-        `/api/v1/documents/${activeDocId}/report?language=${lang}&format=markdown`,
-        { token }
-      ),
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/documents/${activeDocId}/report?lang=${lang}&format=markdown`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        throw new Error(`Report request failed (${res.status})`);
+      }
+      return res.text();
+    },
     enabled: Boolean(token && activeDocId),
   });
 
-  const mdText = reportQuery.data?.markdown ?? reportQuery.data?.report_markdown ?? "";
+  const mdText = reportQuery.data ?? "";
+
+  const handleDownloadMarkdown = () => {
+    if (!mdText || !activeDocId) return;
+    const blob = new Blob([mdText], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${activeDocId}_report_${lang}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-sm font-semibold text-slate-900">Traceable Clinical Reports (EN / FR)</h1>
-            <p className="text-xs text-slate-500">Every finding cites [doc, page, char_start-char_end] with negation & disclaimer</p>
+            <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              Traceable Clinical Reports (EN / FR)
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Every finding cites [doc, page, char_start-char_end] with negation & disclaimer
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <select
               aria-label="Report document"
               value={activeDocId}
               onChange={(e) => setSelectedDocId(e.target.value)}
-              className="rounded border border-slate-300 bg-white px-2.5 py-1.5 text-xs"
+              className="rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs"
             >
               {docsQuery.data?.documents.map((d) => (
                 <option key={d.document_id} value={d.document_id}>
@@ -58,13 +79,21 @@ export function ReportsPage() {
             <Button size="sm" variant={lang === "fr" ? "primary" : "outline"} onClick={() => setLang("fr")}>
               FR
             </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!mdText}
+              onClick={handleDownloadMarkdown}
+            >
+              Download Report
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
           {reportQuery.isLoading ? (
-            <p className="text-xs text-slate-500">Generating traceable report...</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Generating traceable report...</p>
           ) : (
-            <pre className="whitespace-pre-wrap rounded border border-slate-200 bg-slate-50 p-4 text-xs font-mono text-slate-800 max-h-[520px] overflow-auto">
+            <pre className="whitespace-pre-wrap rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 text-xs font-mono text-slate-800 dark:text-slate-200 max-h-[520px] overflow-auto">
               {mdText || "Select an extracted document to preview its traceable EN/FR report."}
             </pre>
           )}

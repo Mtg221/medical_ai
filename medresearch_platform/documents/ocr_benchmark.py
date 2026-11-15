@@ -79,10 +79,28 @@ def tesseract_available(required_langs: tuple[str, ...] = ("eng", "fra")) -> tup
 
 
 _FONT_CANDIDATES: tuple[tuple[str, ...], ...] = (
-    ("/System/Library/Fonts/Helvetica.ttc", "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"),
-    ("/System/Library/Fonts/Supplemental/Times New Roman.ttf", "/System/Library/Fonts/Times.ttc", "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf"),
-    ("/System/Library/Fonts/Supplemental/Courier New.ttf", "/System/Library/Fonts/Courier.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"),
-    ("/System/Library/Fonts/Supplemental/Arial.ttf", "/Library/Fonts/Arial.ttf"),
+    (
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+    ),
+    (
+        "/System/Library/Fonts/Supplemental/Times New Roman.ttf",
+        "/System/Library/Fonts/Times.ttc",
+        "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+        "C:/Windows/Fonts/times.ttf",
+    ),
+    (
+        "/System/Library/Fonts/Supplemental/Courier New.ttf",
+        "/System/Library/Fonts/Courier.ttc",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+        "C:/Windows/Fonts/cour.ttf",
+    ),
+    (
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/Library/Fonts/Arial.ttf",
+        "C:/Windows/Fonts/calibri.ttf",
+    ),
 )
 
 
@@ -93,7 +111,10 @@ def _load_font(font_index: int, size: int) -> ImageFont.ImageFont | ImageFont.Fr
             return ImageFont.truetype(candidate, size=size)
         except Exception:
             continue
-    return ImageFont.load_default()
+    try:
+        return ImageFont.load_default(size=size)
+    except TypeError:
+        return ImageFont.load_default()
 
 
 def render_noisy_scan_image(
@@ -351,37 +372,38 @@ def map_ocr_spans_to_reference(
     reference_text: str,
     spans: Sequence[tuple[int, int]],
 ) -> list[tuple[int, int] | None]:
-    """Map character spans [start, end) from OCR text back to reference_text offsets via token alignment."""
-    import re
-
-    ref_toks = [(m.group(0).lower(), m.start(), m.end()) for m in re.finditer(r"\S+", reference_text)]
-    ocr_toks = [(m.group(0).lower(), m.start(), m.end()) for m in re.finditer(r"\S+", ocr_text)]
-    if not ref_toks or not ocr_toks:
+    """Map character spans [start, end) from OCR text back to reference_text offsets via character alignment."""
+    if not ocr_text or not reference_text:
         return [None for _ in spans]
 
-    sm = difflib.SequenceMatcher(
-        a=[t[0] for t in ocr_toks],
-        b=[t[0] for t in ref_toks],
-        autojunk=False,
-    )
-    ocr_to_ref: dict[int, int] = {}
+    sm = difflib.SequenceMatcher(a=ocr_text, b=reference_text, autojunk=False)
+    n_ocr = len(ocr_text)
+    char_to_ref: list[int | None] = [None] * n_ocr
+
     for tag, i1, i2, j1, j2 in sm.get_opcodes():
         if tag == "equal":
             for k in range(i2 - i1):
-                ocr_to_ref[i1 + k] = j1 + k
-        elif tag == "replace":
-            span_len = min(i2 - i1, j2 - j1)
-            for k in range(span_len):
-                ocr_to_ref[i1 + k] = j1 + k
+                char_to_ref[i1 + k] = j1 + k
+        elif tag == "replace" and j2 > j1 and i2 > i1:
+            ocr_len = i2 - i1
+            ref_len = j2 - j1
+            for k in range(ocr_len):
+                j = j1 + min(ref_len - 1, (k * ref_len) // ocr_len)
+                char_to_ref[i1 + k] = j
 
     mapped: list[tuple[int, int] | None] = []
     for s, e in spans:
-        covered = [idx for idx, (_, ts, te) in enumerate(ocr_toks) if te > s and ts < e]
-        ref_indices = [ocr_to_ref[i] for i in covered if i in ocr_to_ref]
+        lo = max(0, min(s, n_ocr))
+        hi = max(lo, min(e, n_ocr))
+        ref_indices = [idx for i in range(lo, hi) if (idx := char_to_ref[i]) is not None]
         if not ref_indices:
             mapped.append(None)
             continue
-        r_start = ref_toks[min(ref_indices)][1]
-        r_end = ref_toks[max(ref_indices)][2]
-        mapped.append((r_start, r_end))
+        r_start = min(ref_indices)
+        r_end = max(ref_indices) + 1
+        while r_start < r_end and reference_text[r_start].isspace():
+            r_start += 1
+        while r_end > r_start and reference_text[r_end - 1].isspace():
+            r_end -= 1
+        mapped.append((r_start, r_end) if r_start < r_end else None)
     return mapped

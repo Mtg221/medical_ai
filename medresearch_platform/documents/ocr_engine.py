@@ -185,19 +185,23 @@ def detect_column_split(preprocessed: np.ndarray) -> int | None:
     horiz_lines = cv2.morphologyEx(ink, cv2.MORPH_OPEN, horiz_kernel)
     ink_clean = cv2.subtract(ink, horiz_lines)
 
-    y0, y1 = int(0.08 * h), int(0.92 * h)
-    roi = (ink_clean[y0:y1, :] > 0).astype(np.float32)
-    col_density = roi.mean(axis=0)
+    y0, y1 = int(0.05 * h), int(0.95 * h)
+    band = (ink_clean[y0:y1, :] > 0).astype(np.float32)
+    # Restrict projection to active text rows so short pages aren't diluted by empty bottom margin
+    active_rows = np.where(band.sum(axis=1) >= max(4, w // 120))[0]
+    if len(active_rows) < 8:
+        return None
+    col_density = band[active_rows, :].mean(axis=0)
 
     left_mean = float(col_density[int(0.08 * w) : int(0.42 * w)].mean())
     right_mean = float(col_density[int(0.58 * w) : int(0.92 * w)].mean())
-    if left_mean < 0.004 or right_mean < 0.004:
+    if left_mean < 0.002 or right_mean < 0.002:
         return None
 
     band_start = int(0.42 * w)
     band_end = int(0.58 * w)
-    min_gutter_w = max(10, int(0.012 * w))
-    threshold = max(0.004, 0.12 * min(left_mean, right_mean))
+    min_gutter_w = max(8, int(0.010 * w))
+    threshold = max(0.003, 0.15 * min(left_mean, right_mean))
 
     best_start = -1
     best_len = 0
