@@ -56,6 +56,7 @@ class DatabaseEngine:
             "documents": ("'TESSERACT_OCR'",),
             "extracted_entities": ("'needs_review'", "review_reason", "source_stage"),
             "extracted_relations": ("'TREATS'",),
+            "jobs": ("original_filename",),
         }
         needs_upgrade: list[str] = []
         for row in conn.execute(

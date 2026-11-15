@@ -17,6 +17,12 @@ from pydantic import BaseModel
 from medresearch_platform import __spec_coverage__, __version__
 from medresearch_platform.config import PlatformConfig
 from medresearch_platform.diagnostics import generate_readiness_report
+from medresearch_platform.documents.ocr_engine import get_ocr_status
+from medresearch_platform.documents.parsers import (
+    PayloadTooLargeError,
+    UnsupportedFileTypeError,
+    validate_upload_payload,
+)
 from medresearch_platform.extraction.schema_models import (
     CLINICAL_RESEARCH_NOTICE,
     ExtractionResultSchema,
@@ -33,6 +39,7 @@ from medresearch_platform.reports import ReportFormat, ReportLanguage, generate_
 from medresearch_platform.security.audit import verify_audit_chain
 from medresearch_platform.security.auth import (
     AuthenticatedPrincipal,
+    AuthenticationError,
     issue_access_token,
     verify_access_token,
     verify_password,
@@ -65,8 +72,19 @@ def _extract_principal(request: Request, service: MedicalResearchPlatformService
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         token = auth_header[len("Bearer ") :].strip()
-        return verify_access_token(token, service.config.token_secret_key)
-    raise PermissionError("Missing or invalid Authorization: Bearer <token> header.")
+        if token:
+            return verify_access_token(token, service.config.token_secret_key)
+    raise AuthenticationError("Missing or invalid Authorization: Bearer <token> header.")
+
+
+def _auth_error_response(exc: PermissionError) -> JSONResponse:
+    if isinstance(exc, AuthenticationError):
+        return JSONResponse(
+            {"error": str(exc)},
+            status_code=401,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return JSONResponse({"error": str(exc)}, status_code=403)
 
 
 def create_app(config: PlatformConfig | None = None) -> FastAPI:
@@ -90,6 +108,18 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
     app.state.service = service
     app.state.jobs = jobs
 
+    _public_v1_paths = {"/api/v1/health", "/api/v1/auth/token", "/api/v1/openapi.json", "/api/v1/docs"}
+
+    @app.middleware("http")
+    async def require_bearer_token_middleware(request: Request, call_next: Any) -> Response:
+        path = request.url.path
+        if path.startswith("/api/v1/") and path not in _public_v1_paths:
+            try:
+                _extract_principal(request, service)
+            except PermissionError as exc:
+                return _auth_error_response(exc)
+        return await call_next(request)
+
     @app.get("/api/v1/health")
     async def health_endpoint() -> JSONResponse:
         report = generate_readiness_report(service.config.workspace_dir)
@@ -97,12 +127,17 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             "status": "ok",
             "version": __version__,
             "specification_coverage": __spec_coverage__,
+            "ocr": get_ocr_status(),
             "readiness": report.to_dict(),
             "clinical_notice": CLINICAL_RESEARCH_NOTICE,
         })
 
     @app.get("/api/v1/schema/extraction")
-    async def extraction_schema_endpoint() -> JSONResponse:
+    async def extraction_schema_endpoint(request: Request) -> JSONResponse:
+        try:
+            _extract_principal(request, service)
+        except PermissionError as exc:
+            return _auth_error_response(exc)
         schema = ExtractionResultSchema.model_json_schema()
         schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
         return JSONResponse(schema)
@@ -141,7 +176,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         with service.db.connect() as conn:
             rows = conn.execute(
@@ -165,7 +200,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         with service.db.connect() as conn:
             doc = conn.execute("SELECT * FROM documents WHERE document_id = ?", (document_id,)).fetchone()
@@ -236,7 +271,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         with service.db.connect() as conn:
             doc = conn.execute("SELECT * FROM documents WHERE document_id = ?", (document_id,)).fetchone()
@@ -277,7 +312,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:write")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         if body.content_base64 is not None:
             raw_bytes = base64.b64decode(body.content_base64)
@@ -296,8 +331,14 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
                 encounter_date_iso=body.encounter_date_iso,
                 specialty=body.specialty,
                 document_type=body.document_type,
+                force_new=body.force_new,
             )
-            return JSONResponse(result, status_code=201)
+            status_code = 200 if result.get("duplicate_of") else 201
+            return JSONResponse(result, status_code=status_code)
+        except PayloadTooLargeError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=413)
+        except UnsupportedFileTypeError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=415)
         except ValueError as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
@@ -313,19 +354,34 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         encounter_date_iso: str = Form("2026-06-01"),
         specialty: str = Form("INTERNAL_MEDICINE"),
         document_type: str = Form("CLINICAL_NOTE"),
+        force_new: bool = Form(False),
     ) -> JSONResponse:
         try:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:write")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         raw_bytes = await file.read()
         filename = file.filename or "uploaded_document.bin"
+        try:
+            validate_upload_payload(
+                raw_bytes,
+                filename,
+                max_upload_bytes=service.config.max_upload_bytes,
+            )
+        except PayloadTooLargeError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=413)
+        except UnsupportedFileTypeError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=415)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+
         job = jobs.create_job(
             institution_id=principal.institution_id,
             actor_user_id=principal.user_id,
             job_type="DOCUMENT_INGEST_AND_EXTRACT",
+            original_filename=filename,
             initial_stage="QUEUED",
         )
         background_tasks.add_task(
@@ -343,6 +399,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             encounter_date_iso=encounter_date_iso,
             specialty=specialty,
             document_type=document_type,
+            force_new=force_new,
         )
         return JSONResponse(job.to_dict(), status_code=202)
 
@@ -352,7 +409,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         records = jobs.list_jobs(principal.institution_id)
         return JSONResponse({"jobs": [r.to_dict() for r in records], "count": len(records)})
@@ -363,7 +420,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         rec = jobs.get_job(job_id)
         if rec is None:
@@ -371,7 +428,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         try:
             principal.assert_institution_access(rec.institution_id)
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
         return JSONResponse(rec.to_dict())
 
     @app.get("/api/v1/jobs/{job_id}/events")
@@ -380,7 +437,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         rec = jobs.get_job(job_id)
         if rec is None:
@@ -388,7 +445,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         try:
             principal.assert_institution_access(rec.institution_id)
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         async def event_stream() -> AsyncIterator[str]:
             last_payload: str | None = None
@@ -412,7 +469,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("annotation:review")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         try:
             with service.db.transaction() as conn:
@@ -430,6 +487,8 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             return JSONResponse(res)
         except KeyError as exc:
             return JSONResponse({"error": str(exc)}, status_code=404)
+        except AuthenticationError as exc:
+            return _auth_error_response(exc)
         except (PermissionError, ValueError) as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
@@ -439,7 +498,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("annotation:review")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         action_map = {
             "approve": "APPROVE_AS_GROUND_TRUTH",
@@ -467,6 +526,8 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             return JSONResponse(res)
         except KeyError as exc:
             return JSONResponse({"error": str(exc)}, status_code=404)
+        except AuthenticationError as exc:
+            return _auth_error_response(exc)
         except (PermissionError, ValueError) as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
@@ -479,7 +540,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         with service.db.connect() as conn:
             reviews = list_human_reviews(
@@ -499,7 +560,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         with service.db.connect() as conn:
             exported = export_reviewed_gold(
@@ -520,7 +581,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:read")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         with service.db.connect() as conn:
             subj = conn.execute("SELECT * FROM subjects WHERE subject_id = ?", (subject_id,)).fetchone()
@@ -554,7 +615,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("search:query")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         query = q.strip()
         if not query:
@@ -571,9 +632,16 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
 
     @app.get("/api/v1/terminology/map")
     async def terminology_map_endpoint(
+        request: Request,
         term: str = Query(""),
         category: str | None = Query(None),
     ) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("terminology:read")
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
         res = service.terminology.map_mention(term.strip(), category_hint=category)
         return JSONResponse({
             "source_text": res.source_text,
@@ -588,7 +656,12 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         })
 
     @app.get("/api/v1/models")
-    async def list_models_endpoint() -> JSONResponse:
+    async def list_models_endpoint(request: Request) -> JSONResponse:
+        try:
+            _extract_principal(request, service)
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
         service.ensure_models_trained_and_registered()
         with service.db.connect() as conn:
             rows = [dict(r) for r in conn.execute("SELECT * FROM models ORDER BY model_id ASC").fetchall()]
@@ -596,7 +669,12 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         return JSONResponse({"models": rows, "loaded_models": loaded_models, "count": len(rows)})
 
     @app.get("/api/v1/experiments")
-    async def list_experiments_endpoint() -> JSONResponse:
+    async def list_experiments_endpoint(request: Request) -> JSONResponse:
+        try:
+            _extract_principal(request, service)
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
         with service.db.connect() as conn:
             exps = [dict(r) for r in conn.execute("SELECT * FROM experiments ORDER BY created_at DESC").fetchall()]
             rounds = [dict(r) for r in conn.execute("SELECT * FROM federated_rounds ORDER BY round_number ASC").fetchall()]
@@ -608,7 +686,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("training:execute")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         manifest = service.run_phase1_experiments()
         return JSONResponse(manifest)
@@ -622,7 +700,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("training:execute")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         import json as _json
         from pathlib import Path as _Path
@@ -641,7 +719,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal = _extract_principal(request, service)
             principal.assert_permission("audit:read")
         except PermissionError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=403)
+            return _auth_error_response(exc)
 
         with service.db.connect() as conn:
             result = verify_audit_chain(conn)

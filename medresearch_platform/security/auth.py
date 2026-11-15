@@ -65,6 +65,10 @@ ROLE_DEFAULT_PERMISSIONS: dict[str, tuple[str, ...]] = {
 _PASSWORD_HASHER = PasswordHasher(time_cost=2, memory_cost=19456, parallelism=2)
 
 
+class AuthenticationError(PermissionError):
+    """Raised when a Bearer token is missing, malformed, invalid, or expired (HTTP 401)."""
+
+
 @dataclass(frozen=True)
 class AuthenticatedPrincipal:
     user_id: str
@@ -132,22 +136,22 @@ def issue_access_token(
 def verify_access_token(token: str, secret_key: str) -> AuthenticatedPrincipal:
     parts = token.split(".")
     if len(parts) != 2:
-        raise PermissionError("Malformed access token.")
+        raise AuthenticationError("Malformed access token.")
     payload_b64, provided_sig = parts
     expected_sig = hmac.new(
         secret_key.encode("utf-8"), payload_b64.encode("ascii"), hashlib.sha256
     ).hexdigest()
     if not hmac.compare_digest(provided_sig, expected_sig):
-        raise PermissionError("Invalid access token signature.")
+        raise AuthenticationError("Invalid access token signature.")
     try:
         raw_json = base64.urlsafe_b64decode(payload_b64.encode("ascii")).decode("utf-8")
         payload = json.loads(raw_json)
     except Exception as exc:
-        raise PermissionError("Corrupted access token payload.") from exc
+        raise AuthenticationError("Corrupted access token payload.") from exc
 
     exp_dt = datetime.fromisoformat(payload["exp"])
     if datetime.now(timezone.utc) >= exp_dt:
-        raise PermissionError("Access token has expired.")
+        raise AuthenticationError("Access token has expired.")
 
     return AuthenticatedPrincipal(
         user_id=str(payload["sub"]),

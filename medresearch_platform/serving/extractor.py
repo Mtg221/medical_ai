@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +19,7 @@ from medresearch_platform.extraction.contract import (
     ReviewStatus,
 )
 from medresearch_platform.hybrid.pipeline import HybridPipeline
+from medresearch_platform.hybrid.stage4_temporal import resolve_document_date
 
 _ASSERTION_TO_CONTRACT: dict[str, AssertionStatus] = {
     "present": "present",
@@ -181,7 +181,7 @@ class ExtractionService:
         source_record_id: str = "rec_serving",
         approach: str = "hybrid_v2",
     ) -> ExtractionResult:
-        doc_date = document_date or date.today().isoformat()
+        doc_date, _doc_date_source = resolve_document_date(text, fallback_date=document_date)
         doc = AnnotatedDocument(
             doc_id=document_id,
             patient_id="PAT-SERVING",

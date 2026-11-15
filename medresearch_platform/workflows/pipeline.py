@@ -10,7 +10,7 @@ import time
 import uuid
 from dataclasses import asdict
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
 import psutil
 
@@ -30,12 +30,18 @@ from medresearch_platform.ai.terminology import BilingualTerminologyRegistry
 from medresearch_platform.config import PlatformConfig
 from medresearch_platform.db.engine import DatabaseEngine
 from medresearch_platform.diagnostics import capture_hardware_snapshot
-from medresearch_platform.documents.parsers import parse_document_bytes
+from medresearch_platform.documents import ocr_engine
+from medresearch_platform.documents.parsers import (
+    PayloadTooLargeError,
+    parse_document_bytes,
+    validate_upload_payload,
+)
 from medresearch_platform.documents.synthetic_generator import (
     SYNTHETIC_CLINICAL_CORPUS,
     build_synthetic_file_bytes,
     verify_leak_free_splits,
 )
+from medresearch_platform.hybrid.stage4_temporal import resolve_document_date
 from medresearch_platform.security.audit import record_audit_event, verify_audit_chain
 from medresearch_platform.security.auth import (
     ROLE_DEFAULT_PERMISSIONS,
@@ -91,23 +97,42 @@ class MedicalResearchPlatformService:
             default_users = [
                 ("usr_admin_01", "inst_dakar_primary", "admin_dakar", "INSTITUTION_ADMIN", "EXPERT_PI"),
                 ("usr_res_01", "inst_dakar_primary", "researcher_bilingual", "RESEARCHER", "SENIOR_RESEARCHER"),
+                ("usr_res_02", "inst_dakar_primary", "researcher_dakar", "RESEARCHER", "SENIOR_RESEARCHER"),
                 ("usr_ann_01", "inst_dakar_primary", "annotator_clinical", "ANNOTATOR", "CLINICAL_ANNOTATOR"),
+                ("usr_ann_02", "inst_dakar_primary", "annotator_dakar", "ANNOTATOR", "CLINICAL_ANNOTATOR"),
                 ("usr_ml_01", "inst_dakar_primary", "ml_engineer", "ML_ENGINEER", "ML_ARCHITECT"),
+                ("usr_ml_02", "inst_dakar_primary", "ml_dakar", "ML_ENGINEER", "ML_ARCHITECT"),
                 ("usr_partner_01", "inst_paris_partner", "researcher_paris", "RESEARCHER", "PARTNER_INVESTIGATOR"),
+                ("usr_partner_02", "inst_paris_partner", "partner_paris", "RESEARCHER", "PARTNER_INVESTIGATOR"),
             ]
-            demo_pw = os.environ.get("MEDRESEARCH_DEMO_PASSWORD") or secrets.token_urlsafe(24)
+            explicit_demo_pw = os.environ.get("MEDRESEARCH_DEMO_PASSWORD")
+            demo_pw = explicit_demo_pw or secrets.token_urlsafe(24)
             default_pw_hash = hash_password(demo_pw)
             for uid, inst_id, uname, role, qual in default_users:
                 perms = list(ROLE_DEFAULT_PERMISSIONS[role])
-                conn.execute(
-                    """
-                    INSERT OR IGNORE INTO users (
-                        user_id, institution_id, username, password_hash, role,
-                        permissions_json, qualification_level, is_active, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
-                    """,
-                    (uid, inst_id, uname, default_pw_hash, role, json.dumps(perms), qual, now_iso),
-                )
+                if explicit_demo_pw:
+                    conn.execute(
+                        """
+                        INSERT INTO users (
+                            user_id, institution_id, username, password_hash, role,
+                            permissions_json, qualification_level, is_active, created_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+                        ON CONFLICT(user_id) DO UPDATE SET
+                            password_hash = excluded.password_hash,
+                            is_active = 1
+                        """,
+                        (uid, inst_id, uname, default_pw_hash, role, json.dumps(perms), qual, now_iso),
+                    )
+                else:
+                    conn.execute(
+                        """
+                        INSERT OR IGNORE INTO users (
+                            user_id, institution_id, username, password_hash, role,
+                            permissions_json, qualification_level, is_active, created_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+                        """,
+                        (uid, inst_id, uname, default_pw_hash, role, json.dumps(perms), qual, now_iso),
+                    )
 
             conn.execute(
                 """
@@ -144,6 +169,25 @@ class MedicalResearchPlatformService:
             "institutions_bootstrapped": 2,
             "users_bootstrapped": len(default_users),
         }
+
+    def init_or_reset_default_users(self, password: str) -> None:
+        """Initialize the platform DB and set the given password on all default users."""
+        self.initialize_platform()
+        pw_hash = hash_password(password)
+        with self.db.transaction() as conn:
+            conn.execute("UPDATE users SET password_hash = ?, is_active = 1", (pw_hash,))
+
+    def set_user_password(self, username: str, password: str) -> None:
+        """Update the Argon2id password hash for a specific username."""
+        self.initialize_platform()
+        pw_hash = hash_password(password)
+        with self.db.transaction() as conn:
+            cur = conn.execute(
+                "UPDATE users SET password_hash = ?, is_active = 1 WHERE username = ?",
+                (pw_hash, username),
+            )
+            if cur.rowcount == 0:
+                raise KeyError(f"User '{username}' not found.")
 
     def get_default_admin_principal(self, institution_id: str = "inst_dakar_primary") -> AuthenticatedPrincipal:
         token = issue_access_token(
@@ -239,10 +283,18 @@ class MedicalResearchPlatformService:
         document_type: str = "CLINICAL_NOTE",
         ocr_lines_for_hybrid: list[str] | None = None,
         document_id_override: str | None = None,
+        force_new: bool = False,
+        progress_callback: Callable[[str, int], None] | None = None,
     ) -> dict[str, Any]:
         """Validate, store immutably, de-identify, parse, and extract OCR + NLP + timeline for a document."""
         principal.assert_permission("medical_data:write")
         self.ensure_models_trained_and_registered()
+
+        validate_upload_payload(
+            raw_bytes,
+            filename,
+            max_upload_bytes=self.config.max_upload_bytes,
+        )
 
         safety = inspect_untrusted_bytes(
             raw_bytes,
@@ -253,10 +305,56 @@ class MedicalResearchPlatformService:
             raise ValueError(f"Document rejected by safety guard: {safety.rejection_reason}")
 
         content_sha256 = hashlib.sha256(raw_bytes).hexdigest()
+
+        if not force_new and document_id_override is None:
+            with self.db.connect() as conn:
+                existing = conn.execute(
+                    "SELECT * FROM documents WHERE institution_id = ? AND content_sha256 = ? ORDER BY created_at ASC LIMIT 1",
+                    (principal.institution_id, content_sha256),
+                ).fetchone()
+                if existing is not None:
+                    ex_doc_id = str(existing["document_id"])
+                    ent_cnt = int(conn.execute("SELECT COUNT(*) FROM extracted_entities WHERE document_id = ?", (ex_doc_id,)).fetchone()[0])
+                    rel_cnt = int(conn.execute("SELECT COUNT(*) FROM extracted_relations WHERE document_id = ?", (ex_doc_id,)).fetchone()[0])
+                    ocr_cnt = int(conn.execute("SELECT COUNT(*) FROM ocr_blocks WHERE document_id = ?", (ex_doc_id,)).fetchone()[0])
+                    tl_cnt = int(conn.execute("SELECT COUNT(*) FROM longitudinal_events WHERE document_id = ?", (ex_doc_id,)).fetchone()[0])
+                    enc_row = conn.execute("SELECT encounter_date_iso FROM encounters WHERE encounter_id = ?", (existing["encounter_id"],)).fetchone()
+                    ex_date = str(enc_row["encounter_date_iso"]) if enc_row else encounter_date_iso
+                    return {
+                        "document_id": ex_doc_id,
+                        "duplicate_of": ex_doc_id,
+                        "is_duplicate": True,
+                        "content_sha256": content_sha256,
+                        "file_format": str(existing["file_format"]),
+                        "detected_language": str(existing["detected_language"]),
+                        "document_date": ex_date,
+                        "document_date_source": "existing_document",
+                        "pseudonym_code": "EXISTING",
+                        "entities_extracted": ent_cnt,
+                        "relations_extracted": rel_cnt,
+                        "ocr_blocks_extracted": ocr_cnt,
+                        "timeline_events_count": tl_cnt,
+                        "untrusted_flags": json.loads(str(existing["untrusted_flags_json"] or "[]")),
+                    }
+
         ext = safety.detected_format.lower()
         orig_path = self.config.storage_dir / "originals" / f"{content_sha256}.{ext}"
         if not orig_path.exists():
             orig_path.write_bytes(raw_bytes)
+
+        if progress_callback:
+            progress_callback("PARSING", 15)
+
+        if safety.detected_format in ("PNG", "JPEG", "TIFF", "WEBP") and not ocr_lines_for_hybrid:
+            if progress_callback:
+                progress_callback("OCR", 25)
+            tess_ok, _ = ocr_engine.check_tesseract_available()
+            if not tess_ok:
+                raise RuntimeError(
+                    "Tesseract OCR is not installed — cannot extract text from scanned image. "
+                    "See README.md for installation instructions. / "
+                    "Tesseract OCR n'est pas installé — voir README.md."
+                )
 
         parsed = parse_document_bytes(
             raw_bytes,
@@ -264,8 +362,19 @@ class MedicalResearchPlatformService:
             document_type=document_type,
             specialty=specialty,
         )
+        if parsed.extraction_mode == "TESSERACT_OCR" and not ocr_lines_for_hybrid:
+            if progress_callback:
+                progress_callback("OCR", 30)
+            tess_ok, _ = ocr_engine.check_tesseract_available()
+            if not tess_ok:
+                raise RuntimeError(
+                    "Tesseract OCR is not installed — cannot extract text from scanned document. "
+                    "See README.md for installation instructions. / "
+                    "Tesseract OCR n'est pas installé — voir README.md."
+                )
+
         if parsed.page_count > self.config.max_document_pages:
-            raise ValueError(
+            raise PayloadTooLargeError(
                 f"Document page count {parsed.page_count} exceeds max {self.config.max_document_pages}."
             )
 
@@ -273,7 +382,6 @@ class MedicalResearchPlatformService:
             subject_raw_id, self.config.pseudonym_vault_key
         )
         doc_id = document_id_override or f"doc_{uuid.uuid4().hex[:14]}"
-        encounter_id = f"enc_{hashlib.sha256(f'{subject_raw_id}:{encounter_date_iso}'.encode()).hexdigest()[:12]}"
         now_iso = datetime.now(timezone.utc).isoformat()
 
         # Run Custom OCR on either image document or supplementary OCR lines
@@ -295,16 +403,46 @@ class MedicalResearchPlatformService:
             })
 
         combined_text = "\n".join(full_text_pages)
+        if ocr_lines_for_hybrid and not combined_text.strip():
+            combined_text = "\n".join(ocr_lines_for_hybrid)
+
+        if parsed.extraction_mode == "TESSERACT_OCR" and not combined_text.strip() and not ocr_lines_for_hybrid:
+            raise ValueError(
+                "OCR extracted 0 characters from the scanned document (blank or unreadable scan) — "
+                "needs manual review. / L'OCR n'a extrait aucun texte du document scanné."
+            )
+
+        if len(combined_text) > self.config.max_document_chars:
+            raise PayloadTooLargeError(
+                f"Document text length ({len(combined_text):,} chars) exceeds maximum allowed "
+                f"({self.config.max_document_chars:,} chars)."
+            )
+
+        resolved_doc_date, doc_date_source = resolve_document_date(
+            combined_text,
+            fallback_date=encounter_date_iso,
+        )
+        encounter_id = f"enc_{hashlib.sha256(f'{subject_raw_id}:{resolved_doc_date}'.encode()).hexdigest()[:12]}"
+
+        if progress_callback:
+            progress_callback("CLASSIFY", 45)
+            progress_callback("NER", 60)
+
         extraction = self.extractor.extract(
             combined_text,
             language=parsed.detected_language,
-            document_date=encounter_date_iso,
+            document_date=resolved_doc_date,
             page_map=page_map,
             document_id=doc_id,
             source_record_id=doc_id,
         )
-        untrusted_flags = list(safety.untrusted_flags) + scan_text_for_untrusted_instructions(combined_text)
-        deid_res = deidentify_clinical_text(combined_text, date_shift_days=shift_days)
+        if progress_callback:
+            progress_callback("CONTEXT", 75)
+            progress_callback("TEMPORAL", 85)
+            progress_callback("VALIDATE", 92)
+
+        untrusted_flags = list(safety.untrusted_flags) + scan_text_for_untrusted_instructions(combined_text[:16000])
+        deid_res = deidentify_clinical_text(combined_text[:4000], date_shift_days=shift_days)
 
         with self.db.transaction() as conn:
             conn.execute(
@@ -351,7 +489,7 @@ class MedicalResearchPlatformService:
                     principal.institution_id,
                     document_type,
                     specialty,
-                    encounter_date_iso,
+                    resolved_doc_date,
                     now_iso,
                 ),
             )
@@ -399,7 +537,7 @@ class MedicalResearchPlatformService:
                     str(orig_path),
                     safety.byte_size,
                     parsed.page_count,
-                    parsed.detected_language if parsed.detected_language != "unknown" else "en",
+                    parsed.detected_language,
                     document_type,
                     specialty,
                     extraction_mode,
@@ -573,6 +711,8 @@ class MedicalResearchPlatformService:
             "content_sha256": content_sha256,
             "file_format": safety.detected_format,
             "detected_language": parsed.detected_language,
+            "document_date": resolved_doc_date,
+            "document_date_source": doc_date_source,
             "pseudonym_code": pseudonym_code,
             "entities_extracted": total_entities,
             "relations_extracted": total_relations,

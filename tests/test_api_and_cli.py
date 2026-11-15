@@ -55,8 +55,8 @@ def test_full_api_lifecycle_rbac_and_institution_isolation(
     assert "Skip to main content" in r_web.text
     assert "NOT FOR AUTONOMOUS CLINICAL DIAGNOSIS" in r_web.text
 
-    # 2. Unauthenticated access to medical documents must fail (403)
-    assert client.get("/api/v1/documents").status_code == 403
+    # 2. Unauthenticated access to medical documents must fail (401)
+    assert client.get("/api/v1/documents").status_code == 401
 
     # 3. Issue tokens for Admin (Dakar), Annotator (Dakar), and Partner Researcher (Paris)
     tok_admin = client.post(
@@ -147,11 +147,17 @@ def test_full_api_lifecycle_rbac_and_institution_isolation(
     assert r_search.status_code == 200
     assert r_search.json()["count"] >= 1
 
-    r_term = client.get("/api/v1/terminology/map?term=diabète+de+type+2&category=DIAGNOSIS")
+    r_term = client.get(
+        "/api/v1/terminology/map?term=diabète+de+type+2&category=DIAGNOSIS",
+        headers={"Authorization": f"Bearer {tok_admin}"},
+    )
     assert r_term.status_code == 200
     assert r_term.json()["code"] == "E11.9"
 
-    r_models = client.get("/api/v1/models")
+    r_models = client.get(
+        "/api/v1/models",
+        headers={"Authorization": f"Bearer {tok_admin}"},
+    )
     assert r_models.status_code == 200
     models_payload = r_models.json()
     assert len(models_payload["loaded_models"]) == 2

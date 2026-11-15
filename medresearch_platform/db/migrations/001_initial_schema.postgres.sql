@@ -324,6 +324,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     institution_id TEXT NOT NULL,
     actor_user_id TEXT NOT NULL,
     job_type TEXT NOT NULL,
+    original_filename TEXT,
     status TEXT NOT NULL CHECK (status IN ('PENDING', 'RUNNING', 'SUCCEEDED', 'FAILED')),
     progress_pct INTEGER NOT NULL DEFAULT 0,
     current_stage TEXT NOT NULL DEFAULT 'QUEUED',

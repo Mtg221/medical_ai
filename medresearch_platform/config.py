@@ -40,6 +40,8 @@ class PlatformConfig:
     default_random_seed: int
     token_secret_key: str = field(repr=False)
     pseudonym_vault_key: str = field(repr=False)
+    max_document_chars: int = 500_000
+    job_timeout_seconds: float = 120.0
 
     @classmethod
     def from_env(cls, workspace_dir: Path | str | None = None) -> PlatformConfig:
@@ -57,14 +59,15 @@ class PlatformConfig:
         storage_dir = Path(
             os.environ.get("MEDRESEARCH_STORAGE_DIR", str(base_dir / "var" / "storage"))
         ).resolve()
+        db_env = os.environ.get("MEDRESEARCH_DB_PATH") or os.environ.get("MEDRESEARCH_SQLITE_PATH")
         sqlite_path = Path(
-            os.environ.get("MEDRESEARCH_SQLITE_PATH", str(base_dir / "var" / "db" / "medresearch.sqlite3"))
+            db_env or str(base_dir / "var" / "db" / "medresearch.sqlite3")
         ).resolve()
         postgres_url = os.environ.get("DATABASE_URL") or os.environ.get("MEDRESEARCH_POSTGRES_URL")
 
         max_cpu_threads = int(os.environ.get("MEDRESEARCH_MAX_CPU_THREADS", "4"))
         max_memory_mb = int(os.environ.get("MEDRESEARCH_MAX_MEMORY_MB", "4096"))
-        max_upload_bytes = int(os.environ.get("MEDRESEARCH_MAX_UPLOAD_BYTES", str(25 * 1024 * 1024)))
+        max_upload_bytes = int(os.environ.get("MEDRESEARCH_MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
         max_document_pages = int(os.environ.get("MEDRESEARCH_MAX_DOCUMENT_PAGES", "200"))
         default_random_seed = int(os.environ.get("MEDRESEARCH_RANDOM_SEED", "20261112"))
 
@@ -101,6 +104,8 @@ class PlatformConfig:
             default_random_seed=default_random_seed,
             token_secret_key=token_secret,
             pseudonym_vault_key=vault_secret,
+            max_document_chars=int(os.environ.get("MEDRESEARCH_MAX_DOCUMENT_CHARS", "500000")),
+            job_timeout_seconds=float(os.environ.get("MEDRESEARCH_JOB_TIMEOUT_SECONDS", "120.0")),
         )
 
     def ensure_directories(self) -> None:

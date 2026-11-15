@@ -41,13 +41,23 @@ medextract data build --config configs/data/v3_1.yaml
 medextract train --config configs/exp/v3_2/hybrid_v2.yaml --seed 1 --out models/hybrid_v2_seed1/
 medextract experiment run configs/exp/hybrid.yaml --seeds 1,2,3
 
-# 4. Extract structured JSON or EN/FR report from a document (TXT, PDF, DOCX, PNG)
-medextract extract path/to/note.pdf --pipeline hybrid
-medextract report path/to/note.pdf --lang fr --format html -o report_fr.html
+# 4. Extract structured JSON or EN/FR report from a document using the saved model (TXT, PDF, DOCX, PNG)
+medextract extract path/to/note.pdf --model models/hybrid_v2_seed1 --out extracted.json
+medextract report path/to/note.pdf --model models/hybrid_v2_seed1 --lang fr --format html --out report_fr.html
 
-# 5. Start the FastAPI server (set an explicit demo password for seeded local users)
-export MEDRESEARCH_DEMO_PASSWORD="change-me-local-only"
+# 5. Initialize local demo users and start the FastAPI server
+# macOS / Linux:
+export MEDRESEARCH_DEMO_PASSWORD="ChangeMe_LocalDev_2026!"
+medextract users init
 uvicorn medresearch_platform.interfaces.api:create_app --factory --host 127.0.0.1 --port 8000
+
+# Windows (PowerShell):
+# $env:MEDRESEARCH_DEMO_PASSWORD = "ChangeMe_LocalDev_2026!"
+# medextract users init
+# uvicorn medresearch_platform.interfaces.api:create_app --factory --host 127.0.0.1 --port 8000
+
+# Reset a specific user's password at any time:
+medextract users set-password admin_dakar --password "ChangeMe_LocalDev_2026!"
 
 # 6. Run lint, type check, and tests
 ruff check medresearch_platform tests && mypy medresearch_platform && pytest -q

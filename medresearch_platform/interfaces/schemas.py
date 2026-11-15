@@ -32,6 +32,7 @@ class IngestDocumentRequest(BaseModel):
     encounter_date_iso: str = "2026-06-01"
     specialty: str = "INTERNAL_MEDICINE"
     document_type: str = "CLINICAL_NOTE"
+    force_new: bool = False
 
 
 class ReviewEntityRequest(BaseModel):
@@ -53,10 +54,13 @@ class JobStatusResponse(BaseModel):
     institution_id: str
     actor_user_id: str
     job_type: str
-    status: Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED"]
+    original_filename: str = ""
+    status: Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"]
     progress_pct: int = Field(ge=0, le=100)
+    stage: str = ""
     current_stage: str
     result: dict[str, Any] | None = None
+    error: str | None = None
     error_message: str | None = None
     created_at: str
     updated_at: str

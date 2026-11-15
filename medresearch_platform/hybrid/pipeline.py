@@ -20,6 +20,8 @@ from medresearch_platform.data.schema import ASSERTION_CLASSES, AnnotatedDocumen
 from medresearch_platform.eval_harness.metrics import (
     DocumentPrediction,
     PredictedEntity,
+    PredictedRelation,
+    PredictedTimex,
 )
 from medresearch_platform.hybrid.persistence import (
     compute_corpus_hash,
@@ -140,6 +142,16 @@ class HybridPipeline:
         if use_assertion_bilstm and self.assertion_model is None:
             use_assertion_bilstm = False
 
+        if len(doc.text) > 4000:
+            return self._extract_long_document_chunked(
+                doc,
+                use_rules_layer=use_rules_layer,
+                use_assertion_bilstm=use_assertion_bilstm,
+                use_relation_cnn=use_relation_cnn,
+                use_temporal_crf=use_temporal_crf,
+                use_transformer_fusion=use_transformer_fusion,
+            )
+
         timings: list[dict[str, Any]] = []
 
         # Stage 1: Document Understanding
@@ -244,6 +256,10 @@ class HybridPipeline:
                     "text": c.entity.text,
                     "assertion": c.entity.assertion,
                     "confidence": c.entity.confidence,
+                    "char_start": c.entity.start,
+                    "char_end": c.entity.end,
+                    "entity_type": c.entity.type,
+                    "provenance": {"source_stage": c.source_stage},
                     "source": {"page": 1, "start": c.entity.start, "end": c.entity.end},
                     "produced_by": {"approach": "hybrid", "stage": c.source_stage, "model_version": "2.0.0"},
                     "review": {"status": "flagged" if c.entity.confidence < 0.65 else "unreviewed", "by": None},
@@ -284,6 +300,144 @@ class HybridPipeline:
                 "pipeline": "hybrid-v2",
                 "duration_ms": round(sum(t["ms"] for t in timings), 2),
                 "stages": timings,
+            },
+        }
+        contract_json["records"] = contract_json["entities"]
+        return pred, contract_json
+
+    def _extract_long_document_chunked(
+        self,
+        doc: AnnotatedDocument,
+        *,
+        use_rules_layer: bool,
+        use_assertion_bilstm: bool,
+        use_relation_cnn: bool,
+        use_temporal_crf: bool,
+        use_transformer_fusion: bool,
+        chunk_max_chars: int = 3500,
+    ) -> tuple[DocumentPrediction, dict[str, Any]]:
+        """Process documents > 4,000 chars in sentence-window chunks to avoid sequence length limits."""
+        t0 = time.perf_counter()
+        s1 = self.stage1.predict(doc.text[:4000])
+        all_entities: list[PredictedEntity] = []
+        all_relations: list[PredictedRelation] = []
+        all_timex: list[PredictedTimex] = []
+        all_records: list[dict[str, Any]] = []
+        warnings: list[str] = []
+
+        # Split text on newline or sentence boundary <= chunk_max_chars
+        chunks: list[tuple[int, str]] = []
+        n = len(doc.text)
+        pos = 0
+        while pos < n:
+            end = min(pos + chunk_max_chars, n)
+            if end < n:
+                nl = doc.text.rfind("\n", pos + 500, end)
+                if nl != -1:
+                    end = nl + 1
+                else:
+                    dot = doc.text.rfind(". ", pos + 500, end)
+                    if dot != -1:
+                        end = dot + 2
+            chunks.append((pos, doc.text[pos:end]))
+            pos = end
+
+        # Deduplicate identical chunks to process repeated boilerplate in O(1) while preserving all span offsets
+        chunk_cache: dict[str, tuple[DocumentPrediction, dict[str, Any]]] = {}
+        is_huge = n > 25_000
+        for offset, chunk_txt in chunks:
+            if not chunk_txt.strip():
+                continue
+            cached = chunk_cache.get(chunk_txt)
+            if cached is None:
+                sub_doc = AnnotatedDocument(
+                    doc_id=f"{doc.doc_id}_chunk_{offset}",
+                    patient_id=doc.patient_id,
+                    language=doc.language,
+                    doc_type=doc.doc_type,
+                    document_date=doc.document_date,
+                    source=doc.source,
+                    text=chunk_txt,
+                )
+                cached = self.extract_document(
+                    sub_doc,
+                    use_rules_layer=use_rules_layer,
+                    use_assertion_bilstm=use_assertion_bilstm and not is_huge,
+                    use_relation_cnn=use_relation_cnn and not is_huge,
+                    use_temporal_crf=use_temporal_crf,
+                    use_transformer_fusion=use_transformer_fusion and not is_huge,
+                )
+                chunk_cache[chunk_txt] = cached
+            c_pred, c_json = cached
+            for ent in c_pred.entities:
+                all_entities.append(
+                    PredictedEntity(
+                        type=ent.type,
+                        start=ent.start + offset,
+                        end=ent.end + offset,
+                        text=ent.text,
+                        assertion=ent.assertion,
+                        confidence=ent.confidence,
+                    )
+                )
+            for rel in c_pred.relations:
+                all_relations.append(
+                    PredictedRelation(
+                        type=rel.type,
+                        head_start=rel.head_start + offset,
+                        head_end=rel.head_end + offset,
+                        tail_start=rel.tail_start + offset,
+                        tail_end=rel.tail_end + offset,
+                        confidence=rel.confidence,
+                    )
+                )
+            for tx in c_pred.timex:
+                all_timex.append(
+                    PredictedTimex(
+                        type=tx.type,
+                        start=tx.start + offset,
+                        end=tx.end + offset,
+                        text=tx.text,
+                        normalized=tx.normalized,
+                    )
+                )
+            for rec in c_json.get("records", []):
+                shifted = dict(rec)
+                shifted["char_start"] = int(rec.get("char_start", 0)) + offset
+                shifted["char_end"] = int(rec.get("char_end", 0)) + offset
+                all_records.append(shifted)
+
+        dur_ms = round((time.perf_counter() - t0) * 1000, 2)
+        pred = DocumentPrediction(
+            doc_id=doc.doc_id,
+            language=doc.language,
+            doc_type=doc.doc_type,
+            predicted_doc_type=s1.doc_type,
+            entities=all_entities,
+            relations=all_relations,
+            timex=all_timex,
+        )
+        contract_json = {
+            "schema_version": "1.0",
+            "document": {
+                "id": doc.doc_id,
+                "language": s1.language,
+                "language_confidence": s1.language_confidence,
+                "doc_type": s1.doc_type,
+                "doc_type_confidence": s1.doc_type_confidence,
+                "document_date": doc.document_date,
+                "sections": s1.sections,
+            },
+            "entities": all_records,
+            "records": all_records,
+            "relations": [],
+            "temporal": [],
+            "missing_information": [],
+            "validation": {"passed": True, "warnings": warnings},
+            "processing": {
+                "pipeline": "hybrid-v2-chunked",
+                "duration_ms": dur_ms,
+                "chunks": len(chunks),
             },
         }
         return pred, contract_json

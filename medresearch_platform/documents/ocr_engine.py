@@ -73,6 +73,33 @@ def check_tesseract_available() -> tuple[bool, list[str]]:
         return False, []
 
 
+def get_ocr_status() -> dict[str, Any]:
+    """Return structured OCR engine availability and EN/FR language pack status."""
+    available, langs = check_tesseract_available()
+    eng_ok = "eng" in langs
+    fra_ok = "fra" in langs
+    if available and eng_ok and fra_ok:
+        status = "ready"
+        msg = "Tesseract OCR is installed with 'eng' and 'fra' language packs."
+    elif available:
+        status = "degraded"
+        msg = f"Tesseract OCR is installed but missing 'eng' or 'fra' language pack (found: {langs})."
+    else:
+        status = "unavailable"
+        msg = (
+            "Tesseract OCR is not installed — scanned images and image-only PDFs cannot be processed. "
+            "See README.md for installation instructions. / Tesseract OCR n'est pas installé — voir README.md."
+        )
+    return {
+        "tesseract_available": available,
+        "languages": langs,
+        "eng_available": eng_ok,
+        "fra_available": fra_ok,
+        "status": status,
+        "message": msg,
+    }
+
+
 def _estimate_skew_angle(gray: np.ndarray) -> float:
     """Estimate document skew angle in degrees using foreground bounding-box orientation."""
     # Invert so dark text becomes foreground (255)

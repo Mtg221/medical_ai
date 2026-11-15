@@ -415,3 +415,117 @@ def parse_document_bytes(
         )
 
     raise ValueError(f"Unsupported format for parsing: {file_format}")
+
+
+class UnsupportedFileTypeError(ValueError):
+    """Raised when an uploaded file's extension or magic bytes are not in the allow-list (HTTP 415)."""
+
+
+class PayloadTooLargeError(ValueError):
+    """Raised when an uploaded file exceeds size, page, or character limits (HTTP 413)."""
+
+
+_ALLOWED_EXTENSIONS: dict[str, str] = {
+    ".txt": "TXT",
+    ".pdf": "PDF",
+    ".docx": "DOCX",
+    ".png": "PNG",
+    ".jpg": "JPEG",
+    ".jpeg": "JPEG",
+    ".tif": "TIFF",
+    ".tiff": "TIFF",
+    ".webp": "WEBP",
+}
+
+_BINARY_SIGNATURES: tuple[tuple[bytes, str], ...] = (
+    (b"MZ", "Windows PE executable (MZ)"),
+    (b"\x7fELF", "ELF executable"),
+    (b"\xfe\xed\xfa\xce", "Mach-O binary"),
+    (b"\xfe\xed\xfa\xcf", "Mach-O 64-bit binary"),
+    (b"\xce\xfa\xed\xfe", "Mach-O binary"),
+    (b"\xcf\xfa\xed\xfe", "Mach-O 64-bit binary"),
+    (b"\xca\xfe\xba\xbe", "Mach-O universal / Java class binary"),
+)
+
+
+def validate_upload_payload(
+    raw_bytes: bytes,
+    filename: str,
+    *,
+    max_upload_bytes: int = 10 * 1024 * 1024,
+) -> str:
+    """Validate file size, extension allow-list, and magic bytes before parsing or queueing."""
+    if len(raw_bytes) > max_upload_bytes:
+        raise PayloadTooLargeError(
+            f"File '{filename}' ({len(raw_bytes):,} bytes) exceeds the maximum allowed upload size "
+            f"({max_upload_bytes:,} bytes). / La taille du fichier dépasse la limite maximale autorisée."
+        )
+    if len(raw_bytes) == 0:
+        raise ValueError(
+            f"File '{filename}' is empty (0 bytes). / Le fichier téléversé est vide."
+        )
+
+    for sig, desc in _BINARY_SIGNATURES:
+        if raw_bytes.startswith(sig):
+            raise UnsupportedFileTypeError(
+                f"Rejected executable or binary payload ({desc}) in '{filename}'. "
+                f"Allowed formats: TXT, PDF, DOCX, PNG, JPEG, TIFF, WEBP. / "
+                f"Fichier exécutable ou binaire non autorisé ({desc})."
+            )
+
+    ext = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in _ALLOWED_EXTENSIONS:
+        raise UnsupportedFileTypeError(
+            f"Unsupported file extension '{ext or '(none)'}' for '{filename}'. "
+            f"Allowed formats: TXT, PDF, DOCX, PNG, JPEG, TIFF, WEBP. / "
+            f"Extension de fichier non prise en charge."
+        )
+
+    expected_fmt = _ALLOWED_EXTENSIONS[ext]
+    if expected_fmt == "PDF":
+        if not raw_bytes.startswith(b"%PDF-"):
+            raise UnsupportedFileTypeError(
+                f"File '{filename}' has a .pdf extension but does not start with %PDF- magic bytes. / "
+                f"Signature PDF (%PDF-) invalide."
+            )
+    elif expected_fmt == "DOCX":
+        if not raw_bytes.startswith(b"PK\x03\x04"):
+            raise UnsupportedFileTypeError(
+                f"File '{filename}' has a .docx extension but is not a valid ZIP/OOXML container. / "
+                f"Conteneur DOCX invalide."
+            )
+        import zipfile
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw_bytes)) as zf:
+                if "[Content_Types].xml" not in zf.namelist():
+                    raise UnsupportedFileTypeError(
+                        f"File '{filename}' is a ZIP archive without [Content_Types].xml (not a valid DOCX)."
+                    )
+        except zipfile.BadZipFile as exc:
+            raise UnsupportedFileTypeError(f"File '{filename}' is a corrupted ZIP/DOCX container.") from exc
+    elif expected_fmt == "PNG":
+        if not raw_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise UnsupportedFileTypeError(f"File '{filename}' does not have valid PNG magic bytes.")
+    elif expected_fmt == "JPEG":
+        if not raw_bytes.startswith(b"\xff\xd8\xff"):
+            raise UnsupportedFileTypeError(f"File '{filename}' does not have valid JPEG magic bytes.")
+    elif expected_fmt == "TIFF":
+        if not (raw_bytes.startswith(b"II*\x00") or raw_bytes.startswith(b"MM\x00*")):
+            raise UnsupportedFileTypeError(f"File '{filename}' does not have valid TIFF magic bytes.")
+    elif expected_fmt == "WEBP":
+        if not (raw_bytes.startswith(b"RIFF") and raw_bytes[8:12] == b"WEBP"):
+            raise UnsupportedFileTypeError(f"File '{filename}' does not have valid WEBP magic bytes.")
+    elif expected_fmt == "TXT":
+        if b"\x00" in raw_bytes[:8192]:
+            raise UnsupportedFileTypeError(
+                f"File '{filename}' contains binary null bytes and is not valid plain text (UTF-8/Latin-1). / "
+                f"Le fichier contient des octets binaires nuls."
+            )
+        sample = raw_bytes[:4096]
+        non_text = sum(1 for b in sample if b < 32 and b not in (9, 10, 13))
+        if len(sample) > 0 and (non_text / len(sample)) > 0.05:
+            raise UnsupportedFileTypeError(
+                f"File '{filename}' contains excessive binary control bytes and is not valid plain text."
+            )
+
+    return expected_fmt

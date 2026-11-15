@@ -63,10 +63,6 @@ def test_fastapi_openapi_upload_jobs_and_sse(tmp_path: Path) -> None:
     assert "/api/v1/documents/upload" in openapi["paths"]
     assert "/api/v1/jobs/{job_id}/events" in openapi["paths"]
 
-    schema_resp = client.get("/api/v1/schema/extraction")
-    assert schema_resp.status_code == 200
-    assert schema_resp.json()["title"] == "ExtractionResultSchema"
-
     # Authenticate
     tok_resp = client.post(
         "/api/v1/auth/token",
@@ -75,6 +71,10 @@ def test_fastapi_openapi_upload_jobs_and_sse(tmp_path: Path) -> None:
     assert tok_resp.status_code == 200
     token = tok_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
+
+    schema_resp = client.get("/api/v1/schema/extraction", headers=headers)
+    assert schema_resp.status_code == 200
+    assert schema_resp.json()["title"] == "ExtractionResultSchema"
 
     # Multipart upload -> 202 Accepted + background execution
     up_resp = client.post(

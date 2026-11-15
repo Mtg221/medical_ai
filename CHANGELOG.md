@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased] — Final Prompt Phase 1 (P1–P9 Product Path Safety & Correctness)
+
+### Phase 1 — Product Path Correctness & Safety (P1–P9) (2026-11-15)
+- **P1 (`medresearch_platform/data/cli.py`):** Removed throw-away `HybridPipeline.fit(...)` from `medextract extract` and `medextract report`; both now load the saved evaluated model via `ExtractionService` (`--model models/hybrid_v2_seed1` default, `--approach` for `hybrid_v2` / `classical_crf`) and fail with the exact `medextract train ...` command when missing. Verified CLI JSON entities == API entities == direct `HybridPipeline` entities.
+- **P2 (`config.py`, `tests/conftest.py`, `workflows/pipeline.py`, `data/cli.py`, `README.md`):** Added `MEDRESEARCH_DB_PATH` support, isolated `pytest` session runs to a temporary SQLite DB (`tests/conftest.py`), synchronized default user passwords when `MEDRESEARCH_DEMO_PASSWORD` is set, and added `medextract users init` and `medextract users set-password <username> --password <pw>`.
+- **P3 (`documents/ocr_engine.py`, `workflows/pipeline.py`, `interfaces/api.py`):** Added `get_ocr_status()` on `/api/v1/health`; image and scanned-PDF jobs fail with a readable EN/FR error when Tesseract is unavailable or when OCR produces 0 characters (`status == "FAILED"`), and preserve `detected_language == "unknown"` instead of coercing to `"en"`.
+- **P4 (`documents/parsers.py`, `interfaces/api.py`):** Enforced upload extension and magic-bytes allow-list (`TXT`, `PDF`, `DOCX`, `PNG`, `JPEG`, `TIFF`, `WEBP`), rejecting executables/binaries (`MZ...`, ELF, Mach-O, null-byte files) with HTTP `415`.
+- **P5 (`config.py`, `hybrid/pipeline.py`, `workflows/jobs.py`, `interfaces/api.py`):** Enforced configurable upload size limits (`10 MB` default -> HTTP `413` on `11 MB` upload, `200` pages, `500,000` chars), sentence-window chunking (`<= 3,500` chars per chunk) for long documents (`300k` chars succeeds without CRF position overflow), worker pool execution with per-job timeout and stage updates (`PARSING`, `OCR`, `CLASSIFY`, `NER`, `CONTEXT`, `TEMPORAL`, `VALIDATE`), and clean user-facing error sentences.
+- **P6 (`hybrid/stage4_temporal.py`, `serving/extractor.py`, `workflows/pipeline.py`):** Extracted document anchor date from header text first (`Date : 14/11/2026`, `Admission date:`, `Discharge date:`, `Le ...`), falling back to `encounter_date_iso`, recording `document_date_source`, and anchoring all relative TIMEX expressions (`"depuis 3 semaines"` -> `2026-10-24`, `"dans 2 semaines"` -> `2026-11-28`).
+- **P7 (`workflows/pipeline.py`, `interfaces/api.py`):** Added duplicate `content_sha256` detection per institution returning HTTP `200` with `duplicate_of` unless `force_new=true`.
+- **P8 (`security/auth.py`, `interfaces/api.py`):** Added `AuthenticationError` (`401` when missing/invalid Bearer token vs `403` when lacking permission) and middleware protecting all `/api/v1/*` routes except `/api/v1/health` and `/api/v1/auth/token`.
+- **P9 (`db/migrations/`, `workflows/jobs.py`, `interfaces/schemas.py`):** Unified job responses (`GET /api/v1/jobs`, `GET /api/v1/jobs/{id}`) with `error`, `original_filename`, `stage`, and `progress_pct`.
+
 ## [Unreleased] — Correction Prompt 12B (H1–H9 Repair & Verification)
 
 ### Correction Prompt 12B (2026-11-15)

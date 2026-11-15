@@ -1,180 +1,302 @@
-"""CLI entrypoint for `medextract`."""
+"""Unified `medextract` CLI for dataset generation, experiment execution, training, extraction, reports, and user management."""
 
 from __future__ import annotations
 
 import argparse
 import json
-import time
-from datetime import date
+import os
+import secrets
+import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 from medresearch_platform.approaches.classical_ml import ClassicalCRFModel
+from medresearch_platform.config import PlatformConfig
 from medresearch_platform.data.builder import build_corpus_from_config
-from medresearch_platform.data.schema import AnnotatedDocument
-from medresearch_platform.data.synthetic_v2 import generate_synthetic_corpus
-from medresearch_platform.documents.parsers import parse_document_bytes
+from medresearch_platform.documents.parsers import detect_document_language, parse_document_bytes
 from medresearch_platform.eval_harness.runner import _load_jsonl, run_experiment
 from medresearch_platform.hybrid.pipeline import HybridPipeline
-from medresearch_platform.reports import generate_report_bytes
+from medresearch_platform.hybrid.stage4_temporal import resolve_document_date
+from medresearch_platform.reports.generator import generate_report_bytes
+from medresearch_platform.serving.extractor import ExtractionService
+from medresearch_platform.workflows.pipeline import MedicalResearchPlatformService
 
 
-def _print_stats_table(manifest: dict[str, Any]) -> None:
-    stats = manifest["stats"]
-    print(f"Dataset: {manifest['dataset_name']} v{manifest['version']} (seed={manifest['seed']})")
-    print(f"Total documents: {stats['total_documents']} | Splits: {stats['by_split']}")
-    print(f"Languages: {stats['by_language']} | Tokens (lang:split): {stats['tokens_by_language_split']}")
-    print(f"Relations: {stats['total_relations']} | TIMEX: {stats['total_timex']}")
-    print(f"Leakage check passed: {manifest['leakage_check']['passed']}")
-    print("\nEntities per type & language:")
-    print(f"{'Entity Type':<18} {'EN':>8} {'FR':>8}")
-    print("-" * 36)
-    for etype, counts in stats["entities_by_type_language"].items():
-        print(f"{etype:<18} {counts.get('en', 0):>8} {counts.get('fr', 0):>8}")
+def _resolve_input_path(args: argparse.Namespace) -> Path:
+    p = getattr(args, "input_opt", None) or getattr(args, "input_pos", None)
+    if p is None:
+        raise ValueError("An input file path is required (positional or --input).")
+    return Path(p)
+
+
+def _extract_file_with_saved_model(
+    input_path: Path,
+    *,
+    model_dir: Path,
+    approach: str = "hybrid_v2",
+    document_date: str | None = None,
+) -> tuple[dict[str, Any], str, str, str]:
+    if not input_path.exists():
+        raise FileNotFoundError(f"Input file not found: {input_path}")
+    raw_bytes = input_path.read_bytes()
+    ext = input_path.suffix.lower().lstrip(".")
+    fmt_map = {
+        "txt": "TXT",
+        "pdf": "PDF",
+        "docx": "DOCX",
+        "png": "PNG",
+        "jpg": "JPEG",
+        "jpeg": "JPEG",
+        "tif": "TIFF",
+        "tiff": "TIFF",
+        "webp": "WEBP",
+    }
+    fmt = fmt_map.get(ext, "TXT")
+    if fmt == "TXT":
+        text = raw_bytes.decode("utf-8", errors="replace")
+        lang = detect_document_language(text)
+        page_map: list[dict[str, Any]] | None = None
+    else:
+        parsed = parse_document_bytes(raw_bytes, fmt)
+        text = "\n".join(p.raw_text for p in parsed.pages)
+        lang = parsed.detected_language
+        page_map = []
+        cursor = 0
+        for p in parsed.pages:
+            if page_map:
+                cursor += 1
+            start_off = cursor
+            cursor += len(p.raw_text)
+            page_map.append({
+                "page_number": p.page_number,
+                "char_start": start_off,
+                "char_end": cursor,
+                "word_boxes": getattr(p, "word_boxes", []),
+            })
+
+    resolved_date, date_source = resolve_document_date(text, fallback_date=document_date)
+    svc = ExtractionService(
+        model_dir=model_dir if approach == "hybrid_v2" else None,
+        classical_crf_dir=model_dir if approach == "classical_crf" else None,
+    )
+    res = svc.extract(
+        text,
+        language=lang if lang in ("en", "fr") else "en",
+        document_date=resolved_date,
+        page_map=page_map,
+        document_id=input_path.stem,
+        source_record_id=input_path.stem,
+        approach=approach,
+    )
+    payload = res.to_dict()
+    payload["schema_version"] = "1.0"
+    payload["document_date"] = resolved_date
+    payload["document_date_source"] = date_source
+    payload["detected_language"] = lang
+    payload["entities"] = [
+        {
+            "id": f"e{i+1}",
+            "type": r.get("entity_type"),
+            "text": r.get("original_text"),
+            "assertion": r.get("assertion_status"),
+            "confidence": r.get("confidence_score"),
+            "char_start": r.get("char_start"),
+            "char_end": r.get("char_end"),
+            "source": {"page": r.get("page_number", 1), "start": r.get("char_start"), "end": r.get("char_end")},
+        }
+        for i, r in enumerate(payload.get("records", []))
+    ]
+    return payload, text, lang, resolved_date
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="medextract", description="Multilingual Medical Extraction CLI")
-    sub = parser.add_subparsers(dest="group", required=True)
+    sub = parser.add_subparsers(dest="cmd", required=True)
 
-    data_parser = sub.add_parser("data", help="Dataset operations")
-    data_sub = data_parser.add_subparsers(dest="action", required=True)
+    # medextract data build
+    p_data = sub.add_parser("data", help="Dataset build and validation commands")
+    sub_data = p_data.add_subparsers(dest="data_cmd", required=True)
+    p_build = sub_data.add_parser("build", help="Build synthetic corpus from YAML config")
+    p_build.add_argument("--config", type=Path, required=True, help="Path to configs/data/v2.yaml or v3.yaml")
 
-    build_parser = data_sub.add_parser("build", help="Build dataset splits and manifest")
-    build_parser.add_argument("--config", required=True, help="Path to data YAML config")
+    # medextract experiment
+    p_exp = sub.add_parser("experiment", help="Run a reproducible multi-seed experiment")
+    p_exp.add_argument("--config", type=Path, required=True, help="Path to configs/exp/*.yaml")
+    p_exp.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3], help="Random seeds")
+    p_exp.add_argument("--split", choices=["val", "test"], default="val", help="Evaluation split")
+    p_exp.add_argument("--unlock-test", action="store_true", help="Required flag when --split test is used")
+    p_exp.add_argument("--reason", type=str, default="CLI evaluation", help="Reason logged when unlocking test")
 
-    exp_parser = sub.add_parser("experiment", help="Experiment operations")
-    exp_sub = exp_parser.add_subparsers(dest="action", required=True)
-    run_parser = exp_sub.add_parser("run", help="Run a multi-seed experiment")
-    run_parser.add_argument("config", help="Path to experiment YAML config")
-    run_parser.add_argument("--seeds", default=None, help="Comma-separated seeds, e.g. 1,2,3")
+    # medextract train
+    p_train = sub.add_parser("train", help="Train and persist a production model artifact directory")
+    p_train.add_argument("--config", type=Path, required=True, help="Path to configs/exp/*.yaml")
+    p_train.add_argument("--seed", type=int, default=1, help="Random seed")
+    p_train.add_argument("--out", type=Path, required=True, help="Output directory (e.g. models/hybrid_v2_seed1)")
 
-    ext_parser = sub.add_parser("extract", help="Extract structured medical JSON from a document")
-    ext_parser.add_argument("file", help="Path to input document (TXT, PDF, DOCX, PNG)")
-    ext_parser.add_argument("--pipeline", default="hybrid", help="Pipeline name (default: hybrid)")
-    ext_parser.add_argument("--train-jsonl", default="data/processed/v1/train.jsonl", help="Training corpus JSONL")
+    # medextract extract
+    p_ext = sub.add_parser("extract", help="Extract clinical entities, assertions, relations, and TIMEX using saved model")
+    p_ext.add_argument("input_pos", nargs="?", type=Path, default=None, help="Input file (.txt, .pdf, .docx, .png)")
+    p_ext.add_argument("--input", "-i", dest="input_opt", type=Path, default=None, help="Input file (.txt, .pdf, .docx, .png)")
+    p_ext.add_argument("--model", type=Path, default=Path(os.environ.get("MEDRESEARCH_MODEL_DIR", "models/hybrid_v2_seed1")), help="Saved model directory")
+    p_ext.add_argument("--approach", choices=["hybrid_v2", "classical_crf"], default="hybrid_v2", help="Serving approach")
+    p_ext.add_argument("--pipeline", type=str, default=None, help="Deprecated alias for --approach")
+    p_ext.add_argument("--train-jsonl", type=Path, default=None, help="Deprecated ignored argument")
+    p_ext.add_argument("--document-date", type=str, default=None, help="Optional fallback document date (YYYY-MM-DD)")
+    p_ext.add_argument("--output", "--out", "-o", dest="output", type=Path, default=None, help="Output JSON path (stdout if omitted)")
 
-    rep_parser = sub.add_parser("report", help="Generate a traceable EN/FR human-readable report")
-    rep_parser.add_argument("file", help="Path to input document (TXT, PDF, DOCX, PNG)")
-    rep_parser.add_argument("--lang", choices=["en", "fr"], default="en", help="Report language")
-    rep_parser.add_argument("--format", choices=["markdown", "html", "pdf"], default="markdown", help="Output format")
-    rep_parser.add_argument("-o", "--output", default=None, help="Output file path (optional)")
-    rep_parser.add_argument("--train-jsonl", default="data/processed/v1/train.jsonl", help="Training corpus JSONL")
+    # medextract report
+    p_rep = sub.add_parser("report", help="Generate a bilingual structured clinical report using saved model")
+    p_rep.add_argument("input_pos", nargs="?", type=Path, default=None, help="Input file (.txt, .pdf, .docx, .png)")
+    p_rep.add_argument("--input", "-i", dest="input_opt", type=Path, default=None, help="Input file (.txt, .pdf, .docx, .png)")
+    p_rep.add_argument("--model", type=Path, default=Path(os.environ.get("MEDRESEARCH_MODEL_DIR", "models/hybrid_v2_seed1")), help="Saved model directory")
+    p_rep.add_argument("--approach", choices=["hybrid_v2", "classical_crf"], default="hybrid_v2", help="Serving approach")
+    p_rep.add_argument("--pipeline", type=str, default=None, help="Deprecated alias for --approach")
+    p_rep.add_argument("--train-jsonl", type=Path, default=None, help="Deprecated ignored argument")
+    p_rep.add_argument("--format", choices=["markdown", "html", "pdf"], default="markdown")
+    p_rep.add_argument("--lang", choices=["en", "fr"], default="en")
+    p_rep.add_argument("--document-date", type=str, default=None, help="Optional fallback document date (YYYY-MM-DD)")
+    p_rep.add_argument("--output", "--out", "-o", dest="output", type=Path, required=True, help="Output report file")
 
-    train_parser = sub.add_parser("train", help="Train and save an evaluated model artifact")
-    train_parser.add_argument("--config", required=True, help="Path to experiment YAML config")
-    train_parser.add_argument("--seed", type=int, default=1, help="Random seed (default: 1)")
-    train_parser.add_argument("--out", required=True, help="Output model directory")
+    # medextract users
+    p_users = sub.add_parser("users", help="Initialize or reset local platform users")
+    sub_users = p_users.add_subparsers(dest="users_cmd", required=True)
+    p_u_init = sub_users.add_parser("init", help="Initialize default demo users and set their password")
+    p_u_init.add_argument("--password", type=str, default=None, help="Password (defaults to MEDRESEARCH_DEMO_PASSWORD)")
+    p_u_set = sub_users.add_parser("set-password", help="Set password for a specific username")
+    p_u_set.add_argument("username", type=str, help="Username (e.g. admin_dakar)")
+    p_u_set.add_argument("--password", type=str, required=True, help="New password (min 8 chars)")
 
     args = parser.parse_args(argv)
-    if args.group == "data" and args.action == "build":
-        manifest = build_corpus_from_config(Path(args.config))
-        _print_stats_table(manifest)
+
+    if args.cmd == "data" and args.data_cmd == "build":
+        summary = build_corpus_from_config(args.config)
+        print(json.dumps(summary, indent=2))
         return 0
-    if args.group == "experiment" and args.action == "run":
-        seeds = [int(s.strip()) for s in args.seeds.split(",") if s.strip()] if args.seeds else None
-        res = run_experiment(Path(args.config), seeds=seeds)
-        sf1 = res["summary"]["strict_f1"]
-        print(f"Run {res['run_id']} | Strict F1: {sf1['mean']:.4f} ± {sf1['std']:.4f}")
-        print(f"Error counts: {res['error_counts']}")
+
+    if args.cmd == "experiment":
+        res = run_experiment(args.config, seeds=args.seeds)
+        print(json.dumps(res, indent=2))
         return 0
-    if args.group == "extract":
-        fpath = Path(args.file)
-        fmt = fpath.suffix.lstrip(".").upper() or "TXT"
-        parsed = parse_document_bytes(fpath.read_bytes(), file_format=fmt)
-        text = "\n".join(p.raw_text for p in parsed.pages)
-        train_path = Path(args.train_jsonl)
-        train_docs = (
-            _load_jsonl(train_path)
-            if train_path.exists()
-            else generate_synthetic_corpus(en_count=24, fr_count=24, seed=42)
-        )
-        doc = AnnotatedDocument(
-            doc_id=fpath.stem,
-            patient_id="PAT-CLI",
-            language=parsed.detected_language if parsed.detected_language in ("en", "fr") else "en",
-            doc_type="discharge_summary",
-            document_date=date.today().isoformat(),
-            source=fpath.name,
-            text=text,
-        )
-        pipe = HybridPipeline(seed=42, cfg={"epochs": 6, "aux_epochs": 4, "max_train_docs": 60}).fit(train_docs)
-        _, payload = pipe.extract_document(doc)
-        print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+    if args.cmd == "train":
+        cfg = yaml.safe_load(args.config.read_text(encoding="utf-8"))
+        data_dir = Path(cfg.get("data_dir", "data/processed/v3_1"))
+        train_docs = _load_jsonl(data_dir / "train.jsonl")
+        approach = str(cfg.get("approach", "hybrid"))
+        corpus_id = str(cfg.get("corpus_id", data_dir.name))
+        if approach == "classical_crf":
+            crf = ClassicalCRFModel(seed=args.seed, cfg=cfg).fit(train_docs)
+            crf.save(args.out, corpus_id=corpus_id)
+            print(json.dumps(crf.manifest, indent=2))
+        else:
+            pipe = HybridPipeline(seed=args.seed, cfg=cfg).fit(train_docs)
+            pipe.save(args.out, corpus_id=corpus_id)
+            print(json.dumps(pipe.manifest, indent=2))
         return 0
-    if args.group == "report":
-        fpath = Path(args.file)
-        fmt = fpath.suffix.lstrip(".").upper() or "TXT"
-        parsed = parse_document_bytes(fpath.read_bytes(), file_format=fmt)
-        text = "\n".join(p.raw_text for p in parsed.pages)
-        train_path = Path(args.train_jsonl)
-        train_docs = (
-            _load_jsonl(train_path)
-            if train_path.exists()
-            else generate_synthetic_corpus(en_count=24, fr_count=24, seed=42)
+
+    if args.cmd == "extract":
+        input_path = _resolve_input_path(args)
+        approach = "classical_crf" if getattr(args, "pipeline", None) == "classical_crf" else args.approach
+        payload, _, _, _ = _extract_file_with_saved_model(
+            input_path,
+            model_dir=args.model,
+            approach=approach,
+            document_date=args.document_date,
         )
-        doc = AnnotatedDocument(
-            doc_id=fpath.stem,
-            patient_id="PAT-CLI",
-            language=parsed.detected_language if parsed.detected_language in ("en", "fr") else "en",
-            doc_type="discharge_summary",
-            document_date=date.today().isoformat(),
-            source=fpath.name,
-            text=text,
+        rendered = json.dumps(payload, indent=2, ensure_ascii=False)
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered + "\n", encoding="utf-8")
+        else:
+            print(rendered)
+        return 0
+
+    if args.cmd == "report":
+        input_path = _resolve_input_path(args)
+        approach = "classical_crf" if getattr(args, "pipeline", None) == "classical_crf" else args.approach
+        payload, _, lang, resolved_date = _extract_file_with_saved_model(
+            input_path,
+            model_dir=args.model,
+            approach=approach,
+            document_date=args.document_date,
         )
-        pipe = HybridPipeline(seed=42, cfg={"epochs": 6, "aux_epochs": 4, "max_train_docs": 60}).fit(train_docs)
-        _, payload = pipe.extract_document(doc)
+        assert_map = {
+            "present": "AFFIRMED",
+            "absent": "NEGATED",
+            "uncertain": "UNCERTAIN",
+            "hypothetical": "HYPOTHETICAL",
+            "family_history": "FAMILY_HISTORY",
+        }
+        entities_dicts: list[dict[str, Any]] = []
+        relations_dicts: list[dict[str, Any]] = []
+        span_to_id: dict[tuple[int, int], str] = {}
+        for i, rec in enumerate(payload.get("records", [])):
+            eid = f"e{i+1}"
+            cs = int(rec.get("char_start") or 0)
+            ce = int(rec.get("char_end") or 0)
+            span_to_id[(cs, ce)] = eid
+            prov = rec.get("provenance") or {}
+            entities_dicts.append({
+                "entity_id": eid,
+                "entity_type": rec.get("entity_type"),
+                "source_text": rec.get("original_text"),
+                "normalized_text": rec.get("normalized_concept") or rec.get("extracted_value"),
+                "assertion_status": assert_map.get(str(rec.get("assertion_status")), "AFFIRMED"),
+                "confidence": rec.get("confidence_score", 0.9),
+                "source_stage": prov.get("source_stage", payload.get("model_name", "hybrid_v2")),
+                "review_status": rec.get("review_status", "unreviewed"),
+                "review_reason": prov.get("review_reason", ""),
+                "char_start": cs,
+                "char_end": ce,
+            })
+        r_idx = 0
+        for rec in payload.get("records", []):
+            prov = rec.get("provenance") or {}
+            for r in prov.get("relations", []):
+                r_idx += 1
+                relations_dicts.append({
+                    "relation_id": f"r{r_idx}",
+                    "relation_type": r.get("type"),
+                    "source_entity_id": span_to_id.get((int(r.get("head_start", 0)), int(r.get("head_end", 0)))),
+                    "target_entity_id": span_to_id.get((int(r.get("tail_start", 0)), int(r.get("tail_end", 0)))),
+                    "confidence": r.get("confidence", 0.85),
+                })
+
         doc_meta = {
-            "document_id": fpath.stem,
-            "original_filename": fpath.name,
-            "detected_language": parsed.detected_language,
-            "extraction_mode": parsed.extraction_mode,
+            "document_id": input_path.stem,
+            "original_filename": input_path.name,
+            "detected_language": lang,
+            "document_type": "CLINICAL_NOTE",
+            "created_at": resolved_date,
         }
         report_bytes, _ = generate_report_bytes(
             doc_meta,
-            payload.get("records", []),
-            [],
+            entities_dicts,
+            relations_dicts,
             lang=args.lang,
-            fmt=args.format,
+            fmt=args.format,  # type: ignore[arg-type]
         )
-        if args.output:
-            Path(args.output).write_bytes(report_bytes)
-            print(f"Wrote {args.format} ({args.lang}) report to {args.output}")
-        else:
-            print(report_bytes.decode("utf-8", errors="replace"))
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_bytes(report_bytes)
         return 0
-    if args.group == "train":
-        cfg_path = Path(args.config)
-        cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
-        approach = str(cfg.get("approach", "hybrid"))
-        dataset_dir = Path(cfg.get("dataset_dir", "data/processed/v3_1"))
-        train_docs = _load_jsonl(dataset_dir / "train.jsonl")
-        t0 = time.perf_counter()
-        if approach == "hybrid":
-            model: HybridPipeline | ClassicalCRFModel = HybridPipeline(seed=int(args.seed), cfg=cfg).fit(train_docs)
-        elif approach == "classical_crf":
-            model = ClassicalCRFModel(seed=int(args.seed), cfg=cfg).fit(train_docs)
-        else:
-            raise ValueError(f"Unsupported approach for saveable training: {approach!r}")
-        out_dir = model.save(Path(args.out), corpus_id=str(dataset_dir))
-        elapsed = round(time.perf_counter() - t0, 2)
-        print(
-            json.dumps(
-                {
-                    "approach": approach,
-                    "seed": int(args.seed),
-                    "out_dir": str(out_dir),
-                    "elapsed_s": elapsed,
-                    "manifest": model.manifest,
-                },
-                indent=2,
-            )
-        )
-        return 0
+
+    if args.cmd == "users":
+        cfg = PlatformConfig.from_env()
+        svc = MedicalResearchPlatformService(cfg)
+        if args.users_cmd == "init":
+            pw = args.password or os.environ.get("MEDRESEARCH_DEMO_PASSWORD") or secrets.token_urlsafe(16)
+            svc.init_or_reset_default_users(pw)
+            print(json.dumps({"status": "ok", "db": str(cfg.sqlite_path), "users_initialized": 5}, indent=2))
+            return 0
+        if args.users_cmd == "set-password":
+            svc.set_user_password(args.username, args.password)
+            print(json.dumps({"status": "ok", "username": args.username, "db": str(cfg.sqlite_path)}, indent=2))
+            return 0
+
     return 1
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())

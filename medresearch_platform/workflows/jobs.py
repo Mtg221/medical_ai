@@ -1,8 +1,10 @@
-"""SQLite-backed background job manager with stage progress tracking for FastAPI."""
+"""SQLite-backed background job manager with stage progress tracking and worker isolation for FastAPI."""
 
 from __future__ import annotations
 
+import concurrent.futures
 import json
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -12,7 +14,11 @@ from medresearch_platform.db.engine import DatabaseEngine
 from medresearch_platform.security.auth import AuthenticatedPrincipal
 from medresearch_platform.workflows.pipeline import MedicalResearchPlatformService
 
-JobStatus = Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED"]
+logger = logging.getLogger(__name__)
+
+JobStatus = Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"]
+
+_JOB_WORKER_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=2, thread_name_prefix="medextract_job")
 
 
 @dataclass(frozen=True)
@@ -23,6 +29,7 @@ class JobRecord:
     institution_id: str
     actor_user_id: str
     job_type: str
+    original_filename: str | None
     status: JobStatus
     progress_pct: int
     current_stage: str
@@ -37,14 +44,26 @@ class JobRecord:
             "institution_id": self.institution_id,
             "actor_user_id": self.actor_user_id,
             "job_type": self.job_type,
+            "original_filename": self.original_filename or "",
             "status": self.status,
-            "progress_pct": self.progress_pct,
+            "stage": self.current_stage,
             "current_stage": self.current_stage,
+            "progress_pct": self.progress_pct,
             "result": self.result,
+            "error": self.error_message,
             "error_message": self.error_message,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
+
+
+def _format_user_facing_error(exc: Exception) -> str:
+    """Return a clean, readable EN/FR user-facing sentence without Python tracebacks."""
+    raw = str(exc).strip()
+    first_line = raw.splitlines()[0].strip() if raw else exc.__class__.__name__
+    if not first_line.endswith((".", "!", "?")):
+        first_line = f"{first_line}."
+    return first_line
 
 
 class JobManager:
@@ -59,6 +78,7 @@ class JobManager:
         institution_id: str,
         actor_user_id: str,
         job_type: str,
+        original_filename: str | None = None,
         initial_stage: str = "QUEUED",
     ) -> JobRecord:
         now = datetime.now(timezone.utc).isoformat()
@@ -67,18 +87,28 @@ class JobManager:
             conn.execute(
                 """
                 INSERT INTO jobs (
-                    job_id, institution_id, actor_user_id, job_type, status,
-                    progress_pct, current_stage, result_json, error_message,
+                    job_id, institution_id, actor_user_id, job_type, original_filename,
+                    status, progress_pct, current_stage, result_json, error_message,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, 'PENDING', 0, ?, NULL, NULL, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, 'PENDING', 0, ?, NULL, NULL, ?, ?)
                 """,
-                (job_id, institution_id, actor_user_id, job_type, initial_stage, now, now),
+                (
+                    job_id,
+                    institution_id,
+                    actor_user_id,
+                    job_type,
+                    original_filename or "",
+                    initial_stage,
+                    now,
+                    now,
+                ),
             )
         return JobRecord(
             job_id=job_id,
             institution_id=institution_id,
             actor_user_id=actor_user_id,
             job_type=job_type,
+            original_filename=original_filename or "",
             status="PENDING",
             progress_pct=0,
             current_stage=initial_stage,
@@ -139,11 +169,16 @@ class JobManager:
     def _row_to_record(row: Any) -> JobRecord:
         res_raw = row["result_json"]
         res = json.loads(str(res_raw)) if res_raw else None
+        keys = set(row.keys()) if hasattr(row, "keys") else set()
+        orig_fn = str(row["original_filename"] or "") if "original_filename" in keys else ""
+        if not orig_fn and isinstance(res, dict):
+            orig_fn = str(res.get("original_filename") or "")
         return JobRecord(
             job_id=str(row["job_id"]),
             institution_id=str(row["institution_id"]),
             actor_user_id=str(row["actor_user_id"]),
             job_type=str(row["job_type"]),
+            original_filename=orig_fn,
             status=str(row["status"]),  # type: ignore[arg-type]
             progress_pct=int(row["progress_pct"]),
             current_stage=str(row["current_stage"]),
@@ -169,11 +204,16 @@ def execute_document_upload_job(
     encounter_date_iso: str,
     specialty: str,
     document_type: str,
+    force_new: bool = False,
 ) -> None:
-    """Background worker that parses/OCRs, extracts, normalizes, and persists an uploaded document."""
-    try:
-        jobs.update_job(job_id, status="RUNNING", progress_pct=20, current_stage="PARSING_AND_OCR")
-        result = service.ingest_document(
+    """Background worker that parses/OCRs, extracts, normalizes, and persists an uploaded document with timeout."""
+    timeout_s = float(getattr(service.config, "job_timeout_seconds", 120.0))
+
+    def _on_stage(stage: str, pct: int) -> None:
+        jobs.update_job(job_id, status="RUNNING", progress_pct=pct, current_stage=stage)
+
+    def _run_ingest() -> dict[str, Any]:
+        return service.ingest_document(
             principal=principal,
             raw_bytes=raw_bytes,
             filename=filename,
@@ -184,7 +224,14 @@ def execute_document_upload_job(
             encounter_date_iso=encounter_date_iso,
             specialty=specialty,
             document_type=document_type,
+            force_new=force_new,
+            progress_callback=_on_stage,
         )
+
+    try:
+        jobs.update_job(job_id, status="RUNNING", progress_pct=10, current_stage="PARSING")
+        fut = _JOB_WORKER_POOL.submit(_run_ingest)
+        result = fut.result(timeout=timeout_s)
         jobs.update_job(
             job_id,
             status="SUCCEEDED",
@@ -192,11 +239,24 @@ def execute_document_upload_job(
             current_stage="COMPLETED",
             result=result,
         )
-    except Exception as exc:
+    except concurrent.futures.TimeoutError:
+        logger.error("Job %s timed out after %.1fs on file '%s'", job_id, timeout_s, filename)
         jobs.update_job(
             job_id,
             status="FAILED",
             progress_pct=100,
             current_stage="FAILED",
-            error_message=str(exc),
+            error_message=(
+                f"Document extraction timed out after {timeout_s:.0f}s. / "
+                f"Le traitement du document a expiré après {timeout_s:.0f}s."
+            ),
+        )
+    except Exception as exc:
+        logger.exception("Job %s failed on file '%s'", job_id, filename)
+        jobs.update_job(
+            job_id,
+            status="FAILED",
+            progress_pct=100,
+            current_stage="FAILED",
+            error_message=_format_user_facing_error(exc),
         )
