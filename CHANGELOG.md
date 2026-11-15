@@ -2,6 +2,12 @@
 
 ## [Unreleased] — Phase 11 ("Make the results true")
 
+### Phase 11B Step 5 — 5-Seed Statistics, 10k Paired Bootstrap & Holm-Bonferroni (G7) (2026-11-15)
+- Upgraded `bootstrap_f1_ci` and `paired_significance_test` in `medresearch_platform/eval_harness/metrics.py` (and `runner.py`) to vectorized `10,000` resamples by default; added `per_doc_strict_counts`, `holm_bonferroni_adjust`, and `pooled_paired_bootstrap` (cluster-paired document bootstrap pooled across seeds).
+- Updated all 7 `configs/exp/v3_1/*.yaml` configs to `seeds: [1, 2, 3, 4, 5]`.
+- Added `tests/test_statistics_and_holm_bonferroni.py` (4 unit tests verifying `n_resamples >= 10000`, exact Holm-Bonferroni monotonicity, no 250-resample floor, and 5-seed pooled paired bootstrap).
+- Ran all 7 approaches × 5 seeds on `SYNTH-MED-V3.1` `val` via `scripts/run_v3_1_val_5seed.py` (`docs/results/v3_1_val_5seed_benchmark.json`, `3538.37s`) and generated `docs/results/v3_1_val_significance.json` and `docs/results/v3_1_val_significance_tables.md` via `scripts/generate_significance_tables.py` (21 pairwise comparisons, 10,000 resamples, Holm-Bonferroni corrected, 95% CIs, method footnotes under each table).
+
 ### Phase 11B Step 4 — Make Every Hybrid Stage Earn Its Place (G4, G8) (2026-11-14)
 - Upgraded `normalize_timex` in `medresearch_platform/hybrid/stage4_temporal.py` to handle all EN/FR `DATE` (`YYYY-MM-DD`, `DD/MM/YYYY`, `Month DD, YYYY`, `DD mois YYYY`, `Month DDth`, `DD mois`, `Month YYYY`), `RELATIVE` (`yesterday`/`la veille`, `today`/`aujourd'hui`, `POD N`/`J N post-op`, `in/dans N days/weeks/months`, `N ... ago`/`il y a`/`depuis`), `DURATION` (`P{n}D/W/M/Y`), and `FREQUENCY` (`QD`/`BID`/`TID`/`PRN`) expressions anchored to `doc.document_date`; updated `CRFTemporalTagger.fit` to train on all 600 EN+FR train docs instead of `train_docs[:250]` (EN-only).
 - Expanded EN/FR `CONTEXT_CUES` and enabled `post_window` checking for `possible` cues in `medresearch_platform/approaches/context_negex.py`; fixed `BiLSTMAssertionClassifier.fit` in `medresearch_platform/hybrid/stage3_context_relations.py` to shuffle `train_docs` before `present` capping (so FR `present` examples are included) and strengthened minority class weights.

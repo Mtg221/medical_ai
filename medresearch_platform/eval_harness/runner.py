@@ -147,7 +147,7 @@ def run_experiment(
         with ResourceProfiler(docs_count=len(eval_docs)) as prof:
             preds = fn(train_docs, eval_docs, seed, cfg)
         metrics = evaluator.evaluate(eval_docs, preds)
-        ci = bootstrap_f1_ci(eval_docs, preds, n_resamples=200, seed=seed)
+        ci = bootstrap_f1_ci(eval_docs, preds, n_resamples=10000, seed=seed)
         metrics["strict_span_ci95"] = ci
         res_dict = prof.metrics.to_dict() if prof.metrics else {}
         seed_results.append({"seed": seed, "metrics": metrics, "resources": res_dict})

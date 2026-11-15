@@ -9,6 +9,8 @@ hidden_dim: 32
 patience: 4
 dropout: 0.15
 seeds:
-  - 1
-  - 2
-  - 3
+- 1
+- 2
+- 3
+- 4
+- 5

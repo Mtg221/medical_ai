@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import math
-import random
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import Any
+
+import numpy as np
 
 from medresearch_platform.data.schema import ASSERTION_CLASSES, AnnotatedDocument
 
@@ -241,32 +242,120 @@ class Evaluator:
         }
 
 
+def per_doc_strict_counts(
+    gold_docs: list[AnnotatedDocument],
+    predictions: list[DocumentPrediction],
+) -> list[tuple[int, int, int]]:
+    """Return per-document strict entity (tp, fp, fn) counts aligned to gold_docs."""
+    pred_map = {p.doc_id: p for p in predictions}
+    counts: list[tuple[int, int, int]] = []
+    for g in gold_docs:
+        gold_set = {(e.type, e.start, e.end) for e in g.entities}
+        pred_doc = pred_map.get(
+            g.doc_id, DocumentPrediction(doc_id=g.doc_id, language=g.language, doc_type=g.doc_type)
+        )
+        pred_set = {(e.type, e.start, e.end) for e in pred_doc.entities}
+        tp = len(gold_set & pred_set)
+        fp = len(pred_set - gold_set)
+        fn = len(gold_set - pred_set)
+        counts.append((tp, fp, fn))
+    return counts
+
+
+def _f1_from_counts_arr(tp: np.ndarray, fp: np.ndarray, fn: np.ndarray) -> np.ndarray:
+    denom = 2.0 * tp + fp + fn
+    return np.where(denom > 0.0, (2.0 * tp) / np.where(denom > 0.0, denom, 1.0), 0.0)
+
+
 def bootstrap_f1_ci(
     gold_docs: list[AnnotatedDocument],
     predictions: list[DocumentPrediction],
     *,
-    n_resamples: int = 500,
+    n_resamples: int = 10000,
     seed: int = 42,
 ) -> dict[str, float]:
-    """Document-level bootstrap 95% confidence interval for strict micro-F1."""
+    """Vectorized document-level bootstrap 95% confidence interval for strict micro-F1."""
     if not gold_docs:
         return {"mean": 0.0, "ci_lower": 0.0, "ci_upper": 0.0}
-    ev = Evaluator()
-    pred_map = {p.doc_id: p for p in predictions}
-    rng = random.Random(seed)
-    scores: list[float] = []
-    n = len(gold_docs)
-    for _ in range(n_resamples):
-        sample_gold = [gold_docs[rng.randrange(n)] for _ in range(n)]
-        sample_preds = [
-            pred_map.get(g.doc_id, DocumentPrediction(doc_id=g.doc_id, language=g.language, doc_type=g.doc_type))
-            for g in sample_gold
-        ]
-        scores.append(ev.evaluate(sample_gold, sample_preds)["strict_span"]["f1"])
-    scores.sort()
-    lo = scores[max(0, int(0.025 * len(scores)))]
-    hi = scores[min(len(scores) - 1, int(0.975 * len(scores)))]
-    return {"mean": round(sum(scores) / len(scores), 6), "ci_lower": round(lo, 6), "ci_upper": round(hi, 6)}
+    arr = np.asarray(per_doc_strict_counts(gold_docs, predictions), dtype=np.float64)
+    n = len(arr)
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, n, size=(n_resamples, n))
+    sampled = arr[idx].sum(axis=1)
+    scores = np.sort(_f1_from_counts_arr(sampled[:, 0], sampled[:, 1], sampled[:, 2]))
+    lo = float(scores[max(0, int(0.025 * len(scores)))])
+    hi = float(scores[min(len(scores) - 1, int(0.975 * len(scores)))])
+    return {
+        "mean": round(float(scores.mean()), 6),
+        "ci_lower": round(lo, 6),
+        "ci_upper": round(hi, 6),
+    }
+
+
+def holm_bonferroni_adjust(p_values: list[float]) -> list[float]:
+    """Apply step-down Holm-Bonferroni family-wise error correction."""
+    m = len(p_values)
+    if m == 0:
+        return []
+    indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+    adjusted = [1.0] * m
+    running_max = 0.0
+    for rank, (orig_idx, p_val) in enumerate(indexed):
+        scaled = min(1.0, (m - rank) * float(p_val))
+        running_max = max(running_max, scaled)
+        adjusted[orig_idx] = running_max
+    return adjusted
+
+
+def pooled_paired_bootstrap(
+    doc_seed_counts_a: list[list[tuple[int, int, int]]],
+    doc_seed_counts_b: list[list[tuple[int, int, int]]],
+    *,
+    n_resamples: int = 10000,
+    seed: int = 42,
+) -> dict[str, Any]:
+    """Cluster-paired bootstrap over documents pooled across seeds (N_docs x N_seeds)."""
+    if len(doc_seed_counts_a) != len(doc_seed_counts_b) or not doc_seed_counts_a:
+        raise ValueError("doc_seed_counts_a and doc_seed_counts_b must be non-empty and equal length")
+    arr_a = np.asarray(doc_seed_counts_a, dtype=np.float64).sum(axis=1)  # (N_docs, 3)
+    arr_b = np.asarray(doc_seed_counts_b, dtype=np.float64).sum(axis=1)  # (N_docs, 3)
+    n = len(arr_a)
+    tot_a = arr_a.sum(axis=0)
+    tot_b = arr_b.sum(axis=0)
+    f1_a = float(_f1_from_counts_arr(tot_a[0:1], tot_a[1:2], tot_a[2:3])[0])
+    f1_b = float(_f1_from_counts_arr(tot_b[0:1], tot_b[1:2], tot_b[2:3])[0])
+    obs_delta = f1_b - f1_a
+
+    rng = np.random.default_rng(seed)
+    deltas = np.empty(n_resamples, dtype=np.float64)
+    chunk = 2000
+    for start in range(0, n_resamples, chunk):
+        sz = min(chunk, n_resamples - start)
+        idx = rng.integers(0, n, size=(sz, n))
+        sa = arr_a[idx].sum(axis=1)
+        sb = arr_b[idx].sum(axis=1)
+        fa = _f1_from_counts_arr(sa[:, 0], sa[:, 1], sa[:, 2])
+        fb = _f1_from_counts_arr(sb[:, 0], sb[:, 1], sb[:, 2])
+        deltas[start : start + sz] = fb - fa
+
+    if obs_delta >= 0.0:
+        extreme = int(np.sum(deltas <= 0.0))
+    else:
+        extreme = int(np.sum(deltas >= 0.0))
+    p_val = min(1.0, 2.0 * (extreme + 1) / (n_resamples + 1))
+    sorted_d = np.sort(deltas)
+    lo = float(sorted_d[max(0, int(0.025 * len(sorted_d)))])
+    hi = float(sorted_d[min(len(sorted_d) - 1, int(0.975 * len(sorted_d)))])
+
+    return {
+        "f1_a": round(f1_a, 6),
+        "f1_b": round(f1_b, 6),
+        "delta_f1": round(obs_delta, 6),
+        "ci95_low": round(lo, 6),
+        "ci95_high": round(hi, 6),
+        "p_value": round(p_val, 8),
+        "n_resamples": n_resamples,
+    }
 
 
 def paired_significance_test(
@@ -274,16 +363,15 @@ def paired_significance_test(
     preds_a: list[DocumentPrediction],
     preds_b: list[DocumentPrediction],
     *,
-    n_resamples: int = 500,
+    n_resamples: int = 10000,
     seed: int = 42,
 ) -> dict[str, Any]:
     """Paired bootstrap test (delta F1 = F1_B - F1_A) and McNemar test on gold entity hits."""
-    ev = Evaluator()
     map_a = {p.doc_id: p for p in preds_a}
     map_b = {p.doc_id: p for p in preds_b}
-    f1_a = ev.evaluate(gold_docs, preds_a)["strict_span"]["f1"]
-    f1_b = ev.evaluate(gold_docs, preds_b)["strict_span"]["f1"]
-    obs_delta = f1_b - f1_a
+    counts_a = [[c] for c in per_doc_strict_counts(gold_docs, preds_a)]
+    counts_b = [[c] for c in per_doc_strict_counts(gold_docs, preds_b)]
+    boot = pooled_paired_bootstrap(counts_a, counts_b, n_resamples=n_resamples, seed=seed)
 
     # McNemar contingency counts on gold entity span hits
     n10 = n01 = 0
@@ -306,26 +394,13 @@ def paired_significance_test(
         chi2 = ((abs(n10 - n01) - 1.0) ** 2) / (n10 + n01)
         mcnemar_p = math.erfc(math.sqrt(chi2 / 2.0))
 
-    # Paired bootstrap two-sided p-value
-    rng = random.Random(seed)
-    n = len(gold_docs)
-    extreme = 0
-    for _ in range(n_resamples):
-        idxs = [rng.randrange(n) for _ in range(n)]
-        sg = [gold_docs[i] for i in idxs]
-        sa = [map_a.get(g.doc_id, DocumentPrediction(g.doc_id, g.language, g.doc_type)) for g in sg]
-        sb = [map_b.get(g.doc_id, DocumentPrediction(g.doc_id, g.language, g.doc_type)) for g in sg]
-        d = ev.evaluate(sg, sb)["strict_span"]["f1"] - ev.evaluate(sg, sa)["strict_span"]["f1"]
-        if (obs_delta >= 0 and d <= 0) or (obs_delta < 0 and d >= 0):
-            extreme += 1
-    boot_p = min(1.0, 2.0 * (extreme + 1) / (n_resamples + 1))
-
     return {
-        "f1_a": f1_a,
-        "f1_b": f1_b,
-        "delta_f1": round(obs_delta, 6),
-        "bootstrap_p_value": round(boot_p, 6),
+        "f1_a": boot["f1_a"],
+        "f1_b": boot["f1_b"],
+        "delta_f1": boot["delta_f1"],
+        "bootstrap_p_value": boot["p_value"],
+        "n_resamples": n_resamples,
         "mcnemar_n10": n10,
         "mcnemar_n01": n01,
-        "mcnemar_p_value": round(mcnemar_p, 6),
+        "mcnemar_p_value": round(mcnemar_p, 8),
     }

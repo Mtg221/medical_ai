@@ -1,7 +1,7 @@
 # Project Status
 
-**Last Updated:** 2026-11-14  
-**Active Phase:** Phase 11B — Step 4 complete (5-seed `SYNTH-MED-V3.1` hybrid ablations on `val`, `test_unseen_terms`, `test_unseen_templates`; Stage 4 TIMEX F1 `1.0000`/`0.9969` & norm `1.0000`, Relation CNN `+0.1735` on `val`, Context/NegEx cues upgraded, Stage 5 fusion documented as `0.0000` negative result); Step 5 (5-seed paired bootstrap >= 10k + Holm-Bonferroni G7) next
+**Last Updated:** 2026-11-15  
+**Active Phase:** Phase 11B — Step 5 complete (5 seeds in all `v3_1` configs, 10,000-resample cluster-paired bootstrap pooled over 5 seeds + Holm-Bonferroni across all 21 pairwise comparisons, generated from JSON); Step 6 (OCR benchmark >= 60 pages/lang + end-to-end F1 + skip without Tesseract G9) next
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
