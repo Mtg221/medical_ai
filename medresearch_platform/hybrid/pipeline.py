@@ -45,6 +45,7 @@ class HybridPipeline:
             epochs=int(self.cfg.get("epochs", 10)),
             lr=float(self.cfg.get("lr", 0.018)),
             max_train_docs=int(raw_max) if raw_max is not None else None,
+            use_crf_ensemble=bool(self.cfg.get("use_crf_ensemble", False)),
             seed=seed,
         )
         self.assertion_model: BiLSTMAssertionClassifier | None = None
@@ -59,9 +60,12 @@ class HybridPipeline:
         self.stage2.fit(train_docs)
         vocab = self.stage2.vocab
 
-        self.assertion_model = BiLSTMAssertionClassifier(len(vocab), seed=self.seed).fit(
-            train_docs, vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
-        )
+        if bool(self.cfg.get("use_assertion_bilstm", True)):
+            self.assertion_model = BiLSTMAssertionClassifier(len(vocab), seed=self.seed).fit(
+                train_docs, vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
+            )
+        else:
+            self.assertion_model = None
         self.relation_model = PiecewiseCNNRelationClassifier(len(vocab), seed=self.seed).fit(
             train_docs, vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
         )
@@ -72,10 +76,11 @@ class HybridPipeline:
         shuffled_docs = list(train_docs)
         rng.shuffle(shuffled_docs)
         self.reranker = TransformerCandidateReranker(vocab_size=len(vocab), seed=self.seed)
-        cand_pairs = [(d, self.stage2.predict(d, use_rules_layer=True)) for d in shuffled_docs[:80]]
-        self.reranker.fit_on_candidates(
-            cand_pairs, vocab=vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
-        )
+        if bool(self.cfg.get("use_transformer_fusion", True)):
+            cand_pairs = [(d, self.stage2.predict(d, use_rules_layer=True)) for d in shuffled_docs[:80]]
+            self.reranker.fit_on_candidates(
+                cand_pairs, vocab=vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
+            )
 
         # Fit temperature scaler on held-out slice of train_docs
         cal_confs: list[float] = []
@@ -99,8 +104,10 @@ class HybridPipeline:
         use_temporal_crf: bool = True,
         use_transformer_fusion: bool = True,
     ) -> tuple[DocumentPrediction, dict[str, Any]]:
-        if not self._fitted or self.assertion_model is None or self.relation_model is None:
+        if not self._fitted or self.relation_model is None:
             raise RuntimeError("HybridPipeline must be fitted before extract_document()")
+        if use_assertion_bilstm and self.assertion_model is None:
+            use_assertion_bilstm = False
 
         timings: list[dict[str, Any]] = []
 
@@ -131,7 +138,7 @@ class HybridPipeline:
         enriched_cands: list[CandidateEntity] = []
         for c in fused_cands:
             ctx_lbl = classify_assertion_context(doc.text, c.entity.start, c.entity.end, language=s1.language)
-            if use_assertion_bilstm:
+            if use_assertion_bilstm and self.assertion_model is not None:
                 probs = self.assertion_model.predict_proba(
                     doc.text, c.entity.start, c.entity.end, vocab, toks=doc_toks
                 )

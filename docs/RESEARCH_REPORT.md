@@ -158,3 +158,29 @@ Even when plain-text CER is `< 1%` (`tier_1`–`tier_3`), Tesseract reading-orde
 2. **Stage 3b Assertion & Stage 5 Fusion:** `BiLSTMAssertionClassifier` degrades Assertion Macro-F1 relative to ConText/NegEx on unseen templates, and Transformer fusion adds `0.0000` Strict F1 gain; Stage 3b should be disabled or replaced with a cross-template calibrated assertion head, and Stage 5 should either be removed or retrained with stronger character+subword representations.
 3. **Synthetic vs Clinical Free Text:** `SYNTH-MED-V3.1` proves comparative behavior under controlled OOV and template shifts, but real de-identified hospital prose evaluation remains gated on external IRB/annotation collection as specified in [`docs/REALISTIC_SET_PROTOCOL.md`](file:///Users/guest777/Desktop/medical/docs/REALISTIC_SET_PROTOCOL.md).
 4. **OCR Reading-Order Fragility:** Document layout segmentation (column detection and table-cell ordering) before Tesseract is required to recover the `-0.34` to `-0.62` OCR F1 gap.
+
+---
+
+## 9. Phase 12 Post-Report Engineering Improvements
+
+Following the negative findings in Sections 5, 6, and 8, three concrete upgrades were implemented and benchmarked (`phase-12-hybrid-ocr-and-realistic`):
+
+### 9.1 Hybrid v2 (`configs/exp/v3_2/hybrid_v2.yaml`, 3-seed mean)
+Configured `HybridPipeline` with `use_crf_ensemble: true` (adding `sklearn-crfsuite` OOV backoff/override to `Stage2EntityExtractor`), `use_assertion_bilstm: false` (reverting to `ConText/NegEx`), and `use_transformer_fusion: false` (removing the zero-delta Stage 5 reranker):
+
+| Split | `hybrid_v1` Strict / Assert / Rel | `hybrid_v2` Strict / Assert / Rel | `classical_crf` Strict / Assert / Rel | Delta (`hybrid_v2 - hybrid_v1`) |
+|---|---|---|---|---|
+| `val` (160) | `0.9925 / 0.6759 / 0.9187` | **`0.9964 / 0.7566 / 0.9174`** | `0.9961 / 0.7567 / 0.7186` | `+0.0039` Strict, `+0.0807` Assert, `-30%` runtime (`184.2s -> 129.1s`) |
+| `test_iid` (160) | `0.9928 / 0.6800 / 0.9189` | **`0.9969 / 0.7176 / 0.9186`** | `0.9968 / 0.7194 / 0.7341` | `+0.0041` Strict, `+0.0376` Assert |
+| `test_unseen_terms` (160) | `0.8176 / 0.6441 / 0.8238` | **`0.9159 / 0.7480 / 0.8560`** | `0.9169 / 0.7511 / 0.7197` | **`+0.0983` Strict**, **`+0.1039` Assert**, `+0.0322` Rel |
+| `test_unseen_templates` (160) | `0.8855 / 0.5150 / 0.8184` | **`0.9263 / 0.6429 / 0.8511`** | `0.9527 / 0.6459 / 0.7235` | **`+0.0408` Strict**, **`+0.1279` Assert**, `+0.0327` Rel |
+| `realistic_80` (40 EN + 40 FR) | `0.2598 / 0.3830 / 0.4014` | `0.2458 / 0.4973 /` **`0.4455`** | **`0.2641`** `/ 0.4987 / 0.4079` | `-0.0140` Strict, `+0.1143` Assert, `+0.0441` Rel |
+
+### 9.2 Realistic Free-Text Prose Stress Test (`realistic_80`)
+Created an 80-note (40 EN + 40 FR) un-templated clinical prose set (`medresearch_platform/data/realistic_v1.py`, `data/processed/realistic/eval.jsonl`) featuring clinical shorthand (`c/o`, `h/o`, `ATCD`, `TTT`), multi-clause uncertainty, and unseen multi-word phrases. All `SYNTH-MED-V3.1`-trained models drop sharply to `0.2458–0.2641` Strict Entity F1, confirming that diverse narrative clinical training data is still needed for free-text generalization.
+
+### 9.3 Column-Aware OCR Layout Segmentation (`docs/results/v3_2_ocr_layout_benchmark.json`)
+Added horizontal-rule-suppressed vertical projection column detection (`detect_column_split` in [`medresearch_platform/documents/ocr_engine.py`](file:///Users/guest777/Desktop/medical/medresearch_platform/documents/ocr_engine.py)) so `run_tesseract_ocr` reads left column top-to-bottom before right column:
+- **`tier_4_two_col_table_stamps` (20 pages):** Mean CER fell from **`0.6670 -> 0.1474`** (-77.9% relative), Mean WER fell from **`0.7620 -> 0.2338`** (-69.3% relative), and `classical_crf` OCR Strict F1 rose from **`0.4173 -> 0.5950`** (`+0.1777`).
+- **Overall 120 pages (`test_iid`):** Mean CER fell from **`0.1927 -> 0.1061`**, Mean WER fell from **`0.3198 -> 0.2318`**, and `classical_crf` OCR Strict F1 improved from **`0.5655 -> 0.5919`** with zero regression on single-column Tiers 1–3.
+

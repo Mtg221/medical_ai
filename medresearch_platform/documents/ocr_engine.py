@@ -169,14 +169,112 @@ def _select_tesseract_lang(available_langs: list[str], lang_hint: str | None) ->
     return "eng"
 
 
+def detect_column_split(preprocessed: np.ndarray) -> int | None:
+    """Detect a vertical column gutter in a preprocessed binary scan image (255=bg, 0=ink).
+
+    Returns the x-coordinate of the gutter midpoint if a clear two-column layout
+    exists, or None for single-column pages.
+    """
+    h, w = preprocessed.shape[:2]
+    if h < 80 or w < 120:
+        return None
+
+    ink = (preprocessed < 128).astype(np.uint8) * 255
+    # Suppress wide horizontal rules (e.g. table borders) before projection
+    horiz_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (max(30, w // 12), 1))
+    horiz_lines = cv2.morphologyEx(ink, cv2.MORPH_OPEN, horiz_kernel)
+    ink_clean = cv2.subtract(ink, horiz_lines)
+
+    y0, y1 = int(0.08 * h), int(0.92 * h)
+    roi = (ink_clean[y0:y1, :] > 0).astype(np.float32)
+    col_density = roi.mean(axis=0)
+
+    left_mean = float(col_density[int(0.08 * w) : int(0.42 * w)].mean())
+    right_mean = float(col_density[int(0.58 * w) : int(0.92 * w)].mean())
+    if left_mean < 0.004 or right_mean < 0.004:
+        return None
+
+    band_start = int(0.42 * w)
+    band_end = int(0.58 * w)
+    min_gutter_w = max(10, int(0.012 * w))
+    threshold = max(0.004, 0.12 * min(left_mean, right_mean))
+
+    best_start = -1
+    best_len = 0
+    cur_start = -1
+    for x in range(band_start, band_end):
+        if col_density[x] <= threshold:
+            if cur_start < 0:
+                cur_start = x
+        else:
+            if cur_start >= 0 and (x - cur_start) > best_len:
+                best_start = cur_start
+                best_len = x - cur_start
+            cur_start = -1
+    if cur_start >= 0 and (band_end - cur_start) > best_len:
+        best_start = cur_start
+        best_len = band_end - cur_start
+
+    if best_len < min_gutter_w or best_start < 0:
+        return None
+    return best_start + best_len // 2
+
+
+def _extract_region_words(
+    region_img: np.ndarray,
+    *,
+    tess_lang: str,
+    config: str,
+    scale: float,
+    x_offset_px: int,
+    pad: int = 16,
+) -> list[list[tuple[str, int, int, int, int, float]]]:
+    """Run pytesseract.image_to_data on one cropped region and return ordered lines of words."""
+    data: dict[str, list[Any]] = pytesseract.image_to_data(
+        region_img,
+        lang=tess_lang,
+        config=config,
+        output_type=Output.DICT,
+    )
+    n_items = len(data.get("text", []))
+    lines_order: list[tuple[int, int, int]] = []
+    grouped: dict[tuple[int, int, int], list[tuple[str, int, int, int, int, float]]] = {}
+
+    for i in range(n_items):
+        word = str(data["text"][i]).strip()
+        if not word:
+            continue
+        conf_raw = float(data["conf"][i])
+        if conf_raw < 0:
+            continue
+        key = (
+            int(data["block_num"][i]),
+            int(data["par_num"][i]),
+            int(data["line_num"][i]),
+        )
+        if key not in grouped:
+            grouped[key] = []
+            lines_order.append(key)
+
+        wx = max(0, int(round((int(data["left"][i]) - pad + x_offset_px) / scale)))
+        wy = max(0, int(round((int(data["top"][i]) - pad) / scale)))
+        ww = max(1, int(round(int(data["width"][i]) / scale)))
+        wh = max(1, int(round(int(data["height"][i]) / scale)))
+        conf = max(0.0, min(1.0, conf_raw / 100.0))
+        grouped[key].append((word, wx, wy, ww, wh, conf))
+
+    return [grouped[key] for key in lines_order]
+
+
 def run_tesseract_ocr(
     image: Image.Image,
     *,
     page_number: int = 1,
     lang_hint: str | None = None,
     psm: int = 6,
+    layout_aware: bool = True,
 ) -> OCRPageResult:
-    """Run OpenCV preprocessing + Tesseract OCR on a PIL image and return text + word boxes."""
+    """Run OpenCV preprocessing, optional column layout segmentation, and Tesseract OCR."""
     orig_w, orig_h = image.size
     available, langs = check_tesseract_available()
     if not available:
@@ -194,51 +292,44 @@ def run_tesseract_ocr(
     preprocessed, scale, skew_angle = preprocess_scan_image(image)
     tess_lang = _select_tesseract_lang(langs, lang_hint)
     config = f"--oem 3 --psm {psm}"
-    data: dict[str, list[Any]] = pytesseract.image_to_data(
-        preprocessed,
-        lang=tess_lang,
-        config=config,
-        output_type=Output.DICT,
-    )
-
-    n_items = len(data.get("text", []))
-    lines_order: list[tuple[int, int, int]] = []
-    grouped: dict[tuple[int, int, int], list[tuple[str, int, int, int, int, float]]] = {}
-
     pad = 16
-    for i in range(n_items):
-        word = str(data["text"][i]).strip()
-        if not word:
-            continue
-        conf_raw = float(data["conf"][i])
-        if conf_raw < 0:
-            continue
-        key = (
-            int(data["block_num"][i]),
-            int(data["par_num"][i]),
-            int(data["line_num"][i]),
-        )
-        if key not in grouped:
-            grouped[key] = []
-            lines_order.append(key)
 
-        wx = max(0, int(round((int(data["left"][i]) - pad) / scale)))
-        wy = max(0, int(round((int(data["top"][i]) - pad) / scale)))
-        ww = max(1, int(round(int(data["width"][i]) / scale)))
-        wh = max(1, int(round(int(data["height"][i]) / scale)))
-        conf = max(0.0, min(1.0, conf_raw / 100.0))
-        grouped[key].append((word, wx, wy, ww, wh, conf))
+    split_x = detect_column_split(preprocessed) if layout_aware else None
+    all_lines: list[list[tuple[str, int, int, int, int, float]]] = []
+    if split_x is not None:
+        left_crop = cv2.copyMakeBorder(preprocessed[:, :split_x], 0, 0, 0, pad, cv2.BORDER_CONSTANT, value=255)
+        right_crop = cv2.copyMakeBorder(preprocessed[:, split_x:], 0, 0, pad, 0, cv2.BORDER_CONSTANT, value=255)
+        all_lines.extend(
+            _extract_region_words(
+                left_crop, tess_lang=tess_lang, config=config, scale=scale, x_offset_px=0, pad=pad
+            )
+        )
+        all_lines.extend(
+            _extract_region_words(
+                right_crop,
+                tess_lang=tess_lang,
+                config=config,
+                scale=scale,
+                x_offset_px=split_x - pad,
+                pad=pad,
+            )
+        )
+    else:
+        all_lines.extend(
+            _extract_region_words(
+                preprocessed, tess_lang=tess_lang, config=config, scale=scale, x_offset_px=0, pad=pad
+            )
+        )
 
     out_parts: list[str] = []
     word_boxes: list[WordBox] = []
     cursor = 0
     confs: list[float] = []
 
-    for line_idx, key in enumerate(lines_order):
+    for line_idx, words in enumerate(all_lines):
         if line_idx > 0:
             out_parts.append("\n")
             cursor += 1
-        words = grouped[key]
         for w_idx, (word, wx, wy, ww, wh, conf) in enumerate(words):
             if w_idx > 0:
                 out_parts.append(" ")

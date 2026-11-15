@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-15  
-**Active Phase:** Phase 11B — Complete (Steps 1–9 finished on `SYNTH-MED-V3.1`, 5-seed locked evaluation + `docs/RESEARCH_REPORT.md` published)
+**Active Phase:** Phase 12 — Complete (`hybrid_v2` CRF+ConText/NegEx ensemble, column-aware OCR layout segmentation, and `realistic_80` EN+FR evaluation; Python 3.13 pure-NumPy runtime confirmed per `ADR-0009`)
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 

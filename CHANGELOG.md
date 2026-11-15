@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] — Phase 12 (Hybrid v2, OCR Layout Segmentation & Realistic 80-Note Eval)
+
+### Phase 12 — Model, OCR & Realistic Free-Text Upgrades (2026-11-15)
+- Added column-aware OCR layout segmentation (`detect_column_split` in `medresearch_platform/documents/ocr_engine.py`, `tests/test_ocr_layout_segmentation.py`): reduces `tier_4_two_col_table_stamps` CER `0.6670 -> 0.1474` and WER `0.7620 -> 0.2338`, lifting `classical_crf` OCR F1 `0.4173 -> 0.5950` (`docs/results/v3_2_ocr_layout_benchmark.json`).
+- Upgraded `Stage2EntityExtractor` (`medresearch_platform/hybrid/stage2_ner.py`) and `HybridPipeline` (`medresearch_platform/hybrid/pipeline.py`) with optional `use_crf_ensemble: true` and `configs/exp/v3_2/hybrid_v2.yaml` (disabling BiLSTMAssertion & Stage 5 Transformer fusion), lifting `hybrid` Strict F1 on `test_unseen_terms` (`0.8176 -> 0.9159`) and `test_unseen_templates` (`0.8855 -> 0.9263`) while cutting training time by 30% (`docs/results/phase12_hybrid_v2_and_realistic.json`).
+- Built `medresearch_platform/data/realistic_v1.py` (`data/processed/realistic/eval.jsonl`, 40 EN + 40 FR un-templated prose notes, `tests/test_realistic_eval_set.py`), revealing `0.2458–0.2641` Strict F1 under un-templated narrative prose & shorthand.
+
 ## [Unreleased] — Phase 11 ("Make the results true")
 
 ### Phase 11B Step 9 — Final 5-Seed Locked Evaluation & Honest Research Report (2026-11-15)

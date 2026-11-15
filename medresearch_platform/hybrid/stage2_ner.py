@@ -5,7 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+import sklearn_crfsuite
 
+from medresearch_platform.approaches.classical_ml import _token_window_features
 from medresearch_platform.approaches.neural_seq import (
     NeuralBiLSTMCRFTagger,
     _AdamW,
@@ -17,6 +19,7 @@ from medresearch_platform.approaches.neural_seq import (
 from medresearch_platform.approaches.rule_based import predict_rule_based
 from medresearch_platform.approaches.tokenizer import (
     TrainOnlyVocabulary,
+    align_entities_to_bio,
     decode_bio_to_entities,
     tokenize_with_offsets,
 )
@@ -40,15 +43,18 @@ class Stage2EntityExtractor:
         epochs: int = 10,
         lr: float = 0.018,
         max_train_docs: int | None = None,
+        use_crf_ensemble: bool = False,
         seed: int = 42,
     ) -> None:
         self.hidden_dim = hidden_dim
         self.epochs = epochs
         self.lr = lr
         self.max_train_docs = max_train_docs
+        self.use_crf_ensemble = use_crf_ensemble
         self.seed = seed
         self.vocab = TrainOnlyVocabulary(max_size=6000, min_freq=1)
         self.model: NeuralBiLSTMCRFTagger | None = None
+        self.crf_model: sklearn_crfsuite.CRF | None = None
 
     def fit(self, train_docs: list[AnnotatedDocument]) -> Stage2EntityExtractor:
         self.vocab.fit(train_docs)
@@ -92,6 +98,27 @@ class Stage2EntityExtractor:
 
         model.params = best_params
         self.model = model
+
+        if self.use_crf_ensemble:
+            x_crf = []
+            y_crf = []
+            for d in subset:
+                toks = tokenize_with_offsets(d.text)
+                if not toks:
+                    continue
+                x_crf.append([_token_window_features(toks, i) for i in range(len(toks))])
+                y_crf.append(align_entities_to_bio(toks, d.entities))
+            crf = sklearn_crfsuite.CRF(
+                algorithm="lbfgs",
+                c1=0.1,
+                c2=0.1,
+                max_iterations=80,
+                all_possible_transitions=True,
+            )
+            if x_crf:
+                crf.fit(x_crf, y_crf)
+            self.crf_model = crf
+
         return self
 
     def predict(
@@ -111,13 +138,46 @@ class Stage2EntityExtractor:
             tags, confs = self.model.predict(w_ids, c_feats)
             neural_ents = decode_bio_to_entities(doc.text, toks, tags, confs)
 
-        if not use_rules_layer:
-            return [CandidateEntity(entity=e, source_stage="bilstm_crf") for e in neural_ents]
-
-        rule_pred = predict_rule_based([], [doc], self.seed, {})[0]
         merged: dict[tuple[str, int, int], CandidateEntity] = {}
         for e in neural_ents:
             merged[(e.type, e.start, e.end)] = CandidateEntity(entity=e, source_stage="bilstm_crf")
+
+        if self.crf_model is not None and toks:
+            feats = [_token_window_features(toks, i) for i in range(len(toks))]
+            pred_tags = list(self.crf_model.predict_single(feats))
+            marginals = self.crf_model.predict_marginals_single(feats)
+            confs = [float(m.get(t, 0.75)) for m, t in zip(marginals, pred_tags, strict=True)]
+            crf_ents = decode_bio_to_entities(doc.text, toks, pred_tags, confs)
+            for ce in crf_ents:
+                key = (ce.type, ce.start, ce.end)
+                if key in merged:
+                    prev = merged[key].entity
+                    boosted = PredictedEntity(
+                        type=prev.type,
+                        start=prev.start,
+                        end=prev.end,
+                        text=prev.text,
+                        assertion=prev.assertion,
+                        confidence=round(min(0.99, max(prev.confidence, ce.confidence) + 0.05), 4),
+                    )
+                    merged[key] = CandidateEntity(entity=boosted, source_stage="bilstm_crf+crf")
+                else:
+                    overlapping = [
+                        k
+                        for k, m in merged.items()
+                        if max(ce.start, m.entity.start) < min(ce.end, m.entity.end)
+                    ]
+                    if not overlapping:
+                        merged[key] = CandidateEntity(entity=ce, source_stage="crf_backoff")
+                    elif all(ce.confidence > merged[k].entity.confidence + 0.05 for k in overlapping):
+                        for k in overlapping:
+                            del merged[k]
+                        merged[key] = CandidateEntity(entity=ce, source_stage="crf_override")
+
+        if not use_rules_layer:
+            return sorted(merged.values(), key=lambda c: c.entity.start)
+
+        rule_pred = predict_rule_based([], [doc], self.seed, {})[0]
 
         for re_ent in rule_pred.entities:
             key = (re_ent.type, re_ent.start, re_ent.end)
