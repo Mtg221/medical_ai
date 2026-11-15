@@ -1,3 +1,22 @@
+import type { components, paths } from "./openapi";
+
+export type OpenApiSchemas = components["schemas"];
+export type OpenApiPaths = paths;
+export type ReviewSubmissionRequest = OpenApiSchemas["ReviewSubmissionRequest"];
+
+export interface HumanReviewRecord {
+  review_id: string;
+  target_type: string;
+  target_id: string;
+  document_id: string;
+  reviewer_user_id: string;
+  previous_value: Record<string, unknown>;
+  corrected_value: Record<string, unknown>;
+  review_decision: string;
+  rationale: string;
+  created_at: string;
+}
+
 export interface TokenResponse {
   access_token: string;
   token_type: string;

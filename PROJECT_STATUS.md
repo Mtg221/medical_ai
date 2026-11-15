@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-15  
-**Active Phase:** Phase 11B — Step 6 complete (120-page EN+FR OCR benchmark across 6 tiers / 11 degradation modes + end-to-end `classical_crf` & `hybrid` F1 drop + `pytest.skip` without Tesseract); Step 7 (Frontend Phase 7 standard G10) next
+**Active Phase:** Phase 11B — Step 7 complete (`POST/GET /api/v1/reviews` + gold JSONL/BRAT export, OpenAPI-generated TS types, Dark Mode, `A/C/R/N` shortcuts + span correction form + progress bar, Playwright E2E + desktop/mobile screenshots); Step 8 (`REALISTIC_SET_PROTOCOL.md` & `ADR-0009` G11) next
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 

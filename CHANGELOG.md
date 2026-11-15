@@ -2,6 +2,13 @@
 
 ## [Unreleased] — Phase 11 ("Make the results true")
 
+### Phase 11B Step 7 — Frontend to the Phase 7 Standard (G10) (2026-11-15)
+- Added persisted review endpoints in `medresearch_platform/interfaces/api.py` and `medresearch_platform/workflows/review.py`: `POST /api/v1/reviews` (`approve`/`correct`/`flag`/`reject` with span/type/assertion updates, reviewer, timestamp, old/new audit log), `GET /api/v1/reviews`, `GET /api/v1/reviews/export` (`jsonl` and `brat` gold export), plus `/react/{full_path:path}` SPA fallback. Added `tests/test_review_api_persistence.py`.
+- Generated TypeScript API types directly from FastAPI `/api/v1/openapi.json` via `scripts/export_openapi_types.py` (`openapi-typescript` -> `frontend/src/types/openapi.d.ts`, `npm run gen:api`).
+- Added Dark Mode (`frontend/src/store/themeStore.ts`, `@custom-variant dark` in `index.css`, toggle in `Layout.tsx`, `dark:` styling on `Card.tsx` and `ReviewQueuePage.tsx`) and `sessionStorage` auth persistence in `authStore.ts`.
+- Upgraded `frontend/src/pages/ReviewQueuePage.tsx` with `POST /api/v1/reviews` persistence, progress bar, selectable document text for span offsets, inline correction form, `A`/`C`/`R`/`N` keyboard shortcuts, JSONL/BRAT export buttons, and saved audit log.
+- Added Playwright E2E suite (`frontend/playwright.config.ts`, `frontend/e2e/app.spec.ts`) running against real FastAPI + built React UI (`/react/`), capturing desktop light, desktop dark, and mobile dark screenshots in `docs/screenshots/`.
+
 ### Phase 11B Step 6 — Full-Size OCR Benchmark & Clean Skip (G9) (2026-11-15)
 - Extended `medresearch_platform/documents/ocr_benchmark.py` with `tesseract_available(("eng", "fra"))`, full degradation rendering (`dpi` 150–300, JPEG, blur, noise, rotation `±5°`, perspective keystone warp, uneven lighting, stamps/stains, two columns, table grid, >= 3 fonts), and `map_ocr_spans_to_reference` for end-to-end OCR span evaluation.
 - Updated `tests/test_ocr_stress_benchmark.py` (4 tests) to `pytest.skip` cleanly when Tesseract or `fra` is missing, and added macOS/Windows Tesseract + `fra` setup instructions to `README.md`.

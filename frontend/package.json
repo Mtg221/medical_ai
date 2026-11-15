@@ -7,7 +7,9 @@
     "dev": "vite --host 127.0.0.1 --port 5173",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && vite build",
-    "test": "vitest run",
+    "test": "vitest run src",
+    "test:e2e": "playwright test",
+    "gen:api": "openapi-typescript openapi.json -o src/types/openapi.d.ts",
     "preview": "vite preview --host 127.0.0.1 --port 4173"
   },
   "dependencies": {
@@ -25,6 +27,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/vite": "^4.1.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -32,6 +35,7 @@
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.3.4",
     "jsdom": "^31.0.1",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5.9.0",
     "vite": "^6.2.0",
     "vitest": "^5.1.0"

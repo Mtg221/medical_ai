@@ -10,8 +10,9 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, Query, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from medresearch_platform import __spec_coverage__, __version__
 from medresearch_platform.config import PlatformConfig
@@ -38,7 +39,24 @@ from medresearch_platform.security.auth import (
 )
 from medresearch_platform.workflows.jobs import JobManager, execute_document_upload_job
 from medresearch_platform.workflows.pipeline import MedicalResearchPlatformService
-from medresearch_platform.workflows.review import submit_entity_human_review
+from medresearch_platform.workflows.review import (
+    export_reviewed_gold,
+    list_human_reviews,
+    submit_entity_human_review,
+)
+
+
+class ReviewSubmissionRequest(BaseModel):
+    entity_id: str
+    action: str  # approve | correct | reject | flag
+    corrected_entity_type: str | None = None
+    corrected_assertion_status: str | None = None
+    corrected_temporal_status: str | None = None
+    corrected_normalized_text: str | None = None
+    corrected_char_start: int | None = None
+    corrected_char_end: int | None = None
+    corrected_surface_text: str | None = None
+    rationale: str = "Expert clinical review"
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -415,6 +433,87 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         except (PermissionError, ValueError) as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
+    @app.post("/api/v1/reviews")
+    async def submit_review_endpoint(body: ReviewSubmissionRequest, request: Request) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("annotation:review")
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+
+        action_map = {
+            "approve": "APPROVE_AS_GROUND_TRUTH",
+            "correct": "CORRECT_AND_APPROVE",
+            "flag": "FLAG_AMBIGUOUS",
+            "reject": "REJECT",
+        }
+        decision = action_map.get(body.action.lower().strip(), body.action)
+        try:
+            with service.db.transaction() as conn:
+                res = submit_entity_human_review(
+                    conn,
+                    principal=principal,
+                    entity_id=body.entity_id,
+                    review_decision=decision,
+                    corrected_entity_type=body.corrected_entity_type,
+                    corrected_assertion_status=body.corrected_assertion_status,
+                    corrected_temporal_status=body.corrected_temporal_status,
+                    corrected_normalized_text=body.corrected_normalized_text,
+                    corrected_char_start=body.corrected_char_start,
+                    corrected_char_end=body.corrected_char_end,
+                    corrected_surface_text=body.corrected_surface_text,
+                    rationale=body.rationale,
+                )
+            return JSONResponse(res)
+        except KeyError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=404)
+        except (PermissionError, ValueError) as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+
+    @app.get("/api/v1/reviews")
+    async def list_reviews_endpoint(
+        request: Request,
+        document_id: str | None = Query(default=None),
+    ) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+
+        with service.db.connect() as conn:
+            reviews = list_human_reviews(
+                conn,
+                institution_id=principal.institution_id,
+                document_id=document_id,
+            )
+        return JSONResponse({"reviews": reviews, "count": len(reviews)})
+
+    @app.get("/api/v1/reviews/export")
+    async def export_reviews_endpoint(
+        request: Request,
+        format: str = Query(default="jsonl"),
+        document_id: str | None = Query(default=None),
+    ) -> Response:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+
+        with service.db.connect() as conn:
+            exported = export_reviewed_gold(
+                conn,
+                institution_id=principal.institution_id,
+                fmt=format,
+                document_id=document_id,
+            )
+        ext = "ann" if format.lower() == "brat" else "jsonl"
+        return PlainTextResponse(
+            exported,
+            headers={"Content-Disposition": f'attachment; filename="reviewed_gold.{ext}"'},
+        )
+
     @app.get("/api/v1/subjects/{subject_id}/timeline")
     async def subject_timeline_endpoint(subject_id: str, request: Request) -> JSONResponse:
         try:
@@ -591,5 +690,6 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
     if (react_dist_dir / "assets").exists():
         app.mount("/react/assets", StaticFiles(directory=str(react_dist_dir / "assets")), name="react_assets")
+    app.add_api_route("/react/{full_path:path}", react_workspace_endpoint, methods=["GET"], response_model=None)
 
     return app
