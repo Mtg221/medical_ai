@@ -2,20 +2,34 @@
 
 from __future__ import annotations
 
+import json
 import time
+from pathlib import Path
 from typing import Any
 
+import joblib
 import numpy as np
 
 from medresearch_platform.approaches.context_negex import (
     apply_context_and_relations,
     classify_assertion_context,
 )
+from medresearch_platform.approaches.neural_seq import NeuralBiLSTMCRFTagger
 from medresearch_platform.approaches.tokenizer import tokenize_with_offsets
 from medresearch_platform.data.schema import ASSERTION_CLASSES, AnnotatedDocument
 from medresearch_platform.eval_harness.metrics import (
     DocumentPrediction,
     PredictedEntity,
+)
+from medresearch_platform.hybrid.persistence import (
+    compute_corpus_hash,
+    git_commit_hash,
+    load_crf_model,
+    load_npz_params,
+    save_crf_model,
+    save_npz_params,
+    verify_manifest,
+    write_manifest,
 )
 from medresearch_platform.hybrid.stage1_doc_understanding import Stage1DocumentUnderstanding
 from medresearch_platform.hybrid.stage2_ner import CandidateEntity, Stage2EntityExtractor
@@ -53,9 +67,13 @@ class HybridPipeline:
         self.temporal_crf = CRFTemporalTagger(seed=seed)
         self.reranker = TransformerCandidateReranker(seed=seed)
         self.scaler = TemperatureScaler()
+        self.corpus_id = str(self.cfg.get("dataset_dir", "in_memory"))
+        self.corpus_hash = ""
+        self.manifest: dict[str, Any] = {}
         self._fitted = False
 
     def fit(self, train_docs: list[AnnotatedDocument]) -> HybridPipeline:
+        self.corpus_hash = compute_corpus_hash(train_docs)
         self.stage1.fit(train_docs)
         self.stage2.fit(train_docs)
         vocab = self.stage2.vocab
@@ -98,14 +116,27 @@ class HybridPipeline:
         self,
         doc: AnnotatedDocument,
         *,
-        use_rules_layer: bool = True,
-        use_assertion_bilstm: bool = True,
-        use_relation_cnn: bool = True,
-        use_temporal_crf: bool = True,
-        use_transformer_fusion: bool = True,
+        use_rules_layer: bool | None = None,
+        use_assertion_bilstm: bool | None = None,
+        use_relation_cnn: bool | None = None,
+        use_temporal_crf: bool | None = None,
+        use_transformer_fusion: bool | None = None,
     ) -> tuple[DocumentPrediction, dict[str, Any]]:
         if not self._fitted or self.relation_model is None:
             raise RuntimeError("HybridPipeline must be fitted before extract_document()")
+        use_rules_layer = bool(self.cfg.get("use_rules_layer", True)) if use_rules_layer is None else use_rules_layer
+        use_assertion_bilstm = (
+            bool(self.cfg.get("use_assertion_bilstm", True))
+            if use_assertion_bilstm is None
+            else use_assertion_bilstm
+        )
+        use_relation_cnn = bool(self.cfg.get("use_relation_cnn", True)) if use_relation_cnn is None else use_relation_cnn
+        use_temporal_crf = bool(self.cfg.get("use_temporal_crf", True)) if use_temporal_crf is None else use_temporal_crf
+        use_transformer_fusion = (
+            bool(self.cfg.get("use_transformer_fusion", True))
+            if use_transformer_fusion is None
+            else use_transformer_fusion
+        )
         if use_assertion_bilstm and self.assertion_model is None:
             use_assertion_bilstm = False
 
@@ -256,6 +287,153 @@ class HybridPipeline:
             },
         }
         return pred, contract_json
+
+    def save(self, model_dir: Path | str, *, corpus_id: str | None = None) -> Path:
+        if not self._fitted or self.stage2.model is None or self.relation_model is None:
+            raise RuntimeError("HybridPipeline must be fitted before save()")
+        out_dir = Path(model_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        joblib.dump(self.stage1, out_dir / "stage1.joblib")
+        vocab_payload = {
+            "max_size": self.stage2.vocab.max_size,
+            "min_freq": self.stage2.vocab.min_freq,
+            "word_to_id": self.stage2.vocab.word_to_id,
+        }
+        (out_dir / "vocab.json").write_text(json.dumps(vocab_payload, ensure_ascii=False), encoding="utf-8")
+
+        save_npz_params(
+            out_dir / "stage2_bilstm_crf.npz",
+            self.stage2.model.params,
+            {
+                "vocab_size": int(self.stage2.model.params["E"].shape[0]),
+                "emb_dim": int(self.stage2.model.params["E"].shape[1]),
+                "hidden_dim": int(self.stage2.hidden_dim),
+            },
+        )
+        if self.stage2.crf_model is not None:
+            save_crf_model(self.stage2.crf_model, out_dir / "stage2_crf.crfsuite")
+        if self.assertion_model is not None:
+            save_npz_params(
+                out_dir / "stage3_assertion.npz",
+                self.assertion_model.params,
+                {
+                    "vocab_size": self.assertion_model.vocab_size,
+                    "emb_dim": self.assertion_model.emb_dim,
+                    "hidden_dim": self.assertion_model.hidden_dim,
+                },
+            )
+        save_npz_params(
+            out_dir / "stage3_relation.npz",
+            self.relation_model.params,
+            {
+                "vocab_size": int(self.relation_model.params["E"].shape[0]),
+                "emb_dim": self.relation_model.emb_dim,
+                "pos_dim": self.relation_model.pos_dim,
+                "n_filters": self.relation_model.n_filters,
+            },
+        )
+        save_crf_model(self.temporal_crf.crf, out_dir / "stage4_temporal.crfsuite")
+        save_npz_params(
+            out_dir / "stage5_reranker.npz",
+            self.reranker.params,
+            {
+                "vocab_size": self.reranker.vocab_size,
+                "emb_dim": self.reranker.emb_dim,
+                "d_model": self.reranker.d_model,
+            },
+        )
+
+        manifest_path = write_manifest(
+            out_dir,
+            {
+                "model_type": "hybrid",
+                "seed": self.seed,
+                "cfg": self.cfg,
+                "corpus_id": corpus_id or self.corpus_id,
+                "corpus_hash": self.corpus_hash,
+                "git_commit": git_commit_hash(),
+                "temperature": float(self.scaler.temperature),
+                "has_stage2_crf": self.stage2.crf_model is not None,
+                "has_assertion_bilstm": self.assertion_model is not None,
+            },
+        )
+        self.manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        return out_dir
+
+    @classmethod
+    def load(cls, model_dir: Path | str) -> HybridPipeline:
+        in_dir = Path(model_dir)
+        manifest = verify_manifest(in_dir)
+        if manifest.get("model_type") != "hybrid":
+            raise ValueError(f"Expected model_type='hybrid', got {manifest.get('model_type')!r}")
+
+        pipe = cls(seed=int(manifest["seed"]), cfg=dict(manifest.get("cfg", {})))
+        pipe.corpus_id = str(manifest.get("corpus_id", "unknown"))
+        pipe.corpus_hash = str(manifest.get("corpus_hash", ""))
+        pipe.manifest = manifest
+
+        pipe.stage1 = joblib.load(in_dir / "stage1.joblib")
+
+        vocab_data = json.loads((in_dir / "vocab.json").read_text(encoding="utf-8"))
+        pipe.stage2.vocab.max_size = int(vocab_data["max_size"])
+        pipe.stage2.vocab.min_freq = int(vocab_data["min_freq"])
+        pipe.stage2.vocab.word_to_id = {str(k): int(v) for k, v in vocab_data["word_to_id"].items()}
+
+        s2_params, s2_meta = load_npz_params(in_dir / "stage2_bilstm_crf.npz")
+        s2_model = NeuralBiLSTMCRFTagger(
+            int(s2_meta["vocab_size"]),
+            emb_dim=int(s2_meta["emb_dim"]),
+            hidden_dim=int(s2_meta["hidden_dim"]),
+            seed=pipe.seed,
+        )
+        s2_model.params = s2_params
+        pipe.stage2.model = s2_model
+
+        s2_crf_path = in_dir / "stage2_crf.crfsuite"
+        pipe.stage2.crf_model = load_crf_model(s2_crf_path) if s2_crf_path.exists() else None
+
+        s3a_path = in_dir / "stage3_assertion.npz"
+        if s3a_path.exists():
+            a_params, a_meta = load_npz_params(s3a_path)
+            a_model = BiLSTMAssertionClassifier(
+                int(a_meta["vocab_size"]),
+                emb_dim=int(a_meta["emb_dim"]),
+                hidden_dim=int(a_meta["hidden_dim"]),
+                seed=pipe.seed,
+            )
+            a_model.params = a_params
+            pipe.assertion_model = a_model
+        else:
+            pipe.assertion_model = None
+
+        r_params, r_meta = load_npz_params(in_dir / "stage3_relation.npz")
+        r_model = PiecewiseCNNRelationClassifier(
+            int(r_meta["vocab_size"]),
+            emb_dim=int(r_meta["emb_dim"]),
+            pos_dim=int(r_meta["pos_dim"]),
+            n_filters=int(r_meta["n_filters"]),
+            seed=pipe.seed,
+        )
+        r_model.params = r_params
+        pipe.relation_model = r_model
+
+        pipe.temporal_crf.crf = load_crf_model(in_dir / "stage4_temporal.crfsuite")
+        pipe.temporal_crf._fitted = True
+
+        rr_params, rr_meta = load_npz_params(in_dir / "stage5_reranker.npz")
+        rr_model = TransformerCandidateReranker(
+            vocab_size=int(rr_meta["vocab_size"]),
+            emb_dim=int(rr_meta["emb_dim"]),
+            d_model=int(rr_meta["d_model"]),
+            seed=pipe.seed,
+        )
+        rr_model.params = rr_params
+        pipe.reranker = rr_model
+
+        pipe.scaler.temperature = float(manifest.get("temperature", 1.0))
+        pipe._fitted = True
+        return pipe
 
 
 def predict_hybrid(

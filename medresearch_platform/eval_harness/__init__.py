@@ -8,6 +8,7 @@ from medresearch_platform.eval_harness.metrics import (
     PredictedRelation,
     PredictedTimex,
     bootstrap_f1_ci,
+    bootstrap_mean_seed_f1_ci,
     paired_significance_test,
 )
 from medresearch_platform.eval_harness.profiler import ResourceMetrics, ResourceProfiler
@@ -22,6 +23,7 @@ __all__ = [
     "ResourceMetrics",
     "ResourceProfiler",
     "bootstrap_f1_ci",
+    "bootstrap_mean_seed_f1_ci",
     "classify_corpus_errors",
     "paired_significance_test",
 ]

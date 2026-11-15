@@ -17,6 +17,7 @@ const TARGET_PAGES = [
   { name: "login", url: `${BASE}/react/` },
   { name: "workspace", url: `${BASE}/react/` },
   { name: "upload", url: `${BASE}/react/upload` },
+  { name: "relations", url: `${BASE}/react/relations` },
   { name: "review", url: `${BASE}/react/review` },
   { name: "reports", url: `${BASE}/react/reports` },
 ];

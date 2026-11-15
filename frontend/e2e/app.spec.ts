@@ -126,9 +126,12 @@ test.describe("Phase 12B Full E2E (EN + FR) & 14-Page Light/Dark Screenshots", (
 
     await page.locator("nav a").first().click();
     await page.getByRole("button", { name: /e2e_fr_note\.pdf/i }).first().click();
-    const frHighlight = page.locator("pre button").first();
-    await expect(frHighlight).toBeVisible({ timeout: 10_000 });
-    await frHighlight.click();
+    const dosageHighlight = page.locator("pre button[data-entity-type='DOSAGE']", { hasText: "500 mg" }).first();
+    await expect(dosageHighlight).toBeVisible({ timeout: 10_000 });
+    await dosageHighlight.click();
+    await page.getByRole("button", { name: /Relations/i }).click();
+    await expect(page.getByText(/HAS_DOSAGE/i).first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/metformine/i).first()).toBeVisible();
 
     await page.locator("nav a[href='/react/review']").click();
     await expect(page.getByRole("heading", { name: /Review Mode|Human-in-the-Loop/i })).toBeVisible();
@@ -151,6 +154,15 @@ test.describe("Phase 12B Full E2E (EN + FR) & 14-Page Light/Dark Screenshots", (
       page.getByRole("button", { name: "Download Report" }).click(),
     ]);
     expect(frDownload.suggestedFilename()).toMatch(/_report_fr\.md$/);
+
+    // Verify Relation Graph page renders >=1 node and >=1 edge and node click jumps to workspace
+    await page.goto("/react/relations");
+    await expect(page.locator("[data-testid='graph-node']").first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator("[data-testid='graph-edge']").first()).toBeVisible({ timeout: 10_000 });
+    expect(await page.locator("[data-testid='graph-node']").count()).toBeGreaterThanOrEqual(1);
+    expect(await page.locator("[data-testid='graph-edge']").count()).toBeGreaterThanOrEqual(1);
+    await page.locator("[data-testid='graph-node']").first().click();
+    await expect(page).toHaveURL(/\/react\/?\?doc=.*&entity=/);
 
     // Switch back to EN and capture all remaining 13 authenticated pages x 2 themes (light + dark)
     await page.getByRole("button", { name: "Toggle language" }).click();

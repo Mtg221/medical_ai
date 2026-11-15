@@ -41,6 +41,19 @@
       ]
     },
     {
+      "page": "relations",
+      "url": "http://127.0.0.1:8011/react/relations",
+      "accessibility_score": 100,
+      "failed_audits": [
+        {
+          "id": "label-content-name-mismatch",
+          "title": "Elements with visible text labels do not have matching accessible names.",
+          "score": 0,
+          "items": 1
+        }
+      ]
+    },
+    {
       "page": "review",
       "url": "http://127.0.0.1:8011/react/review",
       "accessibility_score": 100,

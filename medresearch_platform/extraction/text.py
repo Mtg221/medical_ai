@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from medresearch_platform.ai.nlp_model import (
+from extras.legacy.nlp_model import (
     _FAMILY_CUES,
     _HISTORICAL_CUES,
     _HYPOTHETICAL_CUES,

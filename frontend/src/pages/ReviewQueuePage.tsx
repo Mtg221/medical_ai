@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { apiRequest } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
+import { getEntityText } from "@/utils/entityStyles";
 import type {
   DocumentDetailResponse,
   DocumentSummary,
@@ -113,7 +114,7 @@ export function ReviewQueuePage() {
     setCorrAssertion(ent.assertion_status);
     setCorrStart(ent.char_start);
     setCorrEnd(ent.char_end);
-    setCorrSurface(ent.surface_text || ent.normalized_text);
+    setCorrSurface(getEntityText(ent));
     setCorrRationale("Span / label correction");
   };
 
@@ -280,7 +281,7 @@ export function ReviewQueuePage() {
               }}
             >
               <div className="font-semibold text-sky-900 dark:text-sky-200">
-                Correct Entity: {editingEntity.surface_text || editingEntity.normalized_text}
+                Correct Entity: {getEntityText(editingEntity)}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <label className="flex flex-col gap-1">
@@ -370,7 +371,7 @@ export function ReviewQueuePage() {
             <div className="space-y-2">
               {entities.map((ent, idx) => {
                 const isFocused = idx === focusedIdx;
-                const labelText = ent.surface_text || ent.normalized_text;
+                const labelText = getEntityText(ent);
                 return (
                   <div
                     key={ent.entity_id}

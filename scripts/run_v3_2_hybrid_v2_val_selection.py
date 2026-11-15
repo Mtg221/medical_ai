@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import statistics
 import time
@@ -14,8 +15,9 @@ from medresearch_platform.data.schema import AnnotatedDocument
 from medresearch_platform.eval_harness.metrics import (
     DocumentPrediction,
     Evaluator,
-    bootstrap_f1_ci,
-    paired_significance_test,
+    bootstrap_mean_seed_f1_ci,
+    per_doc_strict_counts,
+    pooled_paired_bootstrap,
 )
 from medresearch_platform.eval_harness.runner import APPROACH_REGISTRY, _load_jsonl
 
@@ -46,10 +48,13 @@ def _summarize_with_doc_bootstrap(
     timex_vals = [float(m["timex"]["f1"]) for m in per_seed]
     norm_vals = [float(m["timex"]["normalization_accuracy"]) for m in per_seed]
 
-    # Pooled document-level bootstrap CI (10,000 resamples) across all seeds
-    pooled_docs = docs * len(preds_by_seed)
-    pooled_preds = [p for sp in preds_by_seed for p in sp]
-    doc_boot_ci = bootstrap_f1_ci(pooled_docs, pooled_preds, n_resamples=10000, seed=42)
+    # Document-level bootstrap CI (10,000 resamples of N_docs) of mean-across-seeds micro-F1
+    per_seed_doc_counts = [per_doc_strict_counts(docs, sp) for sp in preds_by_seed]
+    doc_seed_counts = [
+        [per_seed_doc_counts[s][i] for s in range(len(preds_by_seed))]
+        for i in range(len(docs))
+    ]
+    doc_boot_ci = bootstrap_mean_seed_f1_ci(doc_seed_counts, n_resamples=10000, seed=42)
 
     return {
         "strict_f1_mean": round(statistics.mean(strict_vals), 4),
@@ -64,15 +69,28 @@ def _summarize_with_doc_bootstrap(
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--recompute-winner-only", action="store_true")
+    args = parser.parse_args()
+
     t_total = time.perf_counter()
     v3_dir = Path("data/processed/v3_1")
     train_docs = _load_jsonl(v3_dir / "train.jsonl")
     val_docs = _load_jsonl(v3_dir / "val.jsonl")
     hybrid_fn = APPROACH_REGISTRY["hybrid"]
 
+    val_json_path = Path("docs/results/v3_2_hybrid_v2_val_selection.json")
+    if args.recompute_winner_only and val_json_path.exists():
+        existing = json.loads(val_json_path.read_text(encoding="utf-8"))
+        val_results = existing["candidates"]
+        winner_name = existing["winner"]
+        grid_to_run = [(winner_name, dict(_val_design_grid())[winner_name])]
+    else:
+        val_results = {}
+        grid_to_run = _val_design_grid()
+
     # 1. Val-only selection (5 seeds)
-    val_results: dict[str, Any] = {}
-    for name, cfg in _val_design_grid():
+    for name, cfg in grid_to_run:
         t0 = time.perf_counter()
         seed_preds = [hybrid_fn(train_docs, val_docs, seed, cfg) for seed in SEEDS]
         elapsed = round(time.perf_counter() - t0, 2)
@@ -133,13 +151,11 @@ def main() -> None:
         sp_crf = [p[lo:hi] for p in crf_test_preds]
         h2_stats = _summarize_with_doc_bootstrap(sdocs, sp_h2)
         crf_stats = _summarize_with_doc_bootstrap(sdocs, sp_crf)
-        sig = paired_significance_test(
-            sdocs * len(SEEDS),
-            [p for sp_p in sp_crf for p in sp_p],
-            [p for sp_p in sp_h2 for p in sp_p],
-            n_resamples=10000,
-            seed=42,
-        )
+        crf_counts_per_seed = [per_doc_strict_counts(sdocs, p) for p in sp_crf]
+        h2_counts_per_seed = [per_doc_strict_counts(sdocs, p) for p in sp_h2]
+        crf_doc_seed = [[crf_counts_per_seed[s][i] for s in range(len(SEEDS))] for i in range(len(sdocs))]
+        h2_doc_seed = [[h2_counts_per_seed[s][i] for s in range(len(SEEDS))] for i in range(len(sdocs))]
+        sig = pooled_paired_bootstrap(crf_doc_seed, h2_doc_seed, n_resamples=10000, seed=42)
         test_summary[sp] = {
             "hybrid_v2": h2_stats,
             "classical_crf": crf_stats,

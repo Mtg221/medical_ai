@@ -64,7 +64,8 @@ export interface ExtractedEntity {
   page_number: number;
   section_type?: string;
   entity_type: string;
-  surface_text: string;
+  source_text?: string;
+  surface_text?: string;
   normalized_text: string;
   char_start: number;
   char_end: number;

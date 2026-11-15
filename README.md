@@ -37,8 +37,9 @@ pip install -e ".[dev]"
 # 2. Build React + TypeScript + Tailwind frontend (served at /react)
 npm --prefix frontend ci && npm --prefix frontend run build
 
-# 3. Build dataset splits & run an experiment
-medextract data build --config configs/data/v1.yaml
+# 3. Build dataset splits, train & save the served Hybrid v2 model (~138s on CPU), and run experiments
+medextract data build --config configs/data/v3_1.yaml
+medextract train --config configs/exp/v3_2/hybrid_v2.yaml --seed 1 --out models/hybrid_v2_seed1/
 medextract experiment run configs/exp/hybrid.yaml --seeds 1,2,3
 
 # 4. Extract structured JSON or EN/FR report from a document (TXT, PDF, DOCX, PNG)

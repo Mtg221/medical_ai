@@ -88,15 +88,15 @@
       "strict_f1_mean": 0.9966,
       "strict_f1_seed_std": 0.0009,
       "strict_f1_doc_ci95": [
-        0.9962,
-        0.998
+        0.9945,
+        0.9984
       ],
       "lenient_f1_mean": 0.9987,
       "assertion_macro_f1_mean": 0.7567,
       "relation_f1_mean": 0.8916,
       "timex_f1_mean": 1.0,
       "timex_norm_acc_mean": 1.0,
-      "total_5seed_runtime_s": 591.34,
+      "total_5seed_runtime_s": 603.77,
       "config": {
         "use_crf_ensemble": true,
         "use_assertion_bilstm": false,

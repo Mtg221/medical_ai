@@ -51,7 +51,7 @@
         "ci95_high": 1.0
       },
       "strict_f1_pooled_boot_ci95": {
-        "mean": 0.3064,
+        "mean": 0.3066,
         "ci95_low": 0.2799,
         "ci95_high": 0.3327
       }
@@ -198,9 +198,9 @@
         "ci95_high": 1.0
       },
       "strict_f1_pooled_boot_ci95": {
-        "mean": 0.8618,
-        "ci95_low": 0.8497,
-        "ci95_high": 0.874
+        "mean": 0.8619,
+        "ci95_low": 0.8498,
+        "ci95_high": 0.8741
       }
     },
     "bilstm_crf": {
@@ -247,7 +247,7 @@
         "ci95_high": 1.0
       },
       "strict_f1_pooled_boot_ci95": {
-        "mean": 0.9391,
+        "mean": 0.9392,
         "ci95_low": 0.9316,
         "ci95_high": 0.9466
       }
@@ -296,9 +296,9 @@
         "ci95_high": 1.0
       },
       "strict_f1_pooled_boot_ci95": {
-        "mean": 0.6885,
-        "ci95_low": 0.672,
-        "ci95_high": 0.7048
+        "mean": 0.6886,
+        "ci95_low": 0.6722,
+        "ci95_high": 0.7049
       }
     },
     "hybrid": {
@@ -345,8 +345,8 @@
         "ci95_high": 1.0
       },
       "strict_f1_pooled_boot_ci95": {
-        "mean": 0.8948,
-        "ci95_low": 0.8841,
+        "mean": 0.8949,
+        "ci95_low": 0.8842,
         "ci95_high": 0.9055
       }
     }

@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from datetime import date
 from pathlib import Path
 from typing import Any
 
+import yaml
+
+from medresearch_platform.approaches.classical_ml import ClassicalCRFModel
 from medresearch_platform.data.builder import build_corpus_from_config
 from medresearch_platform.data.schema import AnnotatedDocument
 from medresearch_platform.data.synthetic_v2 import generate_synthetic_corpus
@@ -58,6 +62,11 @@ def main(argv: list[str] | None = None) -> int:
     rep_parser.add_argument("--format", choices=["markdown", "html", "pdf"], default="markdown", help="Output format")
     rep_parser.add_argument("-o", "--output", default=None, help="Output file path (optional)")
     rep_parser.add_argument("--train-jsonl", default="data/processed/v1/train.jsonl", help="Training corpus JSONL")
+
+    train_parser = sub.add_parser("train", help="Train and save an evaluated model artifact")
+    train_parser.add_argument("--config", required=True, help="Path to experiment YAML config")
+    train_parser.add_argument("--seed", type=int, default=1, help="Random seed (default: 1)")
+    train_parser.add_argument("--out", required=True, help="Output model directory")
 
     args = parser.parse_args(argv)
     if args.group == "data" and args.action == "build":
@@ -135,6 +144,34 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Wrote {args.format} ({args.lang}) report to {args.output}")
         else:
             print(report_bytes.decode("utf-8", errors="replace"))
+        return 0
+    if args.group == "train":
+        cfg_path = Path(args.config)
+        cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+        approach = str(cfg.get("approach", "hybrid"))
+        dataset_dir = Path(cfg.get("dataset_dir", "data/processed/v3_1"))
+        train_docs = _load_jsonl(dataset_dir / "train.jsonl")
+        t0 = time.perf_counter()
+        if approach == "hybrid":
+            model: HybridPipeline | ClassicalCRFModel = HybridPipeline(seed=int(args.seed), cfg=cfg).fit(train_docs)
+        elif approach == "classical_crf":
+            model = ClassicalCRFModel(seed=int(args.seed), cfg=cfg).fit(train_docs)
+        else:
+            raise ValueError(f"Unsupported approach for saveable training: {approach!r}")
+        out_dir = model.save(Path(args.out), corpus_id=str(dataset_dir))
+        elapsed = round(time.perf_counter() - t0, 2)
+        print(
+            json.dumps(
+                {
+                    "approach": approach,
+                    "seed": int(args.seed),
+                    "out_dir": str(out_dir),
+                    "elapsed_s": elapsed,
+                    "manifest": model.manifest,
+                },
+                indent=2,
+            )
+        )
         return 0
     return 1
 

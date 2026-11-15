@@ -592,7 +592,8 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         service.ensure_models_trained_and_registered()
         with service.db.connect() as conn:
             rows = [dict(r) for r in conn.execute("SELECT * FROM models ORDER BY model_id ASC").fetchall()]
-        return JSONResponse({"models": rows, "count": len(rows)})
+        loaded_models = service.extractor.list_loaded_models()
+        return JSONResponse({"models": rows, "loaded_models": loaded_models, "count": len(rows)})
 
     @app.get("/api/v1/experiments")
     async def list_experiments_endpoint() -> JSONResponse:

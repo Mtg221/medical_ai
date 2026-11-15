@@ -10,7 +10,7 @@ import docx
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas as pdf_canvas
 
-from medresearch_platform.ai.ocr_model import render_scanned_document_image
+from extras.legacy.ocr_model import render_scanned_document_image
 
 
 @dataclass(frozen=True)

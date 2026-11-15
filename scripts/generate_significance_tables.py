@@ -11,7 +11,11 @@ from typing import Any
 
 import numpy as np
 
-from medresearch_platform.eval_harness.metrics import holm_bonferroni_adjust, pooled_paired_bootstrap
+from medresearch_platform.eval_harness.metrics import (
+    bootstrap_mean_seed_f1_ci,
+    holm_bonferroni_adjust,
+    pooled_paired_bootstrap,
+)
 
 METRIC_KEYS: tuple[str, ...] = (
     "strict_f1",
@@ -58,19 +62,13 @@ def generate_tables(
                 "ci95_low": round(max(0.0, mean - ci), 4),
                 "ci95_high": round(min(1.0, mean + ci), 4),
             }
-        # Pooled document-level bootstrap CI on strict F1 across all seeds
+        # Document-level bootstrap CI (N_docs resampled, mean-across-seeds micro-F1)
         counts = raw["approaches"][app]["doc_seed_counts"]
-        arr = np.asarray(counts, dtype=np.float64).sum(axis=1)
-        rng = np.random.default_rng(seed)
-        n_docs = len(arr)
-        idx = rng.integers(0, n_docs, size=(n_resamples, n_docs))
-        samp = arr[idx].sum(axis=1)
-        denom = 2.0 * samp[:, 0] + samp[:, 1] + samp[:, 2]
-        f1s = np.sort(np.where(denom > 0.0, (2.0 * samp[:, 0]) / np.where(denom > 0.0, denom, 1.0), 0.0))
+        boot_doc = bootstrap_mean_seed_f1_ci(counts, n_resamples=n_resamples, seed=seed)
         metrics_summary["strict_f1_pooled_boot_ci95"] = {
-            "mean": round(float(f1s.mean()), 4),
-            "ci95_low": round(float(f1s[max(0, int(0.025 * n_resamples))]), 4),
-            "ci95_high": round(float(f1s[min(n_resamples - 1, int(0.975 * n_resamples))]), 4),
+            "mean": round(float(boot_doc["mean"]), 4),
+            "ci95_low": round(float(boot_doc["ci_lower"]), 4),
+            "ci95_high": round(float(boot_doc["ci_upper"]), 4),
         }
         summary_table[app] = metrics_summary
 

@@ -1,26 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { apiRequest } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import type { DocumentDetailResponse, DocumentSummary, ExtractedEntity, ExtractedRelation } from "@/types/api";
-
-const TYPE_COLORS: Record<string, string> = {
-  DIAGNOSIS: "#dc2626",
-  SYMPTOM: "#d97706",
-  MEDICATION: "#0284c7",
-  DOSAGE: "#0d9488",
-  FREQUENCY: "#4f46e5",
-  ROUTE: "#7c3aed",
-  LAB_TEST: "#059669",
-  LAB_VALUE: "#16a34a",
-  LAB_UNIT: "#65a30d",
-  PROCEDURE: "#db2777",
-  ANATOMY: "#9333ea",
-};
+import { getEntityText, getEntityTypeStyle } from "@/utils/entityStyles";
 
 export function RelationGraphPage() {
+  const navigate = useNavigate();
   const token = useAuthStore((s) => s.token);
   const [selectedDocId, setSelectedDocId] = useState<string>("");
   const [selectedRel, setSelectedRel] = useState<ExtractedRelation | null>(null);
@@ -84,7 +73,7 @@ export function RelationGraphPage() {
           {entities.length === 0 ? (
             <p className="text-xs text-slate-500 py-8 text-center">No entities available for relation graph.</p>
           ) : (
-            <div className="overflow-x-auto border border-slate-200 rounded bg-slate-50">
+            <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-900">
               <svg viewBox="0 0 680 360" className="w-full max-w-3xl mx-auto h-96" role="img" aria-label="Relation graph">
                 <defs>
                   <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
@@ -99,7 +88,7 @@ export function RelationGraphPage() {
                   const my = (p1.y + p2.y) / 2;
                   const active = selectedRel?.relation_id === rel.relation_id;
                   return (
-                    <g key={rel.relation_id} onClick={() => setSelectedRel(rel)} className="cursor-pointer">
+                    <g key={rel.relation_id} data-testid="graph-edge" onClick={() => setSelectedRel(rel)} className="cursor-pointer">
                       <line
                         x1={p1.x}
                         y1={p1.y}
@@ -109,7 +98,7 @@ export function RelationGraphPage() {
                         strokeWidth={active ? 2.5 : 1.5}
                         markerEnd="url(#arrow)"
                       />
-                      <text x={mx} y={my - 4} fontSize="9" textAnchor="middle" fill="#0f172a" className="font-semibold">
+                      <text x={mx} y={my - 4} fontSize="9" textAnchor="middle" fill="currentColor" className="font-semibold text-slate-900 dark:text-slate-100">
                         {rel.relation_type}
                       </text>
                     </g>
@@ -118,12 +107,19 @@ export function RelationGraphPage() {
                 {entities.map((ent) => {
                   const p = positions.get(ent.entity_id);
                   if (!p) return null;
-                  const fill = TYPE_COLORS[ent.entity_type] ?? "#334155";
+                  const fill = getEntityTypeStyle(ent.entity_type).hex;
+                  const label = getEntityText(ent).slice(0, 18);
                   return (
-                    <g key={ent.entity_id}>
+                    <g
+                      key={ent.entity_id}
+                      data-testid="graph-node"
+                      className="cursor-pointer"
+                      onClick={() => navigate(`/?doc=${encodeURIComponent(activeDocId)}&entity=${encodeURIComponent(ent.entity_id)}`)}
+                    >
+                      <title>{`${ent.entity_type}: ${getEntityText(ent)} (click to jump to source span)`}</title>
                       <circle cx={p.x} cy={p.y} r={12} fill={fill} stroke="#ffffff" strokeWidth={2} />
-                      <text x={p.x} y={p.y + 24} fontSize="10" textAnchor="middle" fill="#0f172a">
-                        {ent.surface_text.slice(0, 18)}
+                      <text x={p.x} y={p.y + 24} fontSize="10" textAnchor="middle" fill="currentColor" className="text-slate-900 dark:text-slate-100">
+                        {label}
                       </text>
                     </g>
                   );
@@ -133,15 +129,15 @@ export function RelationGraphPage() {
           )}
 
           {selectedRel && (
-            <div className="mt-4 rounded border border-sky-200 bg-sky-50 p-3 text-xs flex items-center justify-between">
+            <div className="mt-4 rounded border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 p-3 text-xs flex items-center justify-between">
               <div>
-                <span className="font-semibold">{entityMap.get(selectedRel.source_entity_id)?.surface_text}</span>
+                <span className="font-semibold">{getEntityText(entityMap.get(selectedRel.source_entity_id))}</span>
                 {" —["}
                 <Badge tone="sky">{selectedRel.relation_type}</Badge>
                 {"]→ "}
-                <span className="font-semibold">{entityMap.get(selectedRel.target_entity_id)?.surface_text}</span>
+                <span className="font-semibold">{getEntityText(entityMap.get(selectedRel.target_entity_id))}</span>
               </div>
-              <span className="text-slate-600">Confidence: {(selectedRel.confidence * 100).toFixed(1)}%</span>
+              <span className="text-slate-600 dark:text-slate-300">Confidence: {(selectedRel.confidence * 100).toFixed(1)}%</span>
             </div>
           )}
         </CardContent>

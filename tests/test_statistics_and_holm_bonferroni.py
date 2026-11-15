@@ -9,6 +9,7 @@ from medresearch_platform.eval_harness.metrics import (
     DocumentPrediction,
     PredictedEntity,
     bootstrap_f1_ci,
+    bootstrap_mean_seed_f1_ci,
     holm_bonferroni_adjust,
     paired_significance_test,
     pooled_paired_bootstrap,
@@ -79,3 +80,19 @@ def test_pooled_paired_bootstrap_over_5_seeds() -> None:
     assert res["p_value"] < 0.001
     assert res["n_resamples"] == 10000
     assert res["ci95_low"] < res["delta_f1"] < res["ci95_high"] or res["ci95_low"] == res["ci95_high"]
+
+
+def test_bootstrap_mean_seed_f1_ci_contains_point_estimate_and_handles_deterministic() -> None:
+    # Deterministic model across 5 seeds with per-doc variation (80 docs): CI must contain point estimate and have >0 width
+    det_counts = [[(2 if i % 2 == 0 else 1, 1 if i % 3 == 0 else 0, 1) for _ in range(5)] for i in range(80)]
+    res_det = bootstrap_mean_seed_f1_ci(det_counts, n_resamples=10000, seed=42)
+    assert res_det["ci_lower"] <= res_det["mean"] <= res_det["ci_upper"]
+    assert res_det["ci_upper"] > res_det["ci_lower"]
+
+    # Stochastic model where seeds vary widely: CI still uses exact same mean-across-seeds estimator
+    stoch_counts = [
+        [(3 if (i + s) % 4 != 0 else 1, 1 if s == 0 else 0, 1 if i % 5 == 0 else 0) for s in range(5)]
+        for i in range(160)
+    ]
+    res_stoch = bootstrap_mean_seed_f1_ci(stoch_counts, n_resamples=10000, seed=42)
+    assert res_stoch["ci_lower"] <= res_stoch["mean"] <= res_stoch["ci_upper"]

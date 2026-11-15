@@ -292,6 +292,47 @@ def bootstrap_f1_ci(
     }
 
 
+def bootstrap_mean_seed_f1_ci(
+    doc_seed_counts: list[list[tuple[int, int, int]]],
+    *,
+    n_resamples: int = 10000,
+    seed: int = 42,
+) -> dict[str, float]:
+    """Document-level bootstrap 95% CI for mean-across-seeds micro-F1.
+
+    Resamples the N_docs independent documents (never N_docs * N_seeds pooled)
+    and applies the exact same estimator (per-seed micro-F1 averaged over seeds)
+    so the CI always centers on and contains the reported point estimate.
+    """
+    if not doc_seed_counts:
+        return {"mean": 0.0, "ci_lower": 0.0, "ci_upper": 0.0}
+    arr = np.asarray(doc_seed_counts, dtype=np.float64)  # (N_docs, N_seeds, 3)
+    n_docs = arr.shape[0]
+    tot = arr.sum(axis=0)  # (N_seeds, 3)
+    seed_f1s = _f1_from_counts_arr(tot[:, 0], tot[:, 1], tot[:, 2])
+    point_est = float(seed_f1s.mean())
+
+    rng = np.random.default_rng(seed)
+    boot_vals = np.empty(n_resamples, dtype=np.float64)
+    chunk = 2000
+    for start in range(0, n_resamples, chunk):
+        sz = min(chunk, n_resamples - start)
+        idx = rng.integers(0, n_docs, size=(sz, n_docs))
+        sampled = arr[idx].sum(axis=1)  # (sz, N_seeds, 3)
+        denom = 2.0 * sampled[:, :, 0] + sampled[:, :, 1] + sampled[:, :, 2]
+        f1s = np.where(denom > 0.0, (2.0 * sampled[:, :, 0]) / np.where(denom > 0.0, denom, 1.0), 0.0)
+        boot_vals[start : start + sz] = f1s.mean(axis=1)
+
+    sorted_b = np.sort(boot_vals)
+    lo = float(sorted_b[max(0, int(0.025 * n_resamples))])
+    hi = float(sorted_b[min(n_resamples - 1, int(0.975 * n_resamples))])
+    return {
+        "mean": round(point_est, 6),
+        "ci_lower": round(lo, 6),
+        "ci_upper": round(hi, 6),
+    }
+
+
 def holm_bonferroni_adjust(p_values: list[float]) -> list[float]:
     """Apply step-down Holm-Bonferroni family-wise error correction."""
     m = len(p_values)

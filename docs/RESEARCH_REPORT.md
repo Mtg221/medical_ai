@@ -14,8 +14,8 @@ This report documents the end-to-end scientific evaluation of seven information 
 ### Headline Findings (5-Seed Means on `SYNTH-MED-V3.1`, Document-Level 95% Bootstrap CIs)
 
 1. **Per-Task Winners (No Single Overall Winner):**
-   - **In-Distribution Entity NER (`test_iid`, n=160):** `classical_ml` (`0.9983` [0.9966, 0.9997]), `hybrid_v2` (`0.9972` [0.9969, 0.9983]), `classical_crf` (`0.9968` [0.9948, 0.9986]), and `hybrid` (`0.9941` [0.9920, 0.9959]) all exceed `0.99` Strict F1.
-   - **Unseen Terminology Entity NER (`test_unseen_terms`, n=160, 0% lexicon overlap):** `hybrid_v2` (`0.9204` [0.9209, 0.9320]) and `classical_crf` (`0.9169` [0.9046, 0.9286]) lead Strict F1 (because `hybrid_v2` enables `use_crf_ensemble: true`), substantially ahead of `classical_ml` (`0.8441`), `hybrid` (`0.8277`), `bilstm_crf` (`0.8141`), `bilstm` (`0.7859`), `transformer` (`0.5241`), and `rule_based` (`0.3233`).
+   - **In-Distribution Entity NER (`test_iid`, n=160):** `classical_ml` (`0.9983` [0.9966, 0.9997]), `hybrid_v2` (`0.9972` [0.9954, 0.9987]), `classical_crf` (`0.9968` [0.9948, 0.9986]), and `hybrid` (`0.9941` [0.9920, 0.9959]) all exceed `0.99` Strict F1.
+   - **Unseen Terminology Entity NER (`test_unseen_terms`, n=160, 0% lexicon overlap):** `hybrid_v2` (`0.9204` [0.9078, 0.9322]) and `classical_crf` (`0.9169` [0.9046, 0.9286]) lead Strict F1 (because `hybrid_v2` enables `use_crf_ensemble: true`; paired `p = 0.1076`), substantially ahead of `classical_ml` (`0.8441`), `hybrid` (`0.8277`), `bilstm_crf` (`0.8141`), `bilstm` (`0.7859`), `transformer` (`0.5241`), and `rule_based` (`0.3233`).
    - **Unseen Template Entity NER (`test_unseen_templates`, n=160, 0.6% masked sentence overlap):** `classical_ml` (`0.9670` [0.9603, 0.9732]) and `classical_crf` (`0.9527` [0.9441, 0.9607]) win Strict F1, ahead of `bilstm_crf` (`0.9392`), `hybrid_v2` (`0.9310`), and `hybrid` (`0.8949`).
    - **Assertion Classification:** `classical_crf` leads on `test_unseen_terms` (`0.7511`) and `test_unseen_templates` (`0.6459`, tied with `transformer` `0.6462`), while `hybrid` reaches `0.7325` on `test_iid`.
    - **Relations & Temporal (`hybrid` / `hybrid_v2`):** `hybrid` / `hybrid_v2` lead **Relation F1** on every split (`0.8912–0.8922` `test_iid`, `0.8127–0.8362` `test_unseen_terms`, `0.8029–0.8315` `test_unseen_templates` vs `0.7197–0.7341` for `classical_crf`) and **TIMEX F1** (`0.9969–1.0000` vs `0.7160–0.7340`).
@@ -178,26 +178,26 @@ Executed with real Tesseract (`eng` + `fra`) via `scripts/run_v3_1_ocr_full_benc
 | `crf_off_ctx_nofusion` | `false` | `false` | `false` | `0.9942` [0.9974, 0.9988] | `0.0033` | `0.7536` | `0.8937` | `615.35s` |
 | `crf_on_bilstm_fusion` | `true` | `true` | `true` | `0.9966` [0.9962, 0.9980] | `0.0009` | `0.7364` | `0.8916` | `946.71s` |
 | `crf_on_ctx_fusion` | `true` | `false` | `true` | `0.9966` [0.9962, 0.9980] | `0.0009` | `0.7567` | `0.8916` | `663.21s` |
-| **`crf_on_ctx_nofusion` (selected)** | **`true`** | **`false`** | **`false`** | **`0.9966`** [0.9962, 0.9980] | `0.0009` | **`0.7567`** | `0.8916` | **`591.34s`** |
+| **`crf_on_ctx_nofusion` (selected)** | **`true`** | **`false`** | **`false`** | **`0.9966`** [0.9945, 0.9984] | `0.0009` | **`0.7567`** | `0.8916` | **`603.77s`** |
 
 ### 7.2 One-Time Locked Test Evaluation (`docs/results/v3_2_hybrid_v2_locked_eval.json`)
 
 Note honestly what `hybrid_v2` is: **the hybrid's entity stage now uses the CRF ensemble (`use_crf_ensemble: true`); the hybrid's own contribution is relations + temporal.**
 
-| Split | `hybrid_v2` Strict F1 [Doc Boot 95% CI] | Seed Std | `classical_crf` Strict F1 [Doc Boot 95% CI] | `hybrid_v2` Assert / Rel / TIMEX | `classical_crf` Assert / Rel / TIMEX | Paired `Δ` Strict F1 (Boot `p`) |
+| Split | `hybrid_v2` Strict F1 [Doc Boot 95% CI] | Seed Std | `classical_crf` Strict F1 [Doc Boot 95% CI] | `hybrid_v2` Assert / Rel / TIMEX | `classical_crf` Assert / Rel / TIMEX | Paired `Δ` Strict F1 (160-doc Boot `p`) |
 |---|---|---|---|---|---|---|
-| `test_iid` (160) | **`0.9972`** [0.9969, 0.9983] | `0.0011` | `0.9968` [0.9960, 0.9976] | `0.7188 /` **`0.8912` / `0.9986`** | **`0.7194`** `/ 0.7341 / 0.7167` | `+0.0008` (`p = 0.0032`) |
-| `test_unseen_terms` (160) | **`0.9204`** [0.9209, 0.9320] | `0.0065` | `0.9169` [0.9116, 0.9224] | `0.7497 /` **`0.8362` / `1.0000`** | **`0.7511`** `/ 0.7197 / 0.7179` | `+0.0095` (`p = 0.0002`) |
-| `test_unseen_templates` (160) | `0.9310` [0.9256, 0.9339] | `0.0102` | **`0.9527`** [0.9490, 0.9562] | `0.6430 /` **`0.8315` / `0.9969`** | **`0.6459`** `/ 0.7235 / 0.7340` | `-0.0229` (`classical_crf` wins) |
+| `test_iid` (160) | **`0.9972`** [0.9954, 0.9987] | `0.0011` | `0.9968` [0.9948, 0.9986] | `0.7188 /` **`0.8912` / `0.9986`** | **`0.7194`** `/ 0.7341 / 0.7167` | `+0.0003` (`p = 0.3814`, n.s.) |
+| `test_unseen_terms` (160) | **`0.9204`** [0.9078, 0.9322] | `0.0065` | `0.9169` [0.9046, 0.9286] | `0.7497 /` **`0.8362` / `1.0000`** | **`0.7511`** `/ 0.7197 / 0.7179` | `+0.0034` (`p = 0.1076`, n.s.) |
+| `test_unseen_templates` (160) | `0.9310` [0.9219, 0.9397] | `0.0102` | **`0.9527`** [0.9441, 0.9607] | `0.6430 /` **`0.8315` / `0.9969`** | **`0.6459`** `/ 0.7235 / 0.7340` | `-0.0217` (`classical_crf` wins) |
 
 ---
 
 ## 8. Platform, Review Persistence, E2E & Accessibility Verification (H8)
 
 - **Review Queue Persistence & Gold Export:** `POST /api/v1/reviews`, `GET /api/v1/reviews`, and `GET /api/v1/reviews/export` (`jsonl` and `brat`) persist reviewer decisions and corrected span offsets in SQLite (`tests/test_review_api_persistence.py`).
-- **Full End-to-End Playwright Suite (`frontend/e2e/app.spec.ts`):** Verified against a live FastAPI backend (`scripts/run_frontend_e2e_and_lighthouse.py`) in both **EN and FR**: login → upload PDF → highlights appear in workspace → open fact → review decision saved after reload → download markdown report (`?lang=en|fr`).
+- **Full End-to-End Playwright Suite (`frontend/e2e/app.spec.ts`):** Verified against a live FastAPI backend (`scripts/run_frontend_e2e_and_lighthouse.py`) in both **EN and FR**: login → upload PDF (including `"Le patient presente une pneumonie et prend metformine 500 mg."` → `"500 mg"` highlighted as `DOSAGE` linked to `metformine` via `HAS_DOSAGE`) → open fact → review decision saved after reload → `/react/relations` renders graph nodes & edges (`node` click navigates to workspace span) → download markdown report (`?lang=en|fr`).
 - **28 Light & Dark Screenshots (`docs/screenshots/`):** Playwright script generates light + dark screenshots for all 14 routes (`login`, `workspace`, `upload`, `pdf`, `relations`, `timeline`, `reports`, `review`, `corpus`, `benchmark`, `ablation`, `errors`, `schema`, `settings`).
-- **Lighthouse Accessibility (`docs/results/lighthouse_accessibility_report.json`):** Scored **`100/100`** (`>= 95` threshold) across all 5 main routes (`login`, `workspace`, `upload`, `review`, `reports`).
+- **Lighthouse Accessibility (`docs/results/lighthouse_accessibility_report.json`):** Scored **`100/100`** (`>= 95` threshold) across all 6 tested routes (`login`, `workspace`, `upload`, `relations`, `review`, `reports`).
 
 ---
 
@@ -222,3 +222,23 @@ Note honestly what `hybrid_v2` is: **the hybrid's entity stage now uses the CRF 
 | **H7** | `1.0000` TIMEX normalisation lacked circularity caveat. | Added explicit synthetic-only caveat wherever cited and added 40-expression out-of-format unit check (`4/40 = 0.1000`). |
 | **H8** | Screenshots covered 1/14 pages; E2E omitted upload/highlights/report download. | Added EN+FR full workflow E2E in CI, 28 screenshots (14 pages × 2 themes), fixed `ReportsPage.tsx` download, and achieved `100/100` Lighthouse accessibility on all 5 main routes. |
 | **H9** | Docs contained machine-local `file:///Users/guest777/...` links. | Replaced all `file:///` links with relative repo paths and added `tests/test_no_file_uri_in_docs.py` in CI. |
+
+---
+
+## 11. Served Model (`hybrid_v2`)
+
+- **Served Default Model:** `hybrid_v2` (`configs/exp/v3_2/hybrid_v2.yaml`, seed `1`), saved to `models/hybrid_v2_seed1/` via `medextract train --config configs/exp/v3_2/hybrid_v2.yaml --seed 1 --out models/hybrid_v2_seed1/` (`138.1s` on CPU). Optional `classical_crf` saved to `models/classical_crf_seed1/` (`10.77s` on CPU). Both directories include SHA-256 `manifest.json` (`medresearch_platform/hybrid/persistence.py`) and fail loudly if missing.
+- **Serving Path (`medresearch_platform/serving/extractor.py`):** `ExtractionService` backs `workflows/pipeline.py`, `/api/v1/documents/upload`, `/api/v1/models`, and the Settings provenance panel (`SettingsDiagnosticsPage.tsx`). Legacy `ai/nlp_model.py` and `ai/ocr_model.py` are moved to `extras/legacy/`.
+- **API-vs-Pipeline Consistency (`tests/test_api_pipeline_consistency.py`):** Verified that entities returned by `/api/v1/documents/upload` match `HybridPipeline.extract_document` identically across `30` `test_iid` TXT documents and `10` rendered PDFs via Tesseract + character-level span alignment.
+
+---
+
+## 12. Changes Since 12B (Correction Prompt 13: J1–J5)
+
+| ID | Finding in `ac743d6` | Remediation & Verification |
+|---|---|---|
+| **J1** | App served legacy `ai/nlp_model.py` + `ai/ocr_model.py` instead of evaluated `HybridPipeline`. | Moved legacy models to `extras/legacy/`, built `ExtractionService` wired into `workflows/pipeline.py` and `/api/v1/models` + Settings UI, and passed `tests/test_api_pipeline_consistency.py` (30 TXT + 10 PDF `test_iid` docs) + E2E `"500 mg"` → `DOSAGE` (`HAS_DOSAGE` to `metformine`). |
+| **J2** | `HybridPipeline` & `classical_crf` had no `save()`/`load()`. | Added `save`/`load` with NumPy `.npz`, CRF `.crfsuite`, BPE vocab/merges, config, corpus hash, git commit, and SHA-256 `manifest.json` + `medextract train` CLI (`tests/test_model_save_load.py`). |
+| **J3** | Bootstrap CIs pooled 5 seeds × 160 docs into 800 items and missed their own point estimates. | Added `bootstrap_mean_seed_f1_ci` resampling the 160 independent documents with the exact mean-across-seeds estimator (`tests/test_statistics_and_holm_bonferroni.py`), regenerated all 4 `v3_1_*_significance` tables and `v3_2_hybrid_v2_locked_eval.json`, and logged in `TEST_SET_LOG.md`. |
+| **J4** | Relation graph page rendered blank (`ent.surface_text.slice` crashed when API returned `source_text`). | Fixed `getEntityText` (`source_text ?? surface_text`), added node-click → workspace span navigation, verified `relations_light.png` (`58K`) / `relations_dark.png` (`55K`), E2E `>=1` node & edge assertions, and `100/100` Lighthouse on `/react/relations`. |
+| **J5** | Workspace highlights ignored entity type colours and assertion styles. | Added shared `frontend/src/utils/entityStyles.ts` (type colours + `NOT` strikethrough, `?` dashed, `HYP` italic, `FAM`, clock for historical) + visible workspace legend + Vitest unit tests (`entityStyles.test.ts`). |

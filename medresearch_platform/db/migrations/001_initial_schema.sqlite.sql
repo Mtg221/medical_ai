@@ -145,6 +145,7 @@ CREATE TABLE IF NOT EXISTS ocr_blocks (
     bbox_json TEXT NOT NULL,
     model_id TEXT NOT NULL,
     model_version TEXT NOT NULL,
+    source_stage TEXT NOT NULL DEFAULT '',
     confidence REAL NOT NULL,
     aleatoric_uncertainty REAL NOT NULL,
     epistemic_uncertainty REAL NOT NULL,
@@ -170,8 +171,9 @@ CREATE TABLE IF NOT EXISTS extracted_entities (
     page_number INTEGER NOT NULL,
     section_type TEXT NOT NULL,
     entity_type TEXT NOT NULL CHECK (entity_type IN (
-        'SYMPTOM', 'DIAGNOSIS', 'MEDICATION', 'DOSAGE', 'FREQUENCY', 'ROUTE',
-        'LAB_TEST', 'LAB_VALUE', 'LAB_UNIT', 'PROCEDURE', 'ANATOMY', 'TEMPORAL_EXPR'
+        'SYMPTOM', 'DIAGNOSIS', 'MEDICATION', 'DOSAGE', 'FREQUENCY', 'ROUTE', 'DURATION',
+        'LAB_TEST', 'LAB_VALUE', 'LAB_UNIT', 'PROCEDURE', 'ANATOMY', 'TEMPORAL_EXPR',
+        'PATIENT_ID', 'DATE'
     )),
     source_text TEXT NOT NULL,
     normalized_text TEXT NOT NULL,
@@ -189,6 +191,7 @@ CREATE TABLE IF NOT EXISTS extracted_entities (
     bbox_json TEXT NOT NULL,
     model_id TEXT NOT NULL,
     model_version TEXT NOT NULL,
+    source_stage TEXT NOT NULL DEFAULT '',
     confidence REAL NOT NULL,
     uncertainty REAL NOT NULL,
     abstained INTEGER NOT NULL DEFAULT 0,
@@ -202,13 +205,15 @@ CREATE TABLE IF NOT EXISTS extracted_relations (
     source_entity_id TEXT NOT NULL REFERENCES extracted_entities(entity_id) ON DELETE CASCADE,
     target_entity_id TEXT NOT NULL REFERENCES extracted_entities(entity_id) ON DELETE CASCADE,
     relation_type TEXT NOT NULL CHECK (relation_type IN (
-        'HAS_DOSAGE', 'HAS_FREQUENCY', 'HAS_ROUTE', 'HAS_LAB_VALUE', 'HAS_LAB_UNIT',
-        'LOCATED_IN_ANATOMY', 'TEMPORALLY_ANCHORED_TO', 'TREATS_CONDITION'
+        'TREATS', 'HAS_DOSAGE', 'HAS_FREQUENCY', 'HAS_ROUTE', 'HAS_VALUE', 'HAS_UNIT',
+        'REVEALS', 'CAUSES', 'LOCATED_IN',
+        'HAS_LAB_VALUE', 'HAS_LAB_UNIT', 'LOCATED_IN_ANATOMY', 'TEMPORALLY_ANCHORED_TO', 'TREATS_CONDITION'
     )),
     derivation_type TEXT NOT NULL CHECK (derivation_type IN ('EXTRACTED', 'INFERRED')),
     evidence_text TEXT NOT NULL,
     model_id TEXT NOT NULL,
     model_version TEXT NOT NULL,
+    source_stage TEXT NOT NULL DEFAULT '',
     confidence REAL NOT NULL,
     uncertainty REAL NOT NULL,
     review_status TEXT NOT NULL CHECK (review_status IN ('AI_PREDICTED', 'HUMAN_CORRECTED', 'APPROVED_GROUND_TRUTH', 'REJECTED'))

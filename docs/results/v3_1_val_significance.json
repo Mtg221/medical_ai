@@ -51,7 +51,7 @@
         "ci95_high": 1.0
       },
       "strict_f1_pooled_boot_ci95": {
-        "mean": 0.3146,
+        "mean": 0.3148,
         "ci95_low": 0.2869,
         "ci95_high": 0.3418
       }
@@ -296,9 +296,9 @@
         "ci95_high": 1.0
       },
       "strict_f1_pooled_boot_ci95": {
-        "mean": 0.7849,
-        "ci95_low": 0.7677,
-        "ci95_high": 0.8024
+        "mean": 0.7852,
+        "ci95_low": 0.7681,
+        "ci95_high": 0.8027
       }
     },
     "hybrid": {

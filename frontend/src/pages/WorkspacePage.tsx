@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, FileSearch, Network, Code2, X } from "lucide-react";
+import { Check, Clock, FileSearch, Network, Code2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -8,6 +9,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { apiRequest } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import type { DocumentDetailResponse, DocumentSummary, ExtractedEntity } from "@/types/api";
+import {
+  ENTITY_TYPE_STYLES,
+  getAssertionStyle,
+  getEntityText,
+  getEntityTypeStyle,
+} from "@/utils/entityStyles";
 
 function HighlightedPageText({
   text,
@@ -35,22 +42,30 @@ function HighlightedPageText({
       nodes.push(<span key={`t-${cursor}`}>{text.slice(cursor, ent.char_start)}</span>);
     }
     const isSelected = ent.entity_id === selectedId;
-    const isNegated = ent.assertion_status === "absent";
+    const typeStyle = getEntityTypeStyle(ent.entity_type);
+    const assertStyle = getAssertionStyle(ent.assertion_status, ent.temporal_status);
     nodes.push(
       <button
         key={ent.entity_id}
         type="button"
+        data-entity-type={ent.entity_type}
+        data-assertion={assertStyle.canonical}
         onClick={() => onSelect(ent.entity_id)}
-        className={`inline rounded px-1 py-0.5 text-left font-medium transition-colors cursor-pointer ${
+        className={`inline-flex items-center gap-1 rounded px-1 py-0.5 text-left font-medium transition-colors cursor-pointer ${
           isSelected
             ? "bg-sky-600 text-white ring-2 ring-sky-300"
-            : isNegated
-            ? "bg-rose-100 text-rose-900 border-b-2 border-rose-400"
-            : "bg-amber-100 text-amber-950 border-b-2 border-amber-400 hover:bg-amber-200"
+            : `${typeStyle.highlightClass} ${assertStyle.borderStyleClass}`
         }`}
-        title={`${ent.entity_type} · ${ent.assertion_status}`}
+        title={`${typeStyle.label} (${ent.entity_type}) · ${assertStyle.ariaLabel}`}
       >
-        {text.slice(ent.char_start, ent.char_end)}
+        <span className={assertStyle.textClass}>{text.slice(ent.char_start, ent.char_end)}</span>
+        <span className="text-[9px] font-bold opacity-80">{typeStyle.shortCode}</span>
+        {assertStyle.badge && (
+          <span className="rounded bg-slate-900/15 dark:bg-white/20 px-1 text-[9px] font-bold">
+            {assertStyle.badge}
+          </span>
+        )}
+        {assertStyle.showClock && <Clock className="h-2.5 w-2.5 inline" aria-label="Historical" />}
       </button>
     );
     cursor = ent.char_end;
@@ -59,15 +74,16 @@ function HighlightedPageText({
     nodes.push(<span key={`t-end`}>{text.slice(cursor)}</span>);
   }
 
-  return <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-slate-800">{nodes}</pre>;
+  return <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-slate-800 dark:text-slate-100">{nodes}</pre>;
 }
 
 export function WorkspacePage() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   const token = useAuthStore((s) => s.token);
   const queryClient = useQueryClient();
-  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(() => searchParams.get("doc"));
+  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(() => searchParams.get("entity"));
   const [rightTab, setRightTab] = useState<"entities" | "graph" | "json">("entities");
 
   const docsQuery = useQuery({
@@ -145,6 +161,24 @@ export function WorkspacePage() {
           {detail && <Badge tone="slate">{detail.document.page_count} p.</Badge>}
         </CardHeader>
         <CardContent className="space-y-4 max-h-[70vh] overflow-y-auto">
+          <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 text-[11px] space-y-1.5" aria-label="Entity colour legend">
+            <div className="flex flex-wrap gap-1">
+              {Object.values(ENTITY_TYPE_STYLES).slice(0, 10).map((st) => (
+                <span key={st.type} className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-medium ${st.chipClass}`}>
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: st.hex }} />
+                  {st.type}
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2 text-[10px] text-slate-600 dark:text-slate-300">
+              <span className="border-b-2 border-solid border-slate-500">Present: solid</span>
+              <span className="line-through border-b-2 border-solid border-rose-500">Absent: NOT</span>
+              <span className="border-b-2 border-dashed border-amber-500">Possible: ?</span>
+              <span className="italic border-b-2 border-dotted border-indigo-500">Hypothetical: italic</span>
+              <span>Family: FAM</span>
+              <span><Clock className="h-2.5 w-2.5 inline mr-0.5" />Historical</span>
+            </div>
+          </div>
           {!detail && <p className="text-xs text-slate-500">Select a document to inspect.</p>}
           {detail?.pages.map((p) => (
             <div key={p.page_id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
@@ -195,23 +229,33 @@ export function WorkspacePage() {
 
         <CardContent className="max-h-[70vh] overflow-y-auto space-y-2.5">
           {rightTab === "entities" &&
-            detail?.entities.map((ent) => (
+            detail?.entities.map((ent) => {
+              const tStyle = getEntityTypeStyle(ent.entity_type);
+              const aStyle = getAssertionStyle(ent.assertion_status, ent.temporal_status);
+              return (
               <div
                 key={ent.entity_id}
                 onClick={() => setSelectedEntityId(ent.entity_id)}
                 className={`rounded-md border p-2.5 text-xs cursor-pointer ${
                   ent.entity_id === selectedEntityId
-                    ? "border-sky-400 bg-sky-50"
-                    : "border-slate-200 bg-white hover:bg-slate-50"
+                    ? "border-sky-400 bg-sky-50 dark:bg-sky-950/40"
+                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-slate-900">{ent.surface_text}</span>
-                  <Badge tone={ent.assertion_status === "absent" ? "rose" : "emerald"}>
-                    {ent.assertion_status}
-                  </Badge>
+                  <span className={`font-semibold text-slate-900 dark:text-slate-100 ${aStyle.textClass}`}>
+                    {getEntityText(ent)}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${tStyle.chipClass}`}>
+                      {ent.entity_type}
+                    </span>
+                    <Badge tone={aStyle.canonical === "absent" ? "rose" : aStyle.canonical === "possible" ? "amber" : "emerald"}>
+                      {aStyle.badge ? `${aStyle.badge} · ` : ""}{ent.assertion_status}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="text-[11px] text-slate-600 mt-1">
+                <div className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">
                   {ent.entity_type} · {ent.normalized_text} · span [{ent.char_start}, {ent.char_end}]
                 </div>
                 <div className="flex items-center justify-between mt-2">
@@ -242,7 +286,8 @@ export function WorkspacePage() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
 
           {rightTab === "graph" && detail && (
             <div className="space-y-2">
@@ -253,10 +298,10 @@ export function WorkspacePage() {
                   const src = detail.entities.find((e) => e.entity_id === rel.source_entity_id);
                   const tgt = detail.entities.find((e) => e.entity_id === rel.target_entity_id);
                   return (
-                    <div key={rel.relation_id} className="rounded border border-slate-200 p-2 text-xs">
-                      <span className="font-medium">{src?.surface_text ?? rel.source_entity_id}</span>{" "}
+                    <div key={rel.relation_id} className="rounded border border-slate-200 dark:border-slate-700 p-2 text-xs">
+                      <span className="font-medium">{getEntityText(src) || rel.source_entity_id}</span>{" "}
                       <Badge tone="sky">{rel.relation_type}</Badge>{" "}
-                      <span className="font-medium">{tgt?.surface_text ?? rel.target_entity_id}</span>
+                      <span className="font-medium">{getEntityText(tgt) || rel.target_entity_id}</span>
                     </div>
                   );
                 })
