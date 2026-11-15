@@ -2,6 +2,10 @@
 
 ## [Unreleased] — Phase 11 ("Make the results true")
 
+### Phase 11B Step 9 — Final 5-Seed Locked Evaluation & Honest Research Report (2026-11-15)
+- Executed `scripts/run_v3_1_final_locked_eval.py` across all 7 `SYNTH-MED-V3.1` approaches × 5 seeds (`1..5`) on `val` (160), `test_iid` (160), `test_unseen_terms` (160), and `test_unseen_templates` (160) in `3415.92s`, generating `docs/results/v3_1_final_locked_eval.json` and 10,000-resample Holm-Bonferroni significance tables (`docs/results/v3_1_*_significance{,_tables}.{json,md}`), logged in `docs/results/TEST_SET_LOG.md`.
+- Rewrote `docs/RESEARCH_REPORT.md` and updated `PROJECT_STATUS.md` with exact 5-seed metrics, 95% CIs, Holm-Bonferroni p-values, Stage 1–5 ablations (including negative results for Stage 3b BiLSTM assertion and Stage 5 fusion), 120-page real Tesseract OCR F1 drops, and frontend/E2E verification.
+
 ### Phase 11B Step 8 — Realistic Set Protocol & ADR-0009 (G11) (2026-11-15)
 - Added `docs/REALISTIC_SET_PROTOCOL.md` documenting `SYNTH-MED-V3.1` split separation (`val`, `test_iid`, `test_unseen_terms`, `test_unseen_templates`), document-type structural signals, mandatory `scripts/audit_corpus.py` gates, 120-page OCR stress protocol, and external/real clinical corpus governance.
 - Added `DECISIONS/ADR-0009-numpy-vs-pytorch.md` reconciling `ADR-0003` and `ADR-0005`, documenting the single pure-NumPy implementation, `< 1e-4` finite-difference gradient verification across all 6 neural classes, CPU throughput trade-offs, and PyTorch migration criteria.
