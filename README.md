@@ -1,6 +1,6 @@
 # Multilingual Medical Information Extraction AI (`medical_ai`)
 
-**Version:** `0.1.0` (Phases 0–10 Complete)  
+**Version:** `0.2.0` (Phases 0–12 + Correction Prompts 11–14)  
 **Primary Languages:** English (`en`) & French (`fr`)  
 **Execution Profile:** CPU-Only Native (`Intel Core i7-9750H`, 32 GB RAM, macOS Darwin `x86_64`)  
 **Primary AI Track:** Models trained strictly from scratch (random initialization, zero pretrained weights)
@@ -10,21 +10,20 @@
 
 ---
 
-## 1. Architecture & Verified Results (`SYNTH-MED-V2` Locked Test Split, 121 Docs, Seeds 1–3)
+## 1. Architecture & Verified Results (`SYNTH-MED-V3.1` Locked Test Splits, 5 Seeds `1..5`)
 
-All primary models are trained from scratch on `train` (555 docs: EN + FR) and evaluated once on the locked `test` split (121 docs). Full methodology, ablations, OCR benchmarks, and limitations are documented in [docs/RESEARCH_REPORT.md](docs/RESEARCH_REPORT.md).
+All primary models are trained from scratch on `train` (600 docs: 300 EN + 300 FR) and evaluated on `val` (160) and three locked test splits (`test_iid` 160, `test_unseen_terms` 160, `test_unseen_templates` 160). Full methodology, ablations, OCR benchmarks, and limitations are documented in [docs/RESEARCH_REPORT.md](docs/RESEARCH_REPORT.md).
 
-| Approach | Strict F1 (mean ± std) | EN F1 | FR F1 | Assert Acc | Rel F1 | TIMEX F1 | ECE |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| 1. `rule_based` | `0.8583 ± 0.0000` | `0.8673` | `0.8491` | `0.9936` | `0.8233` | `0.0000` | `0.0300` |
-| 2. `classical_ml` (TF-IDF + LinearSVC) | `0.8800 ± 0.0000` | `0.8800` | `0.8800` | `0.9944` | `0.8696` | `0.0000` | `0.1441` |
-| 3. `classical_crf` (`sklearn-crfsuite`) | `0.8800 ± 0.0000` | `0.8800` | `0.8800` | `0.9944` | `0.8696` | `0.0000` | `0.1188` |
-| 4. `bilstm` (from-scratch NumPy) | `0.8798 ± 0.0003` | `0.8800` | `0.8800` | `0.9944` | `0.8696` | `0.0000` | `0.1198` |
-| 5. `bilstm_crf` (from-scratch NumPy) | `0.8799 ± 0.0002` | `0.8800` | `0.8800` | `0.9944` | `0.8696` | `0.0000` | `0.0656` |
-| 6. `transformer` (from-scratch NumPy) | `0.7634 ± 0.0180` | `0.8131` | `0.7473` | `0.9945` | `0.7537` | `0.1823` | `0.2058` |
-| **7. `hybrid` (5-stage, 6-technique)** | **`0.9362 ± 0.0000`** | **`0.9362`** | **`0.9362`** | `0.8103` | `0.8329` | **`0.3071`** | **`0.0139`** |
-
-Paired significance (`hybrid` vs `bilstm_crf`, seed 1): `ΔF1 = +0.05617`, `bootstrap_p_value = 0.003992`.
+| Approach | `test_iid` Strict F1 [Doc Boot 95% CI] | `test_unseen_terms` Strict F1 | `test_unseen_templates` Strict F1 | `test_iid` Rel F1 | `test_iid` TIMEX F1 |
+|---|---|---|---|---|---|
+| 1. `rule_based` | `0.3221` [0.2964, 0.3476] | `0.3233` | `0.3066` | `0.0425` | `0.5101` |
+| 2. `classical_ml` (TF-IDF + LinearSVC) | **`0.9983`** [0.9966, 0.9997] | `0.8441` | **`0.9670`** | `0.7340` | `0.7160` |
+| 3. `classical_crf` (`sklearn-crfsuite`) | `0.9968` [0.9948, 0.9986] | `0.9169` | `0.9527` | `0.7341` | `0.7167` |
+| 4. `bilstm` (from-scratch NumPy) | `0.9659` [0.9613, 0.9703] | `0.7859` | `0.8619` | `0.7208` | `0.6997` |
+| 5. `bilstm_crf` (from-scratch NumPy) | `0.9884` [0.9859, 0.9907] | `0.8141` | `0.9392` | `0.7342` | `0.7155` |
+| 6. `transformer` (from-scratch NumPy) | `0.7930` [0.7764, 0.8100] | `0.5241` | `0.6886` | `0.5978` | `0.4557` |
+| 7. `hybrid` (V3.1 5-stage) | `0.9941` [0.9920, 0.9959] | `0.8277` | `0.8949` | **`0.8922`** | **`0.9986`** |
+| **8. `hybrid_v2` (`val`-selected, served)** | `0.9972` [0.9954, 0.9987] | **`0.9204`** | `0.9310` | `0.8912` | **`0.9986`** |
 
 ---
 

@@ -37,6 +37,7 @@ _LABELS: dict[ReportLanguage, dict[str, str]] = {
         "uncertain_badge": "UNCERTAIN",
         "present_badge": "AFFIRMED",
         "categories": "Clinical Facts by Category",
+        "to_verify_title": "To Verify (Low Confidence)",
     },
     "fr": {
         "title": "Rapport structuré d'extraction d'information médicale",
@@ -61,6 +62,7 @@ _LABELS: dict[ReportLanguage, dict[str, str]] = {
         "uncertain_badge": "INCERTAIN",
         "present_badge": "AFFIRMÉ",
         "categories": "Faits cliniques par catégorie",
+        "to_verify_title": "À vérifier (faible confiance)",
     },
 }
 
@@ -120,6 +122,9 @@ def render_markdown_report(
     det_lang = str(document.get("detected_language", "unknown"))
     mode = str(document.get("extraction_mode", "NATIVE_TEXT"))
 
+    confirmed = [e for e in entities if e.get("review_status") != "needs_review"]
+    to_verify = [e for e in entities if e.get("review_status") == "needs_review"]
+
     lines: list[str] = [
         f"# {lbl['title']}",
         "",
@@ -132,20 +137,20 @@ def render_markdown_report(
         f"- **{lbl['mode']}:** `{mode}`",
         "",
         f"## {lbl['summary_counts']}",
-        f"- **{lbl['total_facts']}:** {len(entities)}",
+        f"- **{lbl['total_facts']}:** {len(confirmed)}",
         "",
         f"## {lbl['categories']}",
         "",
     ]
 
-    for cat_title, items in _group_entities(entities, lang):
+    for cat_title, items in _group_entities(confirmed, lang):
         lines.append(f"### {cat_title}")
         if not items:
             lines.append(f"- *{lbl['none_extracted']}*")
             lines.append("")
             continue
         for ent in items:
-            surf = str(ent.get("surface_text") or ent.get("extracted_value") or "")
+            surf = str(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or "")
             norm = str(ent.get("normalized_text") or ent.get("normalized_concept") or surf)
             etype = str(ent.get("entity_type", "UNKNOWN"))
             assertion = str(ent.get("assertion_status", "present"))
@@ -163,6 +168,25 @@ def render_markdown_report(
             )
         lines.append("")
 
+    if to_verify:
+        lines.append(f"## {lbl['to_verify_title']}")
+        for ent in to_verify:
+            surf = str(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or "")
+            norm = str(ent.get("normalized_text") or ent.get("normalized_concept") or surf)
+            etype = str(ent.get("entity_type", "UNKNOWN"))
+            assertion = str(ent.get("assertion_status", "present"))
+            conf = float(ent.get("confidence", ent.get("confidence_score", 0.0)) or 0.0)
+            page = ent.get("page_number", 1)
+            c0 = ent.get("char_start", "?")
+            c1 = ent.get("char_end", "?")
+            lines.append(
+                f"- **{surf}** (`{etype}` -> `{norm}`) | "
+                f"{lbl['assertion']}: **{_assertion_label(assertion, lang)}** | "
+                f"{lbl['confidence']}: `{conf:.2f}` | "
+                f"{lbl['source_ref']}: `[doc={doc_id}, p.{page}, chars {c0}-{c1}]`"
+            )
+        lines.append("")
+
     lines.append(f"## {lbl['relations_title']}")
     if not relations:
         lines.append(f"- *{lbl['none_extracted']}*")
@@ -171,8 +195,8 @@ def render_markdown_report(
         for rel in relations:
             src = ent_by_id.get(str(rel.get("source_entity_id", "")), {})
             tgt = ent_by_id.get(str(rel.get("target_entity_id", "")), {})
-            src_txt = str(src.get("surface_text") or rel.get("source_entity_id") or "?")
-            tgt_txt = str(tgt.get("surface_text") or rel.get("target_value") or rel.get("target_entity_id") or "?")
+            src_txt = str(src.get("surface_text") or src.get("source_text") or rel.get("source_entity_id") or "?")
+            tgt_txt = str(tgt.get("surface_text") or tgt.get("source_text") or rel.get("target_value") or rel.get("target_entity_id") or "?")
             rtype = str(rel.get("relation_type", "RELATED_TO"))
             conf = float(rel.get("confidence", 0.0) or 0.0)
             lines.append(f"- `{src_txt}` — **[{rtype}]** → `{tgt_txt}` ({lbl['confidence']}: `{conf:.2f}`)")
@@ -194,15 +218,18 @@ def render_html_report(
     det_lang = html.escape(str(document.get("detected_language", "unknown")))
     mode = html.escape(str(document.get("extraction_mode", "NATIVE_TEXT")))
 
+    confirmed = [e for e in entities if e.get("review_status") != "needs_review"]
+    to_verify = [e for e in entities if e.get("review_status") == "needs_review"]
+
     sections_html: list[str] = []
-    for cat_title, items in _group_entities(entities, lang):
+    for cat_title, items in _group_entities(confirmed, lang):
         rows_html: list[str] = []
         if not items:
             rows_html.append(f"<p class='empty'>{html.escape(lbl['none_extracted'])}</p>")
         else:
             rows_html.append("<ul>")
             for ent in items:
-                surf = html.escape(str(ent.get("surface_text") or ent.get("extracted_value") or ""))
+                surf = html.escape(str(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or ""))
                 norm = html.escape(str(ent.get("normalized_text") or ent.get("normalized_concept") or surf))
                 etype = html.escape(str(ent.get("entity_type", "UNKNOWN")))
                 assertion = str(ent.get("assertion_status", "present"))
@@ -218,6 +245,25 @@ def render_html_report(
                 )
             rows_html.append("</ul>")
         sections_html.append(f"<section><h3>{html.escape(cat_title)}</h3>{''.join(rows_html)}</section>")
+
+    if to_verify:
+        tv_rows: list[str] = ["<ul>"]
+        for ent in to_verify:
+            surf = html.escape(str(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or ""))
+            norm = html.escape(str(ent.get("normalized_text") or ent.get("normalized_concept") or surf))
+            etype = html.escape(str(ent.get("entity_type", "UNKNOWN")))
+            assertion = str(ent.get("assertion_status", "present"))
+            conf = float(ent.get("confidence", ent.get("confidence_score", 0.0)) or 0.0)
+            page = html.escape(str(ent.get("page_number", 1)))
+            c0 = html.escape(str(ent.get("char_start", "?")))
+            c1 = html.escape(str(ent.get("char_end", "?")))
+            tv_rows.append(
+                f"<li><strong>{surf}</strong> (<code>{etype}</code> &rarr; <code>{norm}</code>) "
+                f"<span class='badge neg'>{html.escape(_assertion_label(assertion, lang))}</span> "
+                f"<span class='src'>[{html.escape(lbl['source_ref'])}: doc={doc_id}, p.{page}, chars {c0}-{c1}, conf={conf:.2f}]</span></li>"
+            )
+        tv_rows.append("</ul>")
+        sections_html.append(f"<section><h3>{html.escape(lbl['to_verify_title'])}</h3>{''.join(tv_rows)}</section>")
 
     return f"""<!doctype html>
 <html lang="{lang}">
@@ -243,7 +289,7 @@ def render_html_report(
     <strong>{html.escape(lbl['filename'])}:</strong> {filename} |
     <strong>{html.escape(lbl['language'])}:</strong> {det_lang} |
     <strong>{html.escape(lbl['mode'])}:</strong> {mode} |
-    <strong>{html.escape(lbl['total_facts'])}:</strong> {len(entities)}
+    <strong>{html.escape(lbl['total_facts'])}:</strong> {len(confirmed)}
   </div>
   <h2>{html.escape(lbl['categories'])}</h2>
   {''.join(sections_html)}

@@ -97,9 +97,21 @@ export function ReviewQueuePage() {
   });
 
   const allEntities = detailQuery.data?.entities ?? [];
-  const entities = allEntities.filter((e) =>
-    onlyFlagged ? e.confidence < 0.75 || e.review_status === "UNRESOLVED_DISAGREEMENT" : true
-  );
+  const entities = allEntities
+    .filter((e) =>
+      onlyFlagged
+        ? e.review_status === "needs_review" ||
+          e.confidence < 0.75 ||
+          e.review_status === "UNRESOLVED_DISAGREEMENT"
+        : true
+    )
+    .slice()
+    .sort((a, b) => {
+      const aNeeds = a.review_status === "needs_review" ? 0 : 1;
+      const bNeeds = b.review_status === "needs_review" ? 0 : 1;
+      if (aNeeds !== bNeeds) return aNeeds - bNeeds;
+      return a.confidence - b.confidence;
+    });
   const reviewedCount = allEntities.filter((e) => e.review_status !== "AI_PREDICTED").length;
   const progressPct = allEntities.length > 0 ? Math.round((reviewedCount / allEntities.length) * 100) : 0;
 
@@ -393,9 +405,14 @@ export function ReviewQueuePage() {
                           conf {(ent.confidence * 100).toFixed(1)}%
                         </span>
                       </div>
-                      <div className="text-slate-500 dark:text-slate-400">
-                        Offsets [{ent.char_start}, {ent.char_end}] · Status:{" "}
-                        <span className="font-medium text-slate-700 dark:text-slate-200">{ent.review_status}</span>
+                      <div className="text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                        <span>Offsets [{ent.char_start}, {ent.char_end}] · Status:</span>
+                        <Badge tone={ent.review_status === "needs_review" ? "amber" : "slate"}>
+                          {ent.review_status === "needs_review" ? "needs review" : ent.review_status}
+                        </Badge>
+                        {ent.review_reason ? (
+                          <span className="text-amber-700 dark:text-amber-300">({ent.review_reason})</span>
+                        ) : null}
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">

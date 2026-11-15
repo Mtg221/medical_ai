@@ -74,6 +74,7 @@ export interface ExtractedEntity {
   confidence: number;
   uncertainty: number;
   review_status: string;
+  review_reason?: string;
   vocabulary?: string;
   terminology_code?: string;
 }

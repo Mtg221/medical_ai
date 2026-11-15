@@ -42,11 +42,11 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             "historical conditions: ",
             "known ",
         ),
-        "terminators": (".", ";", "\n", " but ", " however ", " except "),
+        "terminators": (".", ";", "\n", " but ", " however ", " except ", " and takes ", " started "),
     },
     "fr": {
         "pseudo_neg": ("sans changement", "pas d'augmentation", "non éliminé"),
-        "neg_pre": ("absence de ", "absence d'", "sans ", "pas de ", "pas d'", "nie ", "négatif pour ", "indemne de ", "aucune "),
+        "neg_pre": ("absence de ", "absence d'", "sans ", "pas de ", "pas d'", "nie ", "négatif pour ", "indemne de ", "aucune ", "ni de ", "ni d'", "ni "),
         "neg_post": (" éliminé", " écarté", " écartée", " exclu", " exclue", " soit absente"),
         "possible": (
             "suspicion de ",
@@ -89,36 +89,70 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             "antécédents médicaux : ",
             "pathologie chronique connue : ",
         ),
-        "terminators": (".", ";", "\n", " mais ", " cependant ", " toutefois "),
+        "terminators": (".", ";", "\n", " mais ", " cependant ", " toutefois ", " et prend ", " traitée par ", " traité par "),
     },
 }
 
 
+def _compile_cue_pattern(cue: str) -> re.Pattern[str]:
+    core = cue.strip()
+    prefix = r"(?<!\w)" if core and (core[0].isalnum() or core[0] == "_") else ""
+    suffix = r"(?!\w)" if core and (core[-1].isalnum() or core[-1] == "_") else ""
+    return re.compile(f"{prefix}{re.escape(core)}{suffix}", flags=re.UNICODE | re.IGNORECASE)
+
+
+_COMPILED_CUES: dict[str, dict[str, tuple[re.Pattern[str], ...]]] = {
+    lang: {
+        cat: tuple(_compile_cue_pattern(c) for c in cues)
+        for cat, cues in groups.items()
+        if cat != "terminators"
+    }
+    for lang, groups in CONTEXT_CUES.items()
+}
+
+_COMPILED_TERMINATORS: dict[str, tuple[re.Pattern[str], ...]] = {
+    lang: tuple(
+        _compile_cue_pattern(t) if t.strip().isalnum() or " " in t.strip() else re.compile(re.escape(t), flags=re.IGNORECASE)
+        for t in groups["terminators"]
+    )
+    for lang, groups in CONTEXT_CUES.items()
+}
+
+
+def _matches_any(patterns: tuple[re.Pattern[str], ...], window: str) -> bool:
+    return any(p.search(window) is not None for p in patterns)
+
+
 def classify_assertion_context(text: str, start: int, end: int, language: str = "en") -> str:
-    """ConText/NegEx-style assertion classification with scope termination and pseudo-negation."""
-    cues = CONTEXT_CUES.get(language, CONTEXT_CUES["en"])
+    """ConText/NegEx-style assertion classification with Unicode word-boundary cue matching."""
+    lang = language if language in CONTEXT_CUES else "en"
+    compiled = _COMPILED_CUES[lang]
+    term_patterns = _COMPILED_TERMINATORS[lang]
+
     # Restrict scope to the current sentence/clause
     pre_window = text[max(0, start - 90) : start].lower()
     post_window = text[end : min(len(text), end + 45)].lower()
 
-    for term in cues["terminators"]:
-        if term in pre_window:
-            pre_window = pre_window.rsplit(term, 1)[-1]
-        if term in post_window:
-            post_window = post_window.split(term, 1)[0]
+    for term_pat in term_patterns:
+        matches_pre = list(term_pat.finditer(pre_window))
+        if matches_pre:
+            pre_window = pre_window[matches_pre[-1].end() :]
+        m_post = term_pat.search(post_window)
+        if m_post:
+            post_window = post_window[: m_post.start()]
 
     full_clause = pre_window + " " + text[start:end].lower() + " " + post_window
-    if any(p in full_clause for p in cues["pseudo_neg"]):
+    if _matches_any(compiled["pseudo_neg"], full_clause):
         return "present"
-    if any(c in pre_window for c in cues["family"]):
+    if _matches_any(compiled["family"], pre_window):
         return "family"
-    if any(c in pre_window for c in cues["hypothetical"]):
+    if _matches_any(compiled["hypothetical"], pre_window):
         return "hypothetical"
-    if any(c in pre_window for c in cues["neg_pre"]) or any(c in post_window for c in cues["neg_post"]):
+    if _matches_any(compiled["neg_pre"], pre_window) or _matches_any(compiled["neg_post"], post_window):
         return "absent"
-    if any(c in pre_window or c in post_window for c in cues["possible"]):
+    if _matches_any(compiled["possible"], pre_window) or _matches_any(compiled["possible"], post_window):
         return "possible"
-    if any(c in pre_window for c in cues["historical"]):
+    if _matches_any(compiled["historical"], pre_window):
         return "historical"
     return "present"
 

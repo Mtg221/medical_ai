@@ -122,16 +122,27 @@ class ExtractionService:
             self._classical_crf = ClassicalCRFModel.load(self.classical_crf_dir)
         return self._classical_crf
 
+    @staticmethod
+    def get_review_threshold(cfg: dict[str, Any] | None = None) -> float:
+        env_val = os.environ.get("MEDRESEARCH_REVIEW_THRESHOLD")
+        if env_val is not None and env_val.strip() != "":
+            return float(env_val)
+        if cfg and cfg.get("review_threshold") is not None:
+            return float(cfg["review_threshold"])
+        return 0.60
+
     def list_loaded_models(self) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
         if self.model_dir.exists():
             h = self._get_hybrid()
+            cfg = h.manifest.get("cfg", h.cfg)
             out.append({
                 "model_id": "hybrid_v2",
                 "name": "hybrid_v2",
                 "model_type": h.manifest.get("model_type", "hybrid"),
                 "seed": h.manifest.get("seed", h.seed),
-                "cfg": h.manifest.get("cfg", h.cfg),
+                "cfg": cfg,
+                "review_threshold": self.get_review_threshold(cfg if isinstance(cfg, dict) else None),
                 "corpus_id": h.manifest.get("corpus_id", h.corpus_id),
                 "corpus_hash": h.manifest.get("corpus_hash", h.corpus_hash),
                 "git_commit": h.manifest.get("git_commit", "unknown"),
@@ -141,12 +152,14 @@ class ExtractionService:
             })
         if self.classical_crf_dir.exists():
             c = self._get_classical_crf()
+            cfg = c.manifest.get("cfg", c.cfg)
             out.append({
                 "model_id": "classical_crf",
                 "name": "classical_crf",
                 "model_type": c.manifest.get("model_type", "classical_crf"),
                 "seed": c.manifest.get("seed", c.seed),
-                "cfg": c.manifest.get("cfg", c.cfg),
+                "cfg": cfg,
+                "review_threshold": self.get_review_threshold(cfg if isinstance(cfg, dict) else None),
                 "corpus_id": c.manifest.get("corpus_id", c.corpus_id),
                 "corpus_hash": c.manifest.get("corpus_hash", c.corpus_hash),
                 "git_commit": c.manifest.get("git_commit", "unknown"),
@@ -243,6 +256,9 @@ class ExtractionService:
                 )
             )
 
+        cfg_dict = manifest.get("cfg") if isinstance(manifest.get("cfg"), dict) else None
+        review_threshold = self.get_review_threshold(cfg_dict)
+
         records: list[ExtractedRecord] = []
         for idx, ent in enumerate(pred.entities):
             page_num, bbox = _resolve_page_and_bbox(ent.start, ent.end, page_map)
@@ -253,6 +269,10 @@ class ExtractionService:
             stage_name = source_stage_by_key.get((ent.type, ent.start, ent.end), model_name)
             assertion_contract = _ASSERTION_TO_CONTRACT.get(ent.assertion, "present")
             negation_contract = _ASSERTION_TO_NEGATION.get(ent.assertion, "affirmed")
+            ent_conf = float(ent.confidence)
+            is_low_conf = ent_conf < review_threshold
+            review_status = "needs_review" if is_low_conf else "AI_PREDICTED"
+            review_reason = "low_confidence" if is_low_conf else ""
             records.append(
                 ExtractedRecord(
                     source_record_id=f"{source_record_id}_{idx}",
@@ -268,16 +288,19 @@ class ExtractionService:
                     language=pred.language,
                     negation_status=negation_contract,
                     assertion_status=assertion_contract,
-                    uncertainty=round(max(0.0, 1.0 - float(ent.confidence)), 4),
+                    uncertainty=round(max(0.0, 1.0 - ent_conf), 4),
                     temporal_information=matched_timex,
                     relationships=tuple(rels_by_head.get((ent.start, ent.end), [])),
-                    confidence_score=round(float(ent.confidence), 4),
+                    confidence_score=round(ent_conf, 4),
                     model_name=model_name,
                     model_version=model_version,
                     provenance={
                         "source_stage": stage_name,
                         "raw_assertion": ent.assertion,
                         "predicted_doc_type": pred.predicted_doc_type,
+                        "review_status": review_status,
+                        "review_reason": review_reason,
+                        "review_threshold": review_threshold,
                         "corpus_id": manifest.get("corpus_id", "unknown"),
                         "corpus_hash": manifest.get("corpus_hash", ""),
                         "git_commit": manifest.get("git_commit", "unknown"),

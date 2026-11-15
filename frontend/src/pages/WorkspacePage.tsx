@@ -259,7 +259,14 @@ export function WorkspacePage() {
                   {ent.entity_type} · {ent.normalized_text} · span [{ent.char_start}, {ent.char_end}]
                 </div>
                 <div className="flex items-center justify-between mt-2">
-                  <Badge tone="slate">{ent.review_status}</Badge>
+                  <div className="flex items-center gap-1">
+                    <Badge tone={ent.review_status === "needs_review" ? "amber" : "slate"}>
+                      {ent.review_status === "needs_review" ? "needs review" : ent.review_status}
+                    </Badge>
+                    {ent.review_reason ? (
+                      <span className="text-[10px] text-amber-700 dark:text-amber-300">{ent.review_reason}</span>
+                    ) : null}
+                  </div>
                   <div className="flex gap-1">
                     <Button
                       size="sm"

@@ -174,8 +174,8 @@ Executed with real Tesseract (`eng` + `fra`) via `scripts/run_v3_1_ocr_full_benc
 
 | Candidate | `use_crf_ensemble` | `use_assertion_bilstm` | `use_transformer_fusion` | `val` Strict F1 [Doc Boot 95% CI] | Seed Std | Assert F1 | Rel F1 | 5-Seed Time |
 |---|---|---|---|---|---|---|---|---|
-| `v3_1_baseline` | `false` | `true` | `true` | `0.9942` [0.9974, 0.9988] | `0.0033` | `0.7350` | `0.8937` | `764.44s` |
-| `crf_off_ctx_nofusion` | `false` | `false` | `false` | `0.9942` [0.9974, 0.9988] | `0.0033` | `0.7536` | `0.8937` | `615.35s` |
+| `v3_1_baseline` | `false` | `true` | `true` | `0.9942` [0.9921, 0.9961] | `0.0033` | `0.7350` | `0.8937` | `764.44s` |
+| `crf_off_ctx_nofusion` | `false` | `false` | `false` | `0.9942` [0.9921, 0.9961] | `0.0033` | `0.7536` | `0.8937` | `615.35s` |
 | `crf_on_bilstm_fusion` | `true` | `true` | `true` | `0.9966` [0.9962, 0.9980] | `0.0009` | `0.7364` | `0.8916` | `946.71s` |
 | `crf_on_ctx_fusion` | `true` | `false` | `true` | `0.9966` [0.9962, 0.9980] | `0.0009` | `0.7567` | `0.8916` | `663.21s` |
 | **`crf_on_ctx_nofusion` (selected)** | **`true`** | **`false`** | **`false`** | **`0.9966`** [0.9945, 0.9984] | `0.0009` | **`0.7567`** | `0.8916` | **`603.77s`** |
@@ -242,3 +242,27 @@ Note honestly what `hybrid_v2` is: **the hybrid's entity stage now uses the CRF 
 | **J3** | Bootstrap CIs pooled 5 seeds × 160 docs into 800 items and missed their own point estimates. | Added `bootstrap_mean_seed_f1_ci` resampling the 160 independent documents with the exact mean-across-seeds estimator (`tests/test_statistics_and_holm_bonferroni.py`), regenerated all 4 `v3_1_*_significance` tables and `v3_2_hybrid_v2_locked_eval.json`, and logged in `TEST_SET_LOG.md`. |
 | **J4** | Relation graph page rendered blank (`ent.surface_text.slice` crashed when API returned `source_text`). | Fixed `getEntityText` (`source_text ?? surface_text`), added node-click → workspace span navigation, verified `relations_light.png` (`58K`) / `relations_dark.png` (`55K`), E2E `>=1` node & edge assertions, and `100/100` Lighthouse on `/react/relations`. |
 | **J5** | Workspace highlights ignored entity type colours and assertion styles. | Added shared `frontend/src/utils/entityStyles.ts` (type colours + `NOT` strikethrough, `?` dashed, `HYP` italic, `FAM`, clock for historical) + visible workspace legend + Vitest unit tests (`entityStyles.test.ts`). |
+
+---
+
+## 13. Changes Since 13 (K1–K6)
+
+| ID | Finding in `edcb2c1` | Remediation & Verification |
+|---|---|---|
+| **K1, K2, K6** | Clean checkout errored (`122 errors`: `HybridConfig` did not exist in `tests/conftest.py`); API test required 3 models; `README.md` showed stale v2 counts; CI used retired `macos-13` and had no clean-checkout job. | Fixed `tests/conftest.py` to train tiny fixture models via the real `HybridPipeline(seed=1, cfg=cfg)` & `ClassicalCRFModel(seed=1)` APIs (`tests/test_conftest_fresh_clone.py`); isolated `test_api_and_cli.py` from repo `models/`; added `fresh-clone-tests` CI job (`ubuntu-latest` + `windows-latest`, Python `3.12`/`3.13`); updated `README.md` to `SYNTH-MED-V3.1` / `hybrid_v2`. |
+| **K3** | `context_negex.py` used raw substring matching (`c in pre_window`), so French `"nie "` matched inside `"pneumonie"`, `"insomnie"`, `"neutropénie"`, `"hernie"`, turning later medications `absent`. | Compiled Unicode word-boundary regexes (`(?<!\w)...(?!\w)`, `re.UNICODE | re.IGNORECASE`), added `"ni"` coordination and clause terminators (`" and takes "`, `" et prend "`, `" traitée par "`, `" started "`), verified via `tests/test_context_negex_word_boundaries.py` (`149 passed`), updated E2E to accented `"Le patient présente une pneumonie et prend metformine 500 mg."` (`data-assertion="present"`), and logged re-measured assertion macro-F1 in `TEST_SET_LOG.md` (`docs/results/v3_2_k3_assertion_recheck.json`). |
+| **K4** | Low-confidence OOD predictions (`0.00`–`0.05` on owner free text such as `"Mme D"`, `"67 ans"`, `"Toux productive"`) were persisted and shown as normal facts. | Calibrated `hybrid_v2` on `val` (`2,947` entities, `overall_ece = 0.0019`, `[0.5, 0.6]` bin precision `0.6667 < 0.80` → `review_threshold: 0.60` in `configs/exp/v3_2/hybrid_v2.yaml`, `docs/results/v3_2_val_calibration.json`). Facts below `review_threshold` are flagged `review_status = "needs_review"` (`review_reason = "low_confidence"`), sorted first in the review queue with amber badges, excluded from confirmed report counts, and listed under **To Verify (Low Confidence)** / **À vérifier (faible confiance)** (`tests/test_low_confidence_review.py`). |
+| **K5** | Two `val` selection CI rows (`v3_1_baseline`, `crf_off_ctx_nofusion`) still showed stale `0.9942` (old CI `[0.9974, 0.9988]`). | Updated lines 177–178 to `0.9942` [0.9921, 0.9961] (`docs/results/v3_1_val_significance.json`) and added `tests/test_report_ci_bounds.py` to enforce `low <= estimate <= high` on every CI in this report. |
+
+### 13.1 Assertion Macro-F1 Before vs After K3 Word-Boundary Fix
+
+| Split | `hybrid_v2` Before K3 (Overall) | `hybrid_v2` After K3 (Overall) | After K3 (EN) | After K3 (FR) |
+|---|---|---|---|---|
+| `val` (160) | `0.7567` | **`0.7585`** | `0.8059` | `0.7244` |
+| `test_iid` (160) | `0.7188` | `0.7155` | `0.7587` | `0.7015` |
+| `test_unseen_terms` (160) | `0.7497` | `0.7485` | `0.7909` | `0.7324` |
+| `test_unseen_templates` (160) | `0.6430` | **`0.6463`** | `0.7052` | `0.6034` |
+
+### 13.2 Owner-Style Free-Text Limitation
+
+`hybrid_v2` is trained exclusively on synthetic clinical notes (`SYNTH-MED-V3.1`). On short, un-templated owner-style free text containing demographic headers or novel clinical phrasing (e.g. `"Mme D"`, `"67 ans"`, `"Toux productive"`), the CRF/BPE stages produce out-of-distribution low-confidence spans (`0.00`–`0.05`). Those predictions are now gated to `"needs_review"` (`review_reason = "low_confidence"`) and separated from confirmed facts in reports, rather than being presented as confident extractions; improving recall and precision on real clinical shorthand requires domain adaptation on owner-annotated notes per [`docs/REALISTIC_SET_PROTOCOL.md`](REALISTIC_SET_PROTOCOL.md).

@@ -33,6 +33,7 @@ export function SettingsDiagnosticsPage() {
           corpus_hash: string;
           git_commit: string;
           saved_at_utc: string;
+          review_threshold?: number;
           cfg: Record<string, unknown>;
           files_sha256: Record<string, string>;
         }>;
@@ -78,6 +79,7 @@ export function SettingsDiagnosticsPage() {
               </div>
               <div>Training Corpus: <span className="font-mono">{m.corpus_id}</span> (<span className="font-mono">{m.corpus_hash?.slice(0, 12)}</span>)</div>
               <div>Git Commit: <span className="font-mono">{m.git_commit}</span> · Saved: <span className="font-mono">{m.saved_at_utc}</span></div>
+              <div>Review Threshold: <span className="font-mono">{m.review_threshold ?? 0.60}</span></div>
               <div>Config: <span className="font-mono break-all">{JSON.stringify(m.cfg)}</span></div>
               <div>Artifact Files SHA-256: <span className="font-mono">{Object.keys(m.files_sha256 ?? {}).length} verified files</span></div>
             </div>

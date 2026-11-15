@@ -481,6 +481,8 @@ class MedicalResearchPlatformService:
                 db_assert = raw_assert_to_db.get(raw_assert, "AFFIRMED")
                 bbox_dict = rec.region_coordinates.to_dict() if rec.region_coordinates is not None else {"x0": 0.0, "y0": 0.0, "x1": 0.0, "y1": 0.0}
                 source_stage = str(rec.provenance.get("source_stage", extraction.model_name))
+                review_status = str(rec.provenance.get("review_status", "AI_PREDICTED"))
+                review_reason = str(rec.provenance.get("review_reason", ""))
                 conn.execute(
                     """
                     INSERT INTO extracted_entities (
@@ -488,8 +490,8 @@ class MedicalResearchPlatformService:
                         source_text, normalized_text, terminology_concept_id, mapping_match_type,
                         assertion_status, temporal_status, medication_status,
                         char_start, char_end, bbox_json, model_id, model_version, source_stage,
-                        confidence, uncertainty, abstained, review_status, created_at
-                    ) VALUES (?, ?, ?, 'PAGE_FULL', ?, ?, ?, NULL, 'UNMAPPED', ?, 'CURRENT', 'NOT_APPLICABLE', ?, ?, ?, ?, ?, ?, ?, ?, 0, 'AI_PREDICTED', ?)
+                        confidence, uncertainty, abstained, review_status, review_reason, created_at
+                    ) VALUES (?, ?, ?, 'PAGE_FULL', ?, ?, ?, NULL, 'UNMAPPED', ?, 'CURRENT', 'NOT_APPLICABLE', ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
                     """,
                     (
                         ent_id,
@@ -507,6 +509,8 @@ class MedicalResearchPlatformService:
                         source_stage,
                         float(rec.confidence_score),
                         float(rec.uncertainty),
+                        review_status,
+                        review_reason,
                         now_iso,
                     ),
                 )

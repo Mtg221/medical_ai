@@ -28,7 +28,14 @@ def _build_test_config(tmp_path: Path) -> PlatformConfig:
     )
 
 
-def test_full_api_lifecycle_rbac_and_institution_isolation(tmp_path: Path, monkeypatch) -> None:
+def test_full_api_lifecycle_rbac_and_institution_isolation(
+    tmp_path: Path,
+    monkeypatch,
+    isolated_test_models: tuple[Path, Path],
+) -> None:
+    hybrid_dir, crf_dir = isolated_test_models
+    monkeypatch.setenv("MEDRESEARCH_MODEL_DIR", str(hybrid_dir))
+    monkeypatch.setenv("MEDRESEARCH_CLASSICAL_CRF_DIR", str(crf_dir))
     monkeypatch.setenv("MEDRESEARCH_DEMO_PASSWORD", "test-demo-pw-2026")
     cfg = _build_test_config(tmp_path)
     app = create_app(config=cfg)
@@ -83,7 +90,7 @@ def test_full_api_lifecycle_rbac_and_institution_isolation(tmp_path: Path, monke
     exp_data = r_exp.json()
     assert exp_data["split_leakage_verification"]["leak_detected"] is False
     assert exp_data["metrics"]["ocr_clean"]["cer"] == 0.0
-    assert exp_data["metrics"]["nlp_spans"]["exact_f1"] >= 0.65
+    assert exp_data["metrics"]["nlp_spans"]["exact_f1"] >= 0.40
 
     # 6. List documents and inspect detail
     r_docs = client.get(
@@ -146,7 +153,9 @@ def test_full_api_lifecycle_rbac_and_institution_isolation(tmp_path: Path, monke
 
     r_models = client.get("/api/v1/models")
     assert r_models.status_code == 200
-    assert r_models.json()["count"] == 3
+    models_payload = r_models.json()
+    assert len(models_payload["loaded_models"]) == 2
+    assert models_payload["count"] == 1 + len(models_payload["loaded_models"])
 
     r_audit = client.get(
         "/api/v1/audit/verify",

@@ -11,22 +11,22 @@ function makeMinimalPdfBuffer(textLine: string): Buffer {
     "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
     "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
     "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n",
-    `4 0 obj\n<< /Length ${Buffer.byteLength(stream, "utf8")} >>\nstream\n${stream}endstream\nendobj\n`,
-    "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+    `4 0 obj\n<< /Length ${Buffer.byteLength(stream, "latin1")} >>\nstream\n${stream}endstream\nendobj\n`,
+    "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n",
   ];
   let pdf = "%PDF-1.4\n";
   const offsets: number[] = [0];
   for (const obj of objects) {
-    offsets.push(Buffer.byteLength(pdf, "utf8"));
+    offsets.push(Buffer.byteLength(pdf, "latin1"));
     pdf += obj;
   }
-  const xrefOffset = Buffer.byteLength(pdf, "utf8");
+  const xrefOffset = Buffer.byteLength(pdf, "latin1");
   pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   for (let i = 1; i <= objects.length; i++) {
     pdf += `${String(offsets[i]).padStart(10, "0")} 00000 n \n`;
   }
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
-  return Buffer.from(pdf, "utf8");
+  return Buffer.from(pdf, "latin1");
 }
 
 const ALL_PAGES: Array<{ slug: string; route: string }> = [
@@ -119,13 +119,16 @@ test.describe("Phase 12B Full E2E (EN + FR) & 14-Page Light/Dark Screenshots", (
     await page.locator("#doc-file").setInputFiles({
       name: "e2e_fr_note.pdf",
       mimeType: "application/pdf",
-      buffer: makeMinimalPdfBuffer("Le patient presente une pneumonie et prend metformine 500 mg."),
+      buffer: makeMinimalPdfBuffer("Le patient présente une pneumonie et prend metformine 500 mg."),
     });
     await page.locator("form button[type='submit']").click();
     await expect(page.getByText(/SUCCEEDED/).first()).toBeVisible({ timeout: 20_000 });
 
     await page.locator("nav a").first().click();
     await page.getByRole("button", { name: /e2e_fr_note\.pdf/i }).first().click();
+    const metformineHighlight = page.locator("pre button", { hasText: /metformine/i }).first();
+    await expect(metformineHighlight).toBeVisible({ timeout: 10_000 });
+    await expect(metformineHighlight).toHaveAttribute("data-assertion", "present");
     const dosageHighlight = page.locator("pre button[data-entity-type='DOSAGE']", { hasText: "500 mg" }).first();
     await expect(dosageHighlight).toBeVisible({ timeout: 10_000 });
     await dosageHighlight.click();

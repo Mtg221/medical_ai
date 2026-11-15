@@ -1,0 +1,53 @@
+{
+  "splits": {
+    "val": {
+      "hybrid_v2_seed1": {
+        "overall_assertion_macro_f1": 0.7585,
+        "en_assertion_macro_f1": 0.8059,
+        "fr_assertion_macro_f1": 0.7244
+      },
+      "rule_based": {
+        "overall_assertion_macro_f1": 0.4354,
+        "en_assertion_macro_f1": 0.7492,
+        "fr_assertion_macro_f1": 0.4818
+      }
+    },
+    "test_iid": {
+      "hybrid_v2_seed1": {
+        "overall_assertion_macro_f1": 0.7155,
+        "en_assertion_macro_f1": 0.7587,
+        "fr_assertion_macro_f1": 0.7015
+      },
+      "rule_based": {
+        "overall_assertion_macro_f1": 0.5878,
+        "en_assertion_macro_f1": 0.5855,
+        "fr_assertion_macro_f1": 0.7403
+      }
+    },
+    "test_unseen_terms": {
+      "hybrid_v2_seed1": {
+        "overall_assertion_macro_f1": 0.7485,
+        "en_assertion_macro_f1": 0.7909,
+        "fr_assertion_macro_f1": 0.7324
+      },
+      "rule_based": {
+        "overall_assertion_macro_f1": 0.6671,
+        "en_assertion_macro_f1": 0.7802,
+        "fr_assertion_macro_f1": 0.488
+      }
+    },
+    "test_unseen_templates": {
+      "hybrid_v2_seed1": {
+        "overall_assertion_macro_f1": 0.6463,
+        "en_assertion_macro_f1": 0.7052,
+        "fr_assertion_macro_f1": 0.6034
+      },
+      "rule_based": {
+        "overall_assertion_macro_f1": 0.5539,
+        "en_assertion_macro_f1": 0.4147,
+        "fr_assertion_macro_f1": 0.6097
+      }
+    }
+  },
+  "runtime_s": 15.08
+}

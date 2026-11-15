@@ -195,7 +195,8 @@ CREATE TABLE IF NOT EXISTS extracted_entities (
     confidence REAL NOT NULL,
     uncertainty REAL NOT NULL,
     abstained INTEGER NOT NULL DEFAULT 0,
-    review_status TEXT NOT NULL CHECK (review_status IN ('AI_PREDICTED', 'HUMAN_CORRECTED', 'APPROVED_GROUND_TRUTH', 'REJECTED', 'UNRESOLVED_DISAGREEMENT')),
+    review_status TEXT NOT NULL CHECK (review_status IN ('AI_PREDICTED', 'needs_review', 'HUMAN_CORRECTED', 'APPROVED_GROUND_TRUTH', 'REJECTED', 'UNRESOLVED_DISAGREEMENT')),
+    review_reason TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL
 );
 
