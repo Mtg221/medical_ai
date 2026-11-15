@@ -173,7 +173,7 @@ class HybridPipeline:
                 probs = self.assertion_model.predict_proba(
                     doc.text, c.entity.start, c.entity.end, vocab, toks=doc_toks
                 )
-                best_idx = int(probs.argmax())
+                best_idx = int(probs.argmax(axis=0))
                 assert_lbl = ASSERTION_CLASSES[best_idx] if float(probs[best_idx]) >= 0.75 else ctx_lbl
             else:
                 assert_lbl = ctx_lbl
