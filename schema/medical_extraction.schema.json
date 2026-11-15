@@ -158,6 +158,7 @@
           "default": "unreviewed",
           "enum": [
             "unreviewed",
+            "needs_review",
             "approved",
             "corrected",
             "rejected",

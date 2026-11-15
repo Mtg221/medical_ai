@@ -263,6 +263,31 @@ Note honestly what `hybrid_v2` is: **the hybrid's entity stage now uses the CRF 
 | `test_unseen_terms` (160) | `0.7497` | `0.7485` | `0.7909` | `0.7324` |
 | `test_unseen_templates` (160) | `0.6430` | **`0.6463`** | `0.7052` | `0.6034` |
 
-### 13.2 Owner-Style Free-Text Limitation
+### 13.2 Owner-Style Free-Text Limitation (Measured Probes, Corrected in L1)
 
-`hybrid_v2` is trained exclusively on synthetic clinical notes (`SYNTH-MED-V3.1`). On short, un-templated owner-style free text containing demographic headers or novel clinical phrasing (e.g. `"Mme D"`, `"67 ans"`, `"Toux productive"`), the CRF/BPE stages produce out-of-distribution low-confidence spans (`0.00`–`0.05`). Those predictions are now gated to `"needs_review"` (`review_reason = "low_confidence"`) and separated from confirmed facts in reports, rather than being presented as confident extractions; improving recall and precision on real clinical shorthand requires domain adaptation on owner-annotated notes per [`docs/REALISTIC_SET_PROTOCOL.md`](REALISTIC_SET_PROTOCOL.md).
+`hybrid_v2` is trained exclusively on synthetic clinical notes (`SYNTH-MED-V3.1`). On short, un-templated owner-style free text (`tests/data/owner_style_probe.jsonl`, e.g. `"Mme D, 67 ans. Toux productive depuis 3 jours, fièvre à 38.7°C. Antécédents : hypertension traitée par amlodipine 5 mg."`), the served model produces **both** low-confidence flagged errors and **confidently wrong** unflagged errors:
+
+- **Flagged (`needs_review`, `low_confidence < 0.60`):** `"Toux productive"` → `LAB_TEST` (`0.0566`), `"fièvre"` → `ANATOMY` (`0.0001`), `"°C"` → `LAB_UNIT` (`0.2484`).
+- **Confidently wrong (NOT flagged, `>= 0.60`):** `"Mme"` → `DIAGNOSIS` (`0.9169`), `"67 ans"` → `DATE` (`0.8792`).
+- **Missed:** `"hypertension"` is omitted.
+
+A confidence threshold cannot catch confident out-of-distribution mistakes; only owner-annotated real clinical notes (training and/or evaluation per [`docs/REALISTIC_SET_PROTOCOL.md`](REALISTIC_SET_PROTOCOL.md)) can measure and reduce them.
+
+---
+
+## 14. Changes Since 14 (Correction Prompt 15: L1–L4)
+
+| ID | Finding in `90c0be6` | Remediation & Verification |
+|---|---|---|
+| **L1** | §13.2 claimed `"Mme D"`, `"67 ans"`, `"Toux productive"` were all low-confidence and gated. | Rewrote §13.2 with exact measured confidences (`"Mme"` → `DIAGNOSIS 0.9169`, `"67 ans"` → `DATE 0.8792` unflagged; `"Toux productive"` `0.0566` flagged) and added `tests/data/owner_style_probe.jsonl` + `tests/test_owner_style_probes.py` (`xfail`). |
+| **L2** | `ExtractedRecord.review_status` stayed `"unreviewed"` while `provenance["review_status"]` held `"needs_review"`. | Extended `ReviewStatus` / `ReviewStatusType` in `contract.py` & `schema_models.py` with `"needs_review"`, set `record.review_status` directly in `serving/extractor.py`, removed `review_status` from `provenance`, updated `workflows/pipeline.py` & `ReviewQueuePage.tsx`, and re-exported `schema/medical_extraction.schema.json`. |
+| **L3, L4** | `context_negex.py` had phrase-specific terminators (`" and takes "`, `" et prend "`, etc.) and missed `"aucun "`, `"not "`, `"never "`, `"free of "`, `"non retrouvé(e)"`, `"pas d'argument pour "`, and comma clause-breaks. | Removed all phrase-specific terminators; replaced with general list-scope & conjunction/comma clause-break rules (`_apply_general_clause_scope`) and missing EN/FR cues (`tests/test_context_negex_word_boundaries.py`: `178 passed`), logged in `TEST_SET_LOG.md` (`docs/results/v3_2_l3_l4_assertion_recheck.json`). |
+
+### 14.1 Assertion Macro-F1 Before (K3) vs After (L3/L4)
+
+| Split | `hybrid_v2` Before → After (Overall) | After (EN / FR) | `classical_crf` After (Overall, EN / FR) | `rule_based` Before → After (Overall) |
+|---|---|---|---|---|
+| `val` (160) | `0.7585` → **`0.7782`** | `0.8285` / `0.7407` | `0.7780` (`0.8282` / `0.7407`) | `0.4354` → **`0.4581`** |
+| `test_iid` (160) | `0.7155` → **`0.7289`** | `0.7715` / `0.7131` | `0.7334` (`0.7715` / `0.7233`) | `0.5878` → **`0.6295`** |
+| `test_unseen_terms` (160) | `0.7485` → **`0.7674`** | `0.8131` / `0.7499` | `0.7701` (`0.8177` / `0.7407`) | `0.6671` → **`0.6835`** |
+| `test_unseen_templates` (160) | `0.6463` → **`0.6524`** | `0.7114` / `0.6095` | `0.6548` (`0.7132` / `0.6128`) | `0.5539` → **`0.5820`** |

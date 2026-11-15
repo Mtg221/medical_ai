@@ -12,7 +12,7 @@ AssertionStatusType = Literal[
     "present", "absent", "uncertain", "hypothetical", "family_history", "historical"
 ]
 NegationStatusType = Literal["affirmed", "negated", "uncertain"]
-ReviewStatusType = Literal["unreviewed", "approved", "corrected", "rejected", "flagged"]
+ReviewStatusType = Literal["unreviewed", "needs_review", "approved", "corrected", "rejected", "flagged"]
 
 CLINICAL_RESEARCH_NOTICE = (
     "Research tool only — NOT for clinical diagnosis or treatment. "

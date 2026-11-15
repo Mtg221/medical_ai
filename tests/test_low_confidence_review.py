@@ -62,12 +62,14 @@ def test_low_confidence_entity_flagged_needs_review(tmp_path: Path) -> None:
     high_rec = res.records[1]
 
     assert low_rec.confidence_score == 0.05
-    assert low_rec.provenance["review_status"] == "needs_review"
+    assert low_rec.review_status == "needs_review"
+    assert "review_status" not in low_rec.provenance
     assert low_rec.provenance["review_reason"] == "low_confidence"
     assert low_rec.provenance["review_threshold"] == 0.60
 
     assert high_rec.confidence_score == 0.92
-    assert high_rec.provenance["review_status"] == "AI_PREDICTED"
+    assert high_rec.review_status == "unreviewed"
+    assert "review_status" not in high_rec.provenance
     assert high_rec.provenance["review_reason"] == ""
 
 

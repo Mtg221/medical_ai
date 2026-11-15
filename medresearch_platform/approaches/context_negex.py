@@ -15,7 +15,17 @@ from medresearch_platform.eval_harness.metrics import (
 CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
     "en": {
         "pseudo_neg": ("no increase", "no change", "not ruled out"),
-        "neg_pre": ("no ", "denies ", "without ", "negative for ", "absence of ", "no evidence of "),
+        "neg_pre": (
+            "no ",
+            "not ",
+            "never ",
+            "denies ",
+            "without ",
+            "free of ",
+            "negative for ",
+            "absence of ",
+            "no evidence of ",
+        ),
         "neg_post": (" ruled out", " excluded", " negative", " absent", " was not observed", " not observed"),
         "possible": ("suspected ", "possible ", "probable ", "likely ", "question of ", "rule out ", "suspect ", "uncertain whether "),
         "hypothetical": ("if ", "return if ", "should ", "in case of ", "watch for ", "return precautions given for "),
@@ -42,12 +52,38 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             "historical conditions: ",
             "known ",
         ),
-        "terminators": (".", ";", "\n", " but ", " however ", " except ", " and takes ", " started "),
+        "terminators": (".", ";", "\n", " but ", " however ", " except ", " although ", " whereas "),
     },
     "fr": {
         "pseudo_neg": ("sans changement", "pas d'augmentation", "non éliminé"),
-        "neg_pre": ("absence de ", "absence d'", "sans ", "pas de ", "pas d'", "nie ", "négatif pour ", "indemne de ", "aucune ", "ni de ", "ni d'", "ni "),
-        "neg_post": (" éliminé", " écarté", " écartée", " exclu", " exclue", " soit absente"),
+        "neg_pre": (
+            "absence de ",
+            "absence d'",
+            "sans ",
+            "pas de ",
+            "pas d'",
+            "pas d'argument pour ",
+            "nie ",
+            "négatif pour ",
+            "indemne de ",
+            "aucun ",
+            "aucune ",
+            "ni de ",
+            "ni d'",
+            "ni ",
+        ),
+        "neg_post": (
+            " éliminé",
+            " écarté",
+            " écartée",
+            " exclu",
+            " exclue",
+            " soit absente",
+            " non retrouvé",
+            " non retrouvée",
+            " non retrouvés",
+            " non retrouvées",
+        ),
         "possible": (
             "suspicion de ",
             "suspicion d'",
@@ -89,7 +125,7 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             "antécédents médicaux : ",
             "pathologie chronique connue : ",
         ),
-        "terminators": (".", ";", "\n", " mais ", " cependant ", " toutefois ", " et prend ", " traitée par ", " traité par "),
+        "terminators": (".", ";", "\n", " mais ", " cependant ", " toutefois ", " sauf ", " alors que "),
     },
 }
 
@@ -123,8 +159,68 @@ def _matches_any(patterns: tuple[re.Pattern[str], ...], window: str) -> bool:
     return any(p.search(window) is not None for p in patterns)
 
 
+_CONJ_PREDICATE_BREAK: dict[str, re.Pattern[str]] = {
+    "en": re.compile(
+        r"(?<!\w)(?:and|or)\s+(?:has|have|had|takes|take|took|taking|reports|presents|started|receives|is|was|are|were)\b",
+        flags=re.UNICODE | re.IGNORECASE,
+    ),
+    "fr": re.compile(
+        r"(?<!\w)(?:et|ou)\s+(?:a|ont|prend|prennent|présente|rapporte|reçoit|est|sont|était|étaient|sous)\b",
+        flags=re.UNICODE | re.IGNORECASE,
+    ),
+}
+
+_COMMA_LIST_LEAD_RE: dict[str, re.Pattern[str]] = {
+    "en": re.compile(r"^\s*(?:or|nor|and)\b", flags=re.UNICODE | re.IGNORECASE),
+    "fr": re.compile(r"^\s*(?:ni|ou|et)\b", flags=re.UNICODE | re.IGNORECASE),
+}
+
+_COMMA_CLAUSE_PREDICATE_RE: dict[str, re.Pattern[str]] = {
+    "en": re.compile(
+        r"^\s*(?:has|have|had|takes|take|took|taking|reports|presents|started|receives|is|was|are|were|on)\b",
+        flags=re.UNICODE | re.IGNORECASE,
+    ),
+    "fr": re.compile(
+        r"^\s*(?:a|ont|prend|prennent|présente|rapporte|reçoit|est|sont|était|étaient|sous|traité|traitée|opéré|opérée)\b",
+        flags=re.UNICODE | re.IGNORECASE,
+    ),
+}
+
+_LIST_CONJ_RE: dict[str, re.Pattern[str]] = {
+    "en": re.compile(r"(?<!\w)(?:or|nor|and)(?!\w)", flags=re.UNICODE | re.IGNORECASE),
+    "fr": re.compile(r"(?<!\w)(?:ni|ou|et)(?!\w)", flags=re.UNICODE | re.IGNORECASE),
+}
+
+
+def _apply_general_clause_scope(
+    pre_window: str,
+    target_lower: str,
+    post_window: str,
+    lang: str,
+) -> str:
+    """Break scope on conjunction+predicate or commas that start a new clause rather than a coordinated list."""
+    conj_pat = _CONJ_PREDICATE_BREAK[lang]
+    m_conj = list(conj_pat.finditer(pre_window))
+    if m_conj:
+        pre_window = pre_window[m_conj[-1].start() :]
+
+    if "," in pre_window:
+        last_comma = pre_window.rfind(",")
+        after_comma = pre_window[last_comma + 1 :]
+        clause_span = f"{after_comma} {target_lower} {post_window}"
+        starts_with_list_marker = _COMMA_LIST_LEAD_RE[lang].search(after_comma) is not None
+        starts_with_predicate = _COMMA_CLAUSE_PREDICATE_RE[lang].search(after_comma) is not None
+        has_list_conj = _LIST_CONJ_RE[lang].search(clause_span) is not None
+        # Continue across comma only if it introduces a coordinated list item (e.g. ", ni X" or ", chills or sweats")
+        # and does not start a new verbal/prepositional clause.
+        if starts_with_predicate or (not starts_with_list_marker and not has_list_conj):
+            pre_window = after_comma
+
+    return pre_window
+
+
 def classify_assertion_context(text: str, start: int, end: int, language: str = "en") -> str:
-    """ConText/NegEx-style assertion classification with Unicode word-boundary cue matching."""
+    """ConText/NegEx-style assertion classification with Unicode word-boundary cue matching and general clause scope."""
     lang = language if language in CONTEXT_CUES else "en"
     compiled = _COMPILED_CUES[lang]
     term_patterns = _COMPILED_TERMINATORS[lang]
@@ -141,7 +237,10 @@ def classify_assertion_context(text: str, start: int, end: int, language: str = 
         if m_post:
             post_window = post_window[: m_post.start()]
 
-    full_clause = pre_window + " " + text[start:end].lower() + " " + post_window
+    target_lower = text[start:end].lower()
+    pre_window = _apply_general_clause_scope(pre_window, target_lower, post_window, lang)
+
+    full_clause = pre_window + " " + target_lower + " " + post_window
     if _matches_any(compiled["pseudo_neg"], full_clause):
         return "present"
     if _matches_any(compiled["family"], pre_window):

@@ -77,3 +77,36 @@ def test_every_cue_does_not_fire_inside_another_word(
         idx = sentence.index("diabetes")
         got = classify_assertion_context(sentence, idx, idx + len("diabetes"), language=lang)
         assert got == "present", f"Cue {cue!r} ({lang}/{category}) fired inside {embedded!r} -> {got}"
+
+
+@pytest.mark.parametrize(
+    ("sentence", "target", "language", "expected"),
+    [
+        # FR L4 cases
+        ("Aucun signe de thrombose.", "thrombose", "fr", "absent"),
+        ("Aucune fièvre.", "fièvre", "fr", "absent"),
+        ("Pas de signe de pneumonie, sous amoxicilline.", "pneumonie", "fr", "absent"),
+        ("Pas de signe de pneumonie, sous amoxicilline.", "amoxicilline", "fr", "present"),
+        ("Pas de fièvre, toux productive depuis 3 jours.", "toux productive", "fr", "present"),
+        ("Pas de fièvre, ni frissons, ni sueurs.", "fièvre", "fr", "absent"),
+        ("Pas de fièvre, ni frissons, ni sueurs.", "frissons", "fr", "absent"),
+        ("Pas de fièvre, ni frissons, ni sueurs.", "sueurs", "fr", "absent"),
+        ("Pas de douleur thoracique ni de dyspnée, mais palpitations.", "palpitations", "fr", "present"),
+        ("Thrombose non retrouvée.", "Thrombose", "fr", "absent"),
+        ("Pas d'argument pour une embolie.", "embolie", "fr", "absent"),
+        # EN L4 cases
+        ("Patient is not taking aspirin.", "aspirin", "en", "absent"),
+        ("No fever, chills or sweats.", "fever", "en", "absent"),
+        ("No fever, chills or sweats.", "chills", "en", "absent"),
+        ("No fever, chills or sweats.", "sweats", "en", "absent"),
+        ("No fever, has a productive cough.", "productive cough", "en", "present"),
+        ("Known diabetes, nose bleeding since yesterday.", "nose bleeding", "en", "present"),
+        ("Denies chest pain, reports palpitations.", "palpitations", "en", "present"),
+        ("Patient never had asthma.", "asthma", "en", "absent"),
+        ("Patient is free of fever.", "fever", "en", "absent"),
+    ],
+)
+def test_context_negex_l4_general_scope_and_cues(
+    sentence: str, target: str, language: str, expected: str
+) -> None:
+    assert _classify_substring(sentence, target, language) == expected

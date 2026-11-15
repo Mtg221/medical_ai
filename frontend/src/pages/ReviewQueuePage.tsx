@@ -112,7 +112,9 @@ export function ReviewQueuePage() {
       if (aNeeds !== bNeeds) return aNeeds - bNeeds;
       return a.confidence - b.confidence;
     });
-  const reviewedCount = allEntities.filter((e) => e.review_status !== "AI_PREDICTED").length;
+  const reviewedCount = allEntities.filter(
+    (e) => e.review_status !== "AI_PREDICTED" && e.review_status !== "needs_review"
+  ).length;
   const progressPct = allEntities.length > 0 ? Math.round((reviewedCount / allEntities.length) * 100) : 0;
 
   const docText =

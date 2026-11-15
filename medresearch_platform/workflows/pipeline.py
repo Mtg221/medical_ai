@@ -481,7 +481,7 @@ class MedicalResearchPlatformService:
                 db_assert = raw_assert_to_db.get(raw_assert, "AFFIRMED")
                 bbox_dict = rec.region_coordinates.to_dict() if rec.region_coordinates is not None else {"x0": 0.0, "y0": 0.0, "x1": 0.0, "y1": 0.0}
                 source_stage = str(rec.provenance.get("source_stage", extraction.model_name))
-                review_status = str(rec.provenance.get("review_status", "AI_PREDICTED"))
+                review_status = "needs_review" if rec.review_status == "needs_review" else "AI_PREDICTED"
                 review_reason = str(rec.provenance.get("review_reason", ""))
                 conn.execute(
                     """

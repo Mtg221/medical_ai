@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 AssertionStatus = Literal["present", "absent", "uncertain", "hypothetical", "family_history", "historical"]
 NegationStatus = Literal["affirmed", "negated", "uncertain"]
-ReviewStatus = Literal["unreviewed", "approved", "corrected", "rejected", "flagged"]
+ReviewStatus = Literal["unreviewed", "needs_review", "approved", "corrected", "rejected", "flagged"]
 
 
 @dataclass(frozen=True)

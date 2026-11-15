@@ -17,6 +17,7 @@ from medresearch_platform.extraction.contract import (
     ExtractionResult,
     NegationStatus,
     RegionCoordinates,
+    ReviewStatus,
 )
 from medresearch_platform.hybrid.pipeline import HybridPipeline
 
@@ -271,7 +272,7 @@ class ExtractionService:
             negation_contract = _ASSERTION_TO_NEGATION.get(ent.assertion, "affirmed")
             ent_conf = float(ent.confidence)
             is_low_conf = ent_conf < review_threshold
-            review_status = "needs_review" if is_low_conf else "AI_PREDICTED"
+            record_review_status: ReviewStatus = "needs_review" if is_low_conf else "unreviewed"
             review_reason = "low_confidence" if is_low_conf else ""
             records.append(
                 ExtractedRecord(
@@ -294,11 +295,11 @@ class ExtractionService:
                     confidence_score=round(ent_conf, 4),
                     model_name=model_name,
                     model_version=model_version,
+                    review_status=record_review_status,
                     provenance={
                         "source_stage": stage_name,
                         "raw_assertion": ent.assertion,
                         "predicted_doc_type": pred.predicted_doc_type,
-                        "review_status": review_status,
                         "review_reason": review_reason,
                         "review_threshold": review_threshold,
                         "corpus_id": manifest.get("corpus_id", "unknown"),
