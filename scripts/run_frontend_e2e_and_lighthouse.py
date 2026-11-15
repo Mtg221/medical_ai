@@ -43,11 +43,10 @@ def main() -> None:
             cfg["aux_epochs"] = 2
             v31_dir = Path("data/processed/v3_1")
             train_docs = _load_jsonl(v31_dir / "train.jsonl")[:60]
-            val_docs = _load_jsonl(v31_dir / "val.jsonl")[:20]
             e2e_model_dir = Path(tmp) / "models" / "hybrid_v2_seed1"
             pipe = HybridPipeline(seed=1, cfg=cfg)
-            pipe.fit(train_docs, val_docs)
-            pipe.save(e2e_model_dir, corpus_id="SYNTH-MED-V3.1-e2e-60", corpus_hash="e2e-ci")
+            pipe.fit(train_docs)
+            pipe.save(e2e_model_dir, corpus_id="SYNTH-MED-V3.1-e2e-60")
             env["MEDRESEARCH_MODEL_DIR"] = str(e2e_model_dir)
 
         proc = subprocess.Popen(
