@@ -2,6 +2,10 @@
 
 ## [Unreleased] — Phase 11 ("Make the results true")
 
+### Phase 11B Step 8 — Realistic Set Protocol & ADR-0009 (G11) (2026-11-15)
+- Added `docs/REALISTIC_SET_PROTOCOL.md` documenting `SYNTH-MED-V3.1` split separation (`val`, `test_iid`, `test_unseen_terms`, `test_unseen_templates`), document-type structural signals, mandatory `scripts/audit_corpus.py` gates, 120-page OCR stress protocol, and external/real clinical corpus governance.
+- Added `DECISIONS/ADR-0009-numpy-vs-pytorch.md` reconciling `ADR-0003` and `ADR-0005`, documenting the single pure-NumPy implementation, `< 1e-4` finite-difference gradient verification across all 6 neural classes, CPU throughput trade-offs, and PyTorch migration criteria.
+
 ### Phase 11B Step 7 — Frontend to the Phase 7 Standard (G10) (2026-11-15)
 - Added persisted review endpoints in `medresearch_platform/interfaces/api.py` and `medresearch_platform/workflows/review.py`: `POST /api/v1/reviews` (`approve`/`correct`/`flag`/`reject` with span/type/assertion updates, reviewer, timestamp, old/new audit log), `GET /api/v1/reviews`, `GET /api/v1/reviews/export` (`jsonl` and `brat` gold export), plus `/react/{full_path:path}` SPA fallback. Added `tests/test_review_api_persistence.py`.
 - Generated TypeScript API types directly from FastAPI `/api/v1/openapi.json` via `scripts/export_openapi_types.py` (`openapi-typescript` -> `frontend/src/types/openapi.d.ts`, `npm run gen:api`).

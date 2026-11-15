@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-15  
-**Active Phase:** Phase 11B — Step 7 complete (`POST/GET /api/v1/reviews` + gold JSONL/BRAT export, OpenAPI-generated TS types, Dark Mode, `A/C/R/N` shortcuts + span correction form + progress bar, Playwright E2E + desktop/mobile screenshots); Step 8 (`REALISTIC_SET_PROTOCOL.md` & `ADR-0009` G11) next
+**Active Phase:** Phase 11B — Step 8 complete (`docs/REALISTIC_SET_PROTOCOL.md` & `DECISIONS/ADR-0009-numpy-vs-pytorch.md`, G11); Step 9 (final 5-seed run across all splits + rewrite `RESEARCH_REPORT.md` & `PROJECT_STATUS.md`) next
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 
