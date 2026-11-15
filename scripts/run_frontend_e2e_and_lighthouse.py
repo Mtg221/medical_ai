@@ -31,6 +31,25 @@ def main() -> None:
         env["MEDRESEARCH_DEMO_PASSWORD"] = env.get("MEDRESEARCH_DEMO_PASSWORD", "e2e-demo-pw-2026")
         env["PLAYWRIGHT_BASE_URL"] = "http://127.0.0.1:8011"
 
+        default_model_dir = Path("models/hybrid_v2_seed1")
+        if not (default_model_dir / "manifest.json").exists() and not env.get("MEDRESEARCH_MODEL_DIR"):
+            from medresearch_platform.data.v3_generator import _load_jsonl
+            from medresearch_platform.experiments.config import load_yaml_config
+
+            from medresearch_platform.hybrid.pipeline import HybridPipeline
+
+            cfg = dict(load_yaml_config("configs/exp/v3_2/hybrid_v2.yaml"))
+            cfg["epochs"] = 3
+            cfg["aux_epochs"] = 2
+            v31_dir = Path("data/processed/v3_1")
+            train_docs = _load_jsonl(v31_dir / "train.jsonl")[:60]
+            val_docs = _load_jsonl(v31_dir / "val.jsonl")[:20]
+            e2e_model_dir = Path(tmp) / "models" / "hybrid_v2_seed1"
+            pipe = HybridPipeline(seed=1, cfg=cfg)
+            pipe.fit(train_docs, val_docs)
+            pipe.save(e2e_model_dir, corpus_id="SYNTH-MED-V3.1-e2e-60", corpus_hash="e2e-ci")
+            env["MEDRESEARCH_MODEL_DIR"] = str(e2e_model_dir)
+
         proc = subprocess.Popen(
             [sys.executable, "-m", "uvicorn", "medresearch_platform.interfaces.api:create_app", "--factory", "--host", "127.0.0.1", "--port", "8011"],
             env=env,
