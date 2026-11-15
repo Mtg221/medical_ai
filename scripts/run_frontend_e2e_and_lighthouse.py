@@ -33,12 +33,12 @@ def main() -> None:
 
         default_model_dir = Path("models/hybrid_v2_seed1")
         if not (default_model_dir / "manifest.json").exists() and not env.get("MEDRESEARCH_MODEL_DIR"):
-            from medresearch_platform.experiments.config import load_yaml_config
+            import yaml
 
             from medresearch_platform.eval_harness.runner import _load_jsonl
             from medresearch_platform.hybrid.pipeline import HybridPipeline
 
-            cfg = dict(load_yaml_config("configs/exp/v3_2/hybrid_v2.yaml"))
+            cfg = dict(yaml.safe_load(Path("configs/exp/v3_2/hybrid_v2.yaml").read_text(encoding="utf-8")))
             cfg["epochs"] = 3
             cfg["aux_epochs"] = 2
             v31_dir = Path("data/processed/v3_1")
