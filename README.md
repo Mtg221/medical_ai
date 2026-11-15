@@ -53,6 +53,23 @@ uvicorn medresearch_platform.interfaces.api:create_app --factory --host 127.0.0.
 ruff check medresearch_platform tests && mypy medresearch_platform && pytest -q
 ```
 
+### Tesseract OCR Setup (`eng` + `fra` Language Packs)
+
+OCR tests automatically skip (`pytest.skip`) when `tesseract` or the `fra` language pack is missing.
+
+- **macOS (Homebrew):**
+  ```bash
+  brew install tesseract tesseract-lang
+  tesseract --list-langs   # verify eng and fra appear
+  ```
+- **Windows (winget / UB Mannheim installer):**
+  ```powershell
+  winget install UB-Mannheim.TesseractOCR
+  # During setup (or via tessdata), select/download French (fra.traineddata) into C:\Program Files\Tesseract-OCR\tessdata\
+  # Add C:\Program Files\Tesseract-OCR to PATH, then verify:
+  tesseract --list-langs
+  ```
+
 ---
 
 ## 3. Documentation & ADRs

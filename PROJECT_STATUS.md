@@ -1,7 +1,7 @@
 # Project Status
 
 **Last Updated:** 2026-11-15  
-**Active Phase:** Phase 11B — Step 5 complete (5 seeds in all `v3_1` configs, 10,000-resample cluster-paired bootstrap pooled over 5 seeds + Holm-Bonferroni across all 21 pairwise comparisons, generated from JSON); Step 6 (OCR benchmark >= 60 pages/lang + end-to-end F1 + skip without Tesseract G9) next
+**Active Phase:** Phase 11B — Step 6 complete (120-page EN+FR OCR benchmark across 6 tiers / 11 degradation modes + end-to-end `classical_crf` & `hybrid` F1 drop + `pytest.skip` without Tesseract); Step 7 (Frontend Phase 7 standard G10) next
 
 Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evaluated on <dataset, n docs>`
 

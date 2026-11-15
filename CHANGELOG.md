@@ -2,6 +2,11 @@
 
 ## [Unreleased] — Phase 11 ("Make the results true")
 
+### Phase 11B Step 6 — Full-Size OCR Benchmark & Clean Skip (G9) (2026-11-15)
+- Extended `medresearch_platform/documents/ocr_benchmark.py` with `tesseract_available(("eng", "fra"))`, full degradation rendering (`dpi` 150–300, JPEG, blur, noise, rotation `±5°`, perspective keystone warp, uneven lighting, stamps/stains, two columns, table grid, >= 3 fonts), and `map_ocr_spans_to_reference` for end-to-end OCR span evaluation.
+- Updated `tests/test_ocr_stress_benchmark.py` (4 tests) to `pytest.skip` cleanly when Tesseract or `fra` is missing, and added macOS/Windows Tesseract + `fra` setup instructions to `README.md`.
+- Ran 120-page (`60 EN + 60 FR`) OCR + end-to-end extraction benchmark via `scripts/run_v3_1_ocr_full_benchmark.py` (`docs/results/v3_1_ocr_full_benchmark.json`, `510.97s`, logged in `TEST_SET_LOG.md`): overall CER `0.1927` (`en` `0.1895`, `fr` `0.1959`), WER `0.3198` (`en` `0.3082`, `fr` `0.3314`), `classical_crf` F1 `0.9978 -> 0.5655` (`-0.4322`), `hybrid` F1 `0.9937 -> 0.5332` (`-0.4605`).
+
 ### Phase 11B Step 5 — 5-Seed Statistics, 10k Paired Bootstrap & Holm-Bonferroni (G7) (2026-11-15)
 - Upgraded `bootstrap_f1_ci` and `paired_significance_test` in `medresearch_platform/eval_harness/metrics.py` (and `runner.py`) to vectorized `10,000` resamples by default; added `per_doc_strict_counts`, `holm_bonferroni_adjust`, and `pooled_paired_bootstrap` (cluster-paired document bootstrap pooled across seeds).
 - Updated all 7 `configs/exp/v3_1/*.yaml` configs to `seeds: [1, 2, 3, 4, 5]`.
