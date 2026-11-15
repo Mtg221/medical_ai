@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -49,15 +50,69 @@ class DatabaseEngine:
         finally:
             conn.close()
 
+    def _reconcile_legacy_sqlite_tables(self, conn: sqlite3.Connection, schema_sql: str) -> None:
+        """Non-destructively upgrade legacy SQLite tables whose CHECK constraints or columns predated current DDL."""
+        checks = {
+            "documents": ("'TESSERACT_OCR'",),
+            "extracted_entities": ("'needs_review'", "review_reason", "source_stage"),
+            "extracted_relations": ("'TREATS'",),
+        }
+        needs_upgrade: list[str] = []
+        for row in conn.execute(
+            "SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
+        ).fetchall():
+            table = str(row["name"])
+            existing_sql = str(row["sql"] or "")
+            required_tokens = checks.get(table, ())
+            if "__legacy_backup" in existing_sql or any(tok not in existing_sql for tok in required_tokens):
+                needs_upgrade.append(table)
+
+        if not needs_upgrade:
+            return
+
+        conn.execute("PRAGMA foreign_keys = OFF;")
+        conn.execute("PRAGMA legacy_alter_table = ON;")
+        try:
+            for table in needs_upgrade:
+                m = re.search(
+                    rf"CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+{table}\s*\(.*?\n\);",
+                    schema_sql,
+                    flags=re.DOTALL | re.IGNORECASE,
+                )
+                if not m:
+                    continue
+                create_stmt = m.group(0)
+                old_cols = {
+                    str(r["name"])
+                    for r in conn.execute(f"PRAGMA table_info({table})").fetchall()
+                }
+                backup = f"{table}__legacy_backup"
+                conn.execute(f"DROP TABLE IF EXISTS {backup}")
+                conn.execute(f"ALTER TABLE {table} RENAME TO {backup}")
+                conn.execute(create_stmt)
+                new_cols = [
+                    str(r["name"])
+                    for r in conn.execute(f"PRAGMA table_info({table})").fetchall()
+                ]
+                common = [c for c in new_cols if c in old_cols]
+                cols_csv = ", ".join(common)
+                conn.execute(f"INSERT INTO {table} ({cols_csv}) SELECT {cols_csv} FROM {backup}")
+                conn.execute(f"DROP TABLE {backup}")
+        finally:
+            conn.execute("PRAGMA legacy_alter_table = OFF;")
+            conn.execute("PRAGMA foreign_keys = ON;")
+
     def apply_migrations(self) -> dict[str, Any]:
         """Apply SQLite migrations locally and optionally run PostgreSQL migration if DATABASE_URL is set."""
         sql_bytes = self.sqlite_migration_file.read_bytes()
+        schema_sql = sql_bytes.decode("utf-8")
         checksum = hashlib.sha256(sql_bytes).hexdigest()
         version = "001_initial_schema"
         now_iso = datetime.now(timezone.utc).isoformat()
 
         with self.transaction() as conn:
-            conn.executescript(sql_bytes.decode("utf-8"))
+            conn.executescript(schema_sql)
+            self._reconcile_legacy_sqlite_tables(conn, schema_sql)
             existing = conn.execute(
                 "SELECT version, checksum_sha256 FROM schema_migrations WHERE version = ?",
                 (version,),
