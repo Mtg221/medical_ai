@@ -21,7 +21,6 @@ from medresearch_platform.hybrid.pipeline import HybridPipeline
 from medresearch_platform.hybrid.stage4_temporal import resolve_document_date
 from medresearch_platform.reports.generator import generate_report_bytes
 from medresearch_platform.serving.extractor import ExtractionService
-from medresearch_platform.workflows.pipeline import MedicalResearchPlatformService
 
 
 def _resolve_input_path(args: argparse.Namespace) -> Path:
@@ -283,6 +282,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.cmd == "users":
+        from medresearch_platform.workflows.pipeline import MedicalResearchPlatformService
+
         cfg = PlatformConfig.from_env()
         svc = MedicalResearchPlatformService(cfg)
         if args.users_cmd == "init":

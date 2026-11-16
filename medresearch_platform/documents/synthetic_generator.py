@@ -7,10 +7,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import docx
+from PIL import Image, ImageDraw
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas as pdf_canvas
-
-from extras.legacy.ocr_model import render_scanned_document_image
 
 
 @dataclass(frozen=True)
@@ -218,7 +217,18 @@ def build_synthetic_file_bytes(spec: SyntheticDocumentSpec) -> tuple[bytes, list
         return buf.getvalue(), []
 
     if fmt == "PNG":
-        img, line_meta = render_scanned_document_image(spec.ocr_lines, seed=42)
+        try:
+            from extras.legacy.ocr_model import render_scanned_document_image
+
+            img, line_meta = render_scanned_document_image(spec.ocr_lines, seed=42)
+        except ModuleNotFoundError:
+            img = Image.new("RGB", (800, max(200, 40 + 28 * len(spec.ocr_lines))), color=(255, 255, 255))
+            draw = ImageDraw.Draw(img)
+            line_meta = []
+            for idx, line in enumerate(spec.ocr_lines):
+                y_pos = 24 + idx * 26
+                draw.text((24, y_pos), line, fill=(10, 10, 10))
+                line_meta.append({"line_index": idx, "text": line, "bbox": [24, y_pos, 760, y_pos + 20]})
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         return buf.getvalue(), line_meta
