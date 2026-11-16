@@ -10,12 +10,12 @@ import httpx
 import numpy as np
 from PIL import Image
 
-from medresearch_platform.dermatology.catalog import (
+from medresearch_platform.vision.catalog import (
     MALIGNANCY_CLASSES,
     DermCatalogRecord,
     iter_derm_catalog,
 )
-from medresearch_platform.dermatology.vision_classifier import DermVisionTrainer
+from medresearch_platform.vision.vision_classifier import DermVisionTrainer
 
 
 @dataclass(frozen=True)
@@ -155,7 +155,7 @@ def run_derm_benchmark(
     )
     data_source = "cloudfront_cached_thumbnails"
     if len(samples) < 12:
-        from medresearch_platform.dermatology.catalog import generate_synthetic_derm_samples
+        from medresearch_platform.vision.catalog import generate_synthetic_derm_samples
 
         samples = generate_synthetic_derm_samples(n_samples=48, image_size=16, seed=seed)
         data_source = "synthetic_derm_phantom_fallback"

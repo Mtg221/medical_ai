@@ -11,13 +11,13 @@ from medresearch_platform.ai.random_init import (
     build_random_init_manifest,
     initialize_tensor,
 )
-from medresearch_platform.dermatology.catalog import (
+from medresearch_platform.vision.catalog import (
     MALIGNANCY_CLASSES,
     MODALITIES,
     SKIN_TONES,
     DermCatalogRecord,
 )
-from medresearch_platform.extraction.nn_utils import (
+from medresearch_platform.vision.vision_classifier import (
     AdamWOptimizer,
     numerical_gradient_check,
     softmax,

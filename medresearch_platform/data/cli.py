@@ -167,6 +167,23 @@ def main(argv: list[str] | None = None) -> int:
     p_u_set.add_argument("username", type=str, help="Username (e.g. admin_dakar)")
     p_u_set.add_argument("--password", type=str, required=True, help="New password (min 8 chars)")
 
+    # medextract derm
+    p_derm = sub.add_parser("derm", help="Dermatology corpus metadata sync, data card, and leak-free split audit")
+    sub_derm = p_derm.add_subparsers(dest="derm_cmd", required=True)
+    p_d_sync = sub_derm.add_parser("sync", help="Sync metadata pages or thumbnails from derm-corpus CloudFront")
+    p_d_sync.add_argument("--meta-only", action="store_true", help="Download only metadata JSON/gzip pages")
+    p_d_sync.add_argument("--thumbs", action="store_true", help="Download thumbnails into local cache")
+    p_d_sync.add_argument("--limit", type=int, default=None, help="Maximum number of thumbnails to download")
+    p_d_sync.add_argument("--meta-dir", type=Path, default=Path("var/cache/derm/meta"), help="Metadata directory")
+    p_d_sync.add_argument("--cache-dir", type=Path, default=Path("var/cache/derm/thumbs"), help="Thumbnails directory")
+
+    p_d_card = sub_derm.add_parser("card", help="Generate docs/data/DERM_CORPUS_CARD.md and split audit report")
+    p_d_card.add_argument("--meta-dir", type=Path, default=Path("var/cache/derm/meta"), help="Metadata directory")
+    p_d_card.add_argument("--out", type=Path, default=Path("docs/data/DERM_CORPUS_CARD.md"), help="Output markdown path")
+
+    p_d_audit = sub_derm.add_parser("audit-splits", help="Verify 0 lesion overlap and 0 cross-split dHash duplicates")
+    p_d_audit.add_argument("--meta-dir", type=Path, default=Path("var/cache/derm/meta"), help="Metadata directory")
+
     args = parser.parse_args(argv)
 
     if args.cmd == "data" and args.data_cmd == "build":
@@ -295,6 +312,47 @@ def main(argv: list[str] | None = None) -> int:
             svc.set_user_password(args.username, args.password)
             print(json.dumps({"status": "ok", "username": args.username, "db": str(cfg.sqlite_path)}, indent=2))
             return 0
+
+    if args.cmd == "derm":
+        from medresearch_platform.vision.card import generate_derm_corpus_card
+        from medresearch_platform.vision.catalog import iter_derm_catalog
+        from medresearch_platform.vision.splits import audit_derm_splits
+        from medresearch_platform.vision.sync import (
+            download_balanced_thumbnails,
+            sync_derm_metadata,
+        )
+
+        if args.derm_cmd == "sync":
+            meta_report = sync_derm_metadata(args.meta_dir)
+            if args.meta_only or not args.thumbs:
+                print(json.dumps(meta_report.to_dict(), indent=2))
+                return 0
+            thumb_report = download_balanced_thumbnails(
+                args.meta_dir,
+                args.cache_dir,
+                limit=args.limit,
+            )
+            print(
+                json.dumps(
+                    {
+                        "metadata": meta_report.to_dict(),
+                        "thumbnails": thumb_report.to_dict(),
+                    },
+                    indent=2,
+                )
+            )
+            return 0
+
+        if args.derm_cmd == "card":
+            report = generate_derm_corpus_card(args.meta_dir, out_md_path=args.out)
+            print(json.dumps(report, indent=2))
+            return 0
+
+        if args.derm_cmd == "audit-splits":
+            recs = list(iter_derm_catalog(args.meta_dir))
+            audit = audit_derm_splits(recs)
+            print(json.dumps(audit, indent=2))
+            return 0 if audit["passed"] else 1
 
     return 1
 

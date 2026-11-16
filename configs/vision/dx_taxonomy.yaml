@@ -1,0 +1,328 @@
+version: "1.1.0"
+taxonomy_id: "DERM-DX-HARMONISED-V1"
+min_class_count: 30
+fallback_class: "other"
+
+licence_policy:
+  allowed_research:
+    - "CC0"
+    - "CC-0"
+    - "CC0-1.0"
+    - "CC-BY"
+    - "CC-BY-4.0"
+    - "CC-BY-3.0"
+    - "CC-BY-SA"
+    - "CC-BY-SA-4.0"
+    - "CC-BY-NC"
+    - "CC-BY-NC-4.0"
+    - "CC-BY-NC-3.0"
+    - "CC-BY-NC-SA"
+    - "CC-BY-NC-SA-4.0"
+    - "CC-BY-NC-ND"
+    - "CC-BY-NC-ND-4.0"
+    - "SCIN-DATA-USE-PUBLIC-LICENSE"
+    - "SYNTHETIC-INTERNAL"
+    - "CC0-1.0-SYNTHETIC-RESEARCH-ONLY"
+  attribution_safe_for_docs_and_screenshots:
+    - "CC0"
+    - "CC-0"
+    - "CC0-1.0"
+    - "CC-BY"
+    - "CC-BY-4.0"
+    - "CC-BY-3.0"
+    - "SYNTHETIC-INTERNAL"
+    - "CC0-1.0-SYNTHETIC-RESEARCH-ONLY"
+  non_commercial_or_no_redistribution:
+    - "CC-BY-NC"
+    - "CC-BY-NC-4.0"
+    - "CC-BY-NC-3.0"
+    - "CC-BY-NC-SA"
+    - "CC-BY-NC-SA-4.0"
+    - "CC-BY-NC-ND"
+    - "CC-BY-NC-ND-4.0"
+    - "SCIN-DATA-USE-PUBLIC-LICENSE"
+  excluded:
+    - "PROPRIETARY-NO-RESEARCH"
+    - "ALL-RIGHTS-RESERVED"
+    - "FORBIDDEN"
+
+classes:
+  melanoma:
+    malignancy_group: "malignant"
+    allowed_mg: ["malignant", "unknown"]
+    icd10: "C43.9"
+    label_en: "Melanoma"
+    label_fr: "Mélanome"
+    aliases:
+      - "melanoma"
+      - "mel"
+      - "malignant melanoma"
+      - "superficial spreading melanoma"
+      - "superficial spreading melanoma ssm"
+      - "nodular melanoma"
+      - "lentigo maligna"
+      - "lentigo maligna melanoma"
+      - "acral lentiginous melanoma"
+      - "melanoma in situ"
+      - "melanoma metastasis"
+      - "amelanotic melanoma"
+      - "mucosal melanoma"
+      - "cutaneous melanoma"
+      - "synthetic_malignant"
+
+  basal_cell_carcinoma:
+    malignancy_group: "malignant"
+    allowed_mg: ["malignant", "unknown"]
+    icd10: "C44.91"
+    label_en: "Basal Cell Carcinoma (BCC)"
+    label_fr: "Carcinome basocellulaire (CBC)"
+    aliases:
+      - "basal cell carcinoma"
+      - "basal cell carcinoma morpheiform"
+      - "solid cystic basal cell carcinoma"
+      - "bcc"
+      - "carcinoma basal cell"
+      - "nodular basal cell carcinoma"
+      - "superficial basal cell carcinoma"
+      - "morpheiform basal cell carcinoma"
+      - "pigmented basal cell carcinoma"
+      - "basalioma"
+      - "basal-cell carcinoma"
+
+  squamous_cell_carcinoma:
+    malignancy_group: "malignant"
+    allowed_mg: ["malignant", "unknown"]
+    icd10: "C44.92"
+    label_en: "Squamous Cell Carcinoma (SCC)"
+    label_fr: "Carcinome épidermoïde (CE)"
+    aliases:
+      - "squamous cell carcinoma"
+      - "scc"
+      - "squamous cell carcinoma in situ"
+      - "sccis"
+      - "bowen's disease"
+      - "bowen disease"
+      - "morbus bowen"
+      - "invasive squamous cell carcinoma"
+      - "keratoacanthoma"
+      - "epidermoid carcinoma"
+      - "squamous-cell carcinoma"
+      - "intraepidermal carcinoma"
+
+  cutaneous_lymphoma_sarcoma:
+    malignancy_group: "malignant"
+    allowed_mg: ["malignant", "unknown"]
+    icd10: "C84.0"
+    label_en: "Cutaneous Lymphoma / Kaposi Sarcoma"
+    label_fr: "Lymphome cutané / Sarcome de Kaposi"
+    aliases:
+      - "mycosis fungoides"
+      - "kaposi sarcoma"
+      - "cutaneous t-cell lymphoma"
+      - "cutaneous lymphoma"
+
+  actinic_keratosis:
+    malignancy_group: "benign"
+    allowed_mg: ["benign", "malignant", "unknown"]
+    icd10: "L57.0"
+    label_en: "Actinic Keratosis / Porokeratosis"
+    label_fr: "Kératose actinique / Porokératose"
+    aliases:
+      - "actinic keratosis"
+      - "ak"
+      - "akiec"
+      - "solar keratosis"
+      - "actinic cheilitis"
+      - "senile keratosis"
+      - "porokeratosis actinic"
+      - "disseminated actinic porokeratosis"
+      - "porokeratosis of mibelli"
+
+  nevus:
+    malignancy_group: "benign"
+    allowed_mg: ["benign", "unknown"]
+    icd10: "D22.9"
+    label_en: "Melanocytic & Epidermal Nevus"
+    label_fr: "Nævus mélanocytaire et épidermique"
+    aliases:
+      - "nevus"
+      - "naevus"
+      - "nevi"
+      - "nv"
+      - "melanocytic nevus"
+      - "melanocytic nevi"
+      - "nevocytic nevus"
+      - "dysplastic nevus"
+      - "atypical nevus"
+      - "clark nevus"
+      - "blue nevus"
+      - "congenital nevus"
+      - "intradermal nevus"
+      - "compound nevus"
+      - "junctional nevus"
+      - "spitz nevus"
+      - "halo nevus"
+      - "dermal nevus"
+      - "reed nevus"
+      - "becker nevus"
+      - "epidermal nevus"
+      - "nevus sebaceous of jadassohn"
+      - "naevus comedonicus"
+      - "synthetic_benign"
+
+  seborrheic_keratosis:
+    malignancy_group: "benign"
+    allowed_mg: ["benign", "unknown"]
+    icd10: "L82.1"
+    label_en: "Seborrheic Keratosis / Solar Lentigo"
+    label_fr: "Kératose séborrhéique / Lentigo solaire"
+    aliases:
+      - "seborrheic keratosis"
+      - "seborrhoeic keratosis"
+      - "sek"
+      - "bkl"
+      - "benign keratosis"
+      - "benign keratosis-like lesions"
+      - "lichenoid keratosis"
+      - "solar lentigo"
+      - "lentigo"
+      - "lentigo nos"
+      - "lentigo simplex"
+      - "ink-spot lentigo"
+
+  dermatofibroma:
+    malignancy_group: "benign"
+    allowed_mg: ["benign", "unknown"]
+    icd10: "D23.9"
+    label_en: "Dermatofibroma"
+    label_fr: "Dermatofibrome"
+    aliases:
+      - "dermatofibroma"
+      - "df"
+      - "fibrous histiocytoma"
+      - "benign fibrous histiocytoma"
+      - "histiocytoma"
+
+  vascular_lesion:
+    malignancy_group: "benign"
+    allowed_mg: ["benign", "unknown"]
+    icd10: "D18.0"
+    label_en: "Vascular Lesion"
+    label_fr: "Lésion vasculaire"
+    aliases:
+      - "vascular lesion"
+      - "vascular lesions"
+      - "vasc"
+      - "hemangioma"
+      - "haemangioma"
+      - "angioma"
+      - "cherry angioma"
+      - "angiokeratoma"
+      - "pyogenic granuloma"
+      - "granuloma pyogenic"
+      - "vascular malformation"
+      - "telangiectasia"
+      - "telangiectases"
+      - "port wine stain"
+      - "venous lake"
+      - "lymphangioma"
+
+  benign_cyst_adnexal:
+    malignancy_group: "benign"
+    allowed_mg: ["benign", "unknown"]
+    icd10: "L72.9"
+    label_en: "Benign Cyst / Adnexal Lesion"
+    label_fr: "Kyste bénin / Lésion annexielle"
+    aliases:
+      - "milia"
+      - "pilar cyst"
+      - "epidermoid cyst"
+      - "mucous cyst"
+      - "syringoma"
+      - "pilomatricoma"
+      - "fordyce spots"
+      - "prurigo nodularis"
+
+  inflammatory_infectious_dermatosis:
+    malignancy_group: "benign"
+    allowed_mg: ["benign", "unknown"]
+    icd10: "L30.9"
+    label_en: "Inflammatory / Infectious Dermatosis"
+    label_fr: "Dermatose inflammatoire ou infectieuse"
+    aliases:
+      - "psoriasis"
+      - "eczema"
+      - "ec"
+      - "atopic dermatitis"
+      - "ad"
+      - "allergic contact dermatitis"
+      - "irritant contact dermatitis"
+      - "contact dermatitis"
+      - "cd - contact dermatitis"
+      - "cd"
+      - "acute dermatitis, nos"
+      - "seborrheic dermatitis"
+      - "sd"
+      - "lichen planus"
+      - "lichen simplex chronicus"
+      - "urticaria"
+      - "urticaria pigmentosa"
+      - "acne vulgaris"
+      - "acne"
+      - "folliculitis"
+      - "scabies"
+      - "sc"
+      - "tinea"
+      - "tinea versicolor"
+      - "tc"
+      - "impetigo"
+      - "herpes zoster"
+      - "herpes simplex"
+      - "insect bite"
+      - "drug eruption"
+      - "drug rash"
+      - "erythema multiforme"
+      - "lupus erythematosus"
+      - "sarcoidosis"
+      - "scleroderma"
+      - "neutrophilic dermatoses"
+      - "photodermatoses"
+      - "pityriasis rosea"
+      - "pityriasis rubra pilaris"
+      - "vitiligo"
+      - "dermatomyositis"
+      - "granuloma annulare"
+      - "dariers disease"
+      - "keratosis pilaris"
+      - "pigmented purpuric eruption"
+
+  benign_unspecified:
+    malignancy_group: "benign"
+    allowed_mg: ["benign"]
+    icd10: "D23.9"
+    label_en: "Benign Cutaneous Lesion (Unspecified Subtype)"
+    label_fr: "Lésion cutanée bénigne (sous-type non spécifié)"
+    aliases:
+      - "benign"
+
+  malignant_unspecified:
+    malignancy_group: "malignant"
+    allowed_mg: ["malignant"]
+    icd10: "C44.90"
+    label_en: "Malignant Cutaneous Lesion (Unspecified Subtype)"
+    label_fr: "Lésion cutanée maligne (sous-type non spécifié)"
+    aliases:
+      - "malignant"
+
+  other:
+    malignancy_group: "any"
+    allowed_mg: ["benign", "malignant", "indeterminate", "unknown"]
+    icd10: "L98.9"
+    label_en: "Other / Indeterminate / Unspecified"
+    label_fr: "Autre / Indéterminé / Non spécifié"
+    aliases:
+      - "other"
+      - "unknown"
+      - "indeterminate"
+      - "none"
+      - "{}"

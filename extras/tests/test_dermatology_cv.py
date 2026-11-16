@@ -6,12 +6,12 @@ import gzip
 import json
 from pathlib import Path
 
-from medresearch_platform.dermatology.catalog import (
+from medresearch_platform.vision.catalog import (
     generate_synthetic_derm_samples,
     iter_derm_catalog,
     summarize_derm_catalog,
 )
-from medresearch_platform.dermatology.vision_classifier import DermVisionTrainer
+from medresearch_platform.vision.vision_classifier import DermVisionTrainer
 
 
 def test_derm_catalog_streaming_and_leak_free_splits(tmp_path: Path) -> None:
