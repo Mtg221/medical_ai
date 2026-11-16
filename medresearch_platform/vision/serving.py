@@ -77,6 +77,8 @@ class VisionServingEngine:
     def router(self) -> PictureTriageRouter:
         if self._router is None:
             r_dir = self.workspace_dir / "models" / "vision_router_v1"
+            if not (r_dir / "manifest.json").exists():
+                r_dir = Path(__file__).resolve().parents[2] / "models" / "vision_router_v1"
             if (r_dir / "manifest.json").exists():
                 self._router = PictureTriageRouter.load(r_dir)
             else:
@@ -87,6 +89,8 @@ class VisionServingEngine:
     def skin_model(self) -> DermResNetMultiTask:
         if self._skin_model is None:
             m_dir = self.workspace_dir / "models" / "derm_cnn_seed1"
+            if not (m_dir / "manifest.json").exists():
+                m_dir = Path(__file__).resolve().parents[2] / "models" / "derm_cnn_seed1"
             if (m_dir / "manifest.json").exists():
                 self._skin_model = DermResNetMultiTask.load(m_dir)
             else:

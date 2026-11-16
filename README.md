@@ -80,6 +80,31 @@ OCR tests automatically skip (`pytest.skip`) when `tesseract` or the `fra` langu
   tesseract --list-langs
   ```
 
+### Skin Image Vision Module (`derm-corpus` & Optional `.[vision]` Extra)
+
+Per `DECISIONS/ADR-0010-pytorch-cpu-for-vision.md`, the platform starts cleanly without PyTorch installed (classical/NumPy vision baselines remain active; PyTorch CNN features report when `torch` is absent).
+
+- **Intel macOS (`x86_64`) Setup (Python `<= 3.12` + `torch==2.2.2`):**
+  ```bash
+  python3.12 -m venv .venv-vision
+  source .venv-vision/bin/activate
+  pip install -e ".[vision,dev]"
+  ```
+- **Linux / Windows / Apple Silicon CPU Setup:**
+  ```bash
+  pip install -e ".[vision,dev]"
+  ```
+- **Dermatology CLI (`medextract derm`):**
+  ```bash
+  medextract derm sync --meta-only
+  medextract derm sync --thumbs --limit 300
+  medextract derm card
+  medextract derm audit-splits
+  medextract derm router-train
+  medextract derm train
+  medextract derm predict path/to/lesion.webp --heatmap-out heatmap.png
+  ```
+
 ---
 
 ## 3. Documentation & ADRs

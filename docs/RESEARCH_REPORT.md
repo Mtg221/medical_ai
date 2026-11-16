@@ -291,3 +291,52 @@ A confidence threshold cannot catch confident out-of-distribution mistakes; only
 | `test_iid` (160) | `0.7155` → **`0.7289`** | `0.7715` / `0.7131` | `0.7334` (`0.7715` / `0.7233`) | `0.5878` → **`0.6295`** |
 | `test_unseen_terms` (160) | `0.7485` → **`0.7674`** | `0.8131` / `0.7499` | `0.7701` (`0.8177` / `0.7407`) | `0.6671` → **`0.6835`** |
 | `test_unseen_templates` (160) | `0.6463` → **`0.6524`** | `0.7114` / `0.6095` | `0.6548` (`0.7132` / `0.6128`) | `0.5539` → **`0.5820`** |
+
+---
+
+## 15. Skin Image Analysis (`derm-corpus`, Steps 1–7)
+
+> **Safety Notice (EN / FR):** Research tool — not a diagnosis. A dermatologist must examine the lesion. / Outil de recherche — ne constitue pas un diagnostic. Un dermatologue doit examiner la lésion.
+
+### 15.1 Data Card Summary, Harmonised Taxonomy & Leak-Free Splits
+- **Source Catalog ([DERM_CORPUS_CARD.md](data/DERM_CORPUS_CARD.md)):** `573,024` metadata records across `4` datasets (`isic`: `549,541`, `fitzpatrick17k`: `11,394`, `scin`: `10,379`, `skindisnet`: `1,710`) and `3` modalities (`tbp_tile`: `418,049`, `dermoscopic`: `121,744`, `clinical`: `33,231`).
+- **Malignancy & Skin Tone Imbalance:** `benign`: `501,150` (`87.46%`), `malignant`: `28,740` (`5.02%`), `unknown`/`indeterminate`: `43,134` (`7.53%`). Fitzpatrick skin tones are `UNKNOWN` on `94.56%` (`541,875`) of records; labelled tones are `I`: `4,412`, `II`: `11,154`, `III`: `6,861`, `IV`: `4,488`, `V`: `2,702`, `VI`: `1,532`.
+- **Harmonised Taxonomy (`configs/vision/dx_taxonomy.yaml`):** `2,063` distinct raw `dx` strings (including SCIN weighted vote dicts) mapped to `14` harmonised classes with `mg` consistency checks and `< 30` rare-class collapse.
+- **Leak-Free Splitting & `dHash` Audit:** Deterministic SHA-256 hash on lesion/image group key (`train`: `402,381`, `val`: `85,324`, `locked_test`: `85,319`; `0` cross-split lesion overlap, `0` cross-split `dHash` duplicates).
+
+### 15.2 Picture Triage Router & Quality Gate (`docs/results/vision/step2_router_eval.json`)
+- **5-Class Router (`PictureTriageRouterCNN-v1.0.0`, `1,829` params, `15.90s` CPU train):**
+  - `val` (`n = 71`): Accuracy = `1.0000`, Macro-F1 = `1.0000`, document photos sent to skin model = `0`.
+  - `locked_test` (`n = 56`): Accuracy = **`0.9464`**, Macro-F1 = **`0.9486`**, document photos sent to skin model = **`0`** (`document_scan` F1 = `1.0000`, `skin_dermoscopic` F1 = `1.0000`, `other` F1 = `0.9630`, `skin_clinical` F1 = `0.9000`, `skin_tbp_tile` F1 = `0.8800`).
+- **Quality Gate (`medresearch_platform/vision/quality.py`):** Checks Laplacian variance (focus), brightness/exposure, resolution, and inclusive Fitzpatrick `I–VI` cutaneous area; `val` quality calibration F1 = `1.0000`.
+
+### 15.3 From-Scratch Skin Models (`docs/results/vision/step3_skin_benchmark.json`, `n = 871` Cached Images: `613` Train / `140` Val / `118` Locked Test)
+
+| Model (All Random-Init, `pretrained_weights_used = false`) | Params | Train Time | `locked_test` AUROC [95% CI] | Sens @ 90% Spec | Sens @ 95% Spec | Bal Acc | Dx Macro-F1 | Top-3 Acc | ECE | Brier | Abstain Rate | High-Risk Precision |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **`derm_cnn_multitask`** (4-Stage ResNet `16→128`) | `130,590` | `6.84s` | `0.8326` [0.7569, 0.9056] | `0.6000` | `0.5273` | `0.7062` | **`0.3023`** | `0.7034` | `0.1262` | `0.1753` | `0.3559` | `0.8409` |
+| **`classical_vision`** (RGB/HSV/Lab + LBP/GLCM + Otsu + LogReg) | `68` feats | `1.12s` | **`0.8701`** [0.8000, 0.9350] | **`0.6909`** | **`0.5455`** | **`0.7810`** | `0.2203` | **`0.7203`** | **`0.0905`** | **`0.1497`** | `0.0763` | **`0.8780`** |
+| **`numpy_toy_cnn`** (`RandomInitDermConvNet`) | `562` | `0.48s` | `0.7276` [0.6394, 0.8192] | `0.3636` | `0.3455` | `0.6447` | `0.1324` | `0.7373` | `0.1116` | `0.2134` | `0.1610` | `0.7027` |
+
+- **Paired Lesion Bootstrap (Holm-Bonferroni):** `derm_cnn_multitask` significantly outperforms `numpy_toy_cnn` (`+0.1051` AUROC, 95% CI `[0.0070, 0.2102]`, $p_{\text{Holm}} = 0.0400$) and is statistically tied with `classical_vision` on binary malignancy (`-0.0375`, $p_{\text{Holm}} = 0.2150$) while leading on 9-class diagnosis Macro-F1 (`0.3023` vs `0.2203`) and providing spatial Grad-CAM (`mean L1 shift = 0.6001` under central lesion masking).
+
+### 15.4 Subgroup Fairness Table (`derm_cnn_multitask` on `locked_test`, `n = 118`)
+
+| Axis | Subgroup | `n` (`mal` / `ben`) | AUROC [95% CI] | Sens @ 90% Spec | Bal Acc | ECE | Sample Size Flag |
+|---|---|---|---|---|---|---|---|
+| Skin Tone | `I` | `83` (`40` / `43`) | `0.8541` [0.7840, 0.9299] | `0.5000` | `0.7515` | `0.0915` | `adequate (>= 30)` |
+| Skin Tone | `II` | `8` (`2` / `6`) | `1.0000` [1.0000, 1.0000] | `1.0000` | `0.6667` | `0.4064` | `too few to conclude (< 30)` |
+| Skin Tone | `III` | `4` (`2` / `2`) | `1.0000` [1.0000, 1.0000] | `1.0000` | `0.7500` | `0.2926` | `too few to conclude (< 30)` |
+| Skin Tone | `IV` | `4` (`2` / `2`) | `0.7500` [0.0000, 1.0000] | `0.5000` | `0.7500` | `0.1693` | `too few to conclude (< 30)` |
+| Skin Tone | `V` | `1` (`1` / `0`) | `0.5000` [0.5000, 0.5000] | `0.0000` | `0.5000` | `0.1240` | `too few to conclude (< 30)` |
+| Skin Tone | `VI` | `5` (`1` / `4`) | `1.0000` [1.0000, 1.0000] | `1.0000` | `0.6250` | `0.4911` | `too few to conclude (< 30)` |
+| Skin Tone | `UNKNOWN` | `13` (`7` / `6`) | `0.6429` [0.2437, 0.9394] | `0.5714` | `0.5238` | `0.3926` | `too few to conclude (< 30)` |
+| Modality | `clinical` | `91` (`43` / `48`) | `0.8760` [0.8082, 0.9349] | `0.6279` | `0.7255` | `0.1563` | `adequate (>= 30)` |
+| Modality | `dermoscopic` | `14` (`5` / `9`) | `0.6667` [0.2000, 0.9906] | `0.0000` | `0.6889` | `0.2576` | `too few to conclude (< 30)` |
+| Modality | `tbp_tile` | `13` (`7` / `6`) | `0.6429` [0.2437, 0.9394] | `0.5714` | `0.5238` | `0.3926` | `too few to conclude (< 30)` |
+| Dataset | `isic` | `67` (`33` / `34`) | `0.8841` [0.7966, 0.9487] | `0.7576` | `0.8217` | `0.1048` | `adequate (>= 30)` |
+| Dataset | `fitzpatrick17k` | `51` (`22` / `29`) | `0.7414` [0.6110, 0.8561] | `0.5000` | `0.5697` | `0.2396` | `adequate (>= 30)` |
+
+### 15.5 Ablations, Errors & Limitations
+- **Ablation Impact:** Removing multi-task learning (`no_multitask`) collapses 9-class diagnosis Macro-F1 from `0.3023` to `0.0590` (`-0.2433`); removing body-site/modality metadata drops Macro-F1 to `0.2300` (`-0.0723`); removing class balancing drops Macro-F1 to `0.2553` (`-0.0470`).
+- **Key Limitations:** (1) `94.56%` of corpus records lack skin-tone labels and Fitzpatrick `V–VI` malignant examples are scarce; (2) `fitzpatrick17k` clinical atlas photos are not biopsy-confirmed (`AUROC 0.7414` vs `0.8841` on `isic`); (3) no prospective clinical validation has been performed. See [MODEL_CARD_DERM_CNN_V1.md](model-cards/MODEL_CARD_DERM_CNN_V1.md).
