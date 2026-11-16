@@ -260,3 +260,70 @@ def execute_document_upload_job(
             current_stage="FAILED",
             error_message=_format_user_facing_error(exc),
         )
+
+
+def execute_image_upload_job(
+    service: MedicalResearchPlatformService,
+    jobs: JobManager,
+    *,
+    job_id: str,
+    principal: AuthenticatedPrincipal,
+    raw_bytes: bytes,
+    filename: str,
+    subject_id: str | None = "subj_synth_001",
+    document_id: str | None = None,
+    body_site: str | None = None,
+    captured_date_iso: str | None = None,
+    force_new: bool = False,
+) -> None:
+    """Background worker that executes stages TRIAGE -> QUALITY -> ANALYSE -> EXPLAIN for an uploaded image."""
+    from medresearch_platform.vision.serving import ingest_and_analyze_image
+
+    timeout_s = float(getattr(service.config, "job_timeout_seconds", 120.0))
+
+    def _on_stage(stage: str, pct: int) -> None:
+        jobs.update_job(job_id, status="RUNNING", progress_pct=pct, current_stage=stage)
+
+    def _run_image() -> dict[str, Any]:
+        return ingest_and_analyze_image(
+            service,
+            service.vision_engine,
+            principal=principal,
+            raw_bytes=raw_bytes,
+            filename=filename,
+            subject_id=subject_id,
+            document_id=document_id,
+            body_site=body_site,
+            captured_date_iso=captured_date_iso,
+            force_new=force_new,
+            progress_callback=_on_stage,
+        )
+
+    try:
+        jobs.update_job(job_id, status="RUNNING", progress_pct=10, current_stage="TRIAGE")
+        fut = _JOB_WORKER_POOL.submit(_run_image)
+        result = fut.result(timeout=timeout_s)
+        jobs.update_job(
+            job_id,
+            status="SUCCEEDED",
+            progress_pct=100,
+            current_stage="COMPLETED",
+            result=result,
+        )
+    except concurrent.futures.TimeoutError:
+        jobs.update_job(
+            job_id,
+            status="FAILED",
+            progress_pct=100,
+            current_stage="FAILED",
+            error_message="Image analysis timed out. / L'analyse de l'image a expiré.",
+        )
+    except Exception as exc:
+        logger.exception("Image job %s failed on '%s'", job_id, filename)
+        jobs.update_job(
+            job_id,
+            status="FAILED",
+            progress_pct=100,
+            current_stage="FAILED",
+            error_message=_format_user_facing_error(exc),
+        )

@@ -38,6 +38,8 @@ _LABELS: dict[ReportLanguage, dict[str, str]] = {
         "present_badge": "AFFIRMED",
         "categories": "Clinical Facts by Category",
         "to_verify_title": "To Verify (Low Confidence)",
+        "skin_images_title": "Skin Images",
+        "skin_safety": "Research tool — not a diagnosis. A dermatologist must examine the lesion.",
     },
     "fr": {
         "title": "Rapport structuré d'extraction d'information médicale",
@@ -63,6 +65,8 @@ _LABELS: dict[ReportLanguage, dict[str, str]] = {
         "present_badge": "AFFIRMÉ",
         "categories": "Faits cliniques par catégorie",
         "to_verify_title": "À vérifier (faible confiance)",
+        "skin_images_title": "Images cutanées",
+        "skin_safety": "Outil de recherche — ne constitue pas un diagnostic. Un dermatologue doit examiner la lésion.",
     },
 }
 
@@ -113,6 +117,8 @@ def render_markdown_report(
     entities: Sequence[Mapping[str, Any]],
     relations: Sequence[Mapping[str, Any]],
     *,
+    image_findings: Sequence[Mapping[str, Any]] = (),
+    same_lesion_links: Sequence[Mapping[str, Any]] = (),
     lang: ReportLanguage = "en",
 ) -> str:
     """Render a traceable Markdown report in English or French."""
@@ -201,6 +207,46 @@ def render_markdown_report(
             conf = float(rel.get("confidence", 0.0) or 0.0)
             lines.append(f"- `{src_txt}` — **[{rtype}]** → `{tgt_txt}` ({lbl['confidence']}: `{conf:.2f}`)")
     lines.append("")
+
+    if image_findings:
+        lines.append(f"## {lbl['skin_images_title']}")
+        lines.append(f"> {lbl['skin_safety']}")
+        lines.append("")
+        for f in image_findings:
+            img_id = str(f.get("image_id", "unknown"))
+            ptype = str(f.get("picture_type", "skin_dermoscopic"))
+            band = str(f.get("malignancy_risk_band", "abstained"))
+            prob = f.get("malignancy_risk_probability")
+            rev = str(f.get("review_status", "needs_review"))
+            site = str(f.get("body_site") or ("unspecified" if lang == "en" else "non spécifié"))
+            abstained = bool(f.get("abstained", False))
+            top3 = f.get("top3_diagnoses") or []
+            if isinstance(top3, str):
+                import json as _json
+                try:
+                    top3 = _json.loads(top3)
+                except Exception:
+                    top3 = []
+            top3_str = ", ".join(f"{d.get('diagnosis')} ({float(d.get('probability', 0.0)):.2f})" for d in top3[:3])
+            if abstained or prob is None:
+                reason = f.get("abstain_reason_fr" if lang == "fr" else "abstain_reason_en") or "Abstained"
+                lines.append(
+                    f"- **`{img_id}`** (`{ptype}`, site: `{site}`) | "
+                    f"**ABSTAINED**: {reason} | Review: `{rev}`"
+                )
+            else:
+                lines.append(
+                    f"- **`{img_id}`** (`{ptype}`, site: `{site}`) | "
+                    f"Risk band: **`{band.upper()}`** (`{float(prob):.2f}`) | "
+                    f"Top-3: `{top3_str}` | Review: `{rev}`"
+                )
+        for lnk in same_lesion_links:
+            lines.append(
+                f"  - `SAME_LESION` link: `{lnk.get('image_id')}` ↔ "
+                f"*{lnk.get('text_span')}* (`{lnk.get('matched_body_site')}`, conf `{float(lnk.get('confidence', 0.0)):.2f}`)"
+            )
+        lines.append("")
+
     return "\n".join(lines)
 
 
@@ -209,6 +255,8 @@ def render_html_report(
     entities: Sequence[Mapping[str, Any]],
     relations: Sequence[Mapping[str, Any]],
     *,
+    image_findings: Sequence[Mapping[str, Any]] = (),
+    same_lesion_links: Sequence[Mapping[str, Any]] = (),
     lang: ReportLanguage = "en",
 ) -> str:
     """Render a self-contained, accessible HTML clinical extraction report."""
@@ -265,6 +313,39 @@ def render_html_report(
         tv_rows.append("</ul>")
         sections_html.append(f"<section><h3>{html.escape(lbl['to_verify_title'])}</h3>{''.join(tv_rows)}</section>")
 
+    if image_findings:
+        img_rows: list[str] = [f"<p class='disclaimer'>{html.escape(lbl['skin_safety'])}</p><ul>"]
+        for f in image_findings:
+            img_id = html.escape(str(f.get("image_id", "unknown")))
+            ptype = html.escape(str(f.get("picture_type", "skin_dermoscopic")))
+            band = html.escape(str(f.get("malignancy_risk_band", "abstained")))
+            prob = f.get("malignancy_risk_probability")
+            rev = html.escape(str(f.get("review_status", "needs_review")))
+            site = html.escape(str(f.get("body_site") or ("unspecified" if lang == "en" else "non spécifié")))
+            abstained = bool(f.get("abstained", False))
+            top3 = f.get("top3_diagnoses") or []
+            if isinstance(top3, str):
+                import json as _json
+                try:
+                    top3 = _json.loads(top3)
+                except Exception:
+                    top3 = []
+            top3_str = html.escape(", ".join(f"{d.get('diagnosis')} ({float(d.get('probability', 0.0)):.2f})" for d in top3[:3]))
+            if abstained or prob is None:
+                reason = html.escape(str(f.get("abstain_reason_fr" if lang == "fr" else "abstain_reason_en") or "Abstained"))
+                img_rows.append(
+                    f"<li><strong>{img_id}</strong> (<code>{ptype}</code>, site: <code>{site}</code>) "
+                    f"<span class='badge neg'>ABSTAINED</span> {reason} [review: <code>{rev}</code>]</li>"
+                )
+            else:
+                img_rows.append(
+                    f"<li><strong>{img_id}</strong> (<code>{ptype}</code>, site: <code>{site}</code>) "
+                    f"<span class='badge pos'>{band.upper()} ({float(prob):.2f})</span> "
+                    f"Top-3: <code>{top3_str}</code> [review: <code>{rev}</code>]</li>"
+                )
+        img_rows.append("</ul>")
+        sections_html.append(f"<section><h3>{html.escape(lbl['skin_images_title'])}</h3>{''.join(img_rows)}</section>")
+
     return f"""<!doctype html>
 <html lang="{lang}">
 <head>
@@ -303,10 +384,19 @@ def render_pdf_report(
     entities: Sequence[Mapping[str, Any]],
     relations: Sequence[Mapping[str, Any]],
     *,
+    image_findings: Sequence[Mapping[str, Any]] = (),
+    same_lesion_links: Sequence[Mapping[str, Any]] = (),
     lang: ReportLanguage = "en",
 ) -> bytes:
     """Render a print-ready PDF clinical extraction report via ReportLab."""
-    md = render_markdown_report(document, entities, relations, lang=lang)
+    md = render_markdown_report(
+        document,
+        entities,
+        relations,
+        image_findings=image_findings,
+        same_lesion_links=same_lesion_links,
+        lang=lang,
+    )
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter)
     styles = getSampleStyleSheet()
@@ -334,14 +424,46 @@ def generate_report_bytes(
     entities: Sequence[Mapping[str, Any]],
     relations: Sequence[Mapping[str, Any]],
     *,
+    image_findings: Sequence[Mapping[str, Any]] = (),
+    same_lesion_links: Sequence[Mapping[str, Any]] = (),
     lang: ReportLanguage = "en",
     fmt: ReportFormat = "markdown",
 ) -> tuple[bytes, str]:
     """Generate report bytes and MIME media type for Markdown, HTML, or PDF."""
     if fmt == "markdown":
-        return render_markdown_report(document, entities, relations, lang=lang).encode("utf-8"), "text/markdown; charset=utf-8"
+        return (
+            render_markdown_report(
+                document,
+                entities,
+                relations,
+                image_findings=image_findings,
+                same_lesion_links=same_lesion_links,
+                lang=lang,
+            ).encode("utf-8"),
+            "text/markdown; charset=utf-8",
+        )
     if fmt == "html":
-        return render_html_report(document, entities, relations, lang=lang).encode("utf-8"), "text/html; charset=utf-8"
+        return (
+            render_html_report(
+                document,
+                entities,
+                relations,
+                image_findings=image_findings,
+                same_lesion_links=same_lesion_links,
+                lang=lang,
+            ).encode("utf-8"),
+            "text/html; charset=utf-8",
+        )
     if fmt == "pdf":
-        return render_pdf_report(document, entities, relations, lang=lang), "application/pdf"
+        return (
+            render_pdf_report(
+                document,
+                entities,
+                relations,
+                image_findings=image_findings,
+                same_lesion_links=same_lesion_links,
+                lang=lang,
+            ),
+            "application/pdf",
+        )
     raise ValueError(f"Unsupported report format: {fmt}")

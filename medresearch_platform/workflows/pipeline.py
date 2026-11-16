@@ -69,6 +69,9 @@ class MedicalResearchPlatformService:
         self.terminology = BilingualTerminologyRegistry()
         self.extractor = ExtractionService()
         self.retrieval_model = CustomNeuralRetrievalScorer(seed=self.config.default_random_seed)
+        from medresearch_platform.vision.serving import VisionServingEngine
+
+        self.vision_engine = VisionServingEngine(self.config.workspace_dir)
         self._models_trained = False
         self._training_summary: dict[str, Any] = {}
 
@@ -285,6 +288,7 @@ class MedicalResearchPlatformService:
         document_id_override: str | None = None,
         force_new: bool = False,
         progress_callback: Callable[[str, int], None] | None = None,
+        _skip_skin_reroute: bool = False,
     ) -> dict[str, Any]:
         """Validate, store immutably, de-identify, parse, and extract OCR + NLP + timeline for a document."""
         principal.assert_permission("medical_data:write")
@@ -346,6 +350,46 @@ class MedicalResearchPlatformService:
             progress_callback("PARSING", 15)
 
         if safety.detected_format in ("PNG", "JPEG", "TIFF", "WEBP") and not ocr_lines_for_hybrid:
+            if not _skip_skin_reroute:
+                import io
+
+                from PIL import Image
+
+                from medresearch_platform.vision.serving import ingest_and_analyze_image
+
+                try:
+                    with Image.open(io.BytesIO(raw_bytes)) as _im:
+                        triage_res = self.vision_engine.router.triage_image(_im.convert("RGB"))
+                    if triage_res.route_action == "skin_vision_pipeline":
+                        img_res = ingest_and_analyze_image(
+                            self,
+                            self.vision_engine,
+                            principal=principal,
+                            raw_bytes=raw_bytes,
+                            filename=filename,
+                            subject_id=subject_raw_id,
+                            captured_date_iso=encounter_date_iso,
+                            force_new=force_new,
+                            allow_document_reroute=False,
+                            progress_callback=progress_callback,
+                        )
+                        return {
+                            "routed_to": "skin_vision_pipeline",
+                            "document_id": img_res["image_id"],
+                            "image_id": img_res["image_id"],
+                            "image_finding": img_res,
+                            "triage": img_res.get("triage"),
+                            "file_format": safety.detected_format,
+                            "detected_language": "en",
+                            "entities_extracted": 0,
+                            "relations_extracted": len(img_res.get("same_lesion_links", [])),
+                            "ocr_blocks_extracted": 0,
+                            "timeline_events_count": 1,
+                            "untrusted_flags": [],
+                        }
+                except Exception:
+                    pass
+
             if progress_callback:
                 progress_callback("OCR", 25)
             tess_ok, _ = ocr_engine.check_tesseract_available()

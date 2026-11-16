@@ -44,13 +44,27 @@ from medresearch_platform.security.auth import (
     verify_access_token,
     verify_password,
 )
-from medresearch_platform.workflows.jobs import JobManager, execute_document_upload_job
+from medresearch_platform.workflows.jobs import (
+    JobManager,
+    execute_document_upload_job,
+    execute_image_upload_job,
+)
 from medresearch_platform.workflows.pipeline import MedicalResearchPlatformService
 from medresearch_platform.workflows.review import (
     export_reviewed_gold,
+    export_reviewed_image_gold,
     list_human_reviews,
     submit_entity_human_review,
+    submit_image_finding_review,
 )
+
+
+class ImageReviewRequest(BaseModel):
+    review_decision: str = "APPROVE_AS_GROUND_TRUTH"
+    corrected_diagnosis: str | None = None
+    corrected_risk_band: str | None = None
+    corrected_body_site: str | None = None
+    rationale: str = "Expert dermatology review"
 
 
 class ReviewSubmissionRequest(BaseModel):
@@ -246,6 +260,25 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
                     (document_id,),
                 ).fetchall()
             ]
+            from medresearch_platform.vision.serving import _row_to_image_finding_dict
+
+            subj_id = doc["subject_id"]
+            img_rows = conn.execute(
+                """
+                SELECT * FROM image_findings
+                WHERE institution_id = ? AND (document_id = ? OR (subject_id = ? AND subject_id IS NOT NULL))
+                ORDER BY created_at DESC
+                """,
+                (principal.institution_id, document_id, subj_id),
+            ).fetchall()
+            image_findings = [_row_to_image_finding_dict(conn, r) for r in img_rows]
+            same_lesion_links = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM image_text_links WHERE document_id = ? ORDER BY confidence DESC",
+                    (document_id,),
+                ).fetchall()
+            ]
 
         return JSONResponse({
             "document": dict(doc),
@@ -254,6 +287,8 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             "ocr_blocks": ocr_blocks,
             "entities": entities,
             "relations": relations,
+            "image_findings": image_findings,
+            "same_lesion_links": same_lesion_links,
             "clinical_disclaimer": (
                 "Extracted entities and relations represent AI predictions or human annotations for research. "
                 "They are NOT verified clinical diagnoses or treatment orders."
@@ -296,11 +331,32 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
                     (document_id,),
                 ).fetchall()
             ]
+            from medresearch_platform.vision.serving import _row_to_image_finding_dict
+
+            subj_id = doc["subject_id"]
+            img_rows = conn.execute(
+                """
+                SELECT * FROM image_findings
+                WHERE institution_id = ? AND (document_id = ? OR (subject_id = ? AND subject_id IS NOT NULL))
+                ORDER BY created_at DESC
+                """,
+                (principal.institution_id, document_id, subj_id),
+            ).fetchall()
+            image_findings = [_row_to_image_finding_dict(conn, r) for r in img_rows]
+            same_lesion_links = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM image_text_links WHERE document_id = ? ORDER BY confidence DESC",
+                    (document_id,),
+                ).fetchall()
+            ]
 
         payload, media_type = generate_report_bytes(
             dict(doc),
             entities,
             relations,
+            image_findings=image_findings,
+            same_lesion_links=same_lesion_links,
             lang=lang,
             fmt=format,
         )
@@ -724,6 +780,249 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         with service.db.connect() as conn:
             result = verify_audit_chain(conn)
         return JSONResponse(result)
+
+    @app.post("/api/v1/images/upload")
+    async def upload_image_endpoint(
+        request: Request,
+        background_tasks: BackgroundTasks,
+        file: UploadFile = File(...),
+        subject_id: str = Form("subj_synth_001"),
+        document_id: str | None = Form(None),
+        body_site: str | None = Form(None),
+        captured_date_iso: str | None = Form(None),
+        force_new: bool = Form(False),
+        async_job: bool = Form(False),
+    ) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:write")
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
+        raw_bytes = await file.read()
+        filename = file.filename or "uploaded_image.png"
+        try:
+            validate_upload_payload(
+                raw_bytes,
+                filename,
+                max_upload_bytes=service.config.max_upload_bytes,
+            )
+        except PayloadTooLargeError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=413)
+        except UnsupportedFileTypeError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=415)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+
+        job = jobs.create_job(
+            institution_id=principal.institution_id,
+            actor_user_id=principal.user_id,
+            job_type="IMAGE_TRIAGE_AND_ANALYZE",
+            original_filename=filename,
+            initial_stage="TRIAGE",
+        )
+        if async_job:
+            background_tasks.add_task(
+                execute_image_upload_job,
+                service,
+                jobs,
+                job_id=job.job_id,
+                principal=principal,
+                raw_bytes=raw_bytes,
+                filename=filename,
+                subject_id=subject_id,
+                document_id=document_id,
+                body_site=body_site,
+                captured_date_iso=captured_date_iso,
+                force_new=force_new,
+            )
+            return JSONResponse(job.to_dict(), status_code=202)
+
+        execute_image_upload_job(
+            service,
+            jobs,
+            job_id=job.job_id,
+            principal=principal,
+            raw_bytes=raw_bytes,
+            filename=filename,
+            subject_id=subject_id,
+            document_id=document_id,
+            body_site=body_site,
+            captured_date_iso=captured_date_iso,
+            force_new=force_new,
+        )
+        completed_job = jobs.get_job(job.job_id)
+        if completed_job is not None and completed_job.status == "FAILED":
+            return JSONResponse({"error": completed_job.error_message, "job": completed_job.to_dict()}, status_code=400)
+        res_payload = completed_job.result if completed_job and completed_job.result else {}
+        return JSONResponse(
+            {
+                "job_id": job.job_id,
+                "stages": ["TRIAGE", "QUALITY", "ANALYSE", "EXPLAIN"],
+                "status": "SUCCEEDED",
+                **res_payload,
+            },
+            status_code=201,
+        )
+
+    @app.get("/api/v1/images")
+    async def list_images_endpoint(request: Request) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
+        from medresearch_platform.vision.serving import _row_to_image_finding_dict
+
+        with service.db.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM image_findings WHERE institution_id = ? ORDER BY created_at DESC",
+                (principal.institution_id,),
+            ).fetchall()
+            items = [_row_to_image_finding_dict(conn, r) for r in rows]
+        return JSONResponse({"images": items, "count": len(items)})
+
+    @app.get("/api/v1/images/{image_id}")
+    async def get_image_finding_endpoint(image_id: str, request: Request) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
+        from medresearch_platform.vision.serving import _row_to_image_finding_dict
+
+        with service.db.connect() as conn:
+            row = conn.execute("SELECT * FROM image_findings WHERE image_id = ?", (image_id,)).fetchone()
+            if row is None:
+                return JSONResponse({"error": "Image finding not found"}, status_code=404)
+            try:
+                principal.assert_institution_access(str(row["institution_id"]))
+            except PermissionError as exc:
+                return JSONResponse({"error": str(exc)}, status_code=403)
+            payload = _row_to_image_finding_dict(conn, row)
+            thumb_p = Path(str(row["thumb_storage_path"] or ""))
+            if thumb_p.exists():
+                payload["thumbnail_base64"] = base64.b64encode(thumb_p.read_bytes()).decode("ascii")
+        return JSONResponse(payload)
+
+    @app.get("/api/v1/images/{image_id}/heatmap")
+    async def get_image_heatmap_endpoint(image_id: str, request: Request) -> Response:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
+        with service.db.connect() as conn:
+            row = conn.execute("SELECT * FROM image_findings WHERE image_id = ?", (image_id,)).fetchone()
+            if row is None:
+                return JSONResponse({"error": "Image finding not found"}, status_code=404)
+            try:
+                principal.assert_institution_access(str(row["institution_id"]))
+            except PermissionError as exc:
+                return JSONResponse({"error": str(exc)}, status_code=403)
+            heatmap_p = Path(str(row["heatmap_storage_path"] or ""))
+            if not heatmap_p.exists():
+                return JSONResponse({"error": "Heatmap file not found"}, status_code=404)
+            return Response(content=heatmap_p.read_bytes(), media_type="image/png")
+
+    @app.get("/api/v1/images/{image_id}/thumbnail")
+    async def get_image_thumbnail_endpoint(image_id: str, request: Request) -> Response:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
+        with service.db.connect() as conn:
+            row = conn.execute("SELECT * FROM image_findings WHERE image_id = ?", (image_id,)).fetchone()
+            if row is None:
+                return JSONResponse({"error": "Image finding not found"}, status_code=404)
+            try:
+                principal.assert_institution_access(str(row["institution_id"]))
+            except PermissionError as exc:
+                return JSONResponse({"error": str(exc)}, status_code=403)
+            thumb_p = Path(str(row["thumb_storage_path"] or ""))
+            if not thumb_p.exists():
+                return JSONResponse({"error": "Thumbnail file not found"}, status_code=404)
+            return Response(content=thumb_p.read_bytes(), media_type="image/webp")
+
+    @app.post("/api/v1/images/{image_id}/review")
+    async def review_image_finding_endpoint(
+        image_id: str,
+        body: ImageReviewRequest,
+        request: Request,
+    ) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("annotation:review")
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
+        try:
+            with service.db.transaction() as conn:
+                result = submit_image_finding_review(
+                    conn,
+                    principal=principal,
+                    image_id=image_id,
+                    review_decision=body.review_decision,
+                    corrected_diagnosis=body.corrected_diagnosis,
+                    corrected_risk_band=body.corrected_risk_band,
+                    corrected_body_site=body.corrected_body_site,
+                    rationale=body.rationale,
+                )
+            return JSONResponse(result)
+        except KeyError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=404)
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+
+    @app.get("/api/v1/images/gold/export")
+    async def export_image_gold_endpoint(request: Request) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
+        with service.db.connect() as conn:
+            gold = export_reviewed_image_gold(conn, institution_id=principal.institution_id)
+        return JSONResponse({"gold_images": gold, "count": len(gold)})
+
+    @app.get("/api/v1/patients/{patient_id}/record")
+    async def get_patient_record_endpoint(patient_id: str, request: Request) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("medical_data:read")
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
+        from medresearch_platform.vision.serving import get_patient_unified_record
+
+        with service.db.connect() as conn:
+            record = get_patient_unified_record(conn, principal=principal, patient_id=patient_id)
+        return JSONResponse(record)
+
+    @app.get("/api/v1/results/vision/{section}")
+    async def get_vision_results_endpoint(section: str, request: Request) -> JSONResponse:
+        try:
+            principal = _extract_principal(request, service)
+            principal.assert_permission("experiment:read")
+        except PermissionError as exc:
+            return _auth_error_response(exc)
+
+        from medresearch_platform.vision.serving import load_vision_benchmark_results
+
+        data = load_vision_benchmark_results(service.config.workspace_dir)
+        if section == "router":
+            return JSONResponse(data["router_evaluation"])
+        if section == "benchmark":
+            return JSONResponse(data["skin_benchmark"])
+        return JSONResponse(data)
 
     @app.get("/")
     async def web_workspace_endpoint() -> FileResponse:
