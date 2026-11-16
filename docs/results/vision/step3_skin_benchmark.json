@@ -1,0 +1,3759 @@
+{
+  "generated_at_utc": "2026-11-16T22:37:53Z",
+  "dataset_splits": {
+    "train": 613,
+    "val": 140,
+    "locked_test": 118,
+    "total": 871
+  },
+  "models": {
+    "derm_cnn_multitask": {
+      "manifest": {
+        "architecture_name": "DermResNetMultiTask",
+        "architecture_version": "1.0.0",
+        "saved_at_utc": "2026-11-16T22:37:15Z",
+        "image_size": 64,
+        "stage_channels": [
+          16,
+          32,
+          64,
+          128
+        ],
+        "include_metadata": true,
+        "multi_task": true,
+        "seed": 1,
+        "parameter_count": 130590,
+        "temperature_mal": 1.2,
+        "temperature_dx": 1.25,
+        "abstain_min_confidence": 0.62,
+        "abstain_max_energy": -0.15,
+        "initial_weights_sha256": "f5b37b1654cacdcf487a7de64f84f400042badf78e076d4172867f77d3339817",
+        "trained_weights_sha256": "acfff93dbec7b34a2d54feaab7eadd25327e0de033d41cca6c965d5b4eb905b0",
+        "corpus_hash": "",
+        "git_commit": "",
+        "pretrained_weights_used": false,
+        "safety_notice_en": "Research tool \u2014 not a diagnosis. A dermatologist must examine the lesion.",
+        "safety_notice_fr": "Outil de recherche \u2014 ne constitue pas un diagnostic. Un dermatologue doit examiner la l\u00e9sion."
+      },
+      "training": {
+        "initial_loss": 1.5958,
+        "final_loss": 0.0302,
+        "best_val_epoch": 2,
+        "temperature_mal": 1.2,
+        "temperature_dx": 1.25,
+        "abstain_min_confidence": 0.62,
+        "abstain_max_energy": -0.15,
+        "parameter_count": 130590,
+        "model_size_bytes": 1044720,
+        "peak_rss_mb": 1500.26,
+        "training_seconds": 6.839,
+        "initial_weights_sha256": "f5b37b1654cacdcf487a7de64f84f400042badf78e076d4172867f77d3339817",
+        "pretrained_weights_used": false
+      },
+      "gradcam_lesion_mask_sanity": {
+        "sanity_passed": true,
+        "mean_l1_difference": 0.6001,
+        "max_abs_difference": 0.9884
+      },
+      "val": {
+        "sample_count": 140,
+        "malignant_count": 76,
+        "benign_count": 64,
+        "auroc": 0.8201,
+        "auroc_ci95": [
+          0.7402,
+          0.8901
+        ],
+        "sensitivity_at_90_specificity": 0.4342,
+        "sensitivity_at_95_specificity": 0.3026,
+        "balanced_accuracy": 0.7636,
+        "diagnosis_macro_f1": 0.2281,
+        "diagnosis_top3_accuracy": 0.7,
+        "diagnosis_per_class_f1": {
+          "melanoma": 0.4615,
+          "basal_cell_carcinoma": 0.2609,
+          "squamous_cell_carcinoma": 0.0,
+          "actinic_keratosis": 0.3226,
+          "nevus": 0.6966,
+          "seborrheic_keratosis": 0.0,
+          "dermatofibroma": 0.0833,
+          "vascular_lesion": 0.0
+        },
+        "ece": 0.0554,
+        "brier_score": 0.1698,
+        "abstention_rate": 0.2571,
+        "non_abstained_high_risk_precision": 0.7937,
+        "reliability_bins": [
+          {
+            "bin": "[0.0, 0.1]",
+            "count": 5,
+            "mean_predicted_prob": 0.0791,
+            "empirical_positive_rate": 0.2,
+            "calibration_gap": 0.1209
+          },
+          {
+            "bin": "[0.1, 0.2]",
+            "count": 19,
+            "mean_predicted_prob": 0.1453,
+            "empirical_positive_rate": 0.1053,
+            "calibration_gap": 0.0401
+          },
+          {
+            "bin": "[0.2, 0.3]",
+            "count": 8,
+            "mean_predicted_prob": 0.2349,
+            "empirical_positive_rate": 0.25,
+            "calibration_gap": 0.0151
+          },
+          {
+            "bin": "[0.3, 0.4]",
+            "count": 8,
+            "mean_predicted_prob": 0.3587,
+            "empirical_positive_rate": 0.125,
+            "calibration_gap": 0.2337
+          },
+          {
+            "bin": "[0.4, 0.5]",
+            "count": 14,
+            "mean_predicted_prob": 0.4525,
+            "empirical_positive_rate": 0.3571,
+            "calibration_gap": 0.0954
+          },
+          {
+            "bin": "[0.5, 0.6]",
+            "count": 10,
+            "mean_predicted_prob": 0.5736,
+            "empirical_positive_rate": 0.6,
+            "calibration_gap": 0.0264
+          },
+          {
+            "bin": "[0.6, 0.7]",
+            "count": 14,
+            "mean_predicted_prob": 0.6441,
+            "empirical_positive_rate": 0.5714,
+            "calibration_gap": 0.0727
+          },
+          {
+            "bin": "[0.7, 0.8]",
+            "count": 24,
+            "mean_predicted_prob": 0.7526,
+            "empirical_positive_rate": 0.7917,
+            "calibration_gap": 0.0391
+          },
+          {
+            "bin": "[0.8, 0.9]",
+            "count": 29,
+            "mean_predicted_prob": 0.8451,
+            "empirical_positive_rate": 0.8276,
+            "calibration_gap": 0.0175
+          },
+          {
+            "bin": "[0.9, 1.0]",
+            "count": 9,
+            "mean_predicted_prob": 0.9259,
+            "empirical_positive_rate": 0.8889,
+            "calibration_gap": 0.037
+          }
+        ],
+        "roc_curve": [
+          {
+            "threshold": 1.0,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.9583,
+            "fpr": 0.0,
+            "tpr": 0.0132
+          },
+          {
+            "threshold": 0.9167,
+            "fpr": 0.0,
+            "tpr": 0.0658
+          },
+          {
+            "threshold": 0.875,
+            "fpr": 0.0156,
+            "tpr": 0.1711
+          },
+          {
+            "threshold": 0.8333,
+            "fpr": 0.0469,
+            "tpr": 0.3026
+          },
+          {
+            "threshold": 0.7917,
+            "fpr": 0.1094,
+            "tpr": 0.4474
+          },
+          {
+            "threshold": 0.75,
+            "fpr": 0.1406,
+            "tpr": 0.5395
+          },
+          {
+            "threshold": 0.7083,
+            "fpr": 0.1719,
+            "tpr": 0.6447
+          },
+          {
+            "threshold": 0.6667,
+            "fpr": 0.1875,
+            "tpr": 0.6842
+          },
+          {
+            "threshold": 0.625,
+            "fpr": 0.25,
+            "tpr": 0.7237
+          },
+          {
+            "threshold": 0.5833,
+            "fpr": 0.2812,
+            "tpr": 0.8026
+          },
+          {
+            "threshold": 0.5417,
+            "fpr": 0.3125,
+            "tpr": 0.8553
+          },
+          {
+            "threshold": 0.5,
+            "fpr": 0.3281,
+            "tpr": 0.8553
+          },
+          {
+            "threshold": 0.4583,
+            "fpr": 0.375,
+            "tpr": 0.8684
+          },
+          {
+            "threshold": 0.4167,
+            "fpr": 0.4531,
+            "tpr": 0.9211
+          },
+          {
+            "threshold": 0.375,
+            "fpr": 0.5,
+            "tpr": 0.9342
+          },
+          {
+            "threshold": 0.3333,
+            "fpr": 0.5469,
+            "tpr": 0.9342
+          },
+          {
+            "threshold": 0.2917,
+            "fpr": 0.5781,
+            "tpr": 0.9342
+          },
+          {
+            "threshold": 0.25,
+            "fpr": 0.6094,
+            "tpr": 0.9342
+          },
+          {
+            "threshold": 0.2083,
+            "fpr": 0.6562,
+            "tpr": 0.9605
+          },
+          {
+            "threshold": 0.1667,
+            "fpr": 0.75,
+            "tpr": 0.9605
+          },
+          {
+            "threshold": 0.125,
+            "fpr": 0.8594,
+            "tpr": 0.9737
+          },
+          {
+            "threshold": 0.0833,
+            "fpr": 0.9531,
+            "tpr": 0.9868
+          },
+          {
+            "threshold": 0.0417,
+            "fpr": 1.0,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0,
+            "fpr": 1.0,
+            "tpr": 1.0
+          }
+        ],
+        "subgroups": {
+          "by_skin_tone": {
+            "I": {
+              "sample_count": 102,
+              "malignant_count": 56,
+              "benign_count": 46,
+              "auroc": 0.863,
+              "auroc_ci95": [
+                0.7872,
+                0.9363
+              ],
+              "sensitivity_at_90_specificity": 0.6964,
+              "sensitivity_at_95_specificity": 0.4286,
+              "balanced_accuracy": 0.8109,
+              "diagnosis_macro_f1": 0.2691,
+              "diagnosis_top3_accuracy": 0.7451,
+              "ece": 0.0936,
+              "brier_score": 0.1478,
+              "abstention_rate": 0.2451,
+              "non_abstained_high_risk_precision": 0.875,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "II": {
+              "sample_count": 9,
+              "malignant_count": 4,
+              "benign_count": 5,
+              "auroc": 0.55,
+              "auroc_ci95": [
+                0.0767,
+                0.9762
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.6,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.1111,
+              "ece": 0.3586,
+              "brier_score": 0.3249,
+              "abstention_rate": 0.1111,
+              "non_abstained_high_risk_precision": 0.4286,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "III": {
+              "sample_count": 4,
+              "malignant_count": 1,
+              "benign_count": 3,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 0.8333,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.25,
+              "ece": 0.4416,
+              "brier_score": 0.2416,
+              "abstention_rate": 0.5,
+              "non_abstained_high_risk_precision": 0.5,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "IV": {
+              "sample_count": 3,
+              "malignant_count": 2,
+              "benign_count": 1,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.5,
+                0.5
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.25,
+              "diagnosis_macro_f1": 0.5,
+              "diagnosis_top3_accuracy": 0.6667,
+              "ece": 0.2418,
+              "brier_score": 0.2676,
+              "abstention_rate": 1.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "UNKNOWN": {
+              "sample_count": 14,
+              "malignant_count": 8,
+              "benign_count": 6,
+              "auroc": 0.8125,
+              "auroc_ci95": [
+                0.4939,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.375,
+              "sensitivity_at_95_specificity": 0.375,
+              "balanced_accuracy": 0.6667,
+              "diagnosis_macro_f1": 0.7754,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.1516,
+              "brier_score": 0.1963,
+              "abstention_rate": 0.2143,
+              "non_abstained_high_risk_precision": 0.7778,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "V": {
+              "sample_count": 3,
+              "malignant_count": 1,
+              "benign_count": 2,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 0.75,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.3333,
+              "ece": 0.4351,
+              "brier_score": 0.2876,
+              "abstention_rate": 0.3333,
+              "non_abstained_high_risk_precision": 0.5,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "VI": {
+              "sample_count": 5,
+              "malignant_count": 4,
+              "benign_count": 1,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 0.875,
+              "diagnosis_macro_f1": 0.1111,
+              "diagnosis_top3_accuracy": 0.6,
+              "ece": 0.2438,
+              "brier_score": 0.0789,
+              "abstention_rate": 0.2,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_modality": {
+            "clinical": {
+              "sample_count": 98,
+              "malignant_count": 55,
+              "benign_count": 43,
+              "auroc": 0.8199,
+              "auroc_ci95": [
+                0.7363,
+                0.8966
+              ],
+              "sensitivity_at_90_specificity": 0.4545,
+              "sensitivity_at_95_specificity": 0.3636,
+              "balanced_accuracy": 0.7579,
+              "diagnosis_macro_f1": 0.2029,
+              "diagnosis_top3_accuracy": 0.5816,
+              "ece": 0.0406,
+              "brier_score": 0.1683,
+              "abstention_rate": 0.2347,
+              "non_abstained_high_risk_precision": 0.8125,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "dermoscopic": {
+              "sample_count": 28,
+              "malignant_count": 13,
+              "benign_count": 15,
+              "auroc": 0.8462,
+              "auroc_ci95": [
+                0.6652,
+                0.9812
+              ],
+              "sensitivity_at_90_specificity": 0.6154,
+              "sensitivity_at_95_specificity": 0.4615,
+              "balanced_accuracy": 0.8282,
+              "diagnosis_macro_f1": 0.5893,
+              "diagnosis_top3_accuracy": 0.9643,
+              "ece": 0.1963,
+              "brier_score": 0.1619,
+              "abstention_rate": 0.3571,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "tbp_tile": {
+              "sample_count": 14,
+              "malignant_count": 8,
+              "benign_count": 6,
+              "auroc": 0.8125,
+              "auroc_ci95": [
+                0.4939,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.375,
+              "sensitivity_at_95_specificity": 0.375,
+              "balanced_accuracy": 0.6667,
+              "diagnosis_macro_f1": 0.7754,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.1516,
+              "brier_score": 0.1963,
+              "abstention_rate": 0.2143,
+              "non_abstained_high_risk_precision": 0.7778,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_dataset": {
+            "fitzpatrick17k": {
+              "sample_count": 49,
+              "malignant_count": 28,
+              "benign_count": 21,
+              "auroc": 0.6582,
+              "auroc_ci95": [
+                0.5052,
+                0.7837
+              ],
+              "sensitivity_at_90_specificity": 0.2857,
+              "sensitivity_at_95_specificity": 0.2857,
+              "balanced_accuracy": 0.625,
+              "diagnosis_macro_f1": 0.1082,
+              "diagnosis_top3_accuracy": 0.4082,
+              "ece": 0.1376,
+              "brier_score": 0.2467,
+              "abstention_rate": 0.3469,
+              "non_abstained_high_risk_precision": 0.6957,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "isic": {
+              "sample_count": 91,
+              "malignant_count": 48,
+              "benign_count": 43,
+              "auroc": 0.8963,
+              "auroc_ci95": [
+                0.8144,
+                0.9588
+              ],
+              "sensitivity_at_90_specificity": 0.7292,
+              "sensitivity_at_95_specificity": 0.4792,
+              "balanced_accuracy": 0.8396,
+              "diagnosis_macro_f1": 0.6426,
+              "diagnosis_top3_accuracy": 0.8571,
+              "ece": 0.1118,
+              "brier_score": 0.1284,
+              "abstention_rate": 0.2088,
+              "non_abstained_high_risk_precision": 0.85,
+              "small_sample_flag": "adequate (>= 30)"
+            }
+          },
+          "by_body_site": {
+            "anterior torso": {
+              "sample_count": 20,
+              "malignant_count": 9,
+              "benign_count": 11,
+              "auroc": 0.9899,
+              "auroc_ci95": [
+                0.9394,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 0.8889,
+              "balanced_accuracy": 0.9545,
+              "diagnosis_macro_f1": 0.5952,
+              "diagnosis_top3_accuracy": 0.95,
+              "ece": 0.2074,
+              "brier_score": 0.0877,
+              "abstention_rate": 0.3,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "head/neck": {
+              "sample_count": 21,
+              "malignant_count": 19,
+              "benign_count": 2,
+              "auroc": 0.4474,
+              "auroc_ci95": [
+                0.2372,
+                0.6496
+              ],
+              "sensitivity_at_90_specificity": 0.3684,
+              "sensitivity_at_95_specificity": 0.3684,
+              "balanced_accuracy": 0.5,
+              "diagnosis_macro_f1": 0.2592,
+              "diagnosis_top3_accuracy": 0.619,
+              "ece": 0.1168,
+              "brier_score": 0.1009,
+              "abstention_rate": 0.0952,
+              "non_abstained_high_risk_precision": 0.8947,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "lower extremity": {
+              "sample_count": 14,
+              "malignant_count": 7,
+              "benign_count": 7,
+              "auroc": 0.8367,
+              "auroc_ci95": [
+                0.5804,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.2857,
+              "sensitivity_at_95_specificity": 0.2857,
+              "balanced_accuracy": 0.7857,
+              "diagnosis_macro_f1": 0.641,
+              "diagnosis_top3_accuracy": 0.9286,
+              "ece": 0.1653,
+              "brier_score": 0.1768,
+              "abstention_rate": 0.4286,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "other": {
+              "sample_count": 49,
+              "malignant_count": 28,
+              "benign_count": 21,
+              "auroc": 0.6582,
+              "auroc_ci95": [
+                0.5052,
+                0.7837
+              ],
+              "sensitivity_at_90_specificity": 0.2857,
+              "sensitivity_at_95_specificity": 0.2857,
+              "balanced_accuracy": 0.625,
+              "diagnosis_macro_f1": 0.1082,
+              "diagnosis_top3_accuracy": 0.4082,
+              "ece": 0.1376,
+              "brier_score": 0.2467,
+              "abstention_rate": 0.3469,
+              "non_abstained_high_risk_precision": 0.6957,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "posterior torso": {
+              "sample_count": 17,
+              "malignant_count": 4,
+              "benign_count": 13,
+              "auroc": 0.6731,
+              "auroc_ci95": [
+                0.0762,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.6346,
+              "diagnosis_macro_f1": 0.6012,
+              "diagnosis_top3_accuracy": 0.8824,
+              "ece": 0.2625,
+              "brier_score": 0.1816,
+              "abstention_rate": 0.2353,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "upper extremity": {
+              "sample_count": 19,
+              "malignant_count": 9,
+              "benign_count": 10,
+              "auroc": 0.9333,
+              "auroc_ci95": [
+                0.7988,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.8889,
+              "sensitivity_at_95_specificity": 0.5556,
+              "balanced_accuracy": 0.85,
+              "diagnosis_macro_f1": 0.6389,
+              "diagnosis_top3_accuracy": 0.9474,
+              "ece": 0.1646,
+              "brier_score": 0.1186,
+              "abstention_rate": 0.0526,
+              "non_abstained_high_risk_precision": 0.8,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          }
+        }
+      },
+      "locked_test": {
+        "sample_count": 118,
+        "malignant_count": 55,
+        "benign_count": 63,
+        "auroc": 0.8326,
+        "auroc_ci95": [
+          0.7569,
+          0.9056
+        ],
+        "sensitivity_at_90_specificity": 0.6,
+        "sensitivity_at_95_specificity": 0.5273,
+        "balanced_accuracy": 0.7062,
+        "diagnosis_macro_f1": 0.3023,
+        "diagnosis_top3_accuracy": 0.7034,
+        "diagnosis_per_class_f1": {
+          "melanoma": 0.5091,
+          "basal_cell_carcinoma": 0.0,
+          "squamous_cell_carcinoma": 0.25,
+          "actinic_keratosis": 0.2143,
+          "nevus": 0.6829,
+          "seborrheic_keratosis": 0.4444,
+          "dermatofibroma": 0.0952,
+          "vascular_lesion": 0.2222
+        },
+        "ece": 0.1262,
+        "brier_score": 0.1753,
+        "abstention_rate": 0.3559,
+        "non_abstained_high_risk_precision": 0.8409,
+        "reliability_bins": [
+          {
+            "bin": "[0.0, 0.1]",
+            "count": 5,
+            "mean_predicted_prob": 0.0797,
+            "empirical_positive_rate": 0.2,
+            "calibration_gap": 0.1203
+          },
+          {
+            "bin": "[0.1, 0.2]",
+            "count": 16,
+            "mean_predicted_prob": 0.1307,
+            "empirical_positive_rate": 0.125,
+            "calibration_gap": 0.0057
+          },
+          {
+            "bin": "[0.2, 0.3]",
+            "count": 8,
+            "mean_predicted_prob": 0.2502,
+            "empirical_positive_rate": 0.0,
+            "calibration_gap": 0.2502
+          },
+          {
+            "bin": "[0.3, 0.4]",
+            "count": 4,
+            "mean_predicted_prob": 0.3634,
+            "empirical_positive_rate": 0.25,
+            "calibration_gap": 0.1134
+          },
+          {
+            "bin": "[0.4, 0.5]",
+            "count": 8,
+            "mean_predicted_prob": 0.4627,
+            "empirical_positive_rate": 0.375,
+            "calibration_gap": 0.0877
+          },
+          {
+            "bin": "[0.5, 0.6]",
+            "count": 29,
+            "mean_predicted_prob": 0.5517,
+            "empirical_positive_rate": 0.3793,
+            "calibration_gap": 0.1724
+          },
+          {
+            "bin": "[0.6, 0.7]",
+            "count": 10,
+            "mean_predicted_prob": 0.6622,
+            "empirical_positive_rate": 0.5,
+            "calibration_gap": 0.1622
+          },
+          {
+            "bin": "[0.7, 0.8]",
+            "count": 12,
+            "mean_predicted_prob": 0.7502,
+            "empirical_positive_rate": 0.5833,
+            "calibration_gap": 0.1669
+          },
+          {
+            "bin": "[0.8, 0.9]",
+            "count": 18,
+            "mean_predicted_prob": 0.8455,
+            "empirical_positive_rate": 0.9444,
+            "calibration_gap": 0.099
+          },
+          {
+            "bin": "[0.9, 1.0]",
+            "count": 8,
+            "mean_predicted_prob": 0.921,
+            "empirical_positive_rate": 1.0,
+            "calibration_gap": 0.079
+          }
+        ],
+        "roc_curve": [
+          {
+            "threshold": 1.0,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.9583,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.9167,
+            "fpr": 0.0,
+            "tpr": 0.0545
+          },
+          {
+            "threshold": 0.875,
+            "fpr": 0.0,
+            "tpr": 0.1818
+          },
+          {
+            "threshold": 0.8333,
+            "fpr": 0.0,
+            "tpr": 0.3636
+          },
+          {
+            "threshold": 0.7917,
+            "fpr": 0.0159,
+            "tpr": 0.4727
+          },
+          {
+            "threshold": 0.75,
+            "fpr": 0.0476,
+            "tpr": 0.5273
+          },
+          {
+            "threshold": 0.7083,
+            "fpr": 0.0952,
+            "tpr": 0.5636
+          },
+          {
+            "threshold": 0.6667,
+            "fpr": 0.1111,
+            "tpr": 0.6545
+          },
+          {
+            "threshold": 0.625,
+            "fpr": 0.1587,
+            "tpr": 0.6727
+          },
+          {
+            "threshold": 0.5833,
+            "fpr": 0.254,
+            "tpr": 0.7091
+          },
+          {
+            "threshold": 0.5417,
+            "fpr": 0.3175,
+            "tpr": 0.8
+          },
+          {
+            "threshold": 0.5,
+            "fpr": 0.4603,
+            "tpr": 0.8727
+          },
+          {
+            "threshold": 0.4583,
+            "fpr": 0.4921,
+            "tpr": 0.9091
+          },
+          {
+            "threshold": 0.4167,
+            "fpr": 0.5397,
+            "tpr": 0.9273
+          },
+          {
+            "threshold": 0.375,
+            "fpr": 0.5397,
+            "tpr": 0.9455
+          },
+          {
+            "threshold": 0.3333,
+            "fpr": 0.5873,
+            "tpr": 0.9455
+          },
+          {
+            "threshold": 0.2917,
+            "fpr": 0.5873,
+            "tpr": 0.9455
+          },
+          {
+            "threshold": 0.25,
+            "fpr": 0.6508,
+            "tpr": 0.9455
+          },
+          {
+            "threshold": 0.2083,
+            "fpr": 0.7143,
+            "tpr": 0.9455
+          },
+          {
+            "threshold": 0.1667,
+            "fpr": 0.746,
+            "tpr": 0.9455
+          },
+          {
+            "threshold": 0.125,
+            "fpr": 0.8095,
+            "tpr": 0.9636
+          },
+          {
+            "threshold": 0.0833,
+            "fpr": 0.9841,
+            "tpr": 0.9818
+          },
+          {
+            "threshold": 0.0417,
+            "fpr": 1.0,
+            "tpr": 0.9818
+          },
+          {
+            "threshold": 0.0,
+            "fpr": 1.0,
+            "tpr": 1.0
+          }
+        ],
+        "subgroups": {
+          "by_skin_tone": {
+            "I": {
+              "sample_count": 83,
+              "malignant_count": 40,
+              "benign_count": 43,
+              "auroc": 0.8541,
+              "auroc_ci95": [
+                0.784,
+                0.9299
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.475,
+              "balanced_accuracy": 0.7515,
+              "diagnosis_macro_f1": 0.3096,
+              "diagnosis_top3_accuracy": 0.747,
+              "ece": 0.0915,
+              "brier_score": 0.1549,
+              "abstention_rate": 0.3253,
+              "non_abstained_high_risk_precision": 0.8125,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "II": {
+              "sample_count": 8,
+              "malignant_count": 2,
+              "benign_count": 6,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 0.6667,
+              "diagnosis_macro_f1": 0.4445,
+              "diagnosis_top3_accuracy": 0.375,
+              "ece": 0.4064,
+              "brier_score": 0.2091,
+              "abstention_rate": 0.375,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "III": {
+              "sample_count": 4,
+              "malignant_count": 2,
+              "benign_count": 2,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 0.75,
+              "diagnosis_macro_f1": 0.3333,
+              "diagnosis_top3_accuracy": 0.25,
+              "ece": 0.2926,
+              "brier_score": 0.1134,
+              "abstention_rate": 0.25,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "IV": {
+              "sample_count": 4,
+              "malignant_count": 2,
+              "benign_count": 2,
+              "auroc": 0.75,
+              "auroc_ci95": [
+                0.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.75,
+              "diagnosis_macro_f1": 0.3333,
+              "diagnosis_top3_accuracy": 0.75,
+              "ece": 0.1693,
+              "brier_score": 0.1914,
+              "abstention_rate": 0.75,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "UNKNOWN": {
+              "sample_count": 13,
+              "malignant_count": 7,
+              "benign_count": 6,
+              "auroc": 0.6429,
+              "auroc_ci95": [
+                0.2437,
+                0.9394
+              ],
+              "sensitivity_at_90_specificity": 0.5714,
+              "sensitivity_at_95_specificity": 0.5714,
+              "balanced_accuracy": 0.5238,
+              "diagnosis_macro_f1": 0.6667,
+              "diagnosis_top3_accuracy": 0.8462,
+              "ece": 0.3926,
+              "brier_score": 0.2735,
+              "abstention_rate": 0.4615,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "V": {
+              "sample_count": 1,
+              "malignant_count": 1,
+              "benign_count": 0,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.5,
+                0.5
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.5,
+              "diagnosis_macro_f1": 1.0,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.124,
+              "brier_score": 0.0154,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "VI": {
+              "sample_count": 5,
+              "malignant_count": 1,
+              "benign_count": 4,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 0.625,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.4,
+              "ece": 0.4911,
+              "brier_score": 0.274,
+              "abstention_rate": 0.4,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_modality": {
+            "clinical": {
+              "sample_count": 91,
+              "malignant_count": 43,
+              "benign_count": 48,
+              "auroc": 0.876,
+              "auroc_ci95": [
+                0.8082,
+                0.9349
+              ],
+              "sensitivity_at_90_specificity": 0.6279,
+              "sensitivity_at_95_specificity": 0.6047,
+              "balanced_accuracy": 0.7255,
+              "diagnosis_macro_f1": 0.3072,
+              "diagnosis_top3_accuracy": 0.6484,
+              "ece": 0.1563,
+              "brier_score": 0.1547,
+              "abstention_rate": 0.3407,
+              "non_abstained_high_risk_precision": 0.8378,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "dermoscopic": {
+              "sample_count": 14,
+              "malignant_count": 5,
+              "benign_count": 9,
+              "auroc": 0.6667,
+              "auroc_ci95": [
+                0.2,
+                0.9906
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.6889,
+              "diagnosis_macro_f1": 0.5555,
+              "diagnosis_top3_accuracy": 0.9286,
+              "ece": 0.2576,
+              "brier_score": 0.2183,
+              "abstention_rate": 0.3571,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "tbp_tile": {
+              "sample_count": 13,
+              "malignant_count": 7,
+              "benign_count": 6,
+              "auroc": 0.6429,
+              "auroc_ci95": [
+                0.2437,
+                0.9394
+              ],
+              "sensitivity_at_90_specificity": 0.5714,
+              "sensitivity_at_95_specificity": 0.5714,
+              "balanced_accuracy": 0.5238,
+              "diagnosis_macro_f1": 0.6667,
+              "diagnosis_top3_accuracy": 0.8462,
+              "ece": 0.3926,
+              "brier_score": 0.2735,
+              "abstention_rate": 0.4615,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_dataset": {
+            "fitzpatrick17k": {
+              "sample_count": 51,
+              "malignant_count": 22,
+              "benign_count": 29,
+              "auroc": 0.7414,
+              "auroc_ci95": [
+                0.611,
+                0.8561
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.5697,
+              "diagnosis_macro_f1": 0.1856,
+              "diagnosis_top3_accuracy": 0.4902,
+              "ece": 0.2396,
+              "brier_score": 0.2271,
+              "abstention_rate": 0.4902,
+              "non_abstained_high_risk_precision": 0.6842,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "isic": {
+              "sample_count": 67,
+              "malignant_count": 33,
+              "benign_count": 34,
+              "auroc": 0.8841,
+              "auroc_ci95": [
+                0.7966,
+                0.9487
+              ],
+              "sensitivity_at_90_specificity": 0.7576,
+              "sensitivity_at_95_specificity": 0.697,
+              "balanced_accuracy": 0.8217,
+              "diagnosis_macro_f1": 0.6979,
+              "diagnosis_top3_accuracy": 0.8657,
+              "ece": 0.1048,
+              "brier_score": 0.1359,
+              "abstention_rate": 0.2537,
+              "non_abstained_high_risk_precision": 0.96,
+              "small_sample_flag": "adequate (>= 30)"
+            }
+          },
+          "by_body_site": {
+            "anterior torso": {
+              "sample_count": 9,
+              "malignant_count": 3,
+              "benign_count": 6,
+              "auroc": 0.6667,
+              "auroc_ci95": [
+                0.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.6667,
+              "sensitivity_at_95_specificity": 0.6667,
+              "balanced_accuracy": 0.8333,
+              "diagnosis_macro_f1": 0.8616,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2663,
+              "brier_score": 0.153,
+              "abstention_rate": 0.1111,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "head/neck": {
+              "sample_count": 11,
+              "malignant_count": 11,
+              "benign_count": 0,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.5,
+                0.5
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.5,
+              "diagnosis_macro_f1": 0.625,
+              "diagnosis_top3_accuracy": 0.6364,
+              "ece": 0.1519,
+              "brier_score": 0.0299,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "lower extremity": {
+              "sample_count": 9,
+              "malignant_count": 4,
+              "benign_count": 5,
+              "auroc": 0.75,
+              "auroc_ci95": [
+                0.25,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.75,
+              "sensitivity_at_95_specificity": 0.75,
+              "balanced_accuracy": 0.775,
+              "diagnosis_macro_f1": 0.7084,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.3046,
+              "brier_score": 0.1791,
+              "abstention_rate": 0.2222,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "other": {
+              "sample_count": 51,
+              "malignant_count": 22,
+              "benign_count": 29,
+              "auroc": 0.7414,
+              "auroc_ci95": [
+                0.611,
+                0.8561
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.5697,
+              "diagnosis_macro_f1": 0.1856,
+              "diagnosis_top3_accuracy": 0.4902,
+              "ece": 0.2396,
+              "brier_score": 0.2271,
+              "abstention_rate": 0.4902,
+              "non_abstained_high_risk_precision": 0.6842,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "posterior torso": {
+              "sample_count": 22,
+              "malignant_count": 6,
+              "benign_count": 16,
+              "auroc": 0.8542,
+              "auroc_ci95": [
+                0.5831,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.6667,
+              "sensitivity_at_95_specificity": 0.1667,
+              "balanced_accuracy": 0.7917,
+              "diagnosis_macro_f1": 0.5249,
+              "diagnosis_top3_accuracy": 0.8182,
+              "ece": 0.1607,
+              "brier_score": 0.1598,
+              "abstention_rate": 0.3636,
+              "non_abstained_high_risk_precision": 0.75,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "upper extremity": {
+              "sample_count": 16,
+              "malignant_count": 9,
+              "benign_count": 7,
+              "auroc": 0.873,
+              "auroc_ci95": [
+                0.6219,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.6667,
+              "sensitivity_at_95_specificity": 0.6667,
+              "balanced_accuracy": 0.7302,
+              "diagnosis_macro_f1": 0.6875,
+              "diagnosis_top3_accuracy": 0.9375,
+              "ece": 0.1567,
+              "brier_score": 0.1418,
+              "abstention_rate": 0.375,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          }
+        }
+      }
+    },
+    "classical_vision": {
+      "training": {
+        "variant": "logreg",
+        "feature_dim": 75,
+        "train_samples": 613,
+        "training_seconds": 1.611,
+        "pretrained_weights_used": false
+      },
+      "val": {
+        "sample_count": 140,
+        "malignant_count": 76,
+        "benign_count": 64,
+        "auroc": 0.845,
+        "auroc_ci95": [
+          0.7779,
+          0.9035
+        ],
+        "sensitivity_at_90_specificity": 0.5789,
+        "sensitivity_at_95_specificity": 0.4079,
+        "balanced_accuracy": 0.7492,
+        "diagnosis_macro_f1": 0.307,
+        "diagnosis_top3_accuracy": 0.8571,
+        "diagnosis_per_class_f1": {
+          "melanoma": 0.5455,
+          "basal_cell_carcinoma": 0.1818,
+          "squamous_cell_carcinoma": 0.1538,
+          "actinic_keratosis": 0.4167,
+          "nevus": 0.7097,
+          "seborrheic_keratosis": 0.2667,
+          "dermatofibroma": 0.0,
+          "vascular_lesion": 0.1818
+        },
+        "ece": 0.0759,
+        "brier_score": 0.1622,
+        "abstention_rate": 0.1143,
+        "non_abstained_high_risk_precision": 0.8033,
+        "reliability_bins": [
+          {
+            "bin": "[0.0, 0.1]",
+            "count": 15,
+            "mean_predicted_prob": 0.0394,
+            "empirical_positive_rate": 0.0,
+            "calibration_gap": 0.0394
+          },
+          {
+            "bin": "[0.1, 0.2]",
+            "count": 21,
+            "mean_predicted_prob": 0.152,
+            "empirical_positive_rate": 0.2857,
+            "calibration_gap": 0.1337
+          },
+          {
+            "bin": "[0.2, 0.3]",
+            "count": 6,
+            "mean_predicted_prob": 0.2651,
+            "empirical_positive_rate": 0.1667,
+            "calibration_gap": 0.0984
+          },
+          {
+            "bin": "[0.3, 0.4]",
+            "count": 6,
+            "mean_predicted_prob": 0.3449,
+            "empirical_positive_rate": 0.3333,
+            "calibration_gap": 0.0116
+          },
+          {
+            "bin": "[0.4, 0.5]",
+            "count": 6,
+            "mean_predicted_prob": 0.4601,
+            "empirical_positive_rate": 0.5,
+            "calibration_gap": 0.0399
+          },
+          {
+            "bin": "[0.5, 0.6]",
+            "count": 15,
+            "mean_predicted_prob": 0.5475,
+            "empirical_positive_rate": 0.6,
+            "calibration_gap": 0.0525
+          },
+          {
+            "bin": "[0.6, 0.7]",
+            "count": 17,
+            "mean_predicted_prob": 0.6441,
+            "empirical_positive_rate": 0.4706,
+            "calibration_gap": 0.1736
+          },
+          {
+            "bin": "[0.7, 0.8]",
+            "count": 17,
+            "mean_predicted_prob": 0.757,
+            "empirical_positive_rate": 0.8235,
+            "calibration_gap": 0.0665
+          },
+          {
+            "bin": "[0.8, 0.9]",
+            "count": 31,
+            "mean_predicted_prob": 0.8378,
+            "empirical_positive_rate": 0.871,
+            "calibration_gap": 0.0331
+          },
+          {
+            "bin": "[0.9, 1.0]",
+            "count": 6,
+            "mean_predicted_prob": 0.9274,
+            "empirical_positive_rate": 1.0,
+            "calibration_gap": 0.0726
+          }
+        ],
+        "roc_curve": [
+          {
+            "threshold": 1.0,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.9583,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.9167,
+            "fpr": 0.0,
+            "tpr": 0.0658
+          },
+          {
+            "threshold": 0.875,
+            "fpr": 0.0,
+            "tpr": 0.1316
+          },
+          {
+            "threshold": 0.8333,
+            "fpr": 0.0156,
+            "tpr": 0.25
+          },
+          {
+            "threshold": 0.7917,
+            "fpr": 0.0781,
+            "tpr": 0.4342
+          },
+          {
+            "threshold": 0.75,
+            "fpr": 0.0938,
+            "tpr": 0.5395
+          },
+          {
+            "threshold": 0.7083,
+            "fpr": 0.1094,
+            "tpr": 0.6184
+          },
+          {
+            "threshold": 0.6667,
+            "fpr": 0.1562,
+            "tpr": 0.6447
+          },
+          {
+            "threshold": 0.625,
+            "fpr": 0.1875,
+            "tpr": 0.6974
+          },
+          {
+            "threshold": 0.5833,
+            "fpr": 0.2656,
+            "tpr": 0.7368
+          },
+          {
+            "threshold": 0.5417,
+            "fpr": 0.2812,
+            "tpr": 0.8026
+          },
+          {
+            "threshold": 0.5,
+            "fpr": 0.3438,
+            "tpr": 0.8421
+          },
+          {
+            "threshold": 0.4583,
+            "fpr": 0.3906,
+            "tpr": 0.8553
+          },
+          {
+            "threshold": 0.4167,
+            "fpr": 0.3906,
+            "tpr": 0.8816
+          },
+          {
+            "threshold": 0.375,
+            "fpr": 0.4062,
+            "tpr": 0.8947
+          },
+          {
+            "threshold": 0.3333,
+            "fpr": 0.4219,
+            "tpr": 0.8947
+          },
+          {
+            "threshold": 0.2917,
+            "fpr": 0.4688,
+            "tpr": 0.9079
+          },
+          {
+            "threshold": 0.25,
+            "fpr": 0.5156,
+            "tpr": 0.9211
+          },
+          {
+            "threshold": 0.2083,
+            "fpr": 0.5312,
+            "tpr": 0.9211
+          },
+          {
+            "threshold": 0.1667,
+            "fpr": 0.6094,
+            "tpr": 0.9605
+          },
+          {
+            "threshold": 0.125,
+            "fpr": 0.6875,
+            "tpr": 0.9868
+          },
+          {
+            "threshold": 0.0833,
+            "fpr": 0.7812,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0417,
+            "fpr": 0.875,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0,
+            "fpr": 1.0,
+            "tpr": 1.0
+          }
+        ],
+        "subgroups": {
+          "by_skin_tone": {
+            "I": {
+              "sample_count": 102,
+              "malignant_count": 56,
+              "benign_count": 46,
+              "auroc": 0.8762,
+              "auroc_ci95": [
+                0.803,
+                0.9276
+              ],
+              "sensitivity_at_90_specificity": 0.5893,
+              "sensitivity_at_95_specificity": 0.4107,
+              "balanced_accuracy": 0.7803,
+              "diagnosis_macro_f1": 0.3036,
+              "diagnosis_top3_accuracy": 0.8824,
+              "ece": 0.0783,
+              "brier_score": 0.1457,
+              "abstention_rate": 0.1078,
+              "non_abstained_high_risk_precision": 0.8605,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "II": {
+              "sample_count": 9,
+              "malignant_count": 4,
+              "benign_count": 5,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.0238,
+                0.8947
+              ],
+              "sensitivity_at_90_specificity": 0.25,
+              "sensitivity_at_95_specificity": 0.25,
+              "balanced_accuracy": 0.5,
+              "diagnosis_macro_f1": 0.1905,
+              "diagnosis_top3_accuracy": 0.6667,
+              "ece": 0.245,
+              "brier_score": 0.3211,
+              "abstention_rate": 0.2222,
+              "non_abstained_high_risk_precision": 0.3333,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "III": {
+              "sample_count": 4,
+              "malignant_count": 1,
+              "benign_count": 3,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 1.0,
+              "diagnosis_macro_f1": 0.75,
+              "diagnosis_top3_accuracy": 0.75,
+              "ece": 0.2674,
+              "brier_score": 0.0848,
+              "abstention_rate": 0.25,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "IV": {
+              "sample_count": 3,
+              "malignant_count": 2,
+              "benign_count": 1,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.5,
+                0.5
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.75,
+              "diagnosis_macro_f1": 0.8334,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2133,
+              "brier_score": 0.2125,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "UNKNOWN": {
+              "sample_count": 14,
+              "malignant_count": 8,
+              "benign_count": 6,
+              "auroc": 0.8333,
+              "auroc_ci95": [
+                0.5833,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.625,
+              "sensitivity_at_95_specificity": 0.625,
+              "balanced_accuracy": 0.6667,
+              "diagnosis_macro_f1": 0.65,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2254,
+              "brier_score": 0.1701,
+              "abstention_rate": 0.1429,
+              "non_abstained_high_risk_precision": 0.7143,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "V": {
+              "sample_count": 3,
+              "malignant_count": 1,
+              "benign_count": 2,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 0.75,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.3333,
+              "ece": 0.1276,
+              "brier_score": 0.18,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 0.5,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "VI": {
+              "sample_count": 5,
+              "malignant_count": 4,
+              "benign_count": 1,
+              "auroc": 0.75,
+              "auroc_ci95": [
+                0.25,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.75,
+              "sensitivity_at_95_specificity": 0.75,
+              "balanced_accuracy": 0.875,
+              "diagnosis_macro_f1": 0.3889,
+              "diagnosis_top3_accuracy": 0.6,
+              "ece": 0.3643,
+              "brier_score": 0.2124,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_modality": {
+            "clinical": {
+              "sample_count": 98,
+              "malignant_count": 55,
+              "benign_count": 43,
+              "auroc": 0.8977,
+              "auroc_ci95": [
+                0.8118,
+                0.9519
+              ],
+              "sensitivity_at_90_specificity": 0.7455,
+              "sensitivity_at_95_specificity": 0.4545,
+              "balanced_accuracy": 0.8034,
+              "diagnosis_macro_f1": 0.3076,
+              "diagnosis_top3_accuracy": 0.8061,
+              "ece": 0.0965,
+              "brier_score": 0.1273,
+              "abstention_rate": 0.0918,
+              "non_abstained_high_risk_precision": 0.8542,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "dermoscopic": {
+              "sample_count": 28,
+              "malignant_count": 13,
+              "benign_count": 15,
+              "auroc": 0.5949,
+              "auroc_ci95": [
+                0.3385,
+                0.7661
+              ],
+              "sensitivity_at_90_specificity": 0.0769,
+              "sensitivity_at_95_specificity": 0.0769,
+              "balanced_accuracy": 0.5641,
+              "diagnosis_macro_f1": 0.5351,
+              "diagnosis_top3_accuracy": 0.9643,
+              "ece": 0.2462,
+              "brier_score": 0.2803,
+              "abstention_rate": 0.1786,
+              "non_abstained_high_risk_precision": 0.5,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "tbp_tile": {
+              "sample_count": 14,
+              "malignant_count": 8,
+              "benign_count": 6,
+              "auroc": 0.8333,
+              "auroc_ci95": [
+                0.5833,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.625,
+              "sensitivity_at_95_specificity": 0.625,
+              "balanced_accuracy": 0.6667,
+              "diagnosis_macro_f1": 0.65,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2254,
+              "brier_score": 0.1701,
+              "abstention_rate": 0.1429,
+              "non_abstained_high_risk_precision": 0.7143,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_dataset": {
+            "fitzpatrick17k": {
+              "sample_count": 49,
+              "malignant_count": 28,
+              "benign_count": 21,
+              "auroc": 0.7993,
+              "auroc_ci95": [
+                0.6942,
+                0.9189
+              ],
+              "sensitivity_at_90_specificity": 0.6786,
+              "sensitivity_at_95_specificity": 0.4286,
+              "balanced_accuracy": 0.6905,
+              "diagnosis_macro_f1": 0.2524,
+              "diagnosis_top3_accuracy": 0.7143,
+              "ece": 0.134,
+              "brier_score": 0.1833,
+              "abstention_rate": 0.102,
+              "non_abstained_high_risk_precision": 0.76,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "isic": {
+              "sample_count": 91,
+              "malignant_count": 48,
+              "benign_count": 43,
+              "auroc": 0.8668,
+              "auroc_ci95": [
+                0.7937,
+                0.9312
+              ],
+              "sensitivity_at_90_specificity": 0.5417,
+              "sensitivity_at_95_specificity": 0.3958,
+              "balanced_accuracy": 0.7771,
+              "diagnosis_macro_f1": 0.6493,
+              "diagnosis_top3_accuracy": 0.9341,
+              "ece": 0.0647,
+              "brier_score": 0.1508,
+              "abstention_rate": 0.1209,
+              "non_abstained_high_risk_precision": 0.8333,
+              "small_sample_flag": "adequate (>= 30)"
+            }
+          },
+          "by_body_site": {
+            "anterior torso": {
+              "sample_count": 20,
+              "malignant_count": 9,
+              "benign_count": 11,
+              "auroc": 0.9697,
+              "auroc_ci95": [
+                0.8485,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 0.6667,
+              "balanced_accuracy": 0.8434,
+              "diagnosis_macro_f1": 0.8512,
+              "diagnosis_top3_accuracy": 0.95,
+              "ece": 0.1761,
+              "brier_score": 0.0801,
+              "abstention_rate": 0.05,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "head/neck": {
+              "sample_count": 21,
+              "malignant_count": 19,
+              "benign_count": 2,
+              "auroc": 0.9211,
+              "auroc_ci95": [
+                0.8162,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.8947,
+              "sensitivity_at_95_specificity": 0.8947,
+              "balanced_accuracy": 0.4737,
+              "diagnosis_macro_f1": 0.3226,
+              "diagnosis_top3_accuracy": 0.9524,
+              "ece": 0.1597,
+              "brier_score": 0.0979,
+              "abstention_rate": 0.0952,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "lower extremity": {
+              "sample_count": 14,
+              "malignant_count": 7,
+              "benign_count": 7,
+              "auroc": 0.7755,
+              "auroc_ci95": [
+                0.4299,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.1429,
+              "sensitivity_at_95_specificity": 0.1429,
+              "balanced_accuracy": 0.7857,
+              "diagnosis_macro_f1": 0.6061,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2265,
+              "brier_score": 0.203,
+              "abstention_rate": 0.2857,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "other": {
+              "sample_count": 49,
+              "malignant_count": 28,
+              "benign_count": 21,
+              "auroc": 0.7993,
+              "auroc_ci95": [
+                0.6942,
+                0.9189
+              ],
+              "sensitivity_at_90_specificity": 0.6786,
+              "sensitivity_at_95_specificity": 0.4286,
+              "balanced_accuracy": 0.6905,
+              "diagnosis_macro_f1": 0.2524,
+              "diagnosis_top3_accuracy": 0.7143,
+              "ece": 0.134,
+              "brier_score": 0.1833,
+              "abstention_rate": 0.102,
+              "non_abstained_high_risk_precision": 0.76,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "posterior torso": {
+              "sample_count": 17,
+              "malignant_count": 4,
+              "benign_count": 13,
+              "auroc": 0.6538,
+              "auroc_ci95": [
+                0.4394,
+                0.8629
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.7212,
+              "diagnosis_macro_f1": 0.4445,
+              "diagnosis_top3_accuracy": 0.8824,
+              "ece": 0.3222,
+              "brier_score": 0.2338,
+              "abstention_rate": 0.1765,
+              "non_abstained_high_risk_precision": 0.2,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "upper extremity": {
+              "sample_count": 19,
+              "malignant_count": 9,
+              "benign_count": 10,
+              "auroc": 0.8667,
+              "auroc_ci95": [
+                0.6925,
+                0.9892
+              ],
+              "sensitivity_at_90_specificity": 0.6667,
+              "sensitivity_at_95_specificity": 0.6667,
+              "balanced_accuracy": 0.6833,
+              "diagnosis_macro_f1": 0.5348,
+              "diagnosis_top3_accuracy": 0.8947,
+              "ece": 0.1842,
+              "brier_score": 0.1711,
+              "abstention_rate": 0.0526,
+              "non_abstained_high_risk_precision": 0.8571,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          }
+        }
+      },
+      "locked_test": {
+        "sample_count": 118,
+        "malignant_count": 55,
+        "benign_count": 63,
+        "auroc": 0.8701,
+        "auroc_ci95": [
+          0.8,
+          0.935
+        ],
+        "sensitivity_at_90_specificity": 0.6909,
+        "sensitivity_at_95_specificity": 0.5455,
+        "balanced_accuracy": 0.781,
+        "diagnosis_macro_f1": 0.2203,
+        "diagnosis_top3_accuracy": 0.7203,
+        "diagnosis_per_class_f1": {
+          "melanoma": 0.5246,
+          "basal_cell_carcinoma": 0.1053,
+          "squamous_cell_carcinoma": 0.0,
+          "actinic_keratosis": 0.0,
+          "nevus": 0.7229,
+          "seborrheic_keratosis": 0.1429,
+          "dermatofibroma": 0.0,
+          "vascular_lesion": 0.2667
+        },
+        "ece": 0.0905,
+        "brier_score": 0.1497,
+        "abstention_rate": 0.0763,
+        "non_abstained_high_risk_precision": 0.878,
+        "reliability_bins": [
+          {
+            "bin": "[0.0, 0.1]",
+            "count": 18,
+            "mean_predicted_prob": 0.0422,
+            "empirical_positive_rate": 0.0556,
+            "calibration_gap": 0.0134
+          },
+          {
+            "bin": "[0.1, 0.2]",
+            "count": 10,
+            "mean_predicted_prob": 0.1341,
+            "empirical_positive_rate": 0.1,
+            "calibration_gap": 0.0341
+          },
+          {
+            "bin": "[0.2, 0.3]",
+            "count": 9,
+            "mean_predicted_prob": 0.2551,
+            "empirical_positive_rate": 0.0,
+            "calibration_gap": 0.2551
+          },
+          {
+            "bin": "[0.3, 0.4]",
+            "count": 14,
+            "mean_predicted_prob": 0.35,
+            "empirical_positive_rate": 0.4286,
+            "calibration_gap": 0.0786
+          },
+          {
+            "bin": "[0.4, 0.5]",
+            "count": 8,
+            "mean_predicted_prob": 0.4415,
+            "empirical_positive_rate": 0.375,
+            "calibration_gap": 0.0665
+          },
+          {
+            "bin": "[0.5, 0.6]",
+            "count": 9,
+            "mean_predicted_prob": 0.5555,
+            "empirical_positive_rate": 0.5556,
+            "calibration_gap": 0.0
+          },
+          {
+            "bin": "[0.6, 0.7]",
+            "count": 17,
+            "mean_predicted_prob": 0.6491,
+            "empirical_positive_rate": 0.5294,
+            "calibration_gap": 0.1197
+          },
+          {
+            "bin": "[0.7, 0.8]",
+            "count": 12,
+            "mean_predicted_prob": 0.7394,
+            "empirical_positive_rate": 1.0,
+            "calibration_gap": 0.2606
+          },
+          {
+            "bin": "[0.8, 0.9]",
+            "count": 15,
+            "mean_predicted_prob": 0.8429,
+            "empirical_positive_rate": 0.8,
+            "calibration_gap": 0.0429
+          },
+          {
+            "bin": "[0.9, 1.0]",
+            "count": 6,
+            "mean_predicted_prob": 0.9386,
+            "empirical_positive_rate": 1.0,
+            "calibration_gap": 0.0614
+          }
+        ],
+        "roc_curve": [
+          {
+            "threshold": 1.0,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.9583,
+            "fpr": 0.0,
+            "tpr": 0.0182
+          },
+          {
+            "threshold": 0.9167,
+            "fpr": 0.0,
+            "tpr": 0.1091
+          },
+          {
+            "threshold": 0.875,
+            "fpr": 0.0159,
+            "tpr": 0.1273
+          },
+          {
+            "threshold": 0.8333,
+            "fpr": 0.0317,
+            "tpr": 0.2182
+          },
+          {
+            "threshold": 0.7917,
+            "fpr": 0.0476,
+            "tpr": 0.3273
+          },
+          {
+            "threshold": 0.75,
+            "fpr": 0.0476,
+            "tpr": 0.3818
+          },
+          {
+            "threshold": 0.7083,
+            "fpr": 0.0476,
+            "tpr": 0.5273
+          },
+          {
+            "threshold": 0.6667,
+            "fpr": 0.0635,
+            "tpr": 0.5818
+          },
+          {
+            "threshold": 0.625,
+            "fpr": 0.1429,
+            "tpr": 0.6909
+          },
+          {
+            "threshold": 0.5833,
+            "fpr": 0.1905,
+            "tpr": 0.7091
+          },
+          {
+            "threshold": 0.5417,
+            "fpr": 0.2063,
+            "tpr": 0.7636
+          },
+          {
+            "threshold": 0.5,
+            "fpr": 0.2381,
+            "tpr": 0.8
+          },
+          {
+            "threshold": 0.4583,
+            "fpr": 0.254,
+            "tpr": 0.8182
+          },
+          {
+            "threshold": 0.4167,
+            "fpr": 0.3175,
+            "tpr": 0.8364
+          },
+          {
+            "threshold": 0.375,
+            "fpr": 0.3333,
+            "tpr": 0.8909
+          },
+          {
+            "threshold": 0.3333,
+            "fpr": 0.3968,
+            "tpr": 0.9273
+          },
+          {
+            "threshold": 0.2917,
+            "fpr": 0.4444,
+            "tpr": 0.9636
+          },
+          {
+            "threshold": 0.25,
+            "fpr": 0.5238,
+            "tpr": 0.9636
+          },
+          {
+            "threshold": 0.2083,
+            "fpr": 0.5873,
+            "tpr": 0.9636
+          },
+          {
+            "threshold": 0.1667,
+            "fpr": 0.5873,
+            "tpr": 0.9818
+          },
+          {
+            "threshold": 0.125,
+            "fpr": 0.6667,
+            "tpr": 0.9818
+          },
+          {
+            "threshold": 0.0833,
+            "fpr": 0.7619,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0417,
+            "fpr": 0.8413,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0,
+            "fpr": 1.0,
+            "tpr": 1.0
+          }
+        ],
+        "subgroups": {
+          "by_skin_tone": {
+            "I": {
+              "sample_count": 83,
+              "malignant_count": 40,
+              "benign_count": 43,
+              "auroc": 0.9302,
+              "auroc_ci95": [
+                0.8782,
+                0.9793
+              ],
+              "sensitivity_at_90_specificity": 0.8,
+              "sensitivity_at_95_specificity": 0.65,
+              "balanced_accuracy": 0.8419,
+              "diagnosis_macro_f1": 0.245,
+              "diagnosis_top3_accuracy": 0.7349,
+              "ece": 0.1312,
+              "brier_score": 0.1179,
+              "abstention_rate": 0.0843,
+              "non_abstained_high_risk_precision": 0.96,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "II": {
+              "sample_count": 8,
+              "malignant_count": 2,
+              "benign_count": 6,
+              "auroc": 0.8333,
+              "auroc_ci95": [
+                0.5,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.6667,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.375,
+              "ece": 0.4483,
+              "brier_score": 0.2644,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "III": {
+              "sample_count": 4,
+              "malignant_count": 2,
+              "benign_count": 2,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 0.75,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.75,
+              "ece": 0.3108,
+              "brier_score": 0.1365,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "IV": {
+              "sample_count": 4,
+              "malignant_count": 2,
+              "benign_count": 2,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 0.75,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.75,
+              "ece": 0.3146,
+              "brier_score": 0.1184,
+              "abstention_rate": 0.25,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "UNKNOWN": {
+              "sample_count": 13,
+              "malignant_count": 7,
+              "benign_count": 6,
+              "auroc": 0.5952,
+              "auroc_ci95": [
+                0.2815,
+                0.9122
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.6905,
+              "diagnosis_macro_f1": 0.6905,
+              "diagnosis_top3_accuracy": 0.9231,
+              "ece": 0.3386,
+              "brier_score": 0.26,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 0.7143,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "V": {
+              "sample_count": 1,
+              "malignant_count": 1,
+              "benign_count": 0,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.5,
+                0.5
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.5,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.0826,
+              "brier_score": 0.0068,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "VI": {
+              "sample_count": 5,
+              "malignant_count": 1,
+              "benign_count": 4,
+              "auroc": 1.0,
+              "auroc_ci95": [
+                1.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 1.0,
+              "sensitivity_at_95_specificity": 1.0,
+              "balanced_accuracy": 0.625,
+              "diagnosis_macro_f1": 0.2222,
+              "diagnosis_top3_accuracy": 0.4,
+              "ece": 0.466,
+              "brier_score": 0.2714,
+              "abstention_rate": 0.2,
+              "non_abstained_high_risk_precision": 0.5,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_modality": {
+            "clinical": {
+              "sample_count": 91,
+              "malignant_count": 43,
+              "benign_count": 48,
+              "auroc": 0.8997,
+              "auroc_ci95": [
+                0.8396,
+                0.9474
+              ],
+              "sensitivity_at_90_specificity": 0.7209,
+              "sensitivity_at_95_specificity": 0.6744,
+              "balanced_accuracy": 0.7936,
+              "diagnosis_macro_f1": 0.2035,
+              "diagnosis_top3_accuracy": 0.6484,
+              "ece": 0.0856,
+              "brier_score": 0.1343,
+              "abstention_rate": 0.0769,
+              "non_abstained_high_risk_precision": 0.9062,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "dermoscopic": {
+              "sample_count": 14,
+              "malignant_count": 5,
+              "benign_count": 9,
+              "auroc": 0.8889,
+              "auroc_ci95": [
+                0.7004,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.4,
+              "sensitivity_at_95_specificity": 0.4,
+              "balanced_accuracy": 0.7444,
+              "diagnosis_macro_f1": 0.7544,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2782,
+              "brier_score": 0.1474,
+              "abstention_rate": 0.1429,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "tbp_tile": {
+              "sample_count": 13,
+              "malignant_count": 7,
+              "benign_count": 6,
+              "auroc": 0.5952,
+              "auroc_ci95": [
+                0.2815,
+                0.9122
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.6905,
+              "diagnosis_macro_f1": 0.6905,
+              "diagnosis_top3_accuracy": 0.9231,
+              "ece": 0.3386,
+              "brier_score": 0.26,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 0.7143,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_dataset": {
+            "fitzpatrick17k": {
+              "sample_count": 51,
+              "malignant_count": 22,
+              "benign_count": 29,
+              "auroc": 0.8166,
+              "auroc_ci95": [
+                0.6844,
+                0.9109
+              ],
+              "sensitivity_at_90_specificity": 0.5455,
+              "sensitivity_at_95_specificity": 0.3636,
+              "balanced_accuracy": 0.7022,
+              "diagnosis_macro_f1": 0.0782,
+              "diagnosis_top3_accuracy": 0.451,
+              "ece": 0.1588,
+              "brier_score": 0.1845,
+              "abstention_rate": 0.1176,
+              "non_abstained_high_risk_precision": 0.8,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "isic": {
+              "sample_count": 67,
+              "malignant_count": 33,
+              "benign_count": 34,
+              "auroc": 0.9135,
+              "auroc_ci95": [
+                0.8444,
+                0.9769
+              ],
+              "sensitivity_at_90_specificity": 0.7879,
+              "sensitivity_at_95_specificity": 0.5455,
+              "balanced_accuracy": 0.8498,
+              "diagnosis_macro_f1": 0.7425,
+              "diagnosis_top3_accuracy": 0.9254,
+              "ece": 0.1053,
+              "brier_score": 0.1232,
+              "abstention_rate": 0.0448,
+              "non_abstained_high_risk_precision": 0.9231,
+              "small_sample_flag": "adequate (>= 30)"
+            }
+          },
+          "by_body_site": {
+            "anterior torso": {
+              "sample_count": 9,
+              "malignant_count": 3,
+              "benign_count": 6,
+              "auroc": 0.9444,
+              "auroc_ci95": [
+                0.705,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.6667,
+              "sensitivity_at_95_specificity": 0.6667,
+              "balanced_accuracy": 0.8333,
+              "diagnosis_macro_f1": 0.8616,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.1423,
+              "brier_score": 0.1102,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "head/neck": {
+              "sample_count": 11,
+              "malignant_count": 11,
+              "benign_count": 0,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.5,
+                0.5
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.4091,
+              "diagnosis_macro_f1": 0.4286,
+              "diagnosis_top3_accuracy": 0.7273,
+              "ece": 0.2797,
+              "brier_score": 0.1138,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "lower extremity": {
+              "sample_count": 9,
+              "malignant_count": 4,
+              "benign_count": 5,
+              "auroc": 0.95,
+              "auroc_ci95": [
+                0.6817,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.75,
+              "sensitivity_at_95_specificity": 0.75,
+              "balanced_accuracy": 0.875,
+              "diagnosis_macro_f1": 1.0,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.1913,
+              "brier_score": 0.1057,
+              "abstention_rate": 0.1111,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "other": {
+              "sample_count": 51,
+              "malignant_count": 22,
+              "benign_count": 29,
+              "auroc": 0.8166,
+              "auroc_ci95": [
+                0.6844,
+                0.9109
+              ],
+              "sensitivity_at_90_specificity": 0.5455,
+              "sensitivity_at_95_specificity": 0.3636,
+              "balanced_accuracy": 0.7022,
+              "diagnosis_macro_f1": 0.0782,
+              "diagnosis_top3_accuracy": 0.451,
+              "ece": 0.1588,
+              "brier_score": 0.1845,
+              "abstention_rate": 0.1176,
+              "non_abstained_high_risk_precision": 0.8,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "posterior torso": {
+              "sample_count": 22,
+              "malignant_count": 6,
+              "benign_count": 16,
+              "auroc": 0.8958,
+              "auroc_ci95": [
+                0.7083,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.8542,
+              "diagnosis_macro_f1": 0.6194,
+              "diagnosis_top3_accuracy": 0.9091,
+              "ece": 0.218,
+              "brier_score": 0.1236,
+              "abstention_rate": 0.0909,
+              "non_abstained_high_risk_precision": 0.75,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "upper extremity": {
+              "sample_count": 16,
+              "malignant_count": 9,
+              "benign_count": 7,
+              "auroc": 0.8571,
+              "auroc_ci95": [
+                0.6396,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.2222,
+              "sensitivity_at_95_specificity": 0.2222,
+              "balanced_accuracy": 0.8175,
+              "diagnosis_macro_f1": 0.7333,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2386,
+              "brier_score": 0.1464,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 0.875,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          }
+        }
+      }
+    },
+    "numpy_toy_cnn": {
+      "training": {
+        "initial_loss": 0.6978,
+        "final_loss": 0.5815,
+        "parameter_count": 586,
+        "initial_weights_sha256": "5f457f62d114cc8b532b307acfa3a4f3fd40599f12f64976ec20ea94ea00584f",
+        "pretrained_weights_used": false
+      },
+      "val": {
+        "sample_count": 140,
+        "malignant_count": 76,
+        "benign_count": 64,
+        "auroc": 0.7946,
+        "auroc_ci95": [
+          0.7007,
+          0.8664
+        ],
+        "sensitivity_at_90_specificity": 0.2763,
+        "sensitivity_at_95_specificity": 0.1184,
+        "balanced_accuracy": 0.741,
+        "diagnosis_macro_f1": 0.1583,
+        "diagnosis_top3_accuracy": 0.7714,
+        "diagnosis_per_class_f1": {
+          "melanoma": 0.5714,
+          "basal_cell_carcinoma": 0.0,
+          "squamous_cell_carcinoma": 0.0,
+          "actinic_keratosis": 0.0,
+          "nevus": 0.6949,
+          "seborrheic_keratosis": 0.0,
+          "dermatofibroma": 0.0,
+          "vascular_lesion": 0.0
+        },
+        "ece": 0.0871,
+        "brier_score": 0.1784,
+        "abstention_rate": 0.1357,
+        "non_abstained_high_risk_precision": 0.8039,
+        "reliability_bins": [
+          {
+            "bin": "[0.0, 0.1]",
+            "count": 13,
+            "mean_predicted_prob": 0.074,
+            "empirical_positive_rate": 0.0,
+            "calibration_gap": 0.074
+          },
+          {
+            "bin": "[0.1, 0.2]",
+            "count": 12,
+            "mean_predicted_prob": 0.1492,
+            "empirical_positive_rate": 0.0833,
+            "calibration_gap": 0.0658
+          },
+          {
+            "bin": "[0.2, 0.3]",
+            "count": 6,
+            "mean_predicted_prob": 0.2449,
+            "empirical_positive_rate": 0.1667,
+            "calibration_gap": 0.0782
+          },
+          {
+            "bin": "[0.3, 0.4]",
+            "count": 13,
+            "mean_predicted_prob": 0.3527,
+            "empirical_positive_rate": 0.3846,
+            "calibration_gap": 0.032
+          },
+          {
+            "bin": "[0.4, 0.5]",
+            "count": 20,
+            "mean_predicted_prob": 0.4487,
+            "empirical_positive_rate": 0.55,
+            "calibration_gap": 0.1013
+          },
+          {
+            "bin": "[0.5, 0.6]",
+            "count": 17,
+            "mean_predicted_prob": 0.5526,
+            "empirical_positive_rate": 0.8235,
+            "calibration_gap": 0.2709
+          },
+          {
+            "bin": "[0.6, 0.7]",
+            "count": 19,
+            "mean_predicted_prob": 0.6552,
+            "empirical_positive_rate": 0.6842,
+            "calibration_gap": 0.029
+          },
+          {
+            "bin": "[0.7, 0.8]",
+            "count": 35,
+            "mean_predicted_prob": 0.7628,
+            "empirical_positive_rate": 0.8,
+            "calibration_gap": 0.0372
+          },
+          {
+            "bin": "[0.8, 0.9]",
+            "count": 5,
+            "mean_predicted_prob": 0.8139,
+            "empirical_positive_rate": 0.6,
+            "calibration_gap": 0.2139
+          },
+          {
+            "bin": "[0.9, 1.0]",
+            "count": 0,
+            "mean_predicted_prob": 0.95,
+            "empirical_positive_rate": 0.0,
+            "calibration_gap": 0.0
+          }
+        ],
+        "roc_curve": [
+          {
+            "threshold": 1.0,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.9583,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.9167,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.875,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.8333,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.7917,
+            "fpr": 0.0469,
+            "tpr": 0.1053
+          },
+          {
+            "threshold": 0.75,
+            "fpr": 0.1094,
+            "tpr": 0.2895
+          },
+          {
+            "threshold": 0.7083,
+            "fpr": 0.1406,
+            "tpr": 0.4079
+          },
+          {
+            "threshold": 0.6667,
+            "fpr": 0.1406,
+            "tpr": 0.5132
+          },
+          {
+            "threshold": 0.625,
+            "fpr": 0.1875,
+            "tpr": 0.5658
+          },
+          {
+            "threshold": 0.5833,
+            "fpr": 0.25,
+            "tpr": 0.6184
+          },
+          {
+            "threshold": 0.5417,
+            "fpr": 0.25,
+            "tpr": 0.6842
+          },
+          {
+            "threshold": 0.5,
+            "fpr": 0.2812,
+            "tpr": 0.7632
+          },
+          {
+            "threshold": 0.4583,
+            "fpr": 0.3438,
+            "tpr": 0.8026
+          },
+          {
+            "threshold": 0.4167,
+            "fpr": 0.4062,
+            "tpr": 0.8816
+          },
+          {
+            "threshold": 0.375,
+            "fpr": 0.4688,
+            "tpr": 0.9211
+          },
+          {
+            "threshold": 0.3333,
+            "fpr": 0.5312,
+            "tpr": 0.9474
+          },
+          {
+            "threshold": 0.2917,
+            "fpr": 0.5625,
+            "tpr": 0.9737
+          },
+          {
+            "threshold": 0.25,
+            "fpr": 0.5781,
+            "tpr": 0.9737
+          },
+          {
+            "threshold": 0.2083,
+            "fpr": 0.625,
+            "tpr": 0.9737
+          },
+          {
+            "threshold": 0.1667,
+            "fpr": 0.6719,
+            "tpr": 0.9868
+          },
+          {
+            "threshold": 0.125,
+            "fpr": 0.7344,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0833,
+            "fpr": 0.8906,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0417,
+            "fpr": 1.0,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0,
+            "fpr": 1.0,
+            "tpr": 1.0
+          }
+        ],
+        "subgroups": {
+          "by_skin_tone": {
+            "I": {
+              "sample_count": 102,
+              "malignant_count": 56,
+              "benign_count": 46,
+              "auroc": 0.8626,
+              "auroc_ci95": [
+                0.7826,
+                0.9316
+              ],
+              "sensitivity_at_90_specificity": 0.625,
+              "sensitivity_at_95_specificity": 0.1429,
+              "balanced_accuracy": 0.797,
+              "diagnosis_macro_f1": 0.1986,
+              "diagnosis_top3_accuracy": 0.8137,
+              "ece": 0.1256,
+              "brier_score": 0.1501,
+              "abstention_rate": 0.098,
+              "non_abstained_high_risk_precision": 0.9211,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "II": {
+              "sample_count": 9,
+              "malignant_count": 4,
+              "benign_count": 5,
+              "auroc": 0.65,
+              "auroc_ci95": [
+                0.3,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.7,
+              "diagnosis_macro_f1": 0.2424,
+              "diagnosis_top3_accuracy": 0.4444,
+              "ece": 0.2654,
+              "brier_score": 0.2281,
+              "abstention_rate": 0.1111,
+              "non_abstained_high_risk_precision": 0.5,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "III": {
+              "sample_count": 4,
+              "malignant_count": 1,
+              "benign_count": 3,
+              "auroc": 0.0,
+              "auroc_ci95": [
+                0.0,
+                0.0
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.5,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.75,
+              "ece": 0.6473,
+              "brier_score": 0.4543,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 0.25,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "IV": {
+              "sample_count": 3,
+              "malignant_count": 2,
+              "benign_count": 1,
+              "auroc": 0.0,
+              "auroc_ci95": [
+                0.0,
+                0.0
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.5,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.3333,
+              "ece": 0.2476,
+              "brier_score": 0.2521,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 0.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "UNKNOWN": {
+              "sample_count": 14,
+              "malignant_count": 8,
+              "benign_count": 6,
+              "auroc": 0.7917,
+              "auroc_ci95": [
+                0.4873,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.6667,
+              "diagnosis_macro_f1": 0.641,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.148,
+              "brier_score": 0.2248,
+              "abstention_rate": 0.5,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "V": {
+              "sample_count": 3,
+              "malignant_count": 1,
+              "benign_count": 2,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.5,
+                0.5
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.75,
+              "diagnosis_macro_f1": 0.3333,
+              "diagnosis_top3_accuracy": 0.6667,
+              "ece": 0.5372,
+              "brier_score": 0.3246,
+              "abstention_rate": 0.3333,
+              "non_abstained_high_risk_precision": 0.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "VI": {
+              "sample_count": 5,
+              "malignant_count": 4,
+              "benign_count": 1,
+              "auroc": 0.75,
+              "auroc_ci95": [
+                0.25,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.75,
+              "sensitivity_at_95_specificity": 0.75,
+              "balanced_accuracy": 0.375,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.2,
+              "ece": 0.3877,
+              "brier_score": 0.1833,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_modality": {
+            "clinical": {
+              "sample_count": 98,
+              "malignant_count": 55,
+              "benign_count": 43,
+              "auroc": 0.8195,
+              "auroc_ci95": [
+                0.7028,
+                0.8964
+              ],
+              "sensitivity_at_90_specificity": 0.3455,
+              "sensitivity_at_95_specificity": 0.1273,
+              "balanced_accuracy": 0.7736,
+              "diagnosis_macro_f1": 0.1584,
+              "diagnosis_top3_accuracy": 0.6837,
+              "ece": 0.1192,
+              "brier_score": 0.1523,
+              "abstention_rate": 0.0612,
+              "non_abstained_high_risk_precision": 0.8043,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "dermoscopic": {
+              "sample_count": 28,
+              "malignant_count": 13,
+              "benign_count": 15,
+              "auroc": 0.6051,
+              "auroc_ci95": [
+                0.3909,
+                0.8142
+              ],
+              "sensitivity_at_90_specificity": 0.3077,
+              "sensitivity_at_95_specificity": 0.0769,
+              "balanced_accuracy": 0.6308,
+              "diagnosis_macro_f1": 0.6257,
+              "diagnosis_top3_accuracy": 0.9643,
+              "ece": 0.1209,
+              "brier_score": 0.2466,
+              "abstention_rate": 0.2143,
+              "non_abstained_high_risk_precision": 0.8,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "tbp_tile": {
+              "sample_count": 14,
+              "malignant_count": 8,
+              "benign_count": 6,
+              "auroc": 0.7917,
+              "auroc_ci95": [
+                0.4873,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.6667,
+              "diagnosis_macro_f1": 0.641,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.148,
+              "brier_score": 0.2248,
+              "abstention_rate": 0.5,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_dataset": {
+            "fitzpatrick17k": {
+              "sample_count": 49,
+              "malignant_count": 28,
+              "benign_count": 21,
+              "auroc": 0.6207,
+              "auroc_ci95": [
+                0.4558,
+                0.7404
+              ],
+              "sensitivity_at_90_specificity": 0.0714,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.6012,
+              "diagnosis_macro_f1": 0.0378,
+              "diagnosis_top3_accuracy": 0.3673,
+              "ece": 0.1262,
+              "brier_score": 0.2296,
+              "abstention_rate": 0.0816,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "isic": {
+              "sample_count": 91,
+              "malignant_count": 48,
+              "benign_count": 43,
+              "auroc": 0.8857,
+              "auroc_ci95": [
+                0.823,
+                0.9428
+              ],
+              "sensitivity_at_90_specificity": 0.7292,
+              "sensitivity_at_95_specificity": 0.5208,
+              "balanced_accuracy": 0.8064,
+              "diagnosis_macro_f1": 0.802,
+              "diagnosis_top3_accuracy": 0.989,
+              "ece": 0.112,
+              "brier_score": 0.1508,
+              "abstention_rate": 0.1648,
+              "non_abstained_high_risk_precision": 0.9583,
+              "small_sample_flag": "adequate (>= 30)"
+            }
+          },
+          "by_body_site": {
+            "anterior torso": {
+              "sample_count": 20,
+              "malignant_count": 9,
+              "benign_count": 11,
+              "auroc": 0.8586,
+              "auroc_ci95": [
+                0.6831,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.6667,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.7424,
+              "diagnosis_macro_f1": 0.7442,
+              "diagnosis_top3_accuracy": 0.95,
+              "ece": 0.129,
+              "brier_score": 0.1598,
+              "abstention_rate": 0.05,
+              "non_abstained_high_risk_precision": 0.8,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "head/neck": {
+              "sample_count": 21,
+              "malignant_count": 19,
+              "benign_count": 2,
+              "auroc": 0.9737,
+              "auroc_ci95": [
+                0.889,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.9474,
+              "sensitivity_at_95_specificity": 0.9474,
+              "balanced_accuracy": 0.9211,
+              "diagnosis_macro_f1": 0.7429,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.3246,
+              "brier_score": 0.1513,
+              "abstention_rate": 0.3333,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "lower extremity": {
+              "sample_count": 14,
+              "malignant_count": 7,
+              "benign_count": 7,
+              "auroc": 0.7755,
+              "auroc_ci95": [
+                0.5,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.1429,
+              "sensitivity_at_95_specificity": 0.1429,
+              "balanced_accuracy": 0.6429,
+              "diagnosis_macro_f1": 0.6257,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2731,
+              "brier_score": 0.1947,
+              "abstention_rate": 0.1429,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "other": {
+              "sample_count": 49,
+              "malignant_count": 28,
+              "benign_count": 21,
+              "auroc": 0.6207,
+              "auroc_ci95": [
+                0.4558,
+                0.7404
+              ],
+              "sensitivity_at_90_specificity": 0.0714,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.6012,
+              "diagnosis_macro_f1": 0.0378,
+              "diagnosis_top3_accuracy": 0.3673,
+              "ece": 0.1262,
+              "brier_score": 0.2296,
+              "abstention_rate": 0.0816,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "posterior torso": {
+              "sample_count": 17,
+              "malignant_count": 4,
+              "benign_count": 13,
+              "auroc": 0.7692,
+              "auroc_ci95": [
+                0.4022,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.25,
+              "balanced_accuracy": 0.6731,
+              "diagnosis_macro_f1": 0.6731,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2196,
+              "brier_score": 0.1626,
+              "abstention_rate": 0.1765,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "upper extremity": {
+              "sample_count": 19,
+              "malignant_count": 9,
+              "benign_count": 10,
+              "auroc": 0.9667,
+              "auroc_ci95": [
+                0.895,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.8889,
+              "sensitivity_at_95_specificity": 0.8889,
+              "balanced_accuracy": 0.9444,
+              "diagnosis_macro_f1": 0.9468,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2112,
+              "brier_score": 0.0978,
+              "abstention_rate": 0.1053,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          }
+        }
+      },
+      "locked_test": {
+        "sample_count": 118,
+        "malignant_count": 55,
+        "benign_count": 63,
+        "auroc": 0.7276,
+        "auroc_ci95": [
+          0.6394,
+          0.8192
+        ],
+        "sensitivity_at_90_specificity": 0.3636,
+        "sensitivity_at_95_specificity": 0.3455,
+        "balanced_accuracy": 0.6447,
+        "diagnosis_macro_f1": 0.1324,
+        "diagnosis_top3_accuracy": 0.7373,
+        "diagnosis_per_class_f1": {
+          "melanoma": 0.4742,
+          "basal_cell_carcinoma": 0.0,
+          "squamous_cell_carcinoma": 0.0,
+          "actinic_keratosis": 0.0,
+          "nevus": 0.5849,
+          "seborrheic_keratosis": 0.0,
+          "dermatofibroma": 0.0,
+          "vascular_lesion": 0.0
+        },
+        "ece": 0.1116,
+        "brier_score": 0.2134,
+        "abstention_rate": 0.161,
+        "non_abstained_high_risk_precision": 0.7027,
+        "reliability_bins": [
+          {
+            "bin": "[0.0, 0.1]",
+            "count": 15,
+            "mean_predicted_prob": 0.0687,
+            "empirical_positive_rate": 0.0,
+            "calibration_gap": 0.0687
+          },
+          {
+            "bin": "[0.1, 0.2]",
+            "count": 7,
+            "mean_predicted_prob": 0.1581,
+            "empirical_positive_rate": 0.2857,
+            "calibration_gap": 0.1276
+          },
+          {
+            "bin": "[0.2, 0.3]",
+            "count": 8,
+            "mean_predicted_prob": 0.2392,
+            "empirical_positive_rate": 0.625,
+            "calibration_gap": 0.3858
+          },
+          {
+            "bin": "[0.3, 0.4]",
+            "count": 10,
+            "mean_predicted_prob": 0.3453,
+            "empirical_positive_rate": 0.5,
+            "calibration_gap": 0.1547
+          },
+          {
+            "bin": "[0.4, 0.5]",
+            "count": 19,
+            "mean_predicted_prob": 0.4436,
+            "empirical_positive_rate": 0.3684,
+            "calibration_gap": 0.0752
+          },
+          {
+            "bin": "[0.5, 0.6]",
+            "count": 16,
+            "mean_predicted_prob": 0.5425,
+            "empirical_positive_rate": 0.4375,
+            "calibration_gap": 0.105
+          },
+          {
+            "bin": "[0.6, 0.7]",
+            "count": 12,
+            "mean_predicted_prob": 0.6489,
+            "empirical_positive_rate": 0.4167,
+            "calibration_gap": 0.2322
+          },
+          {
+            "bin": "[0.7, 0.8]",
+            "count": 26,
+            "mean_predicted_prob": 0.7453,
+            "empirical_positive_rate": 0.7692,
+            "calibration_gap": 0.024
+          },
+          {
+            "bin": "[0.8, 0.9]",
+            "count": 5,
+            "mean_predicted_prob": 0.8189,
+            "empirical_positive_rate": 0.8,
+            "calibration_gap": 0.0189
+          },
+          {
+            "bin": "[0.9, 1.0]",
+            "count": 0,
+            "mean_predicted_prob": 0.95,
+            "empirical_positive_rate": 0.0,
+            "calibration_gap": 0.0
+          }
+        ],
+        "roc_curve": [
+          {
+            "threshold": 1.0,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.9583,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.9167,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.875,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.8333,
+            "fpr": 0.0,
+            "tpr": 0.0
+          },
+          {
+            "threshold": 0.7917,
+            "fpr": 0.0159,
+            "tpr": 0.0909
+          },
+          {
+            "threshold": 0.75,
+            "fpr": 0.0317,
+            "tpr": 0.2364
+          },
+          {
+            "threshold": 0.7083,
+            "fpr": 0.1111,
+            "tpr": 0.3818
+          },
+          {
+            "threshold": 0.6667,
+            "fpr": 0.1587,
+            "tpr": 0.4545
+          },
+          {
+            "threshold": 0.625,
+            "fpr": 0.1905,
+            "tpr": 0.5091
+          },
+          {
+            "threshold": 0.5833,
+            "fpr": 0.2698,
+            "tpr": 0.5273
+          },
+          {
+            "threshold": 0.5417,
+            "fpr": 0.3016,
+            "tpr": 0.5455
+          },
+          {
+            "threshold": 0.5,
+            "fpr": 0.3651,
+            "tpr": 0.6545
+          },
+          {
+            "threshold": 0.4583,
+            "fpr": 0.4286,
+            "tpr": 0.6909
+          },
+          {
+            "threshold": 0.4167,
+            "fpr": 0.4921,
+            "tpr": 0.7455
+          },
+          {
+            "threshold": 0.375,
+            "fpr": 0.5714,
+            "tpr": 0.8182
+          },
+          {
+            "threshold": 0.3333,
+            "fpr": 0.6032,
+            "tpr": 0.8182
+          },
+          {
+            "threshold": 0.2917,
+            "fpr": 0.6349,
+            "tpr": 0.8909
+          },
+          {
+            "threshold": 0.25,
+            "fpr": 0.6508,
+            "tpr": 0.8909
+          },
+          {
+            "threshold": 0.2083,
+            "fpr": 0.6667,
+            "tpr": 0.9636
+          },
+          {
+            "threshold": 0.1667,
+            "fpr": 0.7143,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.125,
+            "fpr": 0.7302,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0833,
+            "fpr": 0.8095,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0417,
+            "fpr": 1.0,
+            "tpr": 1.0
+          },
+          {
+            "threshold": 0.0,
+            "fpr": 1.0,
+            "tpr": 1.0
+          }
+        ],
+        "subgroups": {
+          "by_skin_tone": {
+            "I": {
+              "sample_count": 83,
+              "malignant_count": 40,
+              "benign_count": 43,
+              "auroc": 0.8076,
+              "auroc_ci95": [
+                0.7099,
+                0.8838
+              ],
+              "sensitivity_at_90_specificity": 0.4,
+              "sensitivity_at_95_specificity": 0.375,
+              "balanced_accuracy": 0.7337,
+              "diagnosis_macro_f1": 0.1601,
+              "diagnosis_top3_accuracy": 0.7952,
+              "ece": 0.1077,
+              "brier_score": 0.1806,
+              "abstention_rate": 0.0843,
+              "non_abstained_high_risk_precision": 0.8148,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "II": {
+              "sample_count": 8,
+              "malignant_count": 2,
+              "benign_count": 6,
+              "auroc": 0.75,
+              "auroc_ci95": [
+                0.258,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.6667,
+              "diagnosis_macro_f1": 0.1667,
+              "diagnosis_top3_accuracy": 0.25,
+              "ece": 0.3101,
+              "brier_score": 0.2591,
+              "abstention_rate": 0.125,
+              "non_abstained_high_risk_precision": 0.25,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "III": {
+              "sample_count": 4,
+              "malignant_count": 2,
+              "benign_count": 2,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.5,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.25,
+              "ece": 0.4614,
+              "brier_score": 0.277,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "IV": {
+              "sample_count": 4,
+              "malignant_count": 2,
+              "benign_count": 2,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.5,
+              "sensitivity_at_95_specificity": 0.5,
+              "balanced_accuracy": 0.25,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.5,
+              "ece": 0.5297,
+              "brier_score": 0.3124,
+              "abstention_rate": 0.25,
+              "non_abstained_high_risk_precision": 0.3333,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "UNKNOWN": {
+              "sample_count": 13,
+              "malignant_count": 7,
+              "benign_count": 6,
+              "auroc": 0.2857,
+              "auroc_ci95": [
+                0.0372,
+                0.5896
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.3214,
+              "diagnosis_macro_f1": 0.2909,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.4043,
+              "brier_score": 0.3265,
+              "abstention_rate": 0.5385,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "V": {
+              "sample_count": 1,
+              "malignant_count": 1,
+              "benign_count": 0,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.5,
+                0.5
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.5,
+              "diagnosis_macro_f1": 0.0,
+              "diagnosis_top3_accuracy": 0.0,
+              "ece": 0.4617,
+              "brier_score": 0.2132,
+              "abstention_rate": 1.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "VI": {
+              "sample_count": 5,
+              "malignant_count": 1,
+              "benign_count": 4,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.0,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.75,
+              "diagnosis_macro_f1": 0.1333,
+              "diagnosis_top3_accuracy": 0.6,
+              "ece": 0.3077,
+              "brier_score": 0.2613,
+              "abstention_rate": 0.4,
+              "non_abstained_high_risk_precision": 0.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_modality": {
+            "clinical": {
+              "sample_count": 91,
+              "malignant_count": 43,
+              "benign_count": 48,
+              "auroc": 0.7888,
+              "auroc_ci95": [
+                0.6813,
+                0.8661
+              ],
+              "sensitivity_at_90_specificity": 0.4419,
+              "sensitivity_at_95_specificity": 0.3488,
+              "balanced_accuracy": 0.6974,
+              "diagnosis_macro_f1": 0.1379,
+              "diagnosis_top3_accuracy": 0.6703,
+              "ece": 0.1262,
+              "brier_score": 0.1909,
+              "abstention_rate": 0.1099,
+              "non_abstained_high_risk_precision": 0.7027,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "dermoscopic": {
+              "sample_count": 14,
+              "malignant_count": 5,
+              "benign_count": 9,
+              "auroc": 0.4444,
+              "auroc_ci95": [
+                0.0325,
+                0.81
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.5444,
+              "diagnosis_macro_f1": 0.5238,
+              "diagnosis_top3_accuracy": 0.9286,
+              "ece": 0.2389,
+              "brier_score": 0.2551,
+              "abstention_rate": 0.1429,
+              "non_abstained_high_risk_precision": 0.5,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "tbp_tile": {
+              "sample_count": 13,
+              "malignant_count": 7,
+              "benign_count": 6,
+              "auroc": 0.2857,
+              "auroc_ci95": [
+                0.0372,
+                0.5896
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.3214,
+              "diagnosis_macro_f1": 0.2909,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.4043,
+              "brier_score": 0.3265,
+              "abstention_rate": 0.5385,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          },
+          "by_dataset": {
+            "fitzpatrick17k": {
+              "sample_count": 51,
+              "malignant_count": 22,
+              "benign_count": 29,
+              "auroc": 0.5627,
+              "auroc_ci95": [
+                0.4313,
+                0.6904
+              ],
+              "sensitivity_at_90_specificity": 0.2727,
+              "sensitivity_at_95_specificity": 0.1818,
+              "balanced_accuracy": 0.5306,
+              "diagnosis_macro_f1": 0.0293,
+              "diagnosis_top3_accuracy": 0.4118,
+              "ece": 0.2322,
+              "brier_score": 0.2803,
+              "abstention_rate": 0.1765,
+              "non_abstained_high_risk_precision": 0.5,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "isic": {
+              "sample_count": 67,
+              "malignant_count": 33,
+              "benign_count": 34,
+              "auroc": 0.8556,
+              "auroc_ci95": [
+                0.7527,
+                0.94
+              ],
+              "sensitivity_at_90_specificity": 0.6364,
+              "sensitivity_at_95_specificity": 0.5455,
+              "balanced_accuracy": 0.7447,
+              "diagnosis_macro_f1": 0.7426,
+              "diagnosis_top3_accuracy": 0.9851,
+              "ece": 0.1074,
+              "brier_score": 0.1625,
+              "abstention_rate": 0.1493,
+              "non_abstained_high_risk_precision": 0.9412,
+              "small_sample_flag": "adequate (>= 30)"
+            }
+          },
+          "by_body_site": {
+            "anterior torso": {
+              "sample_count": 9,
+              "malignant_count": 3,
+              "benign_count": 6,
+              "auroc": 0.9444,
+              "auroc_ci95": [
+                0.6783,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.6667,
+              "sensitivity_at_95_specificity": 0.6667,
+              "balanced_accuracy": 0.6667,
+              "diagnosis_macro_f1": 0.6785,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2739,
+              "brier_score": 0.141,
+              "abstention_rate": 0.0,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "head/neck": {
+              "sample_count": 11,
+              "malignant_count": 11,
+              "benign_count": 0,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.5,
+                0.5
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.4091,
+              "diagnosis_macro_f1": 0.9,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.2913,
+              "brier_score": 0.1039,
+              "abstention_rate": 0.0909,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "lower extremity": {
+              "sample_count": 9,
+              "malignant_count": 4,
+              "benign_count": 5,
+              "auroc": 0.5,
+              "auroc_ci95": [
+                0.1111,
+                0.9275
+              ],
+              "sensitivity_at_90_specificity": 0.0,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.5,
+              "diagnosis_macro_f1": 0.3572,
+              "diagnosis_top3_accuracy": 0.8889,
+              "ece": 0.1789,
+              "brier_score": 0.2834,
+              "abstention_rate": 0.2222,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "other": {
+              "sample_count": 51,
+              "malignant_count": 22,
+              "benign_count": 29,
+              "auroc": 0.5627,
+              "auroc_ci95": [
+                0.4313,
+                0.6904
+              ],
+              "sensitivity_at_90_specificity": 0.2727,
+              "sensitivity_at_95_specificity": 0.1818,
+              "balanced_accuracy": 0.5306,
+              "diagnosis_macro_f1": 0.0293,
+              "diagnosis_top3_accuracy": 0.4118,
+              "ece": 0.2322,
+              "brier_score": 0.2803,
+              "abstention_rate": 0.1765,
+              "non_abstained_high_risk_precision": 0.5,
+              "small_sample_flag": "adequate (>= 30)"
+            },
+            "posterior torso": {
+              "sample_count": 22,
+              "malignant_count": 6,
+              "benign_count": 16,
+              "auroc": 0.7812,
+              "auroc_ci95": [
+                0.5004,
+                0.9477
+              ],
+              "sensitivity_at_90_specificity": 0.3333,
+              "sensitivity_at_95_specificity": 0.0,
+              "balanced_accuracy": 0.7083,
+              "diagnosis_macro_f1": 0.6857,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.1436,
+              "brier_score": 0.1737,
+              "abstention_rate": 0.1818,
+              "non_abstained_high_risk_precision": 0.6667,
+              "small_sample_flag": "too few to conclude (< 30)"
+            },
+            "upper extremity": {
+              "sample_count": 16,
+              "malignant_count": 9,
+              "benign_count": 7,
+              "auroc": 0.9365,
+              "auroc_ci95": [
+                0.7656,
+                1.0
+              ],
+              "sensitivity_at_90_specificity": 0.7778,
+              "sensitivity_at_95_specificity": 0.7778,
+              "balanced_accuracy": 0.8175,
+              "diagnosis_macro_f1": 0.8117,
+              "diagnosis_top3_accuracy": 1.0,
+              "ece": 0.1927,
+              "brier_score": 0.1316,
+              "abstention_rate": 0.1875,
+              "non_abstained_high_risk_precision": 1.0,
+              "small_sample_flag": "too few to conclude (< 30)"
+            }
+          }
+        }
+      }
+    }
+  },
+  "paired_significance_holm": [
+    {
+      "reference_model": "derm_cnn_multitask",
+      "comparator_model": "numpy_toy_cnn",
+      "reference_auroc": 0.8326,
+      "comparator_auroc": 0.7276,
+      "delta_auroc": 0.1051,
+      "delta_ci95": [
+        0.007,
+        0.2102
+      ],
+      "p_value_raw": 0.02,
+      "p_value_holm": 0.04,
+      "significant_at_0_05": true
+    },
+    {
+      "reference_model": "derm_cnn_multitask",
+      "comparator_model": "classical_vision",
+      "reference_auroc": 0.8326,
+      "comparator_auroc": 0.8701,
+      "delta_auroc": -0.0375,
+      "delta_ci95": [
+        -0.1013,
+        0.0259
+      ],
+      "p_value_raw": 0.215,
+      "p_value_holm": 0.215,
+      "significant_at_0_05": false
+    }
+  ],
+  "ablations": [
+    {
+      "variant": "full_multitask_cnn",
+      "val_auroc": 0.8201,
+      "locked_test_auroc": 0.8326,
+      "delta_auroc_vs_full": 0.0,
+      "locked_test_balanced_accuracy": 0.7062,
+      "locked_test_diagnosis_macro_f1": 0.3023,
+      "locked_test_ece": 0.1262,
+      "training_seconds": 6.839
+    },
+    {
+      "variant": "no_augmentation",
+      "val_auroc": 0.8201,
+      "locked_test_auroc": 0.8332,
+      "delta_auroc_vs_full": 0.0006,
+      "locked_test_balanced_accuracy": 0.7062,
+      "locked_test_diagnosis_macro_f1": 0.3013,
+      "locked_test_ece": 0.1261,
+      "training_seconds": 5.945
+    },
+    {
+      "variant": "no_class_balancing",
+      "val_auroc": 0.862,
+      "locked_test_auroc": 0.8439,
+      "delta_auroc_vs_full": 0.0113,
+      "locked_test_balanced_accuracy": 0.7411,
+      "locked_test_diagnosis_macro_f1": 0.2553,
+      "locked_test_ece": 0.0846,
+      "training_seconds": 6.188
+    },
+    {
+      "variant": "smaller_images_24px",
+      "val_auroc": 0.8462,
+      "locked_test_auroc": 0.8338,
+      "delta_auroc_vs_full": 0.0012,
+      "locked_test_balanced_accuracy": 0.7685,
+      "locked_test_diagnosis_macro_f1": 0.2862,
+      "locked_test_ece": 0.1287,
+      "training_seconds": 5.526
+    },
+    {
+      "variant": "no_metadata",
+      "val_auroc": 0.845,
+      "locked_test_auroc": 0.8361,
+      "delta_auroc_vs_full": 0.0035,
+      "locked_test_balanced_accuracy": 0.7492,
+      "locked_test_diagnosis_macro_f1": 0.23,
+      "locked_test_ece": 0.1137,
+      "training_seconds": 6.153
+    },
+    {
+      "variant": "no_multitask",
+      "val_auroc": 0.8063,
+      "locked_test_auroc": 0.8381,
+      "delta_auroc_vs_full": 0.0055,
+      "locked_test_balanced_accuracy": 0.755,
+      "locked_test_diagnosis_macro_f1": 0.059,
+      "locked_test_ece": 0.1682,
+      "training_seconds": 6.036
+    }
+  ],
+  "total_elapsed_seconds": 162.922
+}

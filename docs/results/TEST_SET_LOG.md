@@ -22,3 +22,5 @@
 | `2026-11-16T20:30:01Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-16T21:11:20Z` | `derm-router-5class:locked_test` | `PictureTriageRouterCNN-v1.0.0` | `56` | Step 2 5-class picture triage router locked-test evaluation |
 | `2026-11-16T21:11:26Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
+| `2026-11-16T22:11:13Z` | `derm-corpus:locked_test_stratified` | `DermResNetMultiTask-v1.0.0` | `88` | Step 3 skin models locked-test benchmark (CNN vs Classical vs NumPy toy CNN) |
+| `2026-11-16T22:37:15Z` | `derm-corpus:locked_test_stratified` | `DermResNetMultiTask-v1.0.0` | `118` | Step 3 skin models locked-test benchmark (CNN vs Classical vs NumPy toy CNN) |

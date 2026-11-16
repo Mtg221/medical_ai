@@ -354,7 +354,7 @@ def select_balanced_records(
                 break
         return selected
 
-    # Stratified across (modality, malignancy) where available; tbp_tile also allows unknown mg if needed
+    # Stratified across (modality, malignancy), specific diagnoses, and Fitzpatrick skin tones I-VI
     target_per_mod = max(2, (per_class_limit * 2) // 3)
     half_mod = max(1, target_per_mod // 2)
     mod_mg_counts: dict[tuple[str, str], int] = {
@@ -365,25 +365,66 @@ def select_balanced_records(
         ("tbp_tile", "benign"): 0,
         ("tbp_tile", "malignant"): 0,
     }
+    specific_dxs = {
+        "melanoma",
+        "basal_cell_carcinoma",
+        "squamous_cell_carcinoma",
+        "actinic_keratosis",
+        "nevus",
+        "seborrheic_keratosis",
+        "dermatofibroma",
+        "vascular_lesion",
+    }
+    dx_counts: dict[str, int] = {dx: 0 for dx in specific_dxs}
+    tone_mg_counts: dict[tuple[str, str], int] = {
+        (t, mg): 0 for t in ("I", "II", "III", "IV", "V", "VI") for mg in ("benign", "malignant")
+    }
     tbp_extra: list[DermCatalogRecord] = []
     selected_strat: list[DermCatalogRecord] = []
+    seen_ids: set[str] = set()
 
+    # Pass 1: Specific diagnoses + Fitzpatrick skin tones I-VI (research-allowed, including fitzpatrick17k & isic)
     for rec in iter_derm_catalog(
         meta_dir,
-        require_quality_ok=require_quality_ok,
+        require_quality_ok=False,
         require_research_licence=True,
     ):
-        if not rec.thumb_path or rec.modality not in ("clinical", "dermoscopic", "tbp_tile"):
+        if not rec.thumb_path or rec.image_id in seen_ids:
             continue
-        key = (rec.modality, rec.malignancy_group)
-        if key in mod_mg_counts:
-            if mod_mg_counts[key] < half_mod:
+        if rec.malignancy_group in ("benign", "malignant"):
+            added = False
+            if rec.diagnosis_harmonised in specific_dxs and dx_counts[rec.diagnosis_harmonised] < 24:
                 selected_strat.append(rec)
-                mod_mg_counts[key] += 1
+                seen_ids.add(rec.image_id)
+                dx_counts[rec.diagnosis_harmonised] += 1
+                added = True
+            t_key = (rec.skin_tone, rec.malignancy_group)
+            if not added and t_key in tone_mg_counts and tone_mg_counts[t_key] < 18:
+                selected_strat.append(rec)
+                seen_ids.add(rec.image_id)
+                tone_mg_counts[t_key] += 1
+                added = True
+            m_key = (rec.modality, rec.malignancy_group)
+            if not added and m_key in mod_mg_counts and mod_mg_counts[m_key] < half_mod:
+                selected_strat.append(rec)
+                seen_ids.add(rec.image_id)
+                mod_mg_counts[m_key] += 1
+                added = True
+            if added:
+                if t_key in tone_mg_counts:
+                    tone_mg_counts[t_key] += 1
+                if m_key in mod_mg_counts:
+                    mod_mg_counts[m_key] += 1
         elif rec.modality == "tbp_tile" and len(tbp_extra) < target_per_mod:
             tbp_extra.append(rec)
+            seen_ids.add(rec.image_id)
 
-        if all(v >= half_mod for v in mod_mg_counts.values()):
+        if (
+            all(v >= 24 for v in dx_counts.values())
+            and all(v >= 18 for v in tone_mg_counts.values())
+            and all(v >= half_mod for v in mod_mg_counts.values())
+            and len(tbp_extra) >= target_per_mod
+        ):
             break
 
     # Top up tbp_tile if tbp_tile had fewer explicit benign/malignant labels
@@ -404,7 +445,7 @@ def download_balanced_thumbnails(
     password: str | None = None,
     per_class_limit: int = 150,
     limit: int | None = None,
-    rate_limit_rps: float = 10.0,
+    rate_limit_rps: float = 25.0,
     timeout_seconds: float = 15.0,
 ) -> DermFetchReport:
     """

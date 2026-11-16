@@ -195,6 +195,24 @@ def main(argv: list[str] | None = None) -> int:
     p_d_triage.add_argument("image_path", type=Path, help="Input image path")
     p_d_triage.add_argument("--model", type=Path, default=Path("models/vision_router_v1"), help="Saved router model directory")
 
+    p_d_train = sub_derm.add_parser("train", help="Train from-scratch skin models (ResNet CNN + classical + NumPy baselines) and run ablations")
+    p_d_train.add_argument("--meta-dir", type=Path, default=Path("var/cache/derm/meta"), help="Metadata directory")
+    p_d_train.add_argument("--out", type=Path, default=Path("models/derm_cnn_seed1"), help="Output model directory")
+    p_d_train.add_argument("--out-results", type=Path, default=Path("docs/results/vision"), help="Output results directory")
+    p_d_train.add_argument("--epochs", type=int, default=45, help="Training epochs")
+    p_d_train.add_argument("--seed", type=int, default=1, help="Random seed")
+
+    p_d_eval = sub_derm.add_parser("evaluate", help="Evaluate saved DermResNetMultiTask model on val or locked_test")
+    p_d_eval.add_argument("--model", type=Path, default=Path("models/derm_cnn_seed1"), help="Saved model directory")
+    p_d_eval.add_argument("--meta-dir", type=Path, default=Path("var/cache/derm/meta"), help="Metadata directory")
+    p_d_eval.add_argument("--split", choices=["val", "locked_test"], default="val", help="Split to evaluate")
+
+    p_d_pred = sub_derm.add_parser("predict", help="Run full triage + quality + multi-task skin analysis + Grad-CAM on an image")
+    p_d_pred.add_argument("image_path", type=Path, help="Input image path")
+    p_d_pred.add_argument("--model", type=Path, default=Path("models/derm_cnn_seed1"), help="Saved skin CNN directory")
+    p_d_pred.add_argument("--router-model", type=Path, default=Path("models/vision_router_v1"), help="Saved router directory")
+    p_d_pred.add_argument("--heatmap-out", type=Path, default=None, help="Optional PNG path to save Grad-CAM overlay")
+
     args = parser.parse_args(argv)
 
     if args.cmd == "data" and args.data_cmd == "build":
@@ -390,6 +408,90 @@ def main(argv: list[str] | None = None) -> int:
             with Image.open(args.image_path) as im:
                 decision = router.triage_image(im.convert("RGB"))
             print(json.dumps(decision.to_dict(), indent=2, ensure_ascii=False))
+            return 0
+
+        if args.derm_cmd == "train":
+            from medresearch_platform.vision.eval_vision import run_step3_skin_benchmark_and_ablations
+
+            res = run_step3_skin_benchmark_and_ablations(
+                args.meta_dir,
+                out_model_dir=args.out,
+                out_results_dir=args.out_results,
+                epochs=args.epochs,
+                seed=args.seed,
+            )
+            print(json.dumps(res, indent=2))
+            return 0
+
+        if args.derm_cmd == "evaluate":
+            from medresearch_platform.vision.cnn_multitask import DermResNetMultiTask
+            from medresearch_platform.vision.eval_vision import (
+                compute_comprehensive_metrics,
+                load_stratified_skin_dataset,
+            )
+
+            model = DermResNetMultiTask.load(args.model)
+            splits = load_stratified_skin_dataset(args.meta_dir, image_size=model.image_size)
+            subset = splits[args.split]
+            pred_b = model.predict_batch(subset)
+            metrics = compute_comprehensive_metrics(
+                subset,
+                pred_b["p_malignant"],
+                pred_b["p_diagnosis"],
+                pred_b["abstained"],
+            )
+            print(json.dumps(metrics, indent=2))
+            return 0
+
+        if args.derm_cmd == "predict":
+            import numpy as np
+            from PIL import Image
+
+            from medresearch_platform.vision.cnn_multitask import DermResNetMultiTask
+            from medresearch_platform.vision.router import PictureTriageRouter
+
+            router = (
+                PictureTriageRouter.load(args.router_model)
+                if (args.router_model / "manifest.json").exists()
+                else PictureTriageRouter()
+            )
+            skin_model = (
+                DermResNetMultiTask.load(args.model)
+                if (args.model / "manifest.json").exists()
+                else DermResNetMultiTask()
+            )
+            with Image.open(args.image_path) as im:
+                rgb_im = im.convert("RGB")
+                triage = router.triage_image(rgb_im)
+                if triage.route_action != "skin_vision_pipeline":
+                    print(
+                        json.dumps(
+                            {
+                                "triage": triage.to_dict(),
+                                "skin_prediction": None,
+                            },
+                            indent=2,
+                            ensure_ascii=False,
+                        )
+                    )
+                    return 0
+                skin_res = skin_model.predict_image(rgb_im)
+                if args.heatmap_out:
+                    args.heatmap_out.parent.mkdir(parents=True, exist_ok=True)
+                    png_bytes = skin_model.render_gradcam_overlay_png(
+                        rgb_im, np.asarray(skin_res.heatmap_grid, dtype=np.float64)
+                    )
+                    args.heatmap_out.write_bytes(png_bytes)
+                print(
+                    json.dumps(
+                        {
+                            "triage": triage.to_dict(),
+                            "skin_prediction": skin_res.to_dict(),
+                        },
+                        indent=2,
+                        ensure_ascii=False,
+                    )
+                )
             return 0
 
     return 1
