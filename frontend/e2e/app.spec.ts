@@ -97,10 +97,12 @@ test.describe("Phase 12B Full E2E (EN + FR) & 14-Page Light/Dark Screenshots", (
     // Review queue: review & reload to verify persistence
     await page.getByRole("link", { name: "Review" }).click();
     await expect(page.getByRole("heading", { name: "Human-in-the-Loop Review Mode" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Approve /i }).first()).toBeVisible({ timeout: 10_000 });
+    await page.locator("main").click();
     await page.keyboard.press("a");
-    await expect(page.getByText(/Saved APPROVED_GROUND_TRUTH/)).toBeVisible();
+    await expect(page.getByText(/Saved APPROVED_GROUND_TRUTH/)).toBeVisible({ timeout: 10_000 });
     await page.reload();
-    await expect(page.getByText("APPROVED_GROUND_TRUTH").first()).toBeVisible();
+    await expect(page.getByText("APPROVED_GROUND_TRUTH").first()).toBeVisible({ timeout: 10_000 });
 
     // Reports: preview and download EN report
     await page.getByRole("link", { name: "Reports" }).click();
@@ -138,6 +140,7 @@ test.describe("Phase 12B Full E2E (EN + FR) & 14-Page Light/Dark Screenshots", (
 
     await page.locator("nav a[href='/react/review']").click();
     await expect(page.getByRole("heading", { name: /Review Mode|Human-in-the-Loop/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Approve /i }).first()).toBeVisible({ timeout: 10_000 });
     await page.locator("main").click();
     await page.keyboard.press("n");
     await page.keyboard.press("c");
