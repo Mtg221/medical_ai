@@ -40,6 +40,12 @@ from medresearch_platform.vision.eval_vision import (
     paired_lesion_bootstrap_holm,
     run_step3_skin_benchmark_and_ablations,
 )
+from medresearch_platform.vision.linking import (
+    build_image_finding,
+    extract_cutaneous_text_descriptors,
+    normalize_body_site,
+    propose_same_lesion_links,
+)
 from medresearch_platform.vision.pipeline import (
     DermFetchReport,
     download_balanced_thumbnails,
@@ -123,6 +129,7 @@ __all__ = [
     "TriageDecision",
     "assess_image_quality",
     "audit_derm_splits",
+    "build_image_finding",
     "build_router_dataset",
     "calibrate_quality_thresholds_on_val",
     "compute_auroc",
@@ -138,6 +145,7 @@ __all__ = [
     "estimate_skin_and_lesion_area_ratio",
     "evaluate_licence_policy",
     "extract_classical_lesion_features",
+    "extract_cutaneous_text_descriptors",
     "extract_router_features",
     "generate_derm_corpus_card",
     "generate_document_scan_image",
@@ -155,7 +163,9 @@ __all__ = [
     "load_stratified_skin_dataset",
     "log_locked_test_access",
     "map_record_to_core_dx_index",
+    "normalize_body_site",
     "paired_lesion_bootstrap_holm",
+    "propose_same_lesion_links",
     "run_derm_benchmark",
     "run_step3_skin_benchmark_and_ablations",
     "select_balanced_records",

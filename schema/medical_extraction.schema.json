@@ -1,5 +1,32 @@
 {
   "$defs": {
+    "DiagnosisCandidateSchema": {
+      "description": "Top-K differential diagnosis candidate with calibrated probability.",
+      "properties": {
+        "rank": {
+          "minimum": 1,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "diagnosis": {
+          "title": "Diagnosis",
+          "type": "string"
+        },
+        "probability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Probability",
+          "type": "number"
+        }
+      },
+      "required": [
+        "rank",
+        "diagnosis",
+        "probability"
+      ],
+      "title": "DiagnosisCandidateSchema",
+      "type": "object"
+    },
     "ExtractedRecordSchema": {
       "description": "Common structured output contract for all extraction approaches.",
       "properties": {
@@ -162,7 +189,8 @@
             "approved",
             "corrected",
             "rejected",
-            "flagged"
+            "flagged",
+            "image_unusable"
           ],
           "title": "Review Status",
           "type": "string"
@@ -228,6 +256,195 @@
       "title": "ExtractedRelationshipSchema",
       "type": "object"
     },
+    "ImageFindingSchema": {
+      "description": "Structured output contract for a dermatology/clinical image finding (Step 4).",
+      "properties": {
+        "image_id": {
+          "title": "Image Id",
+          "type": "string"
+        },
+        "document_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Document Id"
+        },
+        "patient_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Patient Id"
+        },
+        "picture_type": {
+          "title": "Picture Type",
+          "type": "string"
+        },
+        "quality_result": {
+          "additionalProperties": true,
+          "title": "Quality Result",
+          "type": "object"
+        },
+        "malignancy_risk_probability": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Malignancy Risk Probability"
+        },
+        "malignancy_risk_band": {
+          "default": "abstained",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "abstained"
+          ],
+          "title": "Malignancy Risk Band",
+          "type": "string"
+        },
+        "top3_diagnoses": {
+          "items": {
+            "$ref": "#/$defs/DiagnosisCandidateSchema"
+          },
+          "title": "Top3 Diagnoses",
+          "type": "array"
+        },
+        "heatmap_uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Heatmap Uri"
+        },
+        "abstained": {
+          "default": false,
+          "title": "Abstained",
+          "type": "boolean"
+        },
+        "abstain_reason_en": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Abstain Reason En"
+        },
+        "abstain_reason_fr": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Abstain Reason Fr"
+        },
+        "body_site": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Body Site"
+        },
+        "captured_date_iso": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Captured Date Iso"
+        },
+        "model_name": {
+          "title": "Model Name",
+          "type": "string"
+        },
+        "model_version": {
+          "title": "Model Version",
+          "type": "string"
+        },
+        "git_commit": {
+          "default": "",
+          "title": "Git Commit",
+          "type": "string"
+        },
+        "review_status": {
+          "default": "needs_review",
+          "enum": [
+            "unreviewed",
+            "needs_review",
+            "approved",
+            "corrected",
+            "rejected",
+            "flagged",
+            "image_unusable"
+          ],
+          "title": "Review Status",
+          "type": "string"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "safety_notice_en": {
+          "default": "Research tool \u2014 not a diagnosis. A dermatologist must examine the lesion.",
+          "title": "Safety Notice En",
+          "type": "string"
+        },
+        "safety_notice_fr": {
+          "default": "Outil de recherche \u2014 ne constitue pas un diagnostic. Un dermatologue doit examiner la l\u00e9sion.",
+          "title": "Safety Notice Fr",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_id",
+        "picture_type",
+        "model_name",
+        "model_version"
+      ],
+      "title": "ImageFindingSchema",
+      "type": "object"
+    },
     "RegionCoordinatesSchema": {
       "description": "Normalized page bounding box in [0, 1] coordinates.",
       "properties": {
@@ -264,6 +481,118 @@
       ],
       "title": "RegionCoordinatesSchema",
       "type": "object"
+    },
+    "SameLesionLinkSchema": {
+      "description": "Cross-modal SAME_LESION link between a text lesion entity and an ImageFinding.",
+      "properties": {
+        "link_id": {
+          "title": "Link Id",
+          "type": "string"
+        },
+        "relation_type": {
+          "const": "SAME_LESION",
+          "default": "SAME_LESION",
+          "title": "Relation Type",
+          "type": "string"
+        },
+        "patient_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Patient Id"
+        },
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "image_id": {
+          "title": "Image Id",
+          "type": "string"
+        },
+        "text_entity_id": {
+          "title": "Text Entity Id",
+          "type": "string"
+        },
+        "text_span": {
+          "title": "Text Span",
+          "type": "string"
+        },
+        "char_start": {
+          "minimum": 0,
+          "title": "Char Start",
+          "type": "integer"
+        },
+        "char_end": {
+          "minimum": 0,
+          "title": "Char End",
+          "type": "integer"
+        },
+        "matched_body_site": {
+          "title": "Matched Body Site",
+          "type": "string"
+        },
+        "date_delta_days": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date Delta Days"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "review_status": {
+          "default": "needs_review",
+          "enum": [
+            "unreviewed",
+            "needs_review",
+            "approved",
+            "corrected",
+            "rejected",
+            "flagged",
+            "image_unusable"
+          ],
+          "title": "Review Status",
+          "type": "string"
+        },
+        "rationale_en": {
+          "default": "",
+          "title": "Rationale En",
+          "type": "string"
+        },
+        "rationale_fr": {
+          "default": "",
+          "title": "Rationale Fr",
+          "type": "string"
+        }
+      },
+      "required": [
+        "link_id",
+        "document_id",
+        "image_id",
+        "text_entity_id",
+        "text_span",
+        "char_start",
+        "char_end",
+        "matched_body_site",
+        "confidence"
+      ],
+      "title": "SameLesionLinkSchema",
+      "type": "object"
     }
   },
   "description": "Top-level validated extraction output bundle.",
@@ -293,6 +622,20 @@
         "$ref": "#/$defs/ExtractedRecordSchema"
       },
       "title": "Records",
+      "type": "array"
+    },
+    "image_findings": {
+      "items": {
+        "$ref": "#/$defs/ImageFindingSchema"
+      },
+      "title": "Image Findings",
+      "type": "array"
+    },
+    "same_lesion_links": {
+      "items": {
+        "$ref": "#/$defs/SameLesionLinkSchema"
+      },
+      "title": "Same Lesion Links",
       "type": "array"
     },
     "modality_status": {

@@ -7,7 +7,40 @@ from typing import Any, Literal
 
 AssertionStatus = Literal["present", "absent", "uncertain", "hypothetical", "family_history", "historical"]
 NegationStatus = Literal["affirmed", "negated", "uncertain"]
-ReviewStatus = Literal["unreviewed", "needs_review", "approved", "corrected", "rejected", "flagged"]
+ReviewStatus = Literal["unreviewed", "needs_review", "approved", "corrected", "rejected", "flagged", "image_unusable"]
+RiskBand = Literal["low", "medium", "high", "abstained"]
+
+
+@dataclass(frozen=True)
+class ImageFinding:
+    """Structured output contract for a dermatology/clinical image finding (IMAGE PROMPT Step 4)."""
+
+    image_id: str
+    document_id: str | None
+    patient_id: str | None
+    picture_type: str
+    quality_result: dict[str, Any]
+    malignancy_risk_probability: float | None
+    malignancy_risk_band: RiskBand
+    top3_diagnoses: tuple[dict[str, Any], ...]
+    heatmap_uri: str | None
+    abstained: bool
+    abstain_reason_en: str | None
+    abstain_reason_fr: str | None
+    body_site: str | None
+    model_name: str
+    model_version: str
+    git_commit: str
+    review_status: ReviewStatus = "needs_review"
+    provenance: dict[str, Any] = field(default_factory=dict)
+    captured_date_iso: str | None = None
+    safety_notice_en: str = "Research tool — not a diagnosis. A dermatologist must examine the lesion."
+    safety_notice_fr: str = "Outil de recherche — ne constitue pas un diagnostic. Un dermatologue doit examiner la lésion."
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["top3_diagnoses"] = [dict(d) for d in self.top3_diagnoses]
+        return payload
 
 
 @dataclass(frozen=True)
@@ -81,6 +114,8 @@ class ExtractionResult:
     model_name: str
     model_version: str
     records: tuple[ExtractedRecord, ...] = field(default_factory=tuple)
+    image_findings: tuple[ImageFinding, ...] = field(default_factory=tuple)
+    same_lesion_links: tuple[dict[str, Any], ...] = field(default_factory=tuple)
     modality_status: dict[str, str] = field(default_factory=dict)
     warnings: tuple[str, ...] = field(default_factory=tuple)
 
@@ -92,6 +127,8 @@ class ExtractionResult:
             "model_name": self.model_name,
             "model_version": self.model_version,
             "records": [record.to_dict() for record in self.records],
+            "image_findings": [f.to_dict() for f in self.image_findings],
+            "same_lesion_links": [dict(link) for link in self.same_lesion_links],
             "modality_status": dict(self.modality_status),
             "warnings": list(self.warnings),
         }

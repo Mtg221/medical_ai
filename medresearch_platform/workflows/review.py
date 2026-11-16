@@ -325,3 +325,164 @@ def export_reviewed_gold(
             )
         )
     return "\n".join(jsonl_lines) + ("\n" if jsonl_lines else "")
+
+
+def submit_image_finding_review(
+    conn: sqlite3.Connection,
+    *,
+    principal: AuthenticatedPrincipal,
+    image_id: str,
+    review_decision: str,
+    corrected_diagnosis: str | None = None,
+    corrected_risk_band: str | None = None,
+    corrected_body_site: str | None = None,
+    rationale: str = "Expert dermatology review",
+) -> dict[str, Any]:
+    """Record a human review/correction of an `image_findings` record and audit-log it."""
+    principal.assert_permission("annotation:review")
+    allowed_decisions = (
+        "APPROVE_AS_GROUND_TRUTH",
+        "CORRECT_AND_APPROVE",
+        "REJECT",
+        "MARK_IMAGE_UNUSABLE",
+        "FLAG_AMBIGUOUS",
+    )
+    if review_decision not in allowed_decisions:
+        raise ValueError(f"Unsupported image review_decision: {review_decision}")
+
+    row = conn.execute(
+        "SELECT * FROM image_findings WHERE image_id = ?",
+        (image_id,),
+    ).fetchone()
+    if row is None:
+        raise KeyError(f"Image finding not found: {image_id}")
+
+    principal.assert_institution_access(str(row["institution_id"]))
+
+    top3 = json.loads(str(row["top3_diagnoses_json"] or "[]"))
+    prev_dx = str(row["corrected_diagnosis"] or (top3[0]["diagnosis"] if top3 else "other"))
+    previous_val = {
+        "malignancy_risk_band": str(row["malignancy_risk_band"]),
+        "primary_diagnosis": prev_dx,
+        "body_site": row["body_site"],
+        "review_status": str(row["review_status"]),
+    }
+
+    if review_decision == "APPROVE_AS_GROUND_TRUTH":
+        new_status = "approved"
+    elif review_decision == "CORRECT_AND_APPROVE":
+        new_status = "corrected"
+    elif review_decision == "MARK_IMAGE_UNUSABLE":
+        new_status = "image_unusable"
+    elif review_decision == "REJECT":
+        new_status = "rejected"
+    else:
+        new_status = "flagged"
+
+    new_dx = corrected_diagnosis or prev_dx
+    new_band = corrected_risk_band or str(row["malignancy_risk_band"])
+    new_site = corrected_body_site if corrected_body_site is not None else row["body_site"]
+
+    if new_dx and top3 and review_decision == "CORRECT_AND_APPROVE":
+        top3[0]["diagnosis"] = new_dx
+
+    corrected_val = {
+        "malignancy_risk_band": new_band,
+        "primary_diagnosis": new_dx,
+        "body_site": new_site,
+        "review_status": new_status,
+    }
+
+    review_id = f"rev_img_{uuid.uuid4().hex[:12]}"
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    conn.execute(
+        """
+        INSERT INTO human_reviews (
+            review_id, target_type, target_id, document_id, reviewer_user_id,
+            previous_value_json, corrected_value_json, review_decision, rationale, created_at
+        ) VALUES (?, 'IMAGE_FINDING', ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            review_id,
+            image_id,
+            row["document_id"],
+            principal.user_id,
+            json.dumps(previous_val, sort_keys=True),
+            json.dumps(corrected_val, sort_keys=True),
+            review_decision,
+            rationale,
+            now_iso,
+        ),
+    )
+
+    conn.execute(
+        """
+        UPDATE image_findings
+        SET malignancy_risk_band = ?, corrected_diagnosis = ?, body_site = ?,
+            top3_diagnoses_json = ?, review_status = ?
+        WHERE image_id = ?
+        """,
+        (new_band, new_dx, new_site, json.dumps(top3), new_status, image_id),
+    )
+
+    record_audit_event(
+        conn,
+        actor_user_id=principal.user_id,
+        institution_id=principal.institution_id,
+        action_type="HUMAN_REVIEW_IMAGE_FINDING",
+        resource_type="IMAGE_FINDING",
+        resource_id=image_id,
+        metadata={
+            "review_id": review_id,
+            "decision": review_decision,
+            "new_status": new_status,
+            "corrected_diagnosis": new_dx,
+        },
+    )
+
+    return {
+        "review_id": review_id,
+        "image_id": image_id,
+        "review_status": new_status,
+        "previous_value": previous_val,
+        "corrected_value": corrected_val,
+        "review_decision": review_decision,
+        "reviewer_user_id": principal.user_id,
+        "created_at": now_iso,
+    }
+
+
+def export_reviewed_image_gold(
+    conn: sqlite3.Connection,
+    *,
+    institution_id: str,
+) -> list[dict[str, Any]]:
+    """Export approved and human-corrected image findings as gold records."""
+    rows = conn.execute(
+        """
+        SELECT image_id, subject_id, document_id, picture_type, malignancy_risk_band,
+               malignancy_risk_probability, corrected_diagnosis, top3_diagnoses_json,
+               body_site, review_status, created_at
+        FROM image_findings
+        WHERE institution_id = ? AND review_status IN ('approved', 'corrected')
+        ORDER BY created_at DESC
+        """,
+        (institution_id,),
+    ).fetchall()
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        top3 = json.loads(str(r["top3_diagnoses_json"] or "[]"))
+        dx = str(r["corrected_diagnosis"] or (top3[0]["diagnosis"] if top3 else "other"))
+        out.append({
+            "image_id": str(r["image_id"]),
+            "patient_id": r["subject_id"],
+            "document_id": r["document_id"],
+            "picture_type": str(r["picture_type"]),
+            "gold_diagnosis": dx,
+            "gold_risk_band": str(r["malignancy_risk_band"]),
+            "body_site": r["body_site"],
+            "review_status": str(r["review_status"]),
+            "created_at": str(r["created_at"]),
+        })
+    return out

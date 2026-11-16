@@ -56,6 +56,7 @@ class DatabaseEngine:
             "documents": ("'TESSERACT_OCR'",),
             "extracted_entities": ("'needs_review'", "review_reason", "source_stage"),
             "extracted_relations": ("'TREATS'",),
+            "human_reviews": ("'IMAGE_FINDING'", "'MARK_IMAGE_UNUSABLE'"),
             "jobs": ("original_filename",),
         }
         needs_upgrade: list[str] = []

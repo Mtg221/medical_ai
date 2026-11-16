@@ -222,14 +222,64 @@ CREATE TABLE IF NOT EXISTS extracted_relations (
 
 CREATE TABLE IF NOT EXISTS human_reviews (
     review_id TEXT PRIMARY KEY,
-    target_type TEXT NOT NULL CHECK (target_type IN ('ENTITY', 'OCR_BLOCK', 'RELATION')),
+    target_type TEXT NOT NULL CHECK (target_type IN ('ENTITY', 'OCR_BLOCK', 'RELATION', 'IMAGE_FINDING', 'SAME_LESION_LINK')),
     target_id TEXT NOT NULL,
-    document_id TEXT NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+    document_id TEXT REFERENCES documents(document_id) ON DELETE CASCADE,
     reviewer_user_id TEXT NOT NULL REFERENCES users(user_id),
     previous_value_json TEXT NOT NULL,
     corrected_value_json TEXT NOT NULL,
-    review_decision TEXT NOT NULL CHECK (review_decision IN ('APPROVE_AS_GROUND_TRUTH', 'CORRECT_AND_APPROVE', 'FLAG_AMBIGUOUS', 'REJECT')),
+    review_decision TEXT NOT NULL CHECK (review_decision IN ('APPROVE_AS_GROUND_TRUTH', 'CORRECT_AND_APPROVE', 'FLAG_AMBIGUOUS', 'REJECT', 'MARK_IMAGE_UNUSABLE')),
     rationale TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS image_findings (
+    image_id TEXT PRIMARY KEY,
+    institution_id TEXT NOT NULL REFERENCES institutions(institution_id),
+    subject_id TEXT REFERENCES subjects(subject_id),
+    document_id TEXT REFERENCES documents(document_id) ON DELETE SET NULL,
+    original_filename TEXT NOT NULL,
+    file_format TEXT NOT NULL,
+    content_sha256 TEXT NOT NULL,
+    storage_object_path TEXT NOT NULL,
+    thumb_storage_path TEXT,
+    heatmap_storage_path TEXT,
+    picture_type TEXT NOT NULL,
+    quality_json TEXT NOT NULL,
+    malignancy_risk_probability REAL,
+    malignancy_risk_band TEXT NOT NULL,
+    top3_diagnoses_json TEXT NOT NULL DEFAULT '[]',
+    abstained INTEGER NOT NULL DEFAULT 0,
+    abstain_reason_en TEXT,
+    abstain_reason_fr TEXT,
+    body_site TEXT,
+    captured_date_iso TEXT,
+    exif_stripped INTEGER NOT NULL DEFAULT 1,
+    model_name TEXT NOT NULL,
+    model_version TEXT NOT NULL,
+    git_commit TEXT NOT NULL DEFAULT '',
+    review_status TEXT NOT NULL DEFAULT 'needs_review',
+    corrected_diagnosis TEXT,
+    provenance_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS image_text_links (
+    link_id TEXT PRIMARY KEY,
+    institution_id TEXT NOT NULL REFERENCES institutions(institution_id),
+    subject_id TEXT REFERENCES subjects(subject_id),
+    document_id TEXT NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+    image_id TEXT NOT NULL REFERENCES image_findings(image_id) ON DELETE CASCADE,
+    text_entity_id TEXT NOT NULL,
+    text_span TEXT NOT NULL,
+    char_start INTEGER NOT NULL,
+    char_end INTEGER NOT NULL,
+    matched_body_site TEXT NOT NULL,
+    date_delta_days INTEGER,
+    confidence REAL NOT NULL,
+    review_status TEXT NOT NULL DEFAULT 'needs_review',
+    rationale_en TEXT NOT NULL DEFAULT '',
+    rationale_fr TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL
 );
 

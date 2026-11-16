@@ -12,12 +12,71 @@ AssertionStatusType = Literal[
     "present", "absent", "uncertain", "hypothetical", "family_history", "historical"
 ]
 NegationStatusType = Literal["affirmed", "negated", "uncertain"]
-ReviewStatusType = Literal["unreviewed", "needs_review", "approved", "corrected", "rejected", "flagged"]
+ReviewStatusType = Literal[
+    "unreviewed", "needs_review", "approved", "corrected", "rejected", "flagged", "image_unusable"
+]
+RiskBandType = Literal["low", "medium", "high", "abstained"]
 
 CLINICAL_RESEARCH_NOTICE = (
     "Research tool only — NOT for clinical diagnosis or treatment. "
     "Human clinician review required before any clinical use."
 )
+DERM_SAFETY_NOTICE_EN = "Research tool — not a diagnosis. A dermatologist must examine the lesion."
+DERM_SAFETY_NOTICE_FR = "Outil de recherche — ne constitue pas un diagnostic. Un dermatologue doit examiner la lésion."
+
+
+class DiagnosisCandidateSchema(BaseModel):
+    """Top-K differential diagnosis candidate with calibrated probability."""
+
+    rank: int = Field(ge=1)
+    diagnosis: str
+    probability: float = Field(ge=0.0, le=1.0)
+
+
+class ImageFindingSchema(BaseModel):
+    """Structured output contract for a dermatology/clinical image finding (Step 4)."""
+
+    image_id: str
+    document_id: str | None = None
+    patient_id: str | None = None
+    picture_type: str
+    quality_result: dict[str, Any] = Field(default_factory=dict)
+    malignancy_risk_probability: float | None = Field(default=None, ge=0.0, le=1.0)
+    malignancy_risk_band: RiskBandType = "abstained"
+    top3_diagnoses: list[DiagnosisCandidateSchema] = Field(default_factory=list)
+    heatmap_uri: str | None = None
+    abstained: bool = False
+    abstain_reason_en: str | None = None
+    abstain_reason_fr: str | None = None
+    body_site: str | None = None
+    captured_date_iso: str | None = None
+    model_name: str
+    model_version: str
+    git_commit: str = ""
+    review_status: ReviewStatusType = "needs_review"
+    provenance: dict[str, Any] = Field(default_factory=dict)
+    safety_notice_en: str = DERM_SAFETY_NOTICE_EN
+    safety_notice_fr: str = DERM_SAFETY_NOTICE_FR
+
+
+class SameLesionLinkSchema(BaseModel):
+    """Cross-modal SAME_LESION link between a text lesion entity and an ImageFinding."""
+
+    link_id: str
+    relation_type: Literal["SAME_LESION"] = "SAME_LESION"
+    patient_id: str | None = None
+    document_id: str
+    image_id: str
+    text_entity_id: str
+    text_span: str
+    char_start: int = Field(ge=0)
+    char_end: int = Field(ge=0)
+    matched_body_site: str
+    date_delta_days: int | None = None
+    confidence: float = Field(ge=0.0, le=1.0)
+    review_status: ReviewStatusType = "needs_review"
+    rationale_en: str = ""
+    rationale_fr: str = ""
 
 
 class RegionCoordinatesSchema(BaseModel):
@@ -74,6 +133,8 @@ class ExtractionResultSchema(BaseModel):
     model_name: str
     model_version: str
     records: list[ExtractedRecordSchema] = Field(default_factory=list)
+    image_findings: list[ImageFindingSchema] = Field(default_factory=list)
+    same_lesion_links: list[SameLesionLinkSchema] = Field(default_factory=list)
     modality_status: dict[str, str] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
     clinical_notice: str = CLINICAL_RESEARCH_NOTICE
