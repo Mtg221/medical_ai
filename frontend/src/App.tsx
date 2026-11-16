@@ -12,8 +12,10 @@ import { ReportsPage } from "@/pages/ReportsPage";
 import { ReviewQueuePage } from "@/pages/ReviewQueuePage";
 import { SchemaExplorerPage } from "@/pages/SchemaExplorerPage";
 import { SettingsDiagnosticsPage } from "@/pages/SettingsDiagnosticsPage";
+import { SkinVisionPage } from "@/pages/SkinVisionPage";
 import { TimelineAuditPage } from "@/pages/TimelineAuditPage";
 import { UploadJobsPage } from "@/pages/UploadJobsPage";
+import { VisionBenchmarkPage } from "@/pages/VisionBenchmarkPage";
 import { WorkspacePage } from "@/pages/WorkspacePage";
 import { useAuthStore } from "@/store/authStore";
 
@@ -33,6 +35,8 @@ export function App() {
               <>
                 <Route index element={<WorkspacePage />} />
                 <Route path="upload" element={<UploadJobsPage />} />
+                <Route path="skin" element={<SkinVisionPage />} />
+                <Route path="vision-benchmark" element={<VisionBenchmarkPage />} />
                 <Route path="pdf" element={<PdfViewerPage />} />
                 <Route path="relations" element={<RelationGraphPage />} />
                 <Route path="review" element={<ReviewQueuePage />} />

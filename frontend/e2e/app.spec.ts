@@ -32,6 +32,8 @@ function makeMinimalPdfBuffer(textLine: string): Buffer {
 const ALL_PAGES: Array<{ slug: string; route: string }> = [
   { slug: "workspace", route: "/react/" },
   { slug: "upload", route: "/react/upload" },
+  { slug: "skin", route: "/react/skin" },
+  { slug: "vision_benchmark", route: "/react/vision-benchmark" },
   { slug: "pdf", route: "/react/pdf" },
   { slug: "relations", route: "/react/relations" },
   { slug: "review", route: "/react/review" },
@@ -186,5 +188,59 @@ test.describe("Phase 12B Full E2E (EN + FR) & 14-Page Light/Dark Screenshots", (
       await page.waitForTimeout(350);
       await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${pg.slug}_dark.png`), fullPage: true });
     }
+  });
+
+  test("Skin image upload -> triage -> result card -> heatmap -> review persists -> vision benchmark", async ({
+    page,
+  }) => {
+    test.setTimeout(90_000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/react/");
+    await page.getByLabel(/username/i).fill("admin_dakar");
+    await page.getByLabel(/password/i).fill(DEMO_PW);
+    await page.getByRole("button", { name: /sign in/i }).click();
+    await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
+
+    // Minimal valid 64x64 synthetic skin-toned PNG (warm RGB)
+    const pngBase64 = await page.evaluate(() => {
+      const c = document.createElement("canvas");
+      c.width = 96;
+      c.height = 96;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#d8a888";
+      ctx.fillRect(0, 0, 96, 96);
+      ctx.fillStyle = "#4b2c20";
+      ctx.beginPath();
+      ctx.arc(48, 48, 22, 0, Math.PI * 2);
+      ctx.fill();
+      return c.toDataURL("image/png").split(",")[1];
+    });
+    const pngBuf = Buffer.from(pngBase64, "base64");
+
+    await page.locator("nav a[href='/react/upload']").click();
+    await page.locator("#doc-file").setInputFiles({
+      name: "e2e_skin_lesion.png",
+      mimeType: "image/png",
+      buffer: pngBuf,
+    });
+    await page.locator("#body-site").fill("left forearm");
+    await page.locator("form button[type='submit']").click();
+    await expect(page.getByTestId("triage-result-banner")).toBeVisible({ timeout: 20_000 });
+
+    // Navigate to Skin & Patient workspace
+    await page.locator("nav a[href='/react/skin']").click();
+    await expect(page.getByTestId("skin-result-card")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("gradcam-heatmap-img")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Research tool — not a diagnosis/i).first()).toBeVisible();
+
+    // Approve finding and verify persistence after reload
+    await page.getByRole("button", { name: /Approve \(A\)/i }).click();
+    await expect(page.getByText("approved").first()).toBeVisible({ timeout: 10_000 });
+    await page.reload();
+    await expect(page.getByText("approved").first()).toBeVisible({ timeout: 10_000 });
+
+    // Visit Vision Eval benchmark page
+    await page.locator("nav a[href='/react/vision-benchmark']").click();
+    await expect(page.getByText(/derm_cnn_multitask/i)).toBeVisible({ timeout: 10_000 });
   });
 });

@@ -127,3 +127,91 @@ export interface AuditVerifyResult {
   entries_checked: number;
   broken_at_sequence?: number | null;
 }
+
+export interface DiagnosisCandidate {
+  rank: number;
+  diagnosis: string;
+  probability: number;
+}
+
+export interface ImageQualityReport {
+  quality_ok: boolean;
+  quality_score: number;
+  width: number;
+  height: number;
+  laplacian_variance: number;
+  mean_brightness: number;
+  contrast_std: number;
+  skin_area_ratio: number;
+  reasons_code: string[];
+  reasons_en: string[];
+  reasons_fr: string[];
+}
+
+export interface SameLesionLink {
+  link_id: string;
+  relation_type: "SAME_LESION";
+  patient_id: string | null;
+  document_id: string;
+  image_id: string;
+  text_entity_id: string;
+  text_span: string;
+  char_start: number;
+  char_end: number;
+  matched_body_site: string;
+  date_delta_days: number | null;
+  confidence: number;
+  review_status: string;
+  rationale_en: string;
+  rationale_fr: string;
+}
+
+export interface ImageFindingRecord {
+  image_id: string;
+  document_id: string | null;
+  patient_id: string | null;
+  original_filename?: string;
+  picture_type: string;
+  quality_result: ImageQualityReport;
+  malignancy_risk_probability: number | null;
+  malignancy_risk_band: "low" | "medium" | "high" | "abstained";
+  top3_diagnoses: DiagnosisCandidate[];
+  corrected_diagnosis?: string | null;
+  heatmap_uri: string | null;
+  thumbnail_uri?: string | null;
+  thumbnail_base64?: string | null;
+  abstained: boolean;
+  abstain_reason_en: string | null;
+  abstain_reason_fr: string | null;
+  body_site: string | null;
+  captured_date_iso: string | null;
+  exif_stripped?: boolean;
+  model_name: string;
+  model_version: string;
+  review_status: string;
+  safety_notice_en: string;
+  safety_notice_fr: string;
+  same_lesion_links?: SameLesionLink[];
+  created_at?: string;
+}
+
+export interface PatientUnifiedRecord {
+  patient_id: string;
+  pseudonym_code: string;
+  institution_id: string;
+  documents: DocumentSummary[];
+  text_entities: ExtractedEntity[];
+  image_findings: ImageFindingRecord[];
+  same_lesion_links: SameLesionLink[];
+  timeline_events: Array<{
+    event_id: string;
+    event_category: string;
+    summary_text: string;
+    event_date_iso: string;
+    review_status?: string;
+    image_id?: string;
+    document_id?: string;
+  }>;
+  safety_notice_en: string;
+  safety_notice_fr: string;
+}

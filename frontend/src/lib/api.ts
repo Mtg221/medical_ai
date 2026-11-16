@@ -55,3 +55,43 @@ export async function uploadDocumentMultipart(
   }
   return data;
 }
+
+export async function uploadImageMultipart(
+  file: File,
+  token: string,
+  metadata: {
+    subject_id: string;
+    body_site?: string;
+    captured_date_iso?: string;
+    force_new?: boolean;
+  }
+): Promise<Record<string, unknown>> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("subject_id", metadata.subject_id);
+  if (metadata.body_site) form.append("body_site", metadata.body_site);
+  if (metadata.captured_date_iso) form.append("captured_date_iso", metadata.captured_date_iso);
+  if (metadata.force_new) form.append("force_new", "true");
+
+  const res = await fetch("/api/v1/images/upload", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const data = (await res.json()) as Record<string, unknown> & { error?: string; detail?: string };
+  if (!res.ok) {
+    throw new Error(data.error || data.detail || `Image upload failed (HTTP ${res.status})`);
+  }
+  return data;
+}
+
+export async function fetchAuthenticatedBlobUrl(path: string, token: string): Promise<string> {
+  const res = await fetch(path, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch binary asset (HTTP ${res.status})`);
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
