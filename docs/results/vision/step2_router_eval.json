@@ -1,0 +1,216 @@
+{
+  "generated_at_utc": "2026-11-16T21:11:20Z",
+  "model_manifest": {
+    "architecture_name": "PictureTriageRouterCNN",
+    "architecture_version": "1.0.0",
+    "saved_at_utc": "2026-11-16T21:11:20Z",
+    "classes": [
+      "skin_clinical",
+      "skin_dermoscopic",
+      "skin_tbp_tile",
+      "document_scan",
+      "other"
+    ],
+    "parameter_count": 1829,
+    "seed": 42,
+    "temperature": 0.5,
+    "initial_weights_sha256": "0e2400237ad24350816b58827cb703d1097e6d5d7a3ba698606abbcdcc265070",
+    "trained_weights_sha256": "35b4046b4c13ebc1271d71b641bf7064c51726b457ff04eedf59dfd0b522c01d",
+    "pretrained_weights_used": false
+  },
+  "training": {
+    "initial_loss": 0.5716,
+    "final_loss": 0.005,
+    "epochs": 40,
+    "temperature": 0.5,
+    "parameter_count": 1829,
+    "initial_weights_sha256": "0e2400237ad24350816b58827cb703d1097e6d5d7a3ba698606abbcdcc265070",
+    "pretrained_weights_used": false,
+    "training_seconds": 15.898
+  },
+  "val_evaluation": {
+    "total_samples": 71,
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "document_photos_sent_to_skin_model": 0,
+    "per_class": {
+      "skin_clinical": {
+        "support": 17,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "skin_dermoscopic": {
+        "support": 12,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "skin_tbp_tile": {
+        "support": 14,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "document_scan": {
+        "support": 14,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "other": {
+        "support": 14,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    "confusion_matrix": {
+      "labels": [
+        "skin_clinical",
+        "skin_dermoscopic",
+        "skin_tbp_tile",
+        "document_scan",
+        "other"
+      ],
+      "matrix": [
+        [
+          17,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          12,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          14,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          14,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          14
+        ]
+      ]
+    },
+    "pretrained_weights_used": false
+  },
+  "locked_test_evaluation": {
+    "total_samples": 56,
+    "accuracy": 0.9464,
+    "macro_f1": 0.9486,
+    "document_photos_sent_to_skin_model": 0,
+    "per_class": {
+      "skin_clinical": {
+        "support": 10,
+        "precision": 0.9,
+        "recall": 0.9,
+        "f1": 0.9
+      },
+      "skin_dermoscopic": {
+        "support": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "skin_tbp_tile": {
+        "support": 13,
+        "precision": 0.9167,
+        "recall": 0.8462,
+        "f1": 0.88
+      },
+      "document_scan": {
+        "support": 13,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "other": {
+        "support": 13,
+        "precision": 0.9286,
+        "recall": 1.0,
+        "f1": 0.963
+      }
+    },
+    "confusion_matrix": {
+      "labels": [
+        "skin_clinical",
+        "skin_dermoscopic",
+        "skin_tbp_tile",
+        "document_scan",
+        "other"
+      ],
+      "matrix": [
+        [
+          9,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          7,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          11,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          13,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          13
+        ]
+      ]
+    },
+    "pretrained_weights_used": false
+  },
+  "quality_calibration_val": {
+    "calibrated_thresholds": {
+      "min_resolution_px": 48,
+      "min_laplacian_variance": 10.0,
+      "min_brightness": 0.12,
+      "max_brightness": 0.92,
+      "max_dark_fraction": 0.78,
+      "max_bright_fraction": 0.72,
+      "min_skin_area_ratio": 0.15
+    },
+    "val_clean_count": 30,
+    "val_degraded_count": 30,
+    "val_quality_f1": 1.0
+  },
+  "total_elapsed_seconds": 19.005
+}

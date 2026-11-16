@@ -326,28 +326,73 @@ def select_balanced_records(
     *,
     per_class_limit: int = 150,
     require_quality_ok: bool = True,
+    stratify_modalities: bool = True,
 ) -> list[DermCatalogRecord]:
-    """Select a balanced benign/malignant subset across splits from metadata pages."""
-    counts = {"benign": 0, "malignant": 0}
-    selected: list[DermCatalogRecord] = []
+    """
+    Select a balanced subset across modalities (`clinical`, `dermoscopic`, `tbp_tile`)
+    and malignancy groups (`benign`, `malignant`) from metadata pages.
+    """
+    if not stratify_modalities:
+        counts = {"benign": 0, "malignant": 0}
+        selected: list[DermCatalogRecord] = []
+        for rec in iter_derm_catalog(
+            meta_dir,
+            require_quality_ok=require_quality_ok,
+            require_research_licence=True,
+            allowed_malignancy={"benign", "malignant"},
+        ):
+            if not rec.thumb_path:
+                continue
+            mg = rec.malignancy_group
+            if counts[mg] >= per_class_limit:
+                if all(v >= per_class_limit for v in counts.values()):
+                    break
+                continue
+            selected.append(rec)
+            counts[mg] += 1
+            if all(v >= per_class_limit for v in counts.values()):
+                break
+        return selected
+
+    # Stratified across (modality, malignancy) where available; tbp_tile also allows unknown mg if needed
+    target_per_mod = max(2, (per_class_limit * 2) // 3)
+    half_mod = max(1, target_per_mod // 2)
+    mod_mg_counts: dict[tuple[str, str], int] = {
+        ("clinical", "benign"): 0,
+        ("clinical", "malignant"): 0,
+        ("dermoscopic", "benign"): 0,
+        ("dermoscopic", "malignant"): 0,
+        ("tbp_tile", "benign"): 0,
+        ("tbp_tile", "malignant"): 0,
+    }
+    tbp_extra: list[DermCatalogRecord] = []
+    selected_strat: list[DermCatalogRecord] = []
+
     for rec in iter_derm_catalog(
         meta_dir,
         require_quality_ok=require_quality_ok,
         require_research_licence=True,
-        allowed_malignancy={"benign", "malignant"},
     ):
-        if not rec.thumb_path:
+        if not rec.thumb_path or rec.modality not in ("clinical", "dermoscopic", "tbp_tile"):
             continue
-        mg = rec.malignancy_group
-        if counts[mg] >= per_class_limit:
-            if all(v >= per_class_limit for v in counts.values()):
-                break
-            continue
-        selected.append(rec)
-        counts[mg] += 1
-        if all(v >= per_class_limit for v in counts.values()):
+        key = (rec.modality, rec.malignancy_group)
+        if key in mod_mg_counts:
+            if mod_mg_counts[key] < half_mod:
+                selected_strat.append(rec)
+                mod_mg_counts[key] += 1
+        elif rec.modality == "tbp_tile" and len(tbp_extra) < target_per_mod:
+            tbp_extra.append(rec)
+
+        if all(v >= half_mod for v in mod_mg_counts.values()):
             break
-    return selected
+
+    # Top up tbp_tile if tbp_tile had fewer explicit benign/malignant labels
+    tbp_current = mod_mg_counts[("tbp_tile", "benign")] + mod_mg_counts[("tbp_tile", "malignant")]
+    if tbp_current < target_per_mod and tbp_extra:
+        needed = target_per_mod - tbp_current
+        selected_strat.extend(tbp_extra[:needed])
+
+    return selected_strat
 
 
 def download_balanced_thumbnails(

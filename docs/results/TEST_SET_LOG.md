@@ -20,3 +20,5 @@
 | `2026-11-16T20:28:56Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `85319` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-16T20:29:09Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-16T20:30:01Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
+| `2026-11-16T21:11:20Z` | `derm-router-5class:locked_test` | `PictureTriageRouterCNN-v1.0.0` | `56` | Step 2 5-class picture triage router locked-test evaluation |
+| `2026-11-16T21:11:26Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |

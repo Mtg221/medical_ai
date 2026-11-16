@@ -184,6 +184,17 @@ def main(argv: list[str] | None = None) -> int:
     p_d_audit = sub_derm.add_parser("audit-splits", help="Verify 0 lesion overlap and 0 cross-split dHash duplicates")
     p_d_audit.add_argument("--meta-dir", type=Path, default=Path("var/cache/derm/meta"), help="Metadata directory")
 
+    p_d_rtrain = sub_derm.add_parser("router-train", help="Train and evaluate the 5-class picture triage router")
+    p_d_rtrain.add_argument("--meta-dir", type=Path, default=Path("var/cache/derm/meta"), help="Metadata directory")
+    p_d_rtrain.add_argument("--out-model", type=Path, default=Path("models/vision_router_v1"), help="Output model directory")
+    p_d_rtrain.add_argument("--out-eval", type=Path, default=Path("docs/results/vision/step2_router_eval.json"), help="Output eval JSON")
+    p_d_rtrain.add_argument("--epochs", type=int, default=40, help="Training epochs")
+    p_d_rtrain.add_argument("--seed", type=int, default=42, help="Random seed")
+
+    p_d_triage = sub_derm.add_parser("triage", help="Run picture triage and bilingual quality check on an image")
+    p_d_triage.add_argument("image_path", type=Path, help="Input image path")
+    p_d_triage.add_argument("--model", type=Path, default=Path("models/vision_router_v1"), help="Saved router model directory")
+
     args = parser.parse_args(argv)
 
     if args.cmd == "data" and args.data_cmd == "build":
@@ -353,6 +364,33 @@ def main(argv: list[str] | None = None) -> int:
             audit = audit_derm_splits(recs)
             print(json.dumps(audit, indent=2))
             return 0 if audit["passed"] else 1
+
+        if args.derm_cmd == "router-train":
+            from medresearch_platform.vision.router import train_and_evaluate_router
+
+            res = train_and_evaluate_router(
+                args.meta_dir,
+                out_model_dir=args.out_model,
+                out_eval_json=args.out_eval,
+                epochs=args.epochs,
+                seed=args.seed,
+            )
+            print(json.dumps(res, indent=2))
+            return 0
+
+        if args.derm_cmd == "triage":
+            from PIL import Image
+
+            from medresearch_platform.vision.router import PictureTriageRouter
+
+            if (args.model / "manifest.json").exists():
+                router = PictureTriageRouter.load(args.model)
+            else:
+                router = PictureTriageRouter()
+            with Image.open(args.image_path) as im:
+                decision = router.triage_image(im.convert("RGB"))
+            print(json.dumps(decision.to_dict(), indent=2, ensure_ascii=False))
+            return 0
 
     return 1
 
