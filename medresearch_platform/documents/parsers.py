@@ -219,6 +219,7 @@ def parse_document_bytes(
             text = raw_bytes.decode("utf-8")
         except UnicodeDecodeError:
             text = raw_bytes.decode("latin-1", errors="replace")
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
         sections = segment_page_sections(text, page_number=1)
         lang = detect_document_language(text)
         return ParsedDocumentBundle(

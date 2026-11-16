@@ -54,7 +54,7 @@ def _extract_file_with_saved_model(
     }
     fmt = fmt_map.get(ext, "TXT")
     if fmt == "TXT":
-        text = raw_bytes.decode("utf-8", errors="replace")
+        text = raw_bytes.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
         lang = detect_document_language(text)
         page_map: list[dict[str, Any]] | None = None
     else:

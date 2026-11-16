@@ -40,7 +40,7 @@ def test_p1_cli_uses_saved_model_and_matches_api_and_hybrid(
         "Pas de fièvre ni de douleur thoracique.\n"
     )
     note_file = tmp_path / "sample_fr.txt"
-    note_file.write_text(note_text, encoding="utf-8")
+    note_file.write_text(note_text, encoding="utf-8", newline="\n")
     out_json = tmp_path / "cli_out.json"
 
     # Missing model should fail with clear train instruction
