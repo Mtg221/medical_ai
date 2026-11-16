@@ -16,6 +16,8 @@ htmlcov/
 # Node / Frontend
 node_modules/
 frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
 npm-debug.log*
 
 # Runtime data, raw/processed datasets, trained weights & local databases
