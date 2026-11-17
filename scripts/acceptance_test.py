@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 import io
 import json
 import os
@@ -91,8 +92,9 @@ def run_acceptance_suite(*, use_repo_models: bool = False) -> dict[str, object]:
     t0 = time.perf_counter()
     results: dict[str, bool] = {}
 
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         tmp_path = Path(td)
+        client: TestClient | None = None
         old_sqlite = os.environ.get("MEDRESEARCH_SQLITE_PATH")
         old_storage = os.environ.get("MEDRESEARCH_STORAGE_DIR")
         old_model_dir = os.environ.get("MEDRESEARCH_MODEL_DIR")
@@ -328,6 +330,9 @@ def run_acceptance_suite(*, use_repo_models: bool = False) -> dict[str, object]:
             assert en_rep.status_code == 200 and "John Doe" not in en_rep.text
             results["text_acceptance_en_fixture_and_p10"] = True
         finally:
+            if client is not None:
+                client.close()
+            gc.collect()
             if old_sqlite is None:
                 os.environ.pop("MEDRESEARCH_SQLITE_PATH", None)
             else:
