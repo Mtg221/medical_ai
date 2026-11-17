@@ -7,6 +7,7 @@ __pycache__/
 build/
 dist/
 .venv/
+.venv-vision/
 venv/
 .pytest_cache/
 .hypothesis/
@@ -24,6 +25,7 @@ npm-debug.log*
 var/
 data/raw/
 data/processed/
+data/router_real/
 models/
 experiments/runs/
 *.sqlite3

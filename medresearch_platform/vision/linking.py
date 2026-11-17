@@ -460,7 +460,7 @@ def build_image_finding(
         model_name=skin_prediction.model_name,
         model_version="1.0.0",
         git_commit=git_commit,
-        review_status="needs_review" if skin_prediction.needs_review else "unreviewed",
+        review_status="needs_review",
         provenance={
             **(provenance or {}),
             "router_class": triage.predicted_class,

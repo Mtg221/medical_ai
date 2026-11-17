@@ -102,6 +102,8 @@ jobs:
         run: pytest --cov=medresearch_platform --cov-report=term-missing
       - name: Check docs have no file:/// links
         run: pytest tests/test_no_file_uri_in_docs.py -q
+      - name: Run Text + CC0 Image Acceptance Suite
+        run: python scripts/acceptance_test.py
       - name: Run Playwright E2E against real backend
         if: runner.os == 'Linux' && matrix.python-version == '3.12'
         run: |

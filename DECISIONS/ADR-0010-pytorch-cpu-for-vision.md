@@ -25,13 +25,14 @@ The platform is expanding to analyze dermatology skin images (`clinical`, `dermo
    - All text NER, assertion, relation, and temporal models remain in pure NumPy/scikit-learn/CRFsuite so the core text pipeline runs with zero PyTorch dependency.
 3. **Classical & Pure-NumPy Vision Baselines Retained:**
    - Every vision benchmark compares three from-scratch model families on identical lesion-grouped splits:
-     1. **Classical Vision Baseline:** Colour histograms (`RGB`/`HSV`/`CIE-Lab`), texture (`LBP`, `GLCM`/Haralick), and Otsu lesion border/asymmetry geometry with calibrated Logistic Regression / SVM / HistGradientBoosting.
-     2. **Pure-NumPy Toy CNN (`RandomInitDermConvNet`):** Hand-derived 2D convolution + pooling + metadata fusion with finite-difference gradient verification (`< 1e-4`).
-     3. **PyTorch CPU Multi-Task ResNet (`DermResNetMultiTask`):** 4-stage residual CNN (`16 -> 32 -> 64 -> 128` channels, BatchNorm, ReLU, global pooling) with Grad-CAM and temperature scaling.
+     1. **Classical Vision Baseline (`ClassicalSkinClassifier`):** Colour histograms (`RGB`/`HSV`/`CIE-Lab`), texture (`LBP`, `GLCM`/Haralick), and Otsu lesion border/asymmetry geometry with calibrated Logistic Regression.
+     2. **Pure-NumPy Baseline (`numpy_frozen_random_features` / `RandomInitDermConvNet`):** Frozen random filter bank / toy NumPy CNN retained strictly as an honest baseline.
+     3. **Metadata-Only Baseline (`metadata_only_logreg`):** Logistic Regression on modality + body-site + dataset (zero pixels) to detect metadata shortcuts.
+     4. **PyTorch CPU Multi-Task ResNet (`PyTorchDermResNet4Stage-v1.0.0`) & Router (`PyTorchPictureTriageCNN-v1.0.0`):** 4-stage residual CNN (`32 -> 64 -> 128 -> 256` channels, `1,229,845` parameters, `96×96` RGB input, BatchNorm, ReLU, global average pooling) and 5-class PyTorch router (`98,565` parameters, `96×96` RGB input) with forward/backward hook Grad-CAM and temperature scaling.
 4. **Optional `.[vision]` Packaging & Graceful Runtime Degradation:**
-   - `pyproject.toml` defines an optional `[project.optional-dependencies] vision` extra pinning `torch==2.2.2` on `darwin`/`x86_64` (`python_version <= "3.12"`) and `torch>=2.2.2` on Linux/Windows/ARM64.
+   - `pyproject.toml` defines an optional `[project.optional-dependencies] vision` extra pinning `torch==2.2.2` on `darwin`/`x86_64` (`python_version <= "3.12"`) and `torch>=2.2.2` on Linux/Windows/ARM64 (requiring `numpy<2` alongside `torch==2.2.2` on Intel macOS).
    - For Intel macOS, a dedicated `.venv-vision` (Python 3.12 + `pip install -e ".[vision,dev]"`) is supported alongside the base environment.
-   - If `torch` is not installed in the active interpreter, the FastAPI server, CLI, and test suite still start cleanly: classical and NumPy vision models remain available, and PyTorch-specific endpoints/CLI commands report `"vision PyTorch backend not installed (install with: pip install -e '.[vision]' on Python <=3.12)"`.
+   - If `torch` is not installed in the active interpreter (or `models/` is missing / SHA-256 invalid), `/api/v1/images/upload` fails loudly with **HTTP 503** (`{"error": "image model not trained", "command": "medextract derm train ..."}`) and never serves random weights.
 
 ---
 

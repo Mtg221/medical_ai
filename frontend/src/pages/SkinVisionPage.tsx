@@ -275,6 +275,10 @@ export function SkinVisionPage() {
                     )}
                   </div>
 
+                  <p className="text-[11px] italic text-slate-600 dark:text-slate-400">
+                    {t("skin.gradcamCaption")}
+                  </p>
+
                   <div className="flex items-center gap-3 text-xs">
                     <label htmlFor="heatmap-opacity" className="font-medium text-slate-700 dark:text-slate-300 shrink-0">
                       {t("skin.heatmapOpacity")}: {Math.round(heatmapOpacity * 100)}%
@@ -336,20 +340,24 @@ export function SkinVisionPage() {
                     data-testid="skin-result-card"
                     className="rounded-md border border-slate-200 dark:border-slate-800 p-3 space-y-2"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-slate-300">Malignancy Risk Band:</span>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-slate-600 dark:text-slate-300">{t("skin.riskBandLabel")}</span>
                       <Badge
                         tone={
                           riskBand === "high"
                             ? "rose"
                             : riskBand === "medium"
                             ? "amber"
-                            : riskBand === "low"
-                            ? "emerald"
                             : "slate"
                         }
                       >
-                        {riskBand.toUpperCase()}
+                        {riskBand === "high"
+                          ? t("skin.riskHigh")
+                          : riskBand === "medium"
+                          ? t("skin.riskMedium")
+                          : riskBand === "low"
+                          ? t("skin.riskLow")
+                          : t("skin.riskAbstained")}
                         {finding.malignancy_risk_probability !== null &&
                           ` (${(finding.malignancy_risk_probability * 100).toFixed(1)}%)`}
                       </Badge>
@@ -365,7 +373,7 @@ export function SkinVisionPage() {
                   <div className="space-y-1.5">
                     <h3 className="font-semibold text-slate-800 dark:text-slate-200">{t("skin.top3Title")}</h3>
                     {finding.top3_diagnoses.length === 0 ? (
-                      <p className="text-slate-500">No diagnosis candidates (abstained).</p>
+                      <p className="text-slate-500">{t("skin.noCandidatesAbstained")}</p>
                     ) : (
                       <ul className="space-y-1.5">
                         {finding.top3_diagnoses.map((cand) => (

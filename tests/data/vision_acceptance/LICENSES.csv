@@ -1,0 +1,16 @@
+filename,label,modality,license,source
+skin/malignant_0_isic_ISIC_0024209.webp,malignant,clinical,CC-0,ISIC (isic:ISIC_0024209)
+skin/malignant_1_isic_ISIC_0024213.webp,malignant,clinical,CC-0,ISIC (isic:ISIC_0024213)
+skin/benign_0_isic_ISIC_5879786.webp,benign,clinical,CC-0,ISIC (isic:ISIC_5879786)
+skin/benign_1_isic_ISIC_5219984.webp,benign,clinical,CC-0,ISIC (isic:ISIC_5219984)
+skin/benign_2_isic_ISIC_9389491.webp,benign,clinical,CC-0,ISIC (isic:ISIC_9389491)
+non_skin/other_0_faces_000_b5acb90c79.jpg,other,faces,Public domain,"https://commons.wikimedia.org/wiki/File:(Agen)_Portrait_de_Marie-Jos%C3%A8phe_de_Saxe,_dauphine_de_France_-_Jean-Marc_Nattier_-_Mus%C3%A9e_des_Beaux-Arts_d%27Agen.jpg"
+non_skin/other_1_rooms_000_25acbebd6c.jpg,other,rooms,Public domain,https://commons.wikimedia.org/wiki/File:(Barcelona)_Dining_Room_by_Pere_Torn%C3%A9_Esquius_-_Museu_Nacional_d%27Art_de_Catalunya.jpg
+non_skin/other_2_food_000_e49d176422.jpg,other,food,CC0,https://commons.wikimedia.org/wiki/File:9610Cuisine_food_of_Bulacan_Baliuag_29.jpg
+non_skin/other_3_screenshots_000_179be97450.jpg,other,screenshots,CC0,https://commons.wikimedia.org/wiki/File:Flameshot_Interface.png
+non_skin/other_4_xrays_000_2bfb5cd2f6.jpg,other,xrays,Public domain,https://commons.wikimedia.org/wiki/File:Chest_Xray_40_yr_old_male_acute_respiratory_distress_syndrome_as_a_complication_of_murine_typhus._13-1421-F1.jpg
+documents/doc_0_synth_doc_0000.jpg,document_scan,document,CC0 / MIT,SYNTH-MED-V3.1 rendered scan (MIT/CC0)
+documents/doc_1_synth_doc_0001.jpg,document_scan,document,CC0 / MIT,SYNTH-MED-V3.1 rendered scan (MIT/CC0)
+documents/doc_2_synth_doc_0002.jpg,document_scan,document,CC0 / MIT,SYNTH-MED-V3.1 rendered scan (MIT/CC0)
+documents/doc_3_synth_doc_0003.jpg,document_scan,document,CC0 / MIT,SYNTH-MED-V3.1 rendered scan (MIT/CC0)
+documents/doc_4_synth_doc_0004.jpg,document_scan,document,CC0 / MIT,SYNTH-MED-V3.1 rendered scan (MIT/CC0)

@@ -529,6 +529,10 @@ class HybridPipeline:
         pipe.manifest = manifest
 
         pipe.stage1 = joblib.load(in_dir / "stage1.joblib")
+        for clf_attr in ("lang_clf", "doc_type_clf"):
+            clf_obj = getattr(pipe.stage1, clf_attr, None)
+            if clf_obj is not None and not hasattr(clf_obj, "multi_class"):
+                setattr(clf_obj, "multi_class", "auto")
 
         vocab_data = json.loads((in_dir / "vocab.json").read_text(encoding="utf-8"))
         pipe.stage2.vocab.max_size = int(vocab_data["max_size"])

@@ -1,0 +1,164 @@
+{
+  "evaluated_at_utc": "2026-11-17T15:08:04Z",
+  "classes": [
+    "skin_clinical",
+    "skin_dermoscopic",
+    "skin_tbp_tile",
+    "document_scan",
+    "other"
+  ],
+  "total_eval": 389,
+  "accuracy": 0.928,
+  "confusion_matrix": [
+    [
+      70,
+      3,
+      5,
+      0,
+      2
+    ],
+    [
+      7,
+      70,
+      0,
+      0,
+      3
+    ],
+    [
+      5,
+      0,
+      75,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      80,
+      0
+    ],
+    [
+      1,
+      1,
+      0,
+      1,
+      66
+    ]
+  ],
+  "critical_errors": {
+    "skin_to_document_scan": 0,
+    "document_scan_to_skin": 0,
+    "other_to_skin": 2
+  },
+  "owner_document_photos": {
+    "total": 0,
+    "correct_document_scan": 0,
+    "routed_to_skin": 0
+  },
+  "ood_check": {
+    "total": 50,
+    "routed_to_skin": 5,
+    "predictions": {
+      "other": 45,
+      "skin_tbp_tile": 1,
+      "skin_clinical": 4
+    }
+  },
+  "training": {
+    "epochs": 12,
+    "best_val_acc": 0.9363,
+    "temperature": 0.7,
+    "elapsed_seconds": 91.6,
+    "history": [
+      {
+        "epoch": 1.0,
+        "train_loss": 0.745,
+        "val_acc": 0.6923
+      },
+      {
+        "epoch": 2.0,
+        "train_loss": 0.5644,
+        "val_acc": 0.7719
+      },
+      {
+        "epoch": 3.0,
+        "train_loss": 0.4864,
+        "val_acc": 0.7878
+      },
+      {
+        "epoch": 4.0,
+        "train_loss": 0.4261,
+        "val_acc": 0.8037
+      },
+      {
+        "epoch": 5.0,
+        "train_loss": 0.3994,
+        "val_acc": 0.8594
+      },
+      {
+        "epoch": 6.0,
+        "train_loss": 0.35,
+        "val_acc": 0.3873
+      },
+      {
+        "epoch": 7.0,
+        "train_loss": 0.3424,
+        "val_acc": 0.6313
+      },
+      {
+        "epoch": 8.0,
+        "train_loss": 0.2932,
+        "val_acc": 0.8806
+      },
+      {
+        "epoch": 9.0,
+        "train_loss": 0.284,
+        "val_acc": 0.9151
+      },
+      {
+        "epoch": 10.0,
+        "train_loss": 0.2604,
+        "val_acc": 0.7135
+      },
+      {
+        "epoch": 11.0,
+        "train_loss": 0.2452,
+        "val_acc": 0.9363
+      },
+      {
+        "epoch": 12.0,
+        "train_loss": 0.2286,
+        "val_acc": 0.9363
+      }
+    ],
+    "pretrained_weights_used": false
+  },
+  "manifest": {
+    "architecture_name": "PyTorchPictureTriageCNN-v1.0.0",
+    "backend": "pytorch_cpu",
+    "image_size": 96,
+    "classes": [
+      "skin_clinical",
+      "skin_dermoscopic",
+      "skin_tbp_tile",
+      "document_scan",
+      "other"
+    ],
+    "parameter_count": 98565,
+    "seed": 42,
+    "temperature": 0.7,
+    "abstain_threshold": 0.45,
+    "initial_weights_sha256": "99f0bc796406213cf4ad6aa257bbf185d11deb9d2882a7e687f9489ec95e7ed3",
+    "trained_weights_sha256": "70cfbcb22f39819a409c70e5890ce74fbbbe5e7526dcc5afd948fd56d94f2b2f",
+    "pretrained_weights_used": false,
+    "saved_at_utc": "2026-11-17T15:08:00Z"
+  },
+  "split_sizes": {
+    "train": 2260,
+    "val": 377,
+    "held_out_eval": 389,
+    "ood_check": 50,
+    "owner_document_photos_total": 0
+  }
+}

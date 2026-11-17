@@ -148,7 +148,7 @@ class DermResNetMultiTask:
     spatial Grad-CAM on the final 128-channel convolutional block, and energy-based OOD/abstention gating.
     """
 
-    architecture_name = "DermResNetMultiTask"
+    architecture_name = "numpy_frozen_random_features"
     architecture_version = "1.0.0"
 
     def __init__(

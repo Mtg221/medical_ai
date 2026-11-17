@@ -1,9 +1,10 @@
-# Model Card: `DermResNetMultiTask-v1.0.0` & `PictureTriageRouterCNN-v1.0.0`
+# Model Card: `PyTorchDermResNet4Stage-v1.0.0` & `PyTorchPictureTriageCNN-v1.0.0`
 
-- **Model Family:** From-Scratch 4-Stage Residual CNN (`16 → 32 → 64 → 128` channels, `130,590` parameters, `1.04 MB`) + 5-Class Picture Triage Router (`1,829` parameters)
-- **Initialization:** 100% Random Initialization (`he_normal` + `xavier_uniform`, `pretrained_weights_used = false`, zero ImageNet/external weights)
-- **Execution Profile:** CPU-Only Native (`macOS x86_64`, Linux, Windows; optional `.[vision]` PyTorch extra documented in `ADR-0010`)
-- **Artefact Locations:** `models/derm_cnn_seed1/` (`manifest.json` + `weights.npz`), `models/vision_router_v1/`
+- **Skin Model (`PyTorchDermResNet4Stage-v1.0.0`):** From-Scratch 4-Stage Residual CNN (`32 → 64 → 128 → 256` channels, `BatchNorm2d`, `ReLU`, `AdaptiveAvgPool2d`, `1,229,845` parameters, `96×96` RGB input, all layers trained)
+- **Router (`PyTorchPictureTriageCNN-v1.0.0`):** From-Scratch 4-Block PyTorch CNN (`16 → 32 → 64 → 128`, `98,565` parameters, `96×96` RGB input, 5 classes)
+- **Initialization:** 100% Random Initialization (`pretrained_weights_used = false`, `initial_weights_sha256` + `trained_weights_sha256` recorded in `manifest.json`)
+- **Execution Profile:** CPU-Only Native (`torch==2.2.2` on Python 3.12 Intel macOS `x86_64`; `torch>=2.2.2` on Linux/Windows/ARM64)
+- **Artefact Locations:** `models/derm_cnn_seed1/` (`manifest.json` + `weights_torch.pt`), `models/vision_router_v1/` (`manifest.json` + `router_torch.pt`), `configs/vision/abstention_v2.json`
 
 > **Clinical & Scientific Safety Notice (EN / FR)**
 > - **EN:** Research tool — not a diagnosis. A dermatologist must examine the lesion.
@@ -14,41 +15,46 @@
 ## 1. Intended Use & Out-of-Scope / Not-Intended Use
 
 - **Intended Use:**
-  - Research benchmarking of from-scratch 2D dermatology risk estimation, top-3 harmonised diagnosis ranking, picture modality triage (`skin_clinical`, `skin_dermoscopic`, `skin_tbp_tile`, `document_scan`, `other`), bilingual image-quality gating, and spatial Grad-CAM explanations on `derm-corpus` splits.
-  - Human-in-the-loop research review inside an authenticated institutional workspace (`review_status = "needs_review"` on high-risk or uncertain outputs).
+  - Research benchmarking of from-scratch 2D dermatology risk estimation, picture modality triage (`skin_clinical`, `skin_dermoscopic`, `skin_tbp_tile`, `document_scan`, `other`), bilingual image-quality gating, and spatial Grad-CAM explanations on `derm-corpus`.
+  - Human-in-the-loop research review inside an authenticated institutional workspace (`review_status = "needs_review"` on every AI-generated image finding until confirmed by a reviewer).
 - **Not-Intended / Prohibited Use:**
   - **NOT** a medical device and **NOT** cleared or validated for autonomous clinical diagnosis, triage, biopsy deferral, or treatment decisions.
   - Must **never** be deployed without mandatory dermatologist examination of the lesion.
 
 ---
 
-## 2. Training Data, Splits & Licences (`derm-corpus`)
+## 2. Training Data, Splits & Licences (`derm-corpus` v2)
 
-- **Metadata Catalog:** `573,024` records (`isic`: `549,541`, `fitzpatrick17k`: `11,394`, `scin`: `10,379`, `skindisnet`: `1,710`), detailed in [DERM_CORPUS_CARD.md](../data/DERM_CORPUS_CARD.md).
-- **Stratified Evaluation Subset:** `871` cached thumbnails (`train`: `613`, `val`: `140`, `locked_test`: `118`) partitioned deterministically by lesion/image group key with `0` cross-split overlap and 64-bit `dHash` deduplication.
-- **Licence Governance:**
-  - `CC-0`, `CC-BY`, `CC-BY-4.0`: Permitted for research, redistribution, and documentation/screenshots with attribution.
-  - `CC-BY-NC`, `CC-BY-NC-4.0`, `SCIN-Data-Use-Public-License`: Permitted for local research only; excluded from redistribution, commercial use, and documentation screenshots.
-  - Raw images and metadata dumps are git-ignored under `var/cache/derm/`.
+- **Metadata Catalog:** `573,024` records (`305,964` eligible with `quality_ok == true` and `research_allowed == true`).
+- **Real Stratified Subset ([DERM_CORPUS_CARD_V2.md](../data/DERM_CORPUS_CARD_V2.md)):**
+  - `train`: `26,474` real thumbnails (`18,251` benign, `5,804` malignant, `2,419` masked unknown/indet; `4,519` clinical, `20,449` dermoscopic, `1,506` TBP tile).
+  - `val`: `3,000` real thumbnails (`150` per Fitzpatrick tone `I–VI`).
+  - `locked_test_v2` ([locked_test_v2.txt](../../configs/vision/locked_test_v2.txt)): **`2,022`** frozen real thumbnails (`1,853` labelled `mg`: `1,064` malignant, `789` benign; `169` masked; `978` cross-split `dHash` near-duplicates dropped from test, `0` dropped from train).
+  - **Zero** lesion `group_key` overlap across splits and **zero** synthetic images in any benchmark split.
+- **Router Real Dataset:** Real skin thumbnails (`train` split) + rendered SYNTH-MED-V3.1 notes (`document_scan`) + `346` Wikimedia Commons CC0/PD everyday photos (`other`, recorded in `data/router_real/SOURCES.csv`) + `50` CC0/PD OOD check images (`cars`, `landscapes`, `hands`, `wounds`, `tattoos`).
 
 ---
 
-## 3. Locked-Test Performance & Subgroup Fairness (`n = 118`)
+## 3. Locked-Test Performance (`locked_test_v2`, `n = 1,853` Labelled)
 
-- **Overall (`locked_test`, `n = 118`):**
-  - Malignancy AUROC: **`0.8326`** (95% CI `[0.7569, 0.9056]`)
-  - Sensitivity @ 90% Specificity: `0.6000` · Sensitivity @ 95% Specificity: `0.5273`
-  - Balanced Accuracy: `0.7062` · 9-Class Diagnosis Macro-F1: `0.3023` · Top-3 Accuracy: `0.7034`
-  - Calibration: ECE `0.1262`, Brier `0.1753` · Abstention Rate: `35.59%` · Non-Abstained High-Risk Precision: `0.8409`
-  - Grad-CAM Lesion-Mask Sanity: `mean L1 shift = 0.6001` (`sanity_passed = true`)
-- **Subgroup Disparities & Honest Sample-Size Flags:**
-  - **Dataset:** `isic` (`n = 67`) achieves AUROC `0.8841` [`0.7966, 0.9487`] vs. `fitzpatrick17k` (`n = 51`) AUROC `0.7414` [`0.6110, 0.8561`].
-  - **Fitzpatrick Skin Tone:** Only `I` (`n = 83`, AUROC `0.8541`) meets `n >= 30`; tones `II` (`8`), `III` (`4`), `IV` (`4`), `V` (`1`), `VI` (`5`), and `UNKNOWN` (`13`) are **flagged `"too few to conclude (< 30)"`**. Dark-skin malignant examples are severely underrepresented across the source corpus (`0.47%` tone V, `0.27%` tone VI, `94.56%` `UNKNOWN`).
-  - **Modality:** `clinical` (`n = 91`) achieves AUROC `0.8760` [`0.8082, 0.9349`]; `dermoscopic` (`n = 14`) and `tbp_tile` (`n = 13`) are flagged `"too few to conclude (< 30)"`.
+- **PyTorch 4-Stage ResNet (`seed=1`):**
+  - Malignancy AUROC: **`0.9398`** (`95% CI [0.9296, 0.9508]`)
+  - 3-Seed Ensemble AUROC: **`0.9421`** (`[0.9325, 0.9528]`) · No-Metadata Ablation AUROC: **`0.9461`** (`[0.9369, 0.9555]`)
+  - Sensitivity @ 90% Specificity: `0.8186` · Sensitivity @ 95% Specificity: `0.6786` · Balanced Accuracy: `0.8389`
+  - Calibration: ECE `0.1554`, Brier `0.1334` · Abstention Rate (`min_confidence = 0.65` selected on `val`): `12.84%`
+  - Grad-CAM Adebayo Weight-Randomisation Sanity: `mean L1 shift = 0.3546` (`"Where the model looked — not proof of a diagnosis."`)
+- **Baselines on Identical `locked_test_v2`:**
+  - `classical_logreg` (64 handcrafted features): AUROC `0.7321` `[0.7073, 0.7586]`, **wins on 9-class diagnosis Macro-F1 (`0.7447`)**
+  - `numpy_frozen_random_features`: AUROC `0.7034` `[0.6797, 0.7298]`
+  - `metadata_only_logreg` (no pixels): AUROC `0.6364` `[0.6097, 0.6651]`
+- **Subgroup Performance & Limitations:**
+  - **Modality:** `dermoscopic` (`n=1,160`) AUROC `0.9783` `[0.9710, 0.9857]` (ECE `0.0481`); `clinical` (`n=399`) AUROC `0.9029` `[0.8522, 0.9340]`; `tbp_tile` (`n=294`, `288` mal / `6` ben) AUROC `0.7095` `[0.4811, 0.9070]` (ECE `0.6503`).
+  - **Fitzpatrick Tone:** `IV` (`n=44`, `30` mal / `14` ben) AUROC `0.9286` `[0.8387, 1.0000]`; `V` (`n=27`) is **too few to conclude (`< 30`)**; `I` (`128`), `II` (`124`), `III` (`129`), and `VI` (`38`) each contain a single malignancy class in `locked_test_v2` (AUROC undefined).
 
 ---
 
 ## 4. Privacy & Safety Controls
 
+- **Fail-Loud Serving (503 / 404):** Missing/tampered models return HTTP `503` (no random weights); unknown/missing `subject_id` returns `404`/`422` (no cross-patient fallback); missing capture date stays `null` (`captured_date_source = "unknown"`).
 - **EXIF & GPS Stripping:** All uploaded images have EXIF, GPS, XMP, and ICC metadata stripped before storage (`exif_stripped = 1`).
-- **Abstention Gate:** Non-skin images (`other`), blurry/underexposed/overexposed/low-resolution images, low-confidence predictions (`< 0.62`), or high out-of-distribution energy (`> -0.15`) automatically abstain (`risk_band = "abstained"`) with bilingual EN/FR explanations.
+- **Abstention Gate (`configs/vision/abstention_v2.json`):** `min_confidence = 0.65` selected on `val` (`val_coverage = 86.81%`, `val_selective_error = 10.20%`); non-skin images (`other`) never receive a malignancy risk score.

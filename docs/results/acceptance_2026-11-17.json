@@ -1,0 +1,20 @@
+{
+  "status": "PASSED",
+  "checks": {
+    "auth_required_on_image_routes": true,
+    "no_model_returns_503": true,
+    "unknown_patient_returns_404": true,
+    "triage_skin_image": true,
+    "no_exif_gps_kept": true,
+    "heatmap_generated": true,
+    "institution_isolation_on_image_routes": true,
+    "quality_rejection_blurred_image": true,
+    "non_skin_no_risk_score": true,
+    "triage_document_photo_to_ocr": true,
+    "review_persistence_and_audit": true,
+    "report_skin_section_en_fr": true,
+    "text_acceptance_fr_fixture_and_p10": true,
+    "text_acceptance_en_fixture_and_p10": true
+  },
+  "elapsed_seconds": 2.13
+}

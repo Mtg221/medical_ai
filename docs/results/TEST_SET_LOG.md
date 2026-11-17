@@ -27,3 +27,5 @@
 | `2026-11-17T01:17:40Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-17T01:18:30Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-17T14:27:09Z` | `derm-corpus:locked_test_v2` | `frozen_list_sha256:81b0ad60676de635` | `2022` | Frozen configs/vision/locked_test_v2.txt (sha256=81b0ad60676de6355f8c621d8ece3f0696b1bc462ac6ccc928d8afe9cd54776d) |
+| `2026-11-17T21:51:33Z` | `derm-corpus:locked_test_v2` | `PyTorchDermResNet4Stage-v1.0.0` | `1853` | Step 4 final single evaluation on frozen configs/vision/locked_test_v2.txt |
+| `2026-11-17T21:56:55Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |

@@ -83,16 +83,26 @@ class VisionServingEngine:
 
     def __init__(self, workspace_dir: Path | str | None = None) -> None:
         self.workspace_dir = Path(workspace_dir or Path(__file__).resolve().parents[2])
-        self._router: PictureTriageRouter | None = None
-        self._skin_model: DermResNetMultiTask | None = None
+        self._router: Any = None
+        self._skin_model: Any = None
 
-    def _check_model_dir(self, model_dir: Path, weights_filename: str) -> bool:
+    def _check_model_dir(self, model_dir: Path, numpy_weights_filename: str, torch_weights_filename: str) -> bool:
         manifest_path = model_dir / "manifest.json"
-        weights_path = model_dir / weights_filename
-        if not manifest_path.exists() or not weights_path.exists():
+        if not manifest_path.exists():
             return False
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            backend = str(manifest.get("backend") or "numpy")
+            if backend == "pytorch_cpu":
+                from medresearch_platform.vision.router_torch import is_torch_available
+
+                if not is_torch_available():
+                    return False
+                weights_path = model_dir / torch_weights_filename
+            else:
+                weights_path = model_dir / numpy_weights_filename
+            if not weights_path.exists():
+                return False
             expected_sha = str(manifest.get("trained_weights_sha256") or "")
             if not expected_sha:
                 return False
@@ -113,16 +123,27 @@ class VisionServingEngine:
         r_dir = self._router_dir()
         s_dir = self._skin_dir()
         return {
-            "vision_router": "ready" if self._check_model_dir(r_dir, "router_weights.npz") else "missing",
-            "vision_skin": "ready" if self._check_model_dir(s_dir, "weights.npz") else "missing",
+            "vision_router": "ready" if self._check_model_dir(r_dir, "router_weights.npz", "router_torch.pt") else "missing",
+            "vision_skin": "ready" if self._check_model_dir(s_dir, "weights.npz", "weights_torch.pt") else "missing",
         }
 
     @property
-    def router(self) -> PictureTriageRouter:
+    def router(self) -> Any:
         if self._router is None:
             r_dir = self._router_dir()
             try:
-                self._router = PictureTriageRouter.load(r_dir)
+                manifest = json.loads((r_dir / "manifest.json").read_text(encoding="utf-8"))
+                if manifest.get("backend") == "pytorch_cpu":
+                    from medresearch_platform.vision.router_torch import (
+                        PyTorchPictureTriageRouter,
+                        is_torch_available,
+                    )
+
+                    if not is_torch_available():
+                        raise RuntimeError("PyTorch is not installed for pytorch_cpu router model.")
+                    self._router = PyTorchPictureTriageRouter.load(r_dir)
+                else:
+                    self._router = PictureTriageRouter.load(r_dir)
             except Exception as exc:
                 raise ModelNotAvailableError(
                     f"image model not trained (vision_router_v1 missing or invalid in {r_dir}): {exc} / "
@@ -132,11 +153,20 @@ class VisionServingEngine:
         return self._router
 
     @property
-    def skin_model(self) -> DermResNetMultiTask:
+    def skin_model(self) -> Any:
         if self._skin_model is None:
             m_dir = self._skin_dir()
             try:
-                self._skin_model = DermResNetMultiTask.load(m_dir)
+                manifest = json.loads((m_dir / "manifest.json").read_text(encoding="utf-8"))
+                if manifest.get("backend") == "pytorch_cpu":
+                    from medresearch_platform.vision.cnn_torch import PyTorchDermResNet
+                    from medresearch_platform.vision.router_torch import is_torch_available
+
+                    if not is_torch_available():
+                        raise RuntimeError("PyTorch is not installed for pytorch_cpu skin model.")
+                    self._skin_model = PyTorchDermResNet.load(m_dir)
+                else:
+                    self._skin_model = DermResNetMultiTask.load(m_dir)
             except Exception as exc:
                 raise ModelNotAvailableError(
                     f"image model not trained (derm_cnn_seed1 missing or invalid in {m_dir}): {exc} / "

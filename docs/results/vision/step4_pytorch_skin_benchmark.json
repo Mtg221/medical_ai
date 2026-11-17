@@ -1,0 +1,2298 @@
+{
+  "generated_at_utc": "2026-11-17T21:51:33Z",
+  "elapsed_seconds": 8808.1,
+  "data_source": {
+    "train": {
+      "real": 20752,
+      "labelled_mg": 18932,
+      "synthetic": 0
+    },
+    "val": {
+      "real": 4346,
+      "labelled_mg": 3974,
+      "synthetic": 0
+    },
+    "locked_test_v2": {
+      "real": 2022,
+      "labelled_mg": 1853,
+      "synthetic": 0
+    }
+  },
+  "models": {
+    "pytorch_resnet_seed1": {
+      "sample_count": 1853,
+      "malignant_count": 1064,
+      "benign_count": 789,
+      "auroc": 0.9398,
+      "auroc_ci95": [
+        0.9296,
+        0.9508
+      ],
+      "sensitivity_at_90_specificity": 0.8186,
+      "sensitivity_at_95_specificity": 0.6786,
+      "balanced_accuracy": 0.8389,
+      "diagnosis_macro_f1": 0.0,
+      "diagnosis_top3_accuracy": 0.3648,
+      "diagnosis_per_class_f1": {
+        "melanoma": 0.0,
+        "nevus": 0.0
+      },
+      "ece": 0.1554,
+      "brier_score": 0.1334,
+      "abstention_rate": 0.1284,
+      "non_abstained_high_risk_precision": 0.948,
+      "reliability_bins": [
+        {
+          "bin": "[0.0, 0.1]",
+          "count": 713,
+          "mean_predicted_prob": 0.0181,
+          "empirical_positive_rate": 0.1122,
+          "calibration_gap": 0.0941
+        },
+        {
+          "bin": "[0.1, 0.2]",
+          "count": 97,
+          "mean_predicted_prob": 0.1437,
+          "empirical_positive_rate": 0.5361,
+          "calibration_gap": 0.3924
+        },
+        {
+          "bin": "[0.2, 0.3]",
+          "count": 63,
+          "mean_predicted_prob": 0.2478,
+          "empirical_positive_rate": 0.6667,
+          "calibration_gap": 0.4189
+        },
+        {
+          "bin": "[0.3, 0.4]",
+          "count": 64,
+          "mean_predicted_prob": 0.3504,
+          "empirical_positive_rate": 0.6875,
+          "calibration_gap": 0.3371
+        },
+        {
+          "bin": "[0.4, 0.5]",
+          "count": 68,
+          "mean_predicted_prob": 0.4522,
+          "empirical_positive_rate": 0.7647,
+          "calibration_gap": 0.3125
+        },
+        {
+          "bin": "[0.5, 0.6]",
+          "count": 89,
+          "mean_predicted_prob": 0.5481,
+          "empirical_positive_rate": 0.8315,
+          "calibration_gap": 0.2834
+        },
+        {
+          "bin": "[0.6, 0.7]",
+          "count": 101,
+          "mean_predicted_prob": 0.6504,
+          "empirical_positive_rate": 0.901,
+          "calibration_gap": 0.2506
+        },
+        {
+          "bin": "[0.7, 0.8]",
+          "count": 164,
+          "mean_predicted_prob": 0.7522,
+          "empirical_positive_rate": 0.9207,
+          "calibration_gap": 0.1685
+        },
+        {
+          "bin": "[0.8, 0.9]",
+          "count": 254,
+          "mean_predicted_prob": 0.852,
+          "empirical_positive_rate": 0.9449,
+          "calibration_gap": 0.0929
+        },
+        {
+          "bin": "[0.9, 1.0]",
+          "count": 240,
+          "mean_predicted_prob": 0.9428,
+          "empirical_positive_rate": 0.9917,
+          "calibration_gap": 0.0489
+        }
+      ],
+      "roc_curve": [
+        {
+          "threshold": 1.0,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "threshold": 0.9583,
+          "fpr": 0.0,
+          "tpr": 0.0742
+        },
+        {
+          "threshold": 0.9167,
+          "fpr": 0.0025,
+          "tpr": 0.1701
+        },
+        {
+          "threshold": 0.875,
+          "fpr": 0.0051,
+          "tpr": 0.282
+        },
+        {
+          "threshold": 0.8333,
+          "fpr": 0.0127,
+          "tpr": 0.3816
+        },
+        {
+          "threshold": 0.7917,
+          "fpr": 0.0228,
+          "tpr": 0.4633
+        },
+        {
+          "threshold": 0.75,
+          "fpr": 0.0292,
+          "tpr": 0.5254
+        },
+        {
+          "threshold": 0.7083,
+          "fpr": 0.0342,
+          "tpr": 0.5808
+        },
+        {
+          "threshold": 0.6667,
+          "fpr": 0.0418,
+          "tpr": 0.6165
+        },
+        {
+          "threshold": 0.625,
+          "fpr": 0.0469,
+          "tpr": 0.6551
+        },
+        {
+          "threshold": 0.5833,
+          "fpr": 0.052,
+          "tpr": 0.6842
+        },
+        {
+          "threshold": 0.5417,
+          "fpr": 0.0596,
+          "tpr": 0.719
+        },
+        {
+          "threshold": 0.5,
+          "fpr": 0.0684,
+          "tpr": 0.7462
+        },
+        {
+          "threshold": 0.4583,
+          "fpr": 0.076,
+          "tpr": 0.7688
+        },
+        {
+          "threshold": 0.4167,
+          "fpr": 0.0862,
+          "tpr": 0.7876
+        },
+        {
+          "threshold": 0.375,
+          "fpr": 0.0913,
+          "tpr": 0.8083
+        },
+        {
+          "threshold": 0.3333,
+          "fpr": 0.1052,
+          "tpr": 0.8233
+        },
+        {
+          "threshold": 0.2917,
+          "fpr": 0.1179,
+          "tpr": 0.8402
+        },
+        {
+          "threshold": 0.25,
+          "fpr": 0.128,
+          "tpr": 0.8515
+        },
+        {
+          "threshold": 0.2083,
+          "fpr": 0.1381,
+          "tpr": 0.875
+        },
+        {
+          "threshold": 0.1667,
+          "fpr": 0.1534,
+          "tpr": 0.8882
+        },
+        {
+          "threshold": 0.125,
+          "fpr": 0.1774,
+          "tpr": 0.9107
+        },
+        {
+          "threshold": 0.0833,
+          "fpr": 0.2281,
+          "tpr": 0.9342
+        },
+        {
+          "threshold": 0.0417,
+          "fpr": 0.2902,
+          "tpr": 0.968
+        },
+        {
+          "threshold": 0.0,
+          "fpr": 1.0,
+          "tpr": 1.0
+        }
+      ],
+      "subgroups": {
+        "by_skin_tone": {
+          "I": {
+            "sample_count": 128,
+            "malignant_count": 128,
+            "benign_count": 0,
+            "auroc": 0.5,
+            "auroc_ci95": [
+              0.5,
+              0.5
+            ],
+            "sensitivity_at_90_specificity": 0.0,
+            "sensitivity_at_95_specificity": 0.0,
+            "balanced_accuracy": 0.4375,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.6562,
+            "ece": 0.2339,
+            "brier_score": 0.0992,
+            "abstention_rate": 0.1172,
+            "non_abstained_high_risk_precision": 1.0,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "II": {
+            "sample_count": 124,
+            "malignant_count": 124,
+            "benign_count": 0,
+            "auroc": 0.5,
+            "auroc_ci95": [
+              0.5,
+              0.5
+            ],
+            "sensitivity_at_90_specificity": 0.0,
+            "sensitivity_at_95_specificity": 0.0,
+            "balanced_accuracy": 0.4516,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.6048,
+            "ece": 0.213,
+            "brier_score": 0.0808,
+            "abstention_rate": 0.1774,
+            "non_abstained_high_risk_precision": 1.0,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "III": {
+            "sample_count": 129,
+            "malignant_count": 129,
+            "benign_count": 0,
+            "auroc": 0.5,
+            "auroc_ci95": [
+              0.5,
+              0.5
+            ],
+            "sensitivity_at_90_specificity": 0.0,
+            "sensitivity_at_95_specificity": 0.0,
+            "balanced_accuracy": 0.4419,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.5736,
+            "ece": 0.2303,
+            "brier_score": 0.0907,
+            "abstention_rate": 0.1705,
+            "non_abstained_high_risk_precision": 1.0,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "IV": {
+            "sample_count": 44,
+            "malignant_count": 30,
+            "benign_count": 14,
+            "auroc": 0.9286,
+            "auroc_ci95": [
+              0.8464,
+              0.9958
+            ],
+            "sensitivity_at_90_specificity": 0.6,
+            "sensitivity_at_95_specificity": 0.6,
+            "balanced_accuracy": 0.8952,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.6136,
+            "ece": 0.1316,
+            "brier_score": 0.1025,
+            "abstention_rate": 0.1591,
+            "non_abstained_high_risk_precision": 0.9231,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "UNKNOWN": {
+            "sample_count": 1363,
+            "malignant_count": 648,
+            "benign_count": 715,
+            "auroc": 0.922,
+            "auroc_ci95": [
+              0.908,
+              0.934
+            ],
+            "sensitivity_at_90_specificity": 0.733,
+            "sensitivity_at_95_specificity": 0.5648,
+            "balanced_accuracy": 0.7908,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.27,
+            "ece": 0.1486,
+            "brier_score": 0.1516,
+            "abstention_rate": 0.1225,
+            "non_abstained_high_risk_precision": 0.9079,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "V": {
+            "sample_count": 27,
+            "malignant_count": 5,
+            "benign_count": 22,
+            "auroc": 1.0,
+            "auroc_ci95": [
+              1.0,
+              1.0
+            ],
+            "sensitivity_at_90_specificity": 1.0,
+            "sensitivity_at_95_specificity": 1.0,
+            "balanced_accuracy": 0.9,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.7407,
+            "ece": 0.1037,
+            "brier_score": 0.0275,
+            "abstention_rate": 0.0741,
+            "non_abstained_high_risk_precision": 1.0,
+            "small_sample_flag": "too few to conclude (< 30)"
+          },
+          "VI": {
+            "sample_count": 38,
+            "malignant_count": 0,
+            "benign_count": 38,
+            "auroc": 0.5,
+            "auroc_ci95": [
+              0.5,
+              0.5
+            ],
+            "sensitivity_at_90_specificity": 0.0,
+            "sensitivity_at_95_specificity": 0.0,
+            "balanced_accuracy": 0.5,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.7368,
+            "ece": 0.0961,
+            "brier_score": 0.0206,
+            "abstention_rate": 0.0789,
+            "non_abstained_high_risk_precision": 1.0,
+            "small_sample_flag": "adequate (>= 30)"
+          }
+        },
+        "by_modality": {
+          "clinical": {
+            "sample_count": 399,
+            "malignant_count": 333,
+            "benign_count": 66,
+            "auroc": 0.9029,
+            "auroc_ci95": [
+              0.8471,
+              0.9373
+            ],
+            "sensitivity_at_90_specificity": 0.6517,
+            "sensitivity_at_95_specificity": 0.5345,
+            "balanced_accuracy": 0.8202,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.6266,
+            "ece": 0.1358,
+            "brier_score": 0.0967,
+            "abstention_rate": 0.1629,
+            "non_abstained_high_risk_precision": 0.9571,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "dermoscopic": {
+            "sample_count": 1160,
+            "malignant_count": 443,
+            "benign_count": 717,
+            "auroc": 0.9783,
+            "auroc_ci95": [
+              0.971,
+              0.9862
+            ],
+            "sensitivity_at_90_specificity": 0.9752,
+            "sensitivity_at_95_specificity": 0.9187,
+            "balanced_accuracy": 0.9376,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.3181,
+            "ece": 0.0481,
+            "brier_score": 0.0522,
+            "abstention_rate": 0.0784,
+            "non_abstained_high_risk_precision": 0.9357,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "tbp_tile": {
+            "sample_count": 294,
+            "malignant_count": 288,
+            "benign_count": 6,
+            "auroc": 0.7095,
+            "auroc_ci95": [
+              0.4026,
+              0.8973
+            ],
+            "sensitivity_at_90_specificity": 0.2812,
+            "sensitivity_at_95_specificity": 0.2812,
+            "balanced_accuracy": 0.5642,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.1939,
+            "ece": 0.6503,
+            "brier_score": 0.5033,
+            "abstention_rate": 0.2789,
+            "non_abstained_high_risk_precision": 1.0,
+            "small_sample_flag": "adequate (>= 30)"
+          }
+        },
+        "by_dataset": {
+          "isic": {
+            "sample_count": 1853,
+            "malignant_count": 1064,
+            "benign_count": 789,
+            "auroc": 0.9398,
+            "auroc_ci95": [
+              0.9302,
+              0.9492
+            ],
+            "sensitivity_at_90_specificity": 0.8186,
+            "sensitivity_at_95_specificity": 0.6786,
+            "balanced_accuracy": 0.8389,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.3648,
+            "ece": 0.1554,
+            "brier_score": 0.1334,
+            "abstention_rate": 0.1284,
+            "non_abstained_high_risk_precision": 0.948,
+            "small_sample_flag": "adequate (>= 30)"
+          }
+        },
+        "by_body_site": {
+          "anterior torso": {
+            "sample_count": 179,
+            "malignant_count": 149,
+            "benign_count": 30,
+            "auroc": 0.7508,
+            "auroc_ci95": [
+              0.6641,
+              0.8185
+            ],
+            "sensitivity_at_90_specificity": 0.5369,
+            "sensitivity_at_95_specificity": 0.2617,
+            "balanced_accuracy": 0.7223,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.6145,
+            "ece": 0.2841,
+            "brier_score": 0.2402,
+            "abstention_rate": 0.2179,
+            "non_abstained_high_risk_precision": 0.9545,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "head/neck": {
+            "sample_count": 346,
+            "malignant_count": 324,
+            "benign_count": 22,
+            "auroc": 0.7562,
+            "auroc_ci95": [
+              0.6749,
+              0.8436
+            ],
+            "sensitivity_at_90_specificity": 0.5432,
+            "sensitivity_at_95_specificity": 0.3519,
+            "balanced_accuracy": 0.6486,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.4971,
+            "ece": 0.1981,
+            "brier_score": 0.1393,
+            "abstention_rate": 0.1301,
+            "non_abstained_high_risk_precision": 0.9614,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "lower extremity": {
+            "sample_count": 168,
+            "malignant_count": 141,
+            "benign_count": 27,
+            "auroc": 0.7828,
+            "auroc_ci95": [
+              0.6983,
+              0.8622
+            ],
+            "sensitivity_at_90_specificity": 0.4255,
+            "sensitivity_at_95_specificity": 0.3617,
+            "balanced_accuracy": 0.7423,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.4524,
+            "ece": 0.3573,
+            "brier_score": 0.2849,
+            "abstention_rate": 0.2083,
+            "non_abstained_high_risk_precision": 0.9545,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "other": {
+            "sample_count": 759,
+            "malignant_count": 114,
+            "benign_count": 645,
+            "auroc": 0.9951,
+            "auroc_ci95": [
+              0.9914,
+              0.9982
+            ],
+            "sensitivity_at_90_specificity": 1.0,
+            "sensitivity_at_95_specificity": 0.9912,
+            "balanced_accuracy": 0.9688,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.1001,
+            "ece": 0.0303,
+            "brier_score": 0.0196,
+            "abstention_rate": 0.025,
+            "non_abstained_high_risk_precision": 0.9196,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "palms/soles": {
+            "sample_count": 9,
+            "malignant_count": 6,
+            "benign_count": 3,
+            "auroc": 1.0,
+            "auroc_ci95": [
+              1.0,
+              1.0
+            ],
+            "sensitivity_at_90_specificity": 1.0,
+            "sensitivity_at_95_specificity": 1.0,
+            "balanced_accuracy": 0.9167,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.7778,
+            "ece": 0.1648,
+            "brier_score": 0.0455,
+            "abstention_rate": 0.1111,
+            "non_abstained_high_risk_precision": 1.0,
+            "small_sample_flag": "too few to conclude (< 30)"
+          },
+          "posterior torso": {
+            "sample_count": 194,
+            "malignant_count": 151,
+            "benign_count": 43,
+            "auroc": 0.7072,
+            "auroc_ci95": [
+              0.6131,
+              0.825
+            ],
+            "sensitivity_at_90_specificity": 0.3444,
+            "sensitivity_at_95_specificity": 0.1987,
+            "balanced_accuracy": 0.6319,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.5979,
+            "ece": 0.3031,
+            "brier_score": 0.2779,
+            "abstention_rate": 0.299,
+            "non_abstained_high_risk_precision": 0.8841,
+            "small_sample_flag": "adequate (>= 30)"
+          },
+          "upper extremity": {
+            "sample_count": 198,
+            "malignant_count": 179,
+            "benign_count": 19,
+            "auroc": 0.8221,
+            "auroc_ci95": [
+              0.7231,
+              0.9097
+            ],
+            "sensitivity_at_90_specificity": 0.3855,
+            "sensitivity_at_95_specificity": 0.2235,
+            "balanced_accuracy": 0.7136,
+            "diagnosis_macro_f1": 0.0,
+            "diagnosis_top3_accuracy": 0.601,
+            "ece": 0.2966,
+            "brier_score": 0.1963,
+            "abstention_rate": 0.2071,
+            "non_abstained_high_risk_precision": 0.9735,
+            "small_sample_flag": "adequate (>= 30)"
+          }
+        }
+      }
+    },
+    "pytorch_resnet_3seed_ensemble": {
+      "sample_count": 1853,
+      "malignant_count": 1064,
+      "benign_count": 789,
+      "auroc": 0.9421,
+      "auroc_ci95": [
+        0.9325,
+        0.9528
+      ],
+      "sensitivity_at_90_specificity": 0.8308,
+      "sensitivity_at_95_specificity": 0.6898,
+      "balanced_accuracy": 0.8401,
+      "diagnosis_macro_f1": 0.0,
+      "diagnosis_top3_accuracy": 0.3281,
+      "diagnosis_per_class_f1": {
+        "melanoma": 0.0,
+        "nevus": 0.0
+      },
+      "ece": 0.1441,
+      "brier_score": 0.1256,
+      "abstention_rate": 0.116,
+      "non_abstained_high_risk_precision": 0.9514,
+      "reliability_bins": [
+        {
+          "bin": "[0.0, 0.1]",
+          "count": 671,
+          "mean_predicted_prob": 0.0185,
+          "empirical_positive_rate": 0.0954,
+          "calibration_gap": 0.0769
+        },
+        {
+          "bin": "[0.1, 0.2]",
+          "count": 120,
+          "mean_predicted_prob": 0.1452,
+          "empirical_positive_rate": 0.475,
+          "calibration_gap": 0.3298
+        },
+        {
+          "bin": "[0.2, 0.3]",
+          "count": 70,
+          "mean_predicted_prob": 0.2484,
+          "empirical_positive_rate": 0.5857,
+          "calibration_gap": 0.3373
+        },
+        {
+          "bin": "[0.3, 0.4]",
+          "count": 66,
+          "mean_predicted_prob": 0.3487,
+          "empirical_positive_rate": 0.6667,
+          "calibration_gap": 0.318
+        },
+        {
+          "bin": "[0.4, 0.5]",
+          "count": 73,
+          "mean_predicted_prob": 0.4566,
+          "empirical_positive_rate": 0.8219,
+          "calibration_gap": 0.3654
+        },
+        {
+          "bin": "[0.5, 0.6]",
+          "count": 79,
+          "mean_predicted_prob": 0.5522,
+          "empirical_positive_rate": 0.8101,
+          "calibration_gap": 0.2579
+        },
+        {
+          "bin": "[0.6, 0.7]",
+          "count": 84,
+          "mean_predicted_prob": 0.6561,
+          "empirical_positive_rate": 0.9048,
+          "calibration_gap": 0.2487
+        },
+        {
+          "bin": "[0.7, 0.8]",
+          "count": 164,
+          "mean_predicted_prob": 0.7549,
+          "empirical_positive_rate": 0.8963,
+          "calibration_gap": 0.1414
+        },
+        {
+          "bin": "[0.8, 0.9]",
+          "count": 269,
+          "mean_predicted_prob": 0.8498,
+          "empirical_positive_rate": 0.9554,
+          "calibration_gap": 0.1056
+        },
+        {
+          "bin": "[0.9, 1.0]",
+          "count": 257,
+          "mean_predicted_prob": 0.9426,
+          "empirical_positive_rate": 0.9883,
+          "calibration_gap": 0.0457
+        }
+      ],
+      "roc_curve": [
+        {
+          "threshold": 1.0,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "threshold": 0.9583,
+          "fpr": 0.0,
+          "tpr": 0.0761
+        },
+        {
+          "threshold": 0.9167,
+          "fpr": 0.0013,
+          "tpr": 0.1927
+        },
+        {
+          "threshold": 0.875,
+          "fpr": 0.0051,
+          "tpr": 0.2942
+        },
+        {
+          "threshold": 0.8333,
+          "fpr": 0.0139,
+          "tpr": 0.4023
+        },
+        {
+          "threshold": 0.7917,
+          "fpr": 0.019,
+          "tpr": 0.4944
+        },
+        {
+          "threshold": 0.75,
+          "fpr": 0.0292,
+          "tpr": 0.5602
+        },
+        {
+          "threshold": 0.7083,
+          "fpr": 0.0368,
+          "tpr": 0.6128
+        },
+        {
+          "threshold": 0.6667,
+          "fpr": 0.0418,
+          "tpr": 0.6476
+        },
+        {
+          "threshold": 0.625,
+          "fpr": 0.0482,
+          "tpr": 0.6795
+        },
+        {
+          "threshold": 0.5833,
+          "fpr": 0.052,
+          "tpr": 0.7021
+        },
+        {
+          "threshold": 0.5417,
+          "fpr": 0.0583,
+          "tpr": 0.7303
+        },
+        {
+          "threshold": 0.5,
+          "fpr": 0.0697,
+          "tpr": 0.75
+        },
+        {
+          "threshold": 0.4583,
+          "fpr": 0.0748,
+          "tpr": 0.7782
+        },
+        {
+          "threshold": 0.4167,
+          "fpr": 0.0837,
+          "tpr": 0.8036
+        },
+        {
+          "threshold": 0.375,
+          "fpr": 0.0938,
+          "tpr": 0.8177
+        },
+        {
+          "threshold": 0.3333,
+          "fpr": 0.1052,
+          "tpr": 0.8346
+        },
+        {
+          "threshold": 0.2917,
+          "fpr": 0.1153,
+          "tpr": 0.8506
+        },
+        {
+          "threshold": 0.25,
+          "fpr": 0.128,
+          "tpr": 0.8684
+        },
+        {
+          "threshold": 0.2083,
+          "fpr": 0.147,
+          "tpr": 0.8844
+        },
+        {
+          "threshold": 0.1667,
+          "fpr": 0.166,
+          "tpr": 0.9051
+        },
+        {
+          "threshold": 0.125,
+          "fpr": 0.2015,
+          "tpr": 0.9267
+        },
+        {
+          "threshold": 0.0833,
+          "fpr": 0.2535,
+          "tpr": 0.9502
+        },
+        {
+          "threshold": 0.0417,
+          "fpr": 0.3321,
+          "tpr": 0.9718
+        },
+        {
+          "threshold": 0.0,
+          "fpr": 1.0,
+          "tpr": 1.0
+        }
+      ]
+    },
+    "pytorch_resnet_no_meta": {
+      "sample_count": 1853,
+      "malignant_count": 1064,
+      "benign_count": 789,
+      "auroc": 0.9461,
+      "auroc_ci95": [
+        0.9369,
+        0.9555
+      ],
+      "sensitivity_at_90_specificity": 0.8346,
+      "sensitivity_at_95_specificity": 0.672,
+      "balanced_accuracy": 0.8426,
+      "diagnosis_macro_f1": 0.0,
+      "diagnosis_top3_accuracy": 0.4053,
+      "diagnosis_per_class_f1": {
+        "melanoma": 0.0,
+        "nevus": 0.0
+      },
+      "ece": 0.142,
+      "brier_score": 0.1212,
+      "abstention_rate": 0.0,
+      "non_abstained_high_risk_precision": 0.9539,
+      "reliability_bins": [
+        {
+          "bin": "[0.0, 0.1]",
+          "count": 658,
+          "mean_predicted_prob": 0.018,
+          "empirical_positive_rate": 0.0684,
+          "calibration_gap": 0.0504
+        },
+        {
+          "bin": "[0.1, 0.2]",
+          "count": 93,
+          "mean_predicted_prob": 0.1497,
+          "empirical_positive_rate": 0.5269,
+          "calibration_gap": 0.3772
+        },
+        {
+          "bin": "[0.2, 0.3]",
+          "count": 83,
+          "mean_predicted_prob": 0.2494,
+          "empirical_positive_rate": 0.6145,
+          "calibration_gap": 0.365
+        },
+        {
+          "bin": "[0.3, 0.4]",
+          "count": 74,
+          "mean_predicted_prob": 0.3446,
+          "empirical_positive_rate": 0.6622,
+          "calibration_gap": 0.3176
+        },
+        {
+          "bin": "[0.4, 0.5]",
+          "count": 75,
+          "mean_predicted_prob": 0.4525,
+          "empirical_positive_rate": 0.8,
+          "calibration_gap": 0.3475
+        },
+        {
+          "bin": "[0.5, 0.6]",
+          "count": 75,
+          "mean_predicted_prob": 0.5485,
+          "empirical_positive_rate": 0.8133,
+          "calibration_gap": 0.2649
+        },
+        {
+          "bin": "[0.6, 0.7]",
+          "count": 138,
+          "mean_predicted_prob": 0.6563,
+          "empirical_positive_rate": 0.8623,
+          "calibration_gap": 0.206
+        },
+        {
+          "bin": "[0.7, 0.8]",
+          "count": 168,
+          "mean_predicted_prob": 0.7569,
+          "empirical_positive_rate": 0.9048,
+          "calibration_gap": 0.1479
+        },
+        {
+          "bin": "[0.8, 0.9]",
+          "count": 270,
+          "mean_predicted_prob": 0.854,
+          "empirical_positive_rate": 0.9667,
+          "calibration_gap": 0.1126
+        },
+        {
+          "bin": "[0.9, 1.0]",
+          "count": 219,
+          "mean_predicted_prob": 0.9387,
+          "empirical_positive_rate": 0.9909,
+          "calibration_gap": 0.0522
+        }
+      ],
+      "roc_curve": [
+        {
+          "threshold": 1.0,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "threshold": 0.9583,
+          "fpr": 0.0,
+          "tpr": 0.0414
+        },
+        {
+          "threshold": 0.9167,
+          "fpr": 0.0013,
+          "tpr": 0.1607
+        },
+        {
+          "threshold": 0.875,
+          "fpr": 0.0038,
+          "tpr": 0.2716
+        },
+        {
+          "threshold": 0.8333,
+          "fpr": 0.0076,
+          "tpr": 0.3872
+        },
+        {
+          "threshold": 0.7917,
+          "fpr": 0.0177,
+          "tpr": 0.468
+        },
+        {
+          "threshold": 0.75,
+          "fpr": 0.0253,
+          "tpr": 0.5395
+        },
+        {
+          "threshold": 0.7083,
+          "fpr": 0.0342,
+          "tpr": 0.5836
+        },
+        {
+          "threshold": 0.6667,
+          "fpr": 0.0393,
+          "tpr": 0.6419
+        },
+        {
+          "threshold": 0.625,
+          "fpr": 0.052,
+          "tpr": 0.6823
+        },
+        {
+          "threshold": 0.5833,
+          "fpr": 0.0596,
+          "tpr": 0.7143
+        },
+        {
+          "threshold": 0.5417,
+          "fpr": 0.0684,
+          "tpr": 0.734
+        },
+        {
+          "threshold": 0.5,
+          "fpr": 0.076,
+          "tpr": 0.7613
+        },
+        {
+          "threshold": 0.4583,
+          "fpr": 0.0811,
+          "tpr": 0.7867
+        },
+        {
+          "threshold": 0.4167,
+          "fpr": 0.09,
+          "tpr": 0.813
+        },
+        {
+          "threshold": 0.375,
+          "fpr": 0.0989,
+          "tpr": 0.8318
+        },
+        {
+          "threshold": 0.3333,
+          "fpr": 0.1103,
+          "tpr": 0.8459
+        },
+        {
+          "threshold": 0.2917,
+          "fpr": 0.1293,
+          "tpr": 0.8675
+        },
+        {
+          "threshold": 0.25,
+          "fpr": 0.1483,
+          "tpr": 0.8853
+        },
+        {
+          "threshold": 0.2083,
+          "fpr": 0.166,
+          "tpr": 0.906
+        },
+        {
+          "threshold": 0.1667,
+          "fpr": 0.1825,
+          "tpr": 0.9276
+        },
+        {
+          "threshold": 0.125,
+          "fpr": 0.2066,
+          "tpr": 0.9445
+        },
+        {
+          "threshold": 0.0833,
+          "fpr": 0.2484,
+          "tpr": 0.9662
+        },
+        {
+          "threshold": 0.0417,
+          "fpr": 0.3308,
+          "tpr": 0.9831
+        },
+        {
+          "threshold": 0.0,
+          "fpr": 1.0,
+          "tpr": 1.0
+        }
+      ]
+    },
+    "classical_logreg": {
+      "sample_count": 1853,
+      "malignant_count": 1064,
+      "benign_count": 789,
+      "auroc": 0.7321,
+      "auroc_ci95": [
+        0.7073,
+        0.7586
+      ],
+      "sensitivity_at_90_specificity": 0.6222,
+      "sensitivity_at_95_specificity": 0.4718,
+      "balanced_accuracy": 0.763,
+      "diagnosis_macro_f1": 0.7447,
+      "diagnosis_top3_accuracy": 0.9946,
+      "diagnosis_per_class_f1": {
+        "melanoma": 0.7422,
+        "nevus": 0.7472
+      },
+      "ece": 0.1788,
+      "brier_score": 0.2257,
+      "abstention_rate": 0.0,
+      "non_abstained_high_risk_precision": 0.9147,
+      "reliability_bins": [
+        {
+          "bin": "[0.0, 0.1]",
+          "count": 781,
+          "mean_predicted_prob": 0.0222,
+          "empirical_positive_rate": 0.3713,
+          "calibration_gap": 0.3492
+        },
+        {
+          "bin": "[0.1, 0.2]",
+          "count": 122,
+          "mean_predicted_prob": 0.1438,
+          "empirical_positive_rate": 0.1148,
+          "calibration_gap": 0.029
+        },
+        {
+          "bin": "[0.2, 0.3]",
+          "count": 69,
+          "mean_predicted_prob": 0.2527,
+          "empirical_positive_rate": 0.2609,
+          "calibration_gap": 0.0082
+        },
+        {
+          "bin": "[0.3, 0.4]",
+          "count": 56,
+          "mean_predicted_prob": 0.3441,
+          "empirical_positive_rate": 0.5,
+          "calibration_gap": 0.1559
+        },
+        {
+          "bin": "[0.4, 0.5]",
+          "count": 54,
+          "mean_predicted_prob": 0.4521,
+          "empirical_positive_rate": 0.6111,
+          "calibration_gap": 0.159
+        },
+        {
+          "bin": "[0.5, 0.6]",
+          "count": 69,
+          "mean_predicted_prob": 0.5467,
+          "empirical_positive_rate": 0.6232,
+          "calibration_gap": 0.0765
+        },
+        {
+          "bin": "[0.6, 0.7]",
+          "count": 74,
+          "mean_predicted_prob": 0.6509,
+          "empirical_positive_rate": 0.8108,
+          "calibration_gap": 0.1599
+        },
+        {
+          "bin": "[0.7, 0.8]",
+          "count": 110,
+          "mean_predicted_prob": 0.7517,
+          "empirical_positive_rate": 0.8909,
+          "calibration_gap": 0.1392
+        },
+        {
+          "bin": "[0.8, 0.9]",
+          "count": 190,
+          "mean_predicted_prob": 0.8563,
+          "empirical_positive_rate": 0.8789,
+          "calibration_gap": 0.0227
+        },
+        {
+          "bin": "[0.9, 1.0]",
+          "count": 328,
+          "mean_predicted_prob": 0.9528,
+          "empirical_positive_rate": 0.9543,
+          "calibration_gap": 0.0014
+        }
+      ],
+      "roc_curve": [
+        {
+          "threshold": 1.0,
+          "fpr": 0.0,
+          "tpr": 0.0009
+        },
+        {
+          "threshold": 0.9583,
+          "fpr": 0.0051,
+          "tpr": 0.1269
+        },
+        {
+          "threshold": 0.9167,
+          "fpr": 0.0177,
+          "tpr": 0.2509
+        },
+        {
+          "threshold": 0.875,
+          "fpr": 0.0292,
+          "tpr": 0.3449
+        },
+        {
+          "threshold": 0.8333,
+          "fpr": 0.0368,
+          "tpr": 0.4135
+        },
+        {
+          "threshold": 0.7917,
+          "fpr": 0.0482,
+          "tpr": 0.4577
+        },
+        {
+          "threshold": 0.75,
+          "fpr": 0.0545,
+          "tpr": 0.4981
+        },
+        {
+          "threshold": 0.7083,
+          "fpr": 0.0634,
+          "tpr": 0.5376
+        },
+        {
+          "threshold": 0.6667,
+          "fpr": 0.0684,
+          "tpr": 0.5639
+        },
+        {
+          "threshold": 0.625,
+          "fpr": 0.0748,
+          "tpr": 0.5865
+        },
+        {
+          "threshold": 0.5833,
+          "fpr": 0.0837,
+          "tpr": 0.6062
+        },
+        {
+          "threshold": 0.5417,
+          "fpr": 0.0989,
+          "tpr": 0.6222
+        },
+        {
+          "threshold": 0.5,
+          "fpr": 0.1141,
+          "tpr": 0.64
+        },
+        {
+          "threshold": 0.4583,
+          "fpr": 0.1229,
+          "tpr": 0.6541
+        },
+        {
+          "threshold": 0.4167,
+          "fpr": 0.1394,
+          "tpr": 0.6645
+        },
+        {
+          "threshold": 0.375,
+          "fpr": 0.1458,
+          "tpr": 0.6776
+        },
+        {
+          "threshold": 0.3333,
+          "fpr": 0.161,
+          "tpr": 0.6852
+        },
+        {
+          "threshold": 0.2917,
+          "fpr": 0.1787,
+          "tpr": 0.703
+        },
+        {
+          "threshold": 0.25,
+          "fpr": 0.2091,
+          "tpr": 0.7077
+        },
+        {
+          "threshold": 0.2083,
+          "fpr": 0.237,
+          "tpr": 0.7133
+        },
+        {
+          "threshold": 0.1667,
+          "fpr": 0.2738,
+          "tpr": 0.7199
+        },
+        {
+          "threshold": 0.125,
+          "fpr": 0.3308,
+          "tpr": 0.7256
+        },
+        {
+          "threshold": 0.0833,
+          "fpr": 0.4271,
+          "tpr": 0.7274
+        },
+        {
+          "threshold": 0.0417,
+          "fpr": 0.5665,
+          "tpr": 0.7415
+        },
+        {
+          "threshold": 0.0,
+          "fpr": 1.0,
+          "tpr": 1.0
+        }
+      ]
+    },
+    "metadata_only_logreg": {
+      "sample_count": 1853,
+      "malignant_count": 1064,
+      "benign_count": 789,
+      "auroc": 0.6364,
+      "auroc_ci95": [
+        0.6097,
+        0.6651
+      ],
+      "sensitivity_at_90_specificity": 0.5216,
+      "sensitivity_at_95_specificity": 0.3844,
+      "balanced_accuracy": 0.7251,
+      "diagnosis_macro_f1": 0.3648,
+      "diagnosis_top3_accuracy": 0.5742,
+      "diagnosis_per_class_f1": {
+        "melanoma": 0.7295,
+        "nevus": 0.0
+      },
+      "ece": 0.297,
+      "brier_score": 0.2862,
+      "abstention_rate": 0.0,
+      "non_abstained_high_risk_precision": 0.9286,
+      "reliability_bins": [
+        {
+          "bin": "[0.0, 0.1]",
+          "count": 294,
+          "mean_predicted_prob": 0.0172,
+          "empirical_positive_rate": 0.9796,
+          "calibration_gap": 0.9624
+        },
+        {
+          "bin": "[0.1, 0.2]",
+          "count": 0,
+          "mean_predicted_prob": 0.15,
+          "empirical_positive_rate": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bin": "[0.2, 0.3]",
+          "count": 0,
+          "mean_predicted_prob": 0.25,
+          "empirical_positive_rate": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bin": "[0.3, 0.4]",
+          "count": 763,
+          "mean_predicted_prob": 0.3259,
+          "empirical_positive_rate": 0.1507,
+          "calibration_gap": 0.1752
+        },
+        {
+          "bin": "[0.4, 0.5]",
+          "count": 0,
+          "mean_predicted_prob": 0.45,
+          "empirical_positive_rate": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bin": "[0.5, 0.6]",
+          "count": 256,
+          "mean_predicted_prob": 0.5297,
+          "empirical_positive_rate": 0.7266,
+          "calibration_gap": 0.1969
+        },
+        {
+          "bin": "[0.6, 0.7]",
+          "count": 260,
+          "mean_predicted_prob": 0.6117,
+          "empirical_positive_rate": 0.8269,
+          "calibration_gap": 0.2152
+        },
+        {
+          "bin": "[0.7, 0.8]",
+          "count": 0,
+          "mean_predicted_prob": 0.75,
+          "empirical_positive_rate": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bin": "[0.8, 0.9]",
+          "count": 280,
+          "mean_predicted_prob": 0.8305,
+          "empirical_positive_rate": 0.9286,
+          "calibration_gap": 0.0981
+        },
+        {
+          "bin": "[0.9, 1.0]",
+          "count": 0,
+          "mean_predicted_prob": 0.95,
+          "empirical_positive_rate": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "roc_curve": [
+        {
+          "threshold": 1.0,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "threshold": 0.9583,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "threshold": 0.9167,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "threshold": 0.875,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "threshold": 0.8333,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "threshold": 0.7917,
+          "fpr": 0.0253,
+          "tpr": 0.2444
+        },
+        {
+          "threshold": 0.75,
+          "fpr": 0.0253,
+          "tpr": 0.2444
+        },
+        {
+          "threshold": 0.7083,
+          "fpr": 0.0253,
+          "tpr": 0.2444
+        },
+        {
+          "threshold": 0.6667,
+          "fpr": 0.0253,
+          "tpr": 0.2444
+        },
+        {
+          "threshold": 0.625,
+          "fpr": 0.0253,
+          "tpr": 0.2444
+        },
+        {
+          "threshold": 0.5833,
+          "fpr": 0.0824,
+          "tpr": 0.4464
+        },
+        {
+          "threshold": 0.5417,
+          "fpr": 0.0824,
+          "tpr": 0.4464
+        },
+        {
+          "threshold": 0.5,
+          "fpr": 0.1711,
+          "tpr": 0.6212
+        },
+        {
+          "threshold": 0.4583,
+          "fpr": 0.1711,
+          "tpr": 0.6212
+        },
+        {
+          "threshold": 0.4167,
+          "fpr": 0.1711,
+          "tpr": 0.6212
+        },
+        {
+          "threshold": 0.375,
+          "fpr": 0.1711,
+          "tpr": 0.6212
+        },
+        {
+          "threshold": 0.3333,
+          "fpr": 0.1711,
+          "tpr": 0.6212
+        },
+        {
+          "threshold": 0.2917,
+          "fpr": 0.9924,
+          "tpr": 0.7293
+        },
+        {
+          "threshold": 0.25,
+          "fpr": 0.9924,
+          "tpr": 0.7293
+        },
+        {
+          "threshold": 0.2083,
+          "fpr": 0.9924,
+          "tpr": 0.7293
+        },
+        {
+          "threshold": 0.1667,
+          "fpr": 0.9924,
+          "tpr": 0.7293
+        },
+        {
+          "threshold": 0.125,
+          "fpr": 0.9924,
+          "tpr": 0.7293
+        },
+        {
+          "threshold": 0.0833,
+          "fpr": 0.9924,
+          "tpr": 0.7293
+        },
+        {
+          "threshold": 0.0417,
+          "fpr": 0.9924,
+          "tpr": 0.7293
+        },
+        {
+          "threshold": 0.0,
+          "fpr": 1.0,
+          "tpr": 1.0
+        }
+      ]
+    },
+    "numpy_frozen_random_features": {
+      "sample_count": 1853,
+      "malignant_count": 1064,
+      "benign_count": 789,
+      "auroc": 0.7034,
+      "auroc_ci95": [
+        0.6797,
+        0.7298
+      ],
+      "sensitivity_at_90_specificity": 0.2387,
+      "sensitivity_at_95_specificity": 0.1429,
+      "balanced_accuracy": 0.651,
+      "diagnosis_macro_f1": 0.5685,
+      "diagnosis_top3_accuracy": 0.7728,
+      "diagnosis_per_class_f1": {
+        "melanoma": 0.7191,
+        "nevus": 0.4178
+      },
+      "ece": 0.1692,
+      "brier_score": 0.2456,
+      "abstention_rate": 0.0,
+      "non_abstained_high_risk_precision": 0.711,
+      "reliability_bins": [
+        {
+          "bin": "[0.0, 0.1]",
+          "count": 245,
+          "mean_predicted_prob": 0.0528,
+          "empirical_positive_rate": 0.2367,
+          "calibration_gap": 0.1839
+        },
+        {
+          "bin": "[0.1, 0.2]",
+          "count": 92,
+          "mean_predicted_prob": 0.1475,
+          "empirical_positive_rate": 0.4348,
+          "calibration_gap": 0.2872
+        },
+        {
+          "bin": "[0.2, 0.3]",
+          "count": 94,
+          "mean_predicted_prob": 0.2554,
+          "empirical_positive_rate": 0.4255,
+          "calibration_gap": 0.1701
+        },
+        {
+          "bin": "[0.3, 0.4]",
+          "count": 79,
+          "mean_predicted_prob": 0.3517,
+          "empirical_positive_rate": 0.3924,
+          "calibration_gap": 0.0407
+        },
+        {
+          "bin": "[0.4, 0.5]",
+          "count": 101,
+          "mean_predicted_prob": 0.4497,
+          "empirical_positive_rate": 0.4455,
+          "calibration_gap": 0.0042
+        },
+        {
+          "bin": "[0.5, 0.6]",
+          "count": 109,
+          "mean_predicted_prob": 0.5512,
+          "empirical_positive_rate": 0.4771,
+          "calibration_gap": 0.0741
+        },
+        {
+          "bin": "[0.6, 0.7]",
+          "count": 114,
+          "mean_predicted_prob": 0.6548,
+          "empirical_positive_rate": 0.5789,
+          "calibration_gap": 0.0758
+        },
+        {
+          "bin": "[0.7, 0.8]",
+          "count": 126,
+          "mean_predicted_prob": 0.7525,
+          "empirical_positive_rate": 0.5873,
+          "calibration_gap": 0.1652
+        },
+        {
+          "bin": "[0.8, 0.9]",
+          "count": 176,
+          "mean_predicted_prob": 0.8549,
+          "empirical_positive_rate": 0.6989,
+          "calibration_gap": 0.156
+        },
+        {
+          "bin": "[0.9, 1.0]",
+          "count": 717,
+          "mean_predicted_prob": 0.9656,
+          "empirical_positive_rate": 0.7462,
+          "calibration_gap": 0.2195
+        }
+      ],
+      "roc_curve": [
+        {
+          "threshold": 1.0,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "threshold": 0.9583,
+          "fpr": 0.1572,
+          "tpr": 0.3252
+        },
+        {
+          "threshold": 0.9167,
+          "fpr": 0.218,
+          "tpr": 0.4718
+        },
+        {
+          "threshold": 0.875,
+          "fpr": 0.2573,
+          "tpr": 0.5385
+        },
+        {
+          "threshold": 0.8333,
+          "fpr": 0.2788,
+          "tpr": 0.5855
+        },
+        {
+          "threshold": 0.7917,
+          "fpr": 0.3016,
+          "tpr": 0.6259
+        },
+        {
+          "threshold": 0.75,
+          "fpr": 0.3257,
+          "tpr": 0.6626
+        },
+        {
+          "threshold": 0.7083,
+          "fpr": 0.3612,
+          "tpr": 0.6842
+        },
+        {
+          "threshold": 0.6667,
+          "fpr": 0.3853,
+          "tpr": 0.7133
+        },
+        {
+          "threshold": 0.625,
+          "fpr": 0.403,
+          "tpr": 0.7444
+        },
+        {
+          "threshold": 0.5833,
+          "fpr": 0.4398,
+          "tpr": 0.7594
+        },
+        {
+          "threshold": 0.5417,
+          "fpr": 0.4664,
+          "tpr": 0.7838
+        },
+        {
+          "threshold": 0.5,
+          "fpr": 0.4968,
+          "tpr": 0.7989
+        },
+        {
+          "threshold": 0.4583,
+          "fpr": 0.5222,
+          "tpr": 0.8148
+        },
+        {
+          "threshold": 0.4167,
+          "fpr": 0.5627,
+          "tpr": 0.8336
+        },
+        {
+          "threshold": 0.375,
+          "fpr": 0.5805,
+          "tpr": 0.8506
+        },
+        {
+          "threshold": 0.3333,
+          "fpr": 0.6134,
+          "tpr": 0.86
+        },
+        {
+          "threshold": 0.2917,
+          "fpr": 0.6451,
+          "tpr": 0.8712
+        },
+        {
+          "threshold": 0.25,
+          "fpr": 0.6654,
+          "tpr": 0.8919
+        },
+        {
+          "threshold": 0.2083,
+          "fpr": 0.6958,
+          "tpr": 0.9051
+        },
+        {
+          "threshold": 0.1667,
+          "fpr": 0.7161,
+          "tpr": 0.9211
+        },
+        {
+          "threshold": 0.125,
+          "fpr": 0.7427,
+          "tpr": 0.937
+        },
+        {
+          "threshold": 0.0833,
+          "fpr": 0.7871,
+          "tpr": 0.953
+        },
+        {
+          "threshold": 0.0417,
+          "fpr": 0.9341,
+          "tpr": 0.9737
+        },
+        {
+          "threshold": 0.0,
+          "fpr": 1.0,
+          "tpr": 1.0
+        }
+      ]
+    }
+  },
+  "seed_runs": [
+    {
+      "seed": 1,
+      "train_info": {
+        "loaded_from_disk": "models/derm_cnn_seed1",
+        "seed": 1,
+        "parameter_count": 1229845
+      },
+      "test_auroc": 0.9398
+    },
+    {
+      "seed": 2,
+      "train_info": {
+        "seed": 2,
+        "include_metadata": true,
+        "parameter_count": 1229845,
+        "epochs_run": 8,
+        "best_val_auroc": 0.9465,
+        "temperature_mal": 1.2,
+        "temperature_dx": 0.5,
+        "elapsed_seconds": 2754.87,
+        "history": [
+          {
+            "epoch": 1.0,
+            "loss": 0.5922,
+            "val_auroc": 0.8664,
+            "sec": 349.64
+          },
+          {
+            "epoch": 2.0,
+            "loss": 0.4963,
+            "val_auroc": 0.8421,
+            "sec": 355.5
+          },
+          {
+            "epoch": 3.0,
+            "loss": 0.423,
+            "val_auroc": 0.8191,
+            "sec": 361.23
+          },
+          {
+            "epoch": 4.0,
+            "loss": 0.3772,
+            "val_auroc": 0.918,
+            "sec": 335.04
+          },
+          {
+            "epoch": 5.0,
+            "loss": 0.356,
+            "val_auroc": 0.9357,
+            "sec": 327.68
+          },
+          {
+            "epoch": 6.0,
+            "loss": 0.3343,
+            "val_auroc": 0.9399,
+            "sec": 331.78
+          },
+          {
+            "epoch": 7.0,
+            "loss": 0.3263,
+            "val_auroc": 0.9427,
+            "sec": 326.16
+          },
+          {
+            "epoch": 8.0,
+            "loss": 0.3163,
+            "val_auroc": 0.9465,
+            "sec": 325.27
+          }
+        ],
+        "initial_weights_sha256": "ac592c628fcdf3ba439f233122f3cf97c9a2ffaee60c0d19cb2fdface6cc4a5e",
+        "pretrained_weights_used": false
+      },
+      "test_auroc": 0.9406
+    },
+    {
+      "seed": 3,
+      "train_info": {
+        "seed": 3,
+        "include_metadata": true,
+        "parameter_count": 1229845,
+        "epochs_run": 8,
+        "best_val_auroc": 0.9445,
+        "temperature_mal": 1.1,
+        "temperature_dx": 0.5,
+        "elapsed_seconds": 2714.68,
+        "history": [
+          {
+            "epoch": 1.0,
+            "loss": 0.6031,
+            "val_auroc": 0.8637,
+            "sec": 338.01
+          },
+          {
+            "epoch": 2.0,
+            "loss": 0.4958,
+            "val_auroc": 0.8702,
+            "sec": 335.75
+          },
+          {
+            "epoch": 3.0,
+            "loss": 0.4411,
+            "val_auroc": 0.8871,
+            "sec": 330.21
+          },
+          {
+            "epoch": 4.0,
+            "loss": 0.3955,
+            "val_auroc": 0.9147,
+            "sec": 324.22
+          },
+          {
+            "epoch": 5.0,
+            "loss": 0.3756,
+            "val_auroc": 0.7863,
+            "sec": 329.06
+          },
+          {
+            "epoch": 6.0,
+            "loss": 0.3507,
+            "val_auroc": 0.9278,
+            "sec": 329.29
+          },
+          {
+            "epoch": 7.0,
+            "loss": 0.3312,
+            "val_auroc": 0.9369,
+            "sec": 324.41
+          },
+          {
+            "epoch": 8.0,
+            "loss": 0.3169,
+            "val_auroc": 0.9445,
+            "sec": 338.88
+          }
+        ],
+        "initial_weights_sha256": "bfd98490041a9a04096a8393e909ca8f0616e4a850cf0b099a377ebcde6a5876",
+        "pretrained_weights_used": false
+      },
+      "test_auroc": 0.9404
+    }
+  ],
+  "no_meta_train_info": {
+    "seed": 1,
+    "include_metadata": false,
+    "parameter_count": 1229741,
+    "epochs_run": 8,
+    "best_val_auroc": 0.9355,
+    "temperature_mal": 1.2,
+    "temperature_dx": 0.5,
+    "elapsed_seconds": 2974.68,
+    "history": [
+      {
+        "epoch": 1.0,
+        "loss": 0.6077,
+        "val_auroc": 0.8336,
+        "sec": 373.76
+      },
+      {
+        "epoch": 2.0,
+        "loss": 0.5355,
+        "val_auroc": 0.8506,
+        "sec": 393.22
+      },
+      {
+        "epoch": 3.0,
+        "loss": 0.4726,
+        "val_auroc": 0.8741,
+        "sec": 359.45
+      },
+      {
+        "epoch": 4.0,
+        "loss": 0.4444,
+        "val_auroc": 0.8882,
+        "sec": 360.31
+      },
+      {
+        "epoch": 5.0,
+        "loss": 0.4152,
+        "val_auroc": 0.912,
+        "sec": 366.09
+      },
+      {
+        "epoch": 6.0,
+        "loss": 0.4083,
+        "val_auroc": 0.9271,
+        "sec": 364.43
+      },
+      {
+        "epoch": 7.0,
+        "loss": 0.3778,
+        "val_auroc": 0.9328,
+        "sec": 348.07
+      },
+      {
+        "epoch": 8.0,
+        "loss": 0.3548,
+        "val_auroc": 0.9355,
+        "sec": 341.61
+      }
+    ],
+    "initial_weights_sha256": "f41d5a6d18d2b23033712e6077cecdebf20a12d334ac01c94b7baaa32b2f50a9",
+    "pretrained_weights_used": false
+  },
+  "abstention_config": {
+    "rule": "abstain_if_max_prob_below_threshold",
+    "min_confidence": 0.65,
+    "selected_on": "val",
+    "val_coverage": 0.8681,
+    "val_selective_error": 0.102
+  },
+  "coverage_risk_curve": [
+    {
+      "confidence_threshold": 0.5,
+      "coverage": 1.0,
+      "error_rate": 0.1749,
+      "selective_auroc": 0.9398
+    },
+    {
+      "confidence_threshold": 0.55,
+      "coverage": 0.9547,
+      "error_rate": 0.1622,
+      "selective_auroc": 0.9443
+    },
+    {
+      "confidence_threshold": 0.6,
+      "coverage": 0.9153,
+      "error_rate": 0.1515,
+      "selective_auroc": 0.9477
+    },
+    {
+      "confidence_threshold": 0.65,
+      "coverage": 0.8716,
+      "error_rate": 0.1424,
+      "selective_auroc": 0.9502
+    },
+    {
+      "confidence_threshold": 0.7,
+      "coverage": 0.8262,
+      "error_rate": 0.1326,
+      "selective_auroc": 0.9544
+    },
+    {
+      "confidence_threshold": 0.75,
+      "coverage": 0.7706,
+      "error_rate": 0.1268,
+      "selective_auroc": 0.9575
+    },
+    {
+      "confidence_threshold": 0.8,
+      "coverage": 0.7037,
+      "error_rate": 0.1135,
+      "selective_auroc": 0.9595
+    },
+    {
+      "confidence_threshold": 0.85,
+      "coverage": 0.6163,
+      "error_rate": 0.0989,
+      "selective_auroc": 0.9604
+    },
+    {
+      "confidence_threshold": 0.9,
+      "coverage": 0.5143,
+      "error_rate": 0.086,
+      "selective_auroc": 0.9568
+    }
+  ],
+  "gradcam_sanity": {
+    "adebayo_mean_l1_shift": 0.3546,
+    "dermoscopic_center_heat_share": 0.0,
+    "n_dermoscopic_checked": 0.0
+  },
+  "subgroups": {
+    "by_fitzpatrick_tone": {
+      "I": {
+        "n": 128,
+        "n_malignant": 128,
+        "n_benign": 0,
+        "auroc": null,
+        "abstain_rate": 0.1172,
+        "note": "single class only"
+      },
+      "II": {
+        "n": 124,
+        "n_malignant": 124,
+        "n_benign": 0,
+        "auroc": null,
+        "abstain_rate": 0.1774,
+        "note": "single class only"
+      },
+      "III": {
+        "n": 129,
+        "n_malignant": 129,
+        "n_benign": 0,
+        "auroc": null,
+        "abstain_rate": 0.1705,
+        "note": "single class only"
+      },
+      "IV": {
+        "n": 44,
+        "n_malignant": 30,
+        "n_benign": 14,
+        "auroc": 0.9286,
+        "auroc_ci95": [
+          0.8387,
+          1.0
+        ],
+        "balanced_accuracy": 0.8952,
+        "ece": 0.1316,
+        "brier_score": 0.1025,
+        "abstain_rate": 0.1591
+      },
+      "UNKNOWN": {
+        "n": 1363,
+        "n_malignant": 648,
+        "n_benign": 715,
+        "auroc": 0.922,
+        "auroc_ci95": [
+          0.9086,
+          0.936
+        ],
+        "balanced_accuracy": 0.7908,
+        "ece": 0.1486,
+        "brier_score": 0.1516,
+        "abstain_rate": 0.1225
+      },
+      "V": {
+        "n": 27,
+        "n_malignant": 5,
+        "n_benign": 22,
+        "auroc": 1.0,
+        "abstain_rate": 0.0741,
+        "note": "too few to conclude"
+      },
+      "VI": {
+        "n": 38,
+        "n_malignant": 0,
+        "n_benign": 38,
+        "auroc": null,
+        "abstain_rate": 0.0789,
+        "note": "single class only"
+      }
+    },
+    "by_modality": {
+      "clinical": {
+        "n": 399,
+        "n_malignant": 333,
+        "n_benign": 66,
+        "auroc": 0.9029,
+        "auroc_ci95": [
+          0.8522,
+          0.934
+        ],
+        "balanced_accuracy": 0.8202,
+        "ece": 0.1358,
+        "brier_score": 0.0967,
+        "abstain_rate": 0.1629
+      },
+      "dermoscopic": {
+        "n": 1160,
+        "n_malignant": 443,
+        "n_benign": 717,
+        "auroc": 0.9783,
+        "auroc_ci95": [
+          0.971,
+          0.9857
+        ],
+        "balanced_accuracy": 0.9376,
+        "ece": 0.0481,
+        "brier_score": 0.0522,
+        "abstain_rate": 0.0784
+      },
+      "tbp_tile": {
+        "n": 294,
+        "n_malignant": 288,
+        "n_benign": 6,
+        "auroc": 0.7095,
+        "auroc_ci95": [
+          0.4811,
+          0.907
+        ],
+        "balanced_accuracy": 0.5642,
+        "ece": 0.6503,
+        "brier_score": 0.5033,
+        "abstain_rate": 0.2789
+      }
+    },
+    "by_dataset": {
+      "isic": {
+        "n": 1853,
+        "n_malignant": 1064,
+        "n_benign": 789,
+        "auroc": 0.9398,
+        "auroc_ci95": [
+          0.9304,
+          0.9498
+        ],
+        "balanced_accuracy": 0.8389,
+        "ece": 0.1554,
+        "brier_score": 0.1334,
+        "abstain_rate": 0.1284
+      }
+    },
+    "by_body_site": {
+      "anterior torso": {
+        "n": 179,
+        "n_malignant": 149,
+        "n_benign": 30,
+        "auroc": 0.7508,
+        "auroc_ci95": [
+          0.6546,
+          0.8172
+        ],
+        "balanced_accuracy": 0.7223,
+        "ece": 0.2841,
+        "brier_score": 0.2402,
+        "abstain_rate": 0.2179
+      },
+      "head/neck": {
+        "n": 346,
+        "n_malignant": 324,
+        "n_benign": 22,
+        "auroc": 0.7562,
+        "auroc_ci95": [
+          0.6639,
+          0.8412
+        ],
+        "balanced_accuracy": 0.6486,
+        "ece": 0.1981,
+        "brier_score": 0.1393,
+        "abstain_rate": 0.1301
+      },
+      "lateral torso": {
+        "n": 5,
+        "n_malignant": 5,
+        "n_benign": 0,
+        "auroc": null,
+        "abstain_rate": 0.0,
+        "note": "too few to conclude"
+      },
+      "lower extremity": {
+        "n": 168,
+        "n_malignant": 141,
+        "n_benign": 27,
+        "auroc": 0.7828,
+        "auroc_ci95": [
+          0.6975,
+          0.8638
+        ],
+        "balanced_accuracy": 0.7423,
+        "ece": 0.3573,
+        "brier_score": 0.2849,
+        "abstain_rate": 0.2083
+      },
+      "oral/genital": {
+        "n": 1,
+        "n_malignant": 1,
+        "n_benign": 0,
+        "auroc": null,
+        "abstain_rate": 1.0,
+        "note": "too few to conclude"
+      },
+      "palms/soles": {
+        "n": 9,
+        "n_malignant": 6,
+        "n_benign": 3,
+        "auroc": 1.0,
+        "abstain_rate": 0.1111,
+        "note": "too few to conclude"
+      },
+      "posterior torso": {
+        "n": 194,
+        "n_malignant": 151,
+        "n_benign": 43,
+        "auroc": 0.7072,
+        "auroc_ci95": [
+          0.6135,
+          0.8063
+        ],
+        "balanced_accuracy": 0.6319,
+        "ece": 0.3031,
+        "brier_score": 0.2779,
+        "abstain_rate": 0.299
+      },
+      "unspecified": {
+        "n": 753,
+        "n_malignant": 108,
+        "n_benign": 645,
+        "auroc": 0.9951,
+        "auroc_ci95": [
+          0.991,
+          0.9979
+        ],
+        "balanced_accuracy": 0.9675,
+        "ece": 0.0305,
+        "brier_score": 0.0194,
+        "abstain_rate": 0.0239
+      },
+      "upper extremity": {
+        "n": 198,
+        "n_malignant": 179,
+        "n_benign": 19,
+        "auroc": 0.8221,
+        "auroc_ci95": [
+          0.6924,
+          0.9183
+        ],
+        "balanced_accuracy": 0.7136,
+        "ece": 0.2966,
+        "brier_score": 0.1963,
+        "abstain_rate": 0.2071
+      }
+    }
+  },
+  "paired_bootstrap_holm": [
+    {
+      "reference_model": "pytorch_resnet_seed1",
+      "comparator_model": "pytorch_resnet_no_meta",
+      "reference_auroc": 0.9398,
+      "comparator_auroc": 0.9461,
+      "delta_auroc": -0.0063,
+      "delta_ci95": [
+        -0.0096,
+        -0.0027
+      ],
+      "p_value_raw": 0.0,
+      "p_value_holm": 0.0,
+      "significant_at_0_05": true
+    },
+    {
+      "reference_model": "pytorch_resnet_seed1",
+      "comparator_model": "classical_logreg",
+      "reference_auroc": 0.9398,
+      "comparator_auroc": 0.7321,
+      "delta_auroc": 0.2077,
+      "delta_ci95": [
+        0.1873,
+        0.2272
+      ],
+      "p_value_raw": 0.0,
+      "p_value_holm": 0.0,
+      "significant_at_0_05": true
+    },
+    {
+      "reference_model": "pytorch_resnet_seed1",
+      "comparator_model": "metadata_only",
+      "reference_auroc": 0.9398,
+      "comparator_auroc": 0.6364,
+      "delta_auroc": 0.3035,
+      "delta_ci95": [
+        0.279,
+        0.3291
+      ],
+      "p_value_raw": 0.0,
+      "p_value_holm": 0.0,
+      "significant_at_0_05": true
+    },
+    {
+      "reference_model": "pytorch_resnet_seed1",
+      "comparator_model": "numpy_frozen_random_features",
+      "reference_auroc": 0.9398,
+      "comparator_auroc": 0.7034,
+      "delta_auroc": 0.2364,
+      "delta_ci95": [
+        0.215,
+        0.2629
+      ],
+      "p_value_raw": 0.0,
+      "p_value_holm": 0.0,
+      "significant_at_0_05": true
+    }
+  ]
+}
