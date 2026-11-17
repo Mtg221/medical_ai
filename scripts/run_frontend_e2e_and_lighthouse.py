@@ -49,6 +49,41 @@ def main() -> None:
             pipe.save(e2e_model_dir, corpus_id="SYNTH-MED-V3.1-e2e-60")
             env["MEDRESEARCH_MODEL_DIR"] = str(e2e_model_dir)
 
+        default_router_dir = Path("models/vision_router_v1")
+        default_skin_dir = Path("models/derm_cnn_seed1")
+        if (not (default_router_dir / "manifest.json").exists() and not env.get("MEDRESEARCH_VISION_ROUTER_DIR")) or (
+            not (default_skin_dir / "manifest.json").exists() and not env.get("MEDRESEARCH_VISION_SKIN_DIR")
+        ):
+            from medresearch_platform.vision.cnn_multitask import DermResNetMultiTask
+            from medresearch_platform.vision.router import (
+                ROUTER_CLASSES,
+                PictureTriageRouter,
+                extract_router_features,
+                generate_document_scan_image,
+                generate_non_skin_other_image,
+                generate_synthetic_skin_modality_image,
+            )
+
+            e2e_router_dir = Path(tmp) / "models" / "vision_router_v1"
+            router = PictureTriageRouter(seed=42)
+            samples = []
+            for i in range(6):
+                for r_cls in ("skin_clinical", "skin_dermoscopic", "skin_tbp_tile"):
+                    p24, d28 = extract_router_features(generate_synthetic_skin_modality_image(r_cls, i, seed=42))
+                    samples.append((p24, d28, ROUTER_CLASSES.index(r_cls)))
+                p24_d, d28_d = extract_router_features(generate_document_scan_image(i, seed=42))
+                samples.append((p24_d, d28_d, ROUTER_CLASSES.index("document_scan")))
+                p24_o, d28_o = extract_router_features(generate_non_skin_other_image(i, seed=42))
+                samples.append((p24_o, d28_o, ROUTER_CLASSES.index("other")))
+            router.fit(samples, epochs=35, lr=0.05)
+            router.save(e2e_router_dir)
+            env["MEDRESEARCH_VISION_ROUTER_DIR"] = str(e2e_router_dir)
+
+            e2e_skin_dir = Path(tmp) / "models" / "derm_cnn_seed1"
+            skin = DermResNetMultiTask(image_size=64, seed=42)
+            skin.save(e2e_skin_dir)
+            env["MEDRESEARCH_VISION_SKIN_DIR"] = str(e2e_skin_dir)
+
         proc = subprocess.Popen(
             [sys.executable, "-m", "uvicorn", "medresearch_platform.interfaces.api:create_app", "--factory", "--host", "127.0.0.1", "--port", "8011"],
             env=env,

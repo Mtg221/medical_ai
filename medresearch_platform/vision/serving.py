@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 import re
 import uuid
 from datetime import datetime, timezone
@@ -100,9 +101,17 @@ class VisionServingEngine:
         except Exception:
             return False
 
+    def _router_dir(self) -> Path:
+        env_dir = os.environ.get("MEDRESEARCH_VISION_ROUTER_DIR")
+        return Path(env_dir) if env_dir else self.workspace_dir / "models" / "vision_router_v1"
+
+    def _skin_dir(self) -> Path:
+        env_dir = os.environ.get("MEDRESEARCH_VISION_SKIN_DIR")
+        return Path(env_dir) if env_dir else self.workspace_dir / "models" / "derm_cnn_seed1"
+
     def status(self) -> dict[str, str]:
-        r_dir = self.workspace_dir / "models" / "vision_router_v1"
-        s_dir = self.workspace_dir / "models" / "derm_cnn_seed1"
+        r_dir = self._router_dir()
+        s_dir = self._skin_dir()
         return {
             "vision_router": "ready" if self._check_model_dir(r_dir, "router_weights.npz") else "missing",
             "vision_skin": "ready" if self._check_model_dir(s_dir, "weights.npz") else "missing",
@@ -111,7 +120,7 @@ class VisionServingEngine:
     @property
     def router(self) -> PictureTriageRouter:
         if self._router is None:
-            r_dir = self.workspace_dir / "models" / "vision_router_v1"
+            r_dir = self._router_dir()
             try:
                 self._router = PictureTriageRouter.load(r_dir)
             except Exception as exc:
@@ -125,7 +134,7 @@ class VisionServingEngine:
     @property
     def skin_model(self) -> DermResNetMultiTask:
         if self._skin_model is None:
-            m_dir = self.workspace_dir / "models" / "derm_cnn_seed1"
+            m_dir = self._skin_dir()
             try:
                 self._skin_model = DermResNetMultiTask.load(m_dir)
             except Exception as exc:
