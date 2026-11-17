@@ -15,9 +15,6 @@ from PIL import Image
 from medresearch_platform.vision.catalog import (
     MALIGNANCY_CLASSES,
     DermCatalogRecord,
-    _deterministic_split,
-    _open_json_auto,
-    generate_synthetic_derm_samples,
 )
 from medresearch_platform.vision.classical_skin import (
     CORE_DX_CLASSES,
@@ -33,7 +30,6 @@ from medresearch_platform.vision.splits import (
     SMALL_GROUP_THRESHOLD,
     log_locked_test_access,
 )
-from medresearch_platform.vision.taxonomy import harmonise_diagnosis
 from medresearch_platform.vision.vision_classifier import (
     DermVisionTrainer,
     encode_derm_metadata,
@@ -370,19 +366,44 @@ def paired_lesion_bootstrap_holm(
     return comparisons
 
 
+def assert_zero_lesion_overlap(
+    splits: dict[str, list[tuple[np.ndarray, int, DermCatalogRecord]]],
+) -> None:
+    """Fail loudly if any lesion `group_key` appears in more than one split."""
+    split_keys: dict[str, set[str]] = {}
+    for sp, items in splits.items():
+        split_keys[sp] = {s[2].group_key for s in items}
+    names = list(split_keys.keys())
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            overlap = split_keys[names[i]] & split_keys[names[j]]
+            if overlap:
+                raise ValueError(
+                    f"Lesion group_key leakage between '{names[i]}' and '{names[j]}': {len(overlap)} shared keys (e.g. {sorted(overlap)[:3]})"
+                )
+
+
 def load_stratified_skin_dataset(
     meta_dir: str | Path = "var/cache/derm/meta",
     cache_dirs: list[str | Path] | None = None,
     *,
     image_size: int = 64,
-    max_samples: int = 1200,
+    max_samples: int | None = None,
+    include_masked_mg: bool = False,
+    locked_test_list_path: str | Path = "configs/vision/locked_test_v2.txt",
+    min_real_samples: int = 12,
     seed: int = 42,
 ) -> dict[str, list[tuple[np.ndarray, int, DermCatalogRecord]]]:
     """
-    Load locally cached real thumbnails from `var/cache/derm/thumbs` and `var/cache/derm_thumbs`
-    paired with their exact metadata records from `var/cache/derm/meta`, partitioned into
-    leak-free `train`, `val`, and `locked_test` splits.
+    Load locally cached real thumbnails from `var/cache/derm/thumbs` paired with metadata
+    from ALL manifest pages in `var/cache/derm/meta`.
+    - Uses catalog lesion `group_key` (`mk` when present) and enforces 0 cross-split overlap.
+    - Never fabricates malignancy labels for `tbp_tile` or `unknown`/`indeterminate` (`-1` if `include_masked_mg=True`).
+    - Never falls back silently to synthetic images.
     """
+    from medresearch_platform.vision.catalog import iter_derm_catalog
+
+    _ = seed
     dirs = [Path(d) for d in (cache_dirs or ["var/cache/derm/thumbs", "var/cache/derm_thumbs"])]
     existing_map: dict[str, Path] = {}
     for base in dirs:
@@ -393,55 +414,30 @@ def load_stratified_skin_dataset(
                 existing_map.setdefault(str(p.relative_to(base)).replace("\\", "/"), p)
 
     meta_base = Path(meta_dir)
-    matched_records: list[tuple[Path, DermCatalogRecord]] = []
+    if not meta_base.exists() or not existing_map:
+        raise RuntimeError(f"No real cached thumbnails or metadata found (meta={meta_base}, thumbs={len(existing_map)}).")
 
-    if meta_base.exists() and existing_map:
-        for mod_name in ("clinical", "dermoscopic", "tbp_tile"):
-            page_path = meta_base / f"manifest-{mod_name}-000.json"
-            if not page_path.exists():
-                continue
-            payload = _open_json_auto(page_path)
-            items = payload.get("items", []) if isinstance(payload, dict) else payload
-            for row in items:
-                t_rel = row.get("t")
-                if not t_rel:
-                    continue
-                local_p = existing_map.get(str(t_rel).lstrip("/"))
-                if local_p is None:
-                    continue
-                raw_mg = str(row.get("mg") or "unknown").lower()
-                if raw_mg not in ("benign", "malignant"):
-                    if mod_name == "tbp_tile":
-                        raw_mg = "benign"
-                    else:
-                        continue
-                img_id = str(row.get("i") or "")
-                ds = str(row.get("d") or "isic")
-                raw_dx = row.get("dx")
-                dx_info = harmonise_diagnosis(raw_dx, raw_mg)
-                group_key = f"{ds}:{img_id.split(':')[-1]}"
-                rec = DermCatalogRecord(
-                    image_id=img_id,
-                    dataset=ds,
-                    modality=mod_name,
-                    thumb_path=str(t_rel),
-                    raw_path=row.get("f"),
-                    skin_tone=str(row.get("st") or "UNKNOWN").upper(),
-                    diagnosis_raw=raw_dx,
-                    malignancy_group=raw_mg,
-                    body_site=row.get("bs"),
-                    license_name=row.get("lc"),
-                    quality_ok=bool(row.get("ok", True)),
-                    confirmation=row.get("cf"),
-                    group_key=group_key,
-                    split_assignment=_deterministic_split(group_key),
-                    diagnosis_harmonised=dx_info.harmonised_dx,
-                    mg_consistent=dx_info.mg_consistent,
-                    research_allowed=True,
-                )
-                matched_records.append((local_p, rec))
-                if len(matched_records) >= max_samples:
-                    break
+    frozen_test_ids: set[str] = set()
+    lt_path = Path(locked_test_list_path)
+    if lt_path.exists():
+        frozen_test_ids = {ln.strip() for ln in lt_path.read_text(encoding="utf-8").splitlines() if ln.strip()}
+
+    matched_records: list[tuple[Path, DermCatalogRecord]] = []
+    for rec in iter_derm_catalog(
+        meta_base,
+        require_quality_ok=True,
+        require_research_licence=True,
+    ):
+        if not rec.thumb_path:
+            continue
+        local_p = existing_map.get(str(rec.thumb_path).lstrip("/"))
+        if local_p is None:
+            continue
+        if rec.malignancy_group not in ("benign", "malignant") and not include_masked_mg:
+            continue
+        matched_records.append((local_p, rec))
+        if max_samples is not None and len(matched_records) >= max_samples:
+            break
 
     samples: list[tuple[np.ndarray, int, DermCatalogRecord]] = []
     for path, rec in matched_records:
@@ -449,19 +445,36 @@ def load_stratified_skin_dataset(
             with Image.open(path) as im:
                 rgb = im.convert("RGB").resize((image_size, image_size), Image.Resampling.BILINEAR)
                 arr = np.asarray(rgb, dtype=np.float64) / 255.0
-            label = MALIGNANCY_CLASSES.index(rec.malignancy_group)
+            label = MALIGNANCY_CLASSES.index(rec.malignancy_group) if rec.malignancy_group in ("benign", "malignant") else -1
             samples.append((arr, label, rec))
         except Exception:
             continue
 
-    if len(samples) < 36:
-        samples = generate_synthetic_derm_samples(n_samples=96, image_size=image_size, seed=seed)
+    if len(samples) < min_real_samples:
+        raise RuntimeError(
+            f"Found only {len(samples)} real cached skin images (< {min_real_samples}); "
+            "silent synthetic fallback is disabled. Run `medextract derm sync --plan docs/data/DERM_SAMPLING_PLAN.md`."
+        )
 
-    splits: dict[str, list[tuple[np.ndarray, int, DermCatalogRecord]]] = {
-        "train": [s for s in samples if s[2].split_assignment == "train"],
-        "val": [s for s in samples if s[2].split_assignment == "val"],
-        "locked_test": [s for s in samples if s[2].split_assignment == "locked_test"],
-    }
+    if frozen_test_ids:
+        test_groups = {s[2].group_key for s in samples if s[2].image_id in frozen_test_ids}
+        splits: dict[str, list[tuple[np.ndarray, int, DermCatalogRecord]]] = {
+            "train": [s for s in samples if s[2].group_key not in test_groups and s[2].split_assignment == "train"],
+            "val": [s for s in samples if s[2].group_key not in test_groups and s[2].split_assignment == "val"],
+            "locked_test": [s for s in samples if s[2].group_key in test_groups],
+        }
+    else:
+        splits = {
+            "train": [s for s in samples if s[2].split_assignment == "train"],
+            "val": [s for s in samples if s[2].split_assignment == "val"],
+            "locked_test": [s for s in samples if s[2].split_assignment == "locked_test"],
+        }
+
+    assert_zero_lesion_overlap(splits)
+    for sp_name, sp_items in splits.items():
+        syn_n = sum(1 for _, _, r in sp_items if r.dataset == "synthetic" or r.image_id.startswith("synth_"))
+        if syn_n > 0:
+            raise RuntimeError(f"Benchmark split '{sp_name}' contains {syn_n} synthetic images; Rule 1 forbids synthetic images in reported benchmarks.")
     return splits
 
 
@@ -653,6 +666,11 @@ def run_step3_skin_benchmark_and_ablations(
             "val": len(val_s),
             "locked_test": len(test_s),
             "total": len(train_s) + len(val_s) + len(test_s),
+        },
+        "data_source": {
+            "train": {"real": len(train_s), "synthetic": 0},
+            "val": {"real": len(val_s), "synthetic": 0},
+            "locked_test": {"real": len(test_s), "synthetic": 0},
         },
         "models": {
             "derm_cnn_multitask": {

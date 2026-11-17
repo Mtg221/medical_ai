@@ -173,6 +173,7 @@ def main(argv: list[str] | None = None) -> int:
     p_d_sync = sub_derm.add_parser("sync", help="Sync metadata pages or thumbnails from derm-corpus CloudFront")
     p_d_sync.add_argument("--meta-only", action="store_true", help="Download only metadata JSON/gzip pages")
     p_d_sync.add_argument("--thumbs", action="store_true", help="Download thumbnails into local cache")
+    p_d_sync.add_argument("--plan", type=Path, default=None, help="Sampling plan markdown path (e.g. docs/data/DERM_SAMPLING_PLAN.md)")
     p_d_sync.add_argument("--limit", type=int, default=None, help="Maximum number of thumbnails to download")
     p_d_sync.add_argument("--meta-dir", type=Path, default=Path("var/cache/derm/meta"), help="Metadata directory")
     p_d_sync.add_argument("--cache-dir", type=Path, default=Path("var/cache/derm/thumbs"), help="Thumbnails directory")
@@ -352,6 +353,18 @@ def main(argv: list[str] | None = None) -> int:
         )
 
         if args.derm_cmd == "sync":
+            if args.plan is not None:
+                from medresearch_platform.vision.sync import sync_derm_from_plan
+
+                meta_report = sync_derm_metadata(args.meta_dir)
+                plan_report = sync_derm_from_plan(
+                    args.meta_dir,
+                    args.cache_dir,
+                    plan_path=args.plan,
+                    limit=args.limit,
+                )
+                print(json.dumps({"metadata": meta_report.to_dict(), "plan_sync": plan_report}, indent=2))
+                return 0
             meta_report = sync_derm_metadata(args.meta_dir)
             if args.meta_only or not args.thumbs:
                 print(json.dumps(meta_report.to_dict(), indent=2))
