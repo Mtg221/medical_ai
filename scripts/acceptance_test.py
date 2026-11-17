@@ -11,11 +11,15 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import yaml
 from fastapi.testclient import TestClient
 from PIL import Image, ImageFilter
 
 from medresearch_platform.config import PlatformConfig
+from medresearch_platform.data.builder import build_corpus_from_config
 from medresearch_platform.documents.ocr_engine import check_tesseract_available
+from medresearch_platform.eval_harness.runner import _load_jsonl
+from medresearch_platform.hybrid.pipeline import HybridPipeline
 from medresearch_platform.interfaces.api import create_app
 from medresearch_platform.security.audit import verify_audit_chain
 from medresearch_platform.vision.cnn_multitask import DermResNetMultiTask
@@ -68,6 +72,21 @@ def _train_tiny_cc0_models(workspace: Path) -> None:
     DermResNetMultiTask(image_size=64, seed=42).save(workspace / "models" / "derm_cnn_seed1")
 
 
+def _train_tiny_hybrid_model(workspace: Path) -> Path:
+    """Train a tiny hybrid_v2 text extractor for fresh-clone CI acceptance runs."""
+    v3_1_train = Path("data/processed/v3_1/train.jsonl")
+    if not v3_1_train.exists():
+        build_corpus_from_config(Path("configs/data/v3_1.yaml"))
+    docs = _load_jsonl(v3_1_train)[:60]
+    cfg = yaml.safe_load(Path("configs/exp/v3_2/hybrid_v2.yaml").read_text(encoding="utf-8"))
+    cfg = {**cfg, "epochs": 6, "max_train_docs": 60}
+    hybrid_dir = workspace / "models" / "hybrid_v2_test"
+    pipe = HybridPipeline(seed=1, cfg=cfg)
+    pipe.fit(docs)
+    pipe.save(hybrid_dir, corpus_id="SYNTH-MED-V3.1-test-subset")
+    return hybrid_dir
+
+
 def run_acceptance_suite(*, use_repo_models: bool = False) -> dict[str, object]:
     t0 = time.perf_counter()
     results: dict[str, bool] = {}
@@ -76,8 +95,11 @@ def run_acceptance_suite(*, use_repo_models: bool = False) -> dict[str, object]:
         tmp_path = Path(td)
         old_sqlite = os.environ.get("MEDRESEARCH_SQLITE_PATH")
         old_storage = os.environ.get("MEDRESEARCH_STORAGE_DIR")
+        old_model_dir = os.environ.get("MEDRESEARCH_MODEL_DIR")
         os.environ["MEDRESEARCH_SQLITE_PATH"] = str(tmp_path / "acc.sqlite3")
         os.environ["MEDRESEARCH_STORAGE_DIR"] = str(tmp_path / "storage")
+        if not (use_repo_models and Path("models/hybrid_v2_seed1").exists()):
+            os.environ["MEDRESEARCH_MODEL_DIR"] = str(_train_tiny_hybrid_model(tmp_path))
 
         try:
             # 0. Check no-model -> 503 before installing models
@@ -314,6 +336,10 @@ def run_acceptance_suite(*, use_repo_models: bool = False) -> dict[str, object]:
                 os.environ.pop("MEDRESEARCH_STORAGE_DIR", None)
             else:
                 os.environ["MEDRESEARCH_STORAGE_DIR"] = old_storage
+            if old_model_dir is None:
+                os.environ.pop("MEDRESEARCH_MODEL_DIR", None)
+            else:
+                os.environ["MEDRESEARCH_MODEL_DIR"] = old_model_dir
 
     return {
         "status": "PASSED",
