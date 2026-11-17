@@ -184,24 +184,28 @@ def extract_cutaneous_text_descriptors(
     `changement récent`, ABCDE words, lesion mentions) not already covered by `existing_entities`.
     """
     occupied: list[tuple[int, int]] = []
+    occupied_anatomy: list[tuple[int, int]] = []
     for e in existing_entities:
         cs = int(e.get("char_start") or e.get("start") or 0)
         ce = int(e.get("char_end") or e.get("end") or 0)
         if ce > cs:
             occupied.append((cs, ce))
+            if str(e.get("entity_type") or e.get("type") or "") == "ANATOMY":
+                occupied_anatomy.append((cs, ce))
 
-    def _overlaps(start: int, end: int) -> bool:
-        return any(not (end <= s or start >= e) for s, e in occupied)
+    def _overlaps(start: int, end: int, spans: list[tuple[int, int]]) -> bool:
+        return any(not (end <= s or start >= e) for s, e in spans)
 
     added: list[dict[str, Any]] = []
     idx_counter = len(existing_entities) + 1
 
-    # 1. Extract ANATOMY body site spans
+    # 1. Extract ANATOMY body site spans (only skip if an ANATOMY span already covers it)
     for pat, canon_site, _ in _BODY_SITE_PATTERNS:
         for m in pat.finditer(text):
             cs, ce = m.start(), m.end()
-            if _overlaps(cs, ce):
+            if _overlaps(cs, ce, occupied_anatomy):
                 continue
+            occupied_anatomy.append((cs, ce))
             occupied.append((cs, ce))
             surf = text[cs:ce]
             added.append({
@@ -223,7 +227,7 @@ def extract_cutaneous_text_descriptors(
     for ent_type, pat in _LESION_MENTION_PATTERNS:
         for m in pat.finditer(text):
             cs, ce = m.start(), m.end()
-            if _overlaps(cs, ce):
+            if _overlaps(cs, ce, occupied):
                 continue
             occupied.append((cs, ce))
             surf = text[cs:ce]
