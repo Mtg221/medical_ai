@@ -24,3 +24,6 @@
 | `2026-11-16T21:11:26Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-16T22:11:13Z` | `derm-corpus:locked_test_stratified` | `DermResNetMultiTask-v1.0.0` | `88` | Step 3 skin models locked-test benchmark (CNN vs Classical vs NumPy toy CNN) |
 | `2026-11-16T22:37:15Z` | `derm-corpus:locked_test_stratified` | `DermResNetMultiTask-v1.0.0` | `118` | Step 3 skin models locked-test benchmark (CNN vs Classical vs NumPy toy CNN) |
+| `2026-11-17T01:17:40Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
+| `2026-11-17T01:18:30Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
+| `2026-11-17T14:27:09Z` | `derm-corpus:locked_test_v2` | `frozen_list_sha256:81b0ad60676de635` | `2022` | Frozen configs/vision/locked_test_v2.txt (sha256=81b0ad60676de6355f8c621d8ece3f0696b1bc462ac6ccc928d8afe9cd54776d) |
