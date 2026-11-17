@@ -40,6 +40,13 @@ export function SkinVisionPage() {
     enabled: Boolean(token),
   });
 
+  const healthQuery = useQuery({
+    queryKey: ["health"],
+    queryFn: () => apiRequest<{ vision_router?: string; vision_skin?: string }>("/api/v1/health", { token }),
+  });
+  const visionModelsMissing =
+    healthQuery.data?.vision_router === "missing" || healthQuery.data?.vision_skin === "missing";
+
   const activeImageId = selectedImageId ?? imagesQuery.data?.images[0]?.image_id ?? null;
 
   const detailQuery = useQuery({
@@ -157,6 +164,20 @@ export function SkinVisionPage() {
           />
         </div>
       </div>
+
+      {visionModelsMissing && (
+        <div
+          role="alert"
+          className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          <p className="font-semibold">
+            {isFr
+              ? "Modèles de vision cutanée non entraînés ou manquants (503)."
+              : "Skin vision models are not trained or missing (503)."}
+          </p>
+          <p className="mt-1 font-mono">medextract derm train --seed 1 --out models/derm_cnn_seed1</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Thumbnail list */}

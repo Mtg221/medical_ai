@@ -578,9 +578,17 @@ class PictureTriageRouter:
     @classmethod
     def load(cls, model_dir: str | Path) -> PictureTriageRouter:
         p = Path(model_dir)
-        manifest = json.loads((p / "manifest.json").read_text(encoding="utf-8"))
+        manifest_path = p / "manifest.json"
+        weights_path = p / "router_weights.npz"
+        if not manifest_path.exists() or not weights_path.exists():
+            raise FileNotFoundError(f"Vision router model files missing in {p}")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        expected_sha = str(manifest.get("trained_weights_sha256") or "")
+        actual_sha = hashlib.sha256(weights_path.read_bytes()).hexdigest()
+        if not expected_sha or expected_sha != actual_sha:
+            raise ValueError(f"Vision router SHA-256 mismatch in {p}: expected {expected_sha}, got {actual_sha}")
         router = cls(seed=int(manifest.get("seed", 42)))
-        data = np.load(p / "router_weights.npz")
+        data = np.load(weights_path)
         for k in router.params:
             router.params[k] = np.asarray(data[k], dtype=np.float64)
         router.desc_mean = np.asarray(data["desc_mean"], dtype=np.float64)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -10,8 +11,13 @@ from PIL import Image
 
 from medresearch_platform.config import PlatformConfig
 from medresearch_platform.interfaces.api import create_app
+from medresearch_platform.vision.cnn_multitask import DermResNetMultiTask
 from medresearch_platform.vision.router import (
+    ROUTER_CLASSES,
+    PictureTriageRouter,
+    extract_router_features,
     generate_document_scan_image,
+    generate_non_skin_other_image,
     generate_synthetic_skin_modality_image,
 )
 
@@ -25,11 +31,46 @@ def _encode_png_with_exif(img: Image.Image) -> bytes:
     return buf.getvalue()
 
 
+def _train_tiny_models_in_workspace(workspace: Path) -> None:
+    router = PictureTriageRouter(seed=42)
+    samples: list[tuple[object, object, int]] = []
+    for i in range(6):
+        for r_cls in ("skin_clinical", "skin_dermoscopic", "skin_tbp_tile"):
+            p24, d28 = extract_router_features(generate_synthetic_skin_modality_image(r_cls, i, seed=42))
+            samples.append((p24, d28, ROUTER_CLASSES.index(r_cls)))
+        p24_doc, d28_doc = extract_router_features(generate_document_scan_image(i, seed=42))
+        samples.append((p24_doc, d28_doc, ROUTER_CLASSES.index("document_scan")))
+        p24_oth, d28_oth = extract_router_features(generate_non_skin_other_image(i, seed=42))
+        samples.append((p24_oth, d28_oth, ROUTER_CLASSES.index("other")))
+    router.fit(samples, epochs=35, lr=0.05)  # type: ignore[arg-type]
+    router.save(workspace / "models" / "vision_router_v1")
+
+    skin = DermResNetMultiTask(image_size=64, seed=42)
+    skin.save(workspace / "models" / "derm_cnn_seed1")
+
+
 def test_step5_image_upload_exif_stripping_linking_and_endpoints(tmp_path: Path) -> None:
     """Verify /api/v1/images/upload, EXIF stripping, SAME_LESION linking, heatmap, review, patient record, and EN/FR reports."""
+    _train_tiny_models_in_workspace(tmp_path)
     cfg = PlatformConfig.from_env(workspace_dir=tmp_path)
     app = create_app(cfg)
     app.state.service.init_or_reset_default_users("TestPass_2026!")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    with app.state.service.db.transaction() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO datasets ("
+            "dataset_id, institution_id, name, version, source_type, license, consent_basis, "
+            "permitted_purpose, deidentification_status, languages_json, modalities_json, "
+            "record_count, manifest_sha256, retention_policy, created_at"
+            ") VALUES ('ds_synth_bilingual_v1', 'inst_dakar_primary', 'Test', '3.1', 'SYNTHETIC', 'MIT', "
+            "'RESEARCH', 'BENCHMARK', 'SYNTHETIC_NO_PHI', '[\"en\",\"fr\"]', '[\"TXT\"]', 0, 'abc', 'RETAIN', ?)",
+            (now_iso,),
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO subjects (subject_id, institution_id, dataset_id, pseudonym_code, language_primary, consent_status, created_at) "
+            "VALUES ('subj_synth_001', 'inst_dakar_primary', 'ds_synth_bilingual_v1', 'PAT-SYNTH-001', 'fr', 'SYNTHETIC_EXEMPT', ?)",
+            (now_iso,),
+        )
     client = TestClient(app)
 
     # 1. Authenticate as admin_dakar (inst_dakar_primary) and researcher_paris (inst_paris_partner)

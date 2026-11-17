@@ -803,14 +803,22 @@ class DermResNetMultiTask:
     @classmethod
     def load(cls, model_dir: str | Path) -> DermResNetMultiTask:
         p = Path(model_dir)
-        manifest = json.loads((p / "manifest.json").read_text(encoding="utf-8"))
+        manifest_path = p / "manifest.json"
+        weights_path = p / "weights.npz"
+        if not manifest_path.exists() or not weights_path.exists():
+            raise FileNotFoundError(f"Skin vision model files missing in {p}")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        expected_sha = str(manifest.get("trained_weights_sha256") or "")
+        actual_sha = hashlib.sha256(weights_path.read_bytes()).hexdigest()
+        if not expected_sha or expected_sha != actual_sha:
+            raise ValueError(f"Skin vision model SHA-256 mismatch in {p}: expected {expected_sha}, got {actual_sha}")
         model = cls(
             image_size=int(manifest.get("image_size", 128)),
             include_metadata=bool(manifest.get("include_metadata", True)),
             multi_task=bool(manifest.get("multi_task", True)),
             seed=int(manifest.get("seed", 42)),
         )
-        data = np.load(p / "weights.npz")
+        data = np.load(weights_path)
         for k in model.params:
             model.params[k] = np.asarray(data[k], dtype=np.float64)
         model.feat_mean = np.asarray(data["feat_mean"], dtype=np.float64)

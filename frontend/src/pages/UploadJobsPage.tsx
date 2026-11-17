@@ -38,6 +38,13 @@ export function UploadJobsPage() {
     refetchInterval: 2000,
   });
 
+  const healthQuery = useQuery({
+    queryKey: ["health"],
+    queryFn: () => apiRequest<{ vision_router?: string; vision_skin?: string }>("/api/v1/health", { token }),
+  });
+  const visionModelsMissing =
+    healthQuery.data?.vision_router === "missing" || healthQuery.data?.vision_skin === "missing";
+
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragActive(false);
@@ -88,7 +95,21 @@ export function UploadJobsPage() {
       : (triageObj?.label_en as string | undefined);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-6">
+      {visionModelsMissing && (
+        <div
+          role="alert"
+          className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          <p className="font-semibold">
+            {i18n.language === "fr"
+              ? "Modèle image non entraîné — l'envoi d'images renverra 503."
+              : "Image model not trained — image uploads will return 503."}
+          </p>
+          <p className="mt-1 font-mono">medextract derm train --seed 1 --out models/derm_cnn_seed1</p>
+        </div>
+      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader className="flex items-center gap-2">
           <UploadCloud className="h-5 w-5 text-sky-700 dark:text-sky-400" aria-hidden="true" />
@@ -241,6 +262,7 @@ export function UploadJobsPage() {
           ))}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

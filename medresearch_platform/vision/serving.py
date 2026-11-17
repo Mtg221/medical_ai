@@ -65,6 +65,18 @@ def strip_exif_and_gps(raw_bytes: bytes) -> tuple[bytes, Image.Image, str | None
     return buf.getvalue(), clean_im, captured_date, fmt
 
 
+class ModelNotAvailableError(RuntimeError):
+    """Raised when a required vision model directory, manifest, or SHA-256 checksum is missing or invalid."""
+
+    def __init__(self, message: str, *, command: str = "medextract derm train --seed 1 --out models/derm_cnn_seed1") -> None:
+        super().__init__(message)
+        self.command = command
+
+
+class SubjectNotFoundError(LookupError):
+    """Raised when the requested subject_id does not exist in the caller's institution."""
+
+
 class VisionServingEngine:
     """Lazy-loaded singleton serving `PictureTriageRouter` and `DermResNetMultiTask`."""
 
@@ -73,28 +85,55 @@ class VisionServingEngine:
         self._router: PictureTriageRouter | None = None
         self._skin_model: DermResNetMultiTask | None = None
 
+    def _check_model_dir(self, model_dir: Path, weights_filename: str) -> bool:
+        manifest_path = model_dir / "manifest.json"
+        weights_path = model_dir / weights_filename
+        if not manifest_path.exists() or not weights_path.exists():
+            return False
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            expected_sha = str(manifest.get("trained_weights_sha256") or "")
+            if not expected_sha:
+                return False
+            actual_sha = hashlib.sha256(weights_path.read_bytes()).hexdigest()
+            return expected_sha == actual_sha
+        except Exception:
+            return False
+
+    def status(self) -> dict[str, str]:
+        r_dir = self.workspace_dir / "models" / "vision_router_v1"
+        s_dir = self.workspace_dir / "models" / "derm_cnn_seed1"
+        return {
+            "vision_router": "ready" if self._check_model_dir(r_dir, "router_weights.npz") else "missing",
+            "vision_skin": "ready" if self._check_model_dir(s_dir, "weights.npz") else "missing",
+        }
+
     @property
     def router(self) -> PictureTriageRouter:
         if self._router is None:
             r_dir = self.workspace_dir / "models" / "vision_router_v1"
-            if not (r_dir / "manifest.json").exists():
-                r_dir = Path(__file__).resolve().parents[2] / "models" / "vision_router_v1"
-            if (r_dir / "manifest.json").exists():
+            try:
                 self._router = PictureTriageRouter.load(r_dir)
-            else:
-                self._router = PictureTriageRouter()
+            except Exception as exc:
+                raise ModelNotAvailableError(
+                    f"image model not trained (vision_router_v1 missing or invalid in {r_dir}): {exc} / "
+                    "Modèle image non entraîné (vision_router_v1 manquant ou invalide).",
+                    command="medextract derm train --seed 1 --out models/derm_cnn_seed1",
+                ) from exc
         return self._router
 
     @property
     def skin_model(self) -> DermResNetMultiTask:
         if self._skin_model is None:
             m_dir = self.workspace_dir / "models" / "derm_cnn_seed1"
-            if not (m_dir / "manifest.json").exists():
-                m_dir = Path(__file__).resolve().parents[2] / "models" / "derm_cnn_seed1"
-            if (m_dir / "manifest.json").exists():
+            try:
                 self._skin_model = DermResNetMultiTask.load(m_dir)
-            else:
-                self._skin_model = DermResNetMultiTask(image_size=64)
+            except Exception as exc:
+                raise ModelNotAvailableError(
+                    f"image model not trained (derm_cnn_seed1 missing or invalid in {m_dir}): {exc} / "
+                    "Modèle image non entraîné (derm_cnn_seed1 manquant ou invalide).",
+                    command="medextract derm train --seed 1 --out models/derm_cnn_seed1",
+                ) from exc
         return self._skin_model
 
 
@@ -105,7 +144,7 @@ def ingest_and_analyze_image(
     principal: AuthenticatedPrincipal,
     raw_bytes: bytes,
     filename: str,
-    subject_id: str | None = "subj_synth_001",
+    subject_id: str | None = None,
     document_id: str | None = None,
     body_site: str | None = None,
     captured_date_iso: str | None = None,
@@ -115,7 +154,7 @@ def ingest_and_analyze_image(
 ) -> dict[str, Any]:
     """
     Full Step 5 image upload pipeline:
-    1. Validate magic bytes & size limit; strip 100% of EXIF & GPS metadata before storage.
+    1. Validate magic bytes, size limit, subject existence, and vision model availability; strip 100% of EXIF & GPS metadata before storage.
     2. Stage `TRIAGE`: run `PictureTriageRouter`. If `document_scan` and `allow_document_reroute=True`,
        automatically route to `service.ingest_document` (OCR + text pipeline).
     3. Stage `QUALITY`: run bilingual quality check.
@@ -123,6 +162,10 @@ def ingest_and_analyze_image(
     5. Stage `EXPLAIN`: compute Grad-CAM overlay PNG, persist `ImageFinding` and `SAME_LESION` text links.
     """
     principal.assert_permission("medical_data:write")
+    if not subject_id or not str(subject_id).strip():
+        raise ValueError("subject_id is required / subject_id est requis")
+    subject_id = str(subject_id).strip()
+
     validate_upload_payload(
         raw_bytes,
         filename,
@@ -140,8 +183,39 @@ def ingest_and_analyze_image(
             f"Image endpoint requires PNG, JPEG, WEBP, or TIFF (got {safety.detected_format})."
         )
 
+    # Verify subject exists in caller's institution (V9: never fall back to another patient)
+    with service.db.connect() as conn:
+        s_row = conn.execute(
+            "SELECT subject_id FROM subjects WHERE institution_id = ? AND (subject_id = ? OR pseudonym_code = ?) LIMIT 1",
+            (principal.institution_id, subject_id, subject_id),
+        ).fetchone()
+        if s_row is None:
+            raise SubjectNotFoundError(
+                f"Unknown subject_id '{subject_id}' for institution '{principal.institution_id}'."
+            )
+        resolved_subj_id = str(s_row["subject_id"])
+
+    # Fail loudly (503) if vision models are missing or manifest SHA-256 fails (V8)
+    router_model = vision_engine.router
+
     clean_bytes, clean_im, exif_date, _ = strip_exif_and_gps(raw_bytes)
-    resolved_date = captured_date_iso or exif_date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    user_date = captured_date_iso.strip() if isinstance(captured_date_iso, str) and captured_date_iso.strip() else None
+    if user_date is not None:
+        resolved_date: str | None = user_date
+        captured_date_source = "user"
+    elif exif_date is not None:
+        resolved_date = exif_date
+        captured_date_source = "exif"
+    else:
+        resolved_date = None
+        captured_date_source = "unknown"
+
+    warnings: list[str] = []
+    if captured_date_source == "unknown":
+        warnings.append(
+            "Date missing: no EXIF or user capture date provided / Date manquante : aucune date EXIF ou saisie fournie"
+        )
+
     content_sha256 = hashlib.sha256(clean_bytes).hexdigest()
 
     # Duplicate check within caller's institution
@@ -158,7 +232,7 @@ def ingest_and_analyze_image(
     if progress_callback:
         progress_callback("TRIAGE", 20)
 
-    triage = vision_engine.router.triage_image(clean_im)
+    triage = router_model.triage_image(clean_im)
 
     # Bidirectional routing: if a document photo is uploaded to /api/v1/images/upload, route to OCR + text pipeline
     if triage.predicted_class == "document_scan" and allow_document_reroute:
@@ -167,7 +241,7 @@ def ingest_and_analyze_image(
             raw_bytes=clean_bytes,
             filename=filename,
             dataset_id="ds_synth_bilingual_v1",
-            subject_raw_id=subject_id or "subj_synth_001",
+            subject_raw_id=resolved_subj_id,
             family_id="fam_synth_upload",
             encounter_date_iso=resolved_date,
             force_new=force_new,
@@ -180,6 +254,9 @@ def ingest_and_analyze_image(
             "exif_stripped": True,
         }
 
+    # Check skin model availability before writing any files to storage (V8)
+    skin_model = vision_engine.skin_model
+
     if progress_callback:
         progress_callback("QUALITY", 45)
 
@@ -187,7 +264,7 @@ def ingest_and_analyze_image(
     if triage.route_action == "skin_vision_pipeline":
         if progress_callback:
             progress_callback("ANALYSE", 75)
-        skin_pred = vision_engine.skin_model.predict_image(clean_im)
+        skin_pred = skin_model.predict_image(clean_im)
 
     if progress_callback:
         progress_callback("EXPLAIN", 90)
@@ -213,42 +290,27 @@ def ingest_and_analyze_image(
     if skin_pred is not None:
         cam_grid = np.asarray(skin_pred.heatmap_grid, dtype=np.float64)
     else:
-        cam_grid, _ = vision_engine.skin_model.compute_gradcam_heatmap(clean_im)
-    heatmap_bytes = vision_engine.skin_model.render_gradcam_overlay_png(clean_im, cam_grid)
+        cam_grid, _ = skin_model.compute_gradcam_heatmap(clean_im)
+    heatmap_bytes = skin_model.render_gradcam_overlay_png(clean_im, cam_grid)
     heatmap_path.write_bytes(heatmap_bytes)
 
     finding = build_image_finding(
         image_id=image_id,
         document_id=document_id,
-        patient_id=subject_id,
+        patient_id=resolved_subj_id,
         triage=triage,
         skin_prediction=skin_pred,
         body_site=body_site,
         captured_date_iso=resolved_date,
         heatmap_uri=f"/api/v1/images/{image_id}/heatmap",
     )
+    finding.provenance["captured_date_source"] = captured_date_source
+    finding.provenance["warnings"] = warnings
 
     now_iso = datetime.now(timezone.utc).isoformat()
     created_links: list[dict[str, Any]] = []
 
     with service.db.transaction() as conn:
-        # Resolve subject_id if present in subjects table
-        resolved_subj_id: str | None = None
-        if subject_id:
-            s_row = conn.execute(
-                "SELECT subject_id FROM subjects WHERE institution_id = ? AND (subject_id = ? OR pseudonym_code = ?) LIMIT 1",
-                (principal.institution_id, subject_id, subject_id),
-            ).fetchone()
-            if s_row is not None:
-                resolved_subj_id = str(s_row["subject_id"])
-            else:
-                # Fallback to first subject of institution if default synthetic ID used
-                any_s = conn.execute(
-                    "SELECT subject_id FROM subjects WHERE institution_id = ? ORDER BY created_at ASC LIMIT 1",
-                    (principal.institution_id,),
-                ).fetchone()
-                if any_s is not None:
-                    resolved_subj_id = str(any_s["subject_id"])
 
         conn.execute(
             """
@@ -408,6 +470,8 @@ def ingest_and_analyze_image(
     out["triage"] = triage.to_dict()
     out["exif_stripped"] = True
     out["is_duplicate"] = False
+    out["captured_date_source"] = captured_date_source
+    out["warnings"] = warnings
     out["same_lesion_links"] = created_links
     out["thumbnail_uri"] = f"/api/v1/images/{image_id}/thumbnail"
     return out
@@ -450,6 +514,10 @@ def _row_to_image_finding_dict(
         "abstain_reason_fr": row["abstain_reason_fr"],
         "body_site": row["body_site"],
         "captured_date_iso": row["captured_date_iso"],
+        "captured_date_source": str(prov.get("captured_date_source") or ("exif" if row["captured_date_iso"] else "unknown")),
+        "warnings": list(prov.get("warnings") or ([] if row["captured_date_iso"] else [
+            "Date missing: no EXIF or user capture date provided / Date manquante : aucune date EXIF ou saisie fournie"
+        ])),
         "exif_stripped": bool(row["exif_stripped"]),
         "model_name": str(row["model_name"]),
         "model_version": str(row["model_version"]),
@@ -504,7 +572,7 @@ def get_patient_unified_record(
         )
 
     img_rows = conn.execute(
-        "SELECT * FROM image_findings WHERE institution_id = ? AND (subject_id = ? OR subject_id IS NULL) ORDER BY created_at DESC",
+        "SELECT * FROM image_findings WHERE institution_id = ? AND subject_id = ? ORDER BY created_at DESC",
         (principal.institution_id, resolved_subj_id),
     ).fetchall()
     image_findings = [_row_to_image_finding_dict(conn, r) for r in img_rows]
@@ -512,7 +580,7 @@ def get_patient_unified_record(
     links = [
         dict(r)
         for r in conn.execute(
-            "SELECT * FROM image_text_links WHERE institution_id = ? AND (subject_id = ? OR subject_id IS NULL) ORDER BY confidence DESC",
+            "SELECT * FROM image_text_links WHERE institution_id = ? AND subject_id = ? ORDER BY confidence DESC",
             (principal.institution_id, resolved_subj_id),
         ).fetchall()
     ]
@@ -529,6 +597,7 @@ def get_patient_unified_record(
             f["corrected_diagnosis"]
             or (f["top3_diagnoses"][0]["diagnosis"] if f["top3_diagnoses"] else "abstained")
         )
+        cap_date = f.get("captured_date_iso")
         timeline.append({
             "event_id": f"evt_{f['image_id']}",
             "subject_id": resolved_subj_id,
@@ -541,12 +610,13 @@ def get_patient_unified_record(
             ),
             "assertion_status": "ABSTAINED" if f["abstained"] else "AFFIRMED",
             "temporal_status": "CURRENT",
-            "event_date_iso": str(f["captured_date_iso"] or f["created_at"][:10]),
+            "event_date_iso": str(cap_date) if cap_date else None,
+            "date_unknown": cap_date is None,
             "derivation_type": "EXTRACTED",
             "confidence": float(f["malignancy_risk_probability"] or 0.5),
             "review_status": f["review_status"],
         })
-    timeline.sort(key=lambda e: str(e.get("event_date_iso") or ""))
+    timeline.sort(key=lambda e: (e.get("event_date_iso") is None, str(e.get("event_date_iso") or "")))
 
     return {
         "patient_id": resolved_subj_id,

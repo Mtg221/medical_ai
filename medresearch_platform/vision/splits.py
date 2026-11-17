@@ -21,7 +21,7 @@ def compute_dhash64_from_array(arr: np.ndarray) -> int:
         gray = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
     else:
         gray = arr
-    pil_gray = Image.fromarray(np.clip(gray * (255.0 if gray.max() <= 1.0 else 1.0), 0, 255).astype(np.uint8))
+    pil_gray = Image.fromarray(np.clip(gray * (255.0 if float(np.max(gray)) <= 1.0 else 1.0), 0, 255).astype(np.uint8))
     resized = np.asarray(pil_gray.resize((9, 8), Image.Resampling.BILINEAR), dtype=np.int16)
     diff = resized[:, 1:] > resized[:, :-1]  # 8x8 boolean grid
     bits = diff.flatten()

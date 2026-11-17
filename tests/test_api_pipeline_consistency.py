@@ -142,7 +142,8 @@ def test_api_matches_hybrid_v2_on_30_txt_and_10_pdf_test_iid(tmp_path: Path, mon
             assert api_ents == expected, f"Mismatch on TXT {doc.doc_id}: API={api_ents[:3]} vs Pipe={expected[:3]}"
 
         # 10 rendered PDF documents (OCR path): API entities mapped via character alignment must match direct OCR+HybridPipeline
-        if tesseract_available(("eng", "fra")):
+        tess_ok, _ = tesseract_available(("eng", "fra"))
+        if tess_ok:
             for doc in test_docs[:10]:
                 pdf_bytes = _render_clean_pdf_bytes(doc.text)
                 detail = _upload_and_wait(

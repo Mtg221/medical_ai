@@ -270,7 +270,7 @@ def execute_image_upload_job(
     principal: AuthenticatedPrincipal,
     raw_bytes: bytes,
     filename: str,
-    subject_id: str | None = "subj_synth_001",
+    subject_id: str | None = None,
     document_id: str | None = None,
     body_site: str | None = None,
     captured_date_iso: str | None = None,

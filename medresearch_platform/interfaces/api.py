@@ -137,11 +137,14 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
     @app.get("/api/v1/health")
     async def health_endpoint() -> JSONResponse:
         report = generate_readiness_report(service.config.workspace_dir)
+        vision_status = service.vision_engine.status()
         return JSONResponse({
             "status": "ok",
             "version": __version__,
             "specification_coverage": __spec_coverage__,
             "ocr": get_ocr_status(),
+            "vision_router": vision_status["vision_router"],
+            "vision_skin": vision_status["vision_skin"],
             "readiness": report.to_dict(),
             "clinical_notice": CLINICAL_RESEARCH_NOTICE,
         })
@@ -786,13 +789,15 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         request: Request,
         background_tasks: BackgroundTasks,
         file: UploadFile = File(...),
-        subject_id: str = Form("subj_synth_001"),
+        subject_id: str = Form(...),
         document_id: str | None = Form(None),
         body_site: str | None = Form(None),
         captured_date_iso: str | None = Form(None),
         force_new: bool = Form(False),
         async_job: bool = Form(False),
     ) -> JSONResponse:
+        from medresearch_platform.vision.serving import ModelNotAvailableError
+
         try:
             principal = _extract_principal(request, service)
             principal.assert_permission("medical_data:write")
@@ -814,6 +819,35 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         except ValueError as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
+        # Fail loudly (503) if vision models are missing or invalid before creating any job or storing data
+        try:
+            _ = service.vision_engine.router
+            _ = service.vision_engine.skin_model
+        except ModelNotAvailableError as exc:
+            return JSONResponse(
+                {
+                    "error": "image model not trained / modèle image non entraîné",
+                    "detail": str(exc),
+                    "command": exc.command,
+                },
+                status_code=503,
+            )
+
+        # Verify subject exists in caller's institution (404 if unknown, 422 if blank) before creating any job
+        subj_clean = subject_id.strip()
+        if not subj_clean:
+            return JSONResponse({"error": "subject_id is required / subject_id est requis"}, status_code=422)
+        with service.db.connect() as conn:
+            s_row = conn.execute(
+                "SELECT subject_id FROM subjects WHERE institution_id = ? AND (subject_id = ? OR pseudonym_code = ?) LIMIT 1",
+                (principal.institution_id, subj_clean, subj_clean),
+            ).fetchone()
+            if s_row is None:
+                return JSONResponse(
+                    {"error": f"Unknown subject_id '{subj_clean}' for institution '{principal.institution_id}'."},
+                    status_code=404,
+                )
+
         job = jobs.create_job(
             institution_id=principal.institution_id,
             actor_user_id=principal.user_id,
@@ -830,7 +864,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
                 principal=principal,
                 raw_bytes=raw_bytes,
                 filename=filename,
-                subject_id=subject_id,
+                subject_id=subj_clean,
                 document_id=document_id,
                 body_site=body_site,
                 captured_date_iso=captured_date_iso,
@@ -845,7 +879,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             principal=principal,
             raw_bytes=raw_bytes,
             filename=filename,
-            subject_id=subject_id,
+            subject_id=subj_clean,
             document_id=document_id,
             body_site=body_site,
             captured_date_iso=captured_date_iso,
@@ -853,7 +887,20 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
         )
         completed_job = jobs.get_job(job.job_id)
         if completed_job is not None and completed_job.status == "FAILED":
-            return JSONResponse({"error": completed_job.error_message, "job": completed_job.to_dict()}, status_code=400)
+            err_msg = str(completed_job.error_message or "")
+            if "image model not trained" in err_msg.lower():
+                return JSONResponse(
+                    {
+                        "error": "image model not trained / modèle image non entraîné",
+                        "detail": err_msg,
+                        "command": "medextract derm train --seed 1 --out models/derm_cnn_seed1",
+                        "job": completed_job.to_dict(),
+                    },
+                    status_code=503,
+                )
+            if "unknown subject_id" in err_msg.lower():
+                return JSONResponse({"error": err_msg, "job": completed_job.to_dict()}, status_code=404)
+            return JSONResponse({"error": err_msg, "job": completed_job.to_dict()}, status_code=400)
         res_payload = completed_job.result if completed_job and completed_job.result else {}
         return JSONResponse(
             {
