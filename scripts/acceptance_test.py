@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import io
 import json
+import os
+import shutil
 import tempfile
 import time
 from pathlib import Path
@@ -15,7 +17,11 @@ from medresearch_platform.config import PlatformConfig
 from medresearch_platform.documents.ocr_engine import check_tesseract_available
 from medresearch_platform.interfaces.api import create_app
 from medresearch_platform.security.audit import verify_audit_chain
+from medresearch_platform.vision.cnn_multitask import DermResNetMultiTask
 from medresearch_platform.vision.router import (
+    ROUTER_CLASSES,
+    PictureTriageRouter,
+    extract_router_features,
     generate_document_scan_image,
     generate_non_skin_other_image,
     generate_synthetic_skin_modality_image,
@@ -40,6 +46,29 @@ def run_acceptance_suite() -> dict[str, object]:
 
     with tempfile.TemporaryDirectory() as td:
         tmp_path = Path(td)
+        # Ensure vision models exist in tmp_path/models (copy repo models if present, else train tiny models)
+        for mname in ("vision_router_v1", "derm_cnn_seed1"):
+            src_m = Path("models") / mname
+            dst_m = tmp_path / "models" / mname
+            if (src_m / "manifest.json").exists():
+                shutil.copytree(src_m, dst_m)
+        if not (tmp_path / "models" / "vision_router_v1" / "manifest.json").exists():
+            router = PictureTriageRouter(seed=42)
+            samples = []
+            for i in range(6):
+                for r_cls in ("skin_clinical", "skin_dermoscopic", "skin_tbp_tile"):
+                    p24, d28 = extract_router_features(generate_synthetic_skin_modality_image(r_cls, i, seed=42))
+                    samples.append((p24, d28, ROUTER_CLASSES.index(r_cls)))
+                p24_d, d28_d = extract_router_features(generate_document_scan_image(i, seed=42))
+                samples.append((p24_d, d28_d, ROUTER_CLASSES.index("document_scan")))
+                p24_o, d28_o = extract_router_features(generate_non_skin_other_image(i, seed=42))
+                samples.append((p24_o, d28_o, ROUTER_CLASSES.index("other")))
+            router.fit(samples, epochs=35, lr=0.05)  # type: ignore[arg-type]
+            router.save(tmp_path / "models" / "vision_router_v1")
+        if not (tmp_path / "models" / "derm_cnn_seed1" / "manifest.json").exists():
+            DermResNetMultiTask(image_size=64, seed=42).save(tmp_path / "models" / "derm_cnn_seed1")
+
+        os.environ.setdefault("MEDRESEARCH_SQLITE_PATH", str(tmp_path / "acc.sqlite3"))
         cfg = PlatformConfig.from_env(workspace_dir=tmp_path)
         app = create_app(cfg)
         app.state.service.init_or_reset_default_users("AcceptancePass_2026!")
@@ -164,6 +193,53 @@ def run_acceptance_suite() -> dict[str, object]:
         assert rep_en.status_code == 200 and "## Skin Images" in rep_en.text
         assert rep_fr.status_code == 200 and "## Images cutanées" in rep_fr.text
         results["report_skin_section_en_fr"] = True
+
+        # 9. Part D Text Acceptance Test: two bilingual clinical fixture notes (FR + EN) & P10 redaction
+        fr_note_resp = client.post(
+            "/api/v1/documents/ingest",
+            headers=h_dakar,
+            json={
+                "filename": "fixture_fr_bpco.txt",
+                "text": "Mme D, 67 ans, BPCO sous tiotropium 18 µg.",
+                "dataset_id": "ds_synth_bilingual_v1",
+                "subject_id": "subj_synth_001",
+                "family_id": "fam_acc_text",
+                "encounter_date_iso": "2026-11-16",
+            },
+        )
+        assert fr_note_resp.status_code in (200, 201), fr_note_resp.text
+        fr_doc_id = fr_note_resp.json()["document_id"]
+        fr_detail = client.get(f"/api/v1/documents/{fr_doc_id}", headers=h_dakar).json()
+        fr_ents = fr_detail["entities"]
+        assert any(e["entity_type"] == "MEDICATION" and "tiotropium" in e["source_text"].lower() for e in fr_ents)
+        assert any(e["entity_type"] == "DOSAGE" and "18" in e["source_text"] for e in fr_ents)
+        assert not any(e["entity_type"] == "DIAGNOSIS" and "mme" in e["source_text"].lower() for e in fr_ents)
+        assert not any(e["entity_type"] == "DATE" and "67 ans" in e["source_text"].lower() for e in fr_ents)
+        fr_rep = client.get(f"/api/v1/documents/{fr_doc_id}/report?lang=fr&format=markdown", headers=h_dakar)
+        assert fr_rep.status_code == 200 and "Mme D" not in fr_rep.text
+        results["text_acceptance_fr_fixture_and_p10"] = True
+
+        en_note_resp = client.post(
+            "/api/v1/documents/ingest",
+            headers=h_dakar,
+            json={
+                "filename": "fixture_en_aspirin.txt",
+                "text": "Patient Name: John Doe. Patient is not taking aspirin.",
+                "dataset_id": "ds_synth_bilingual_v1",
+                "subject_id": "subj_synth_001",
+                "family_id": "fam_acc_text",
+                "encounter_date_iso": "2026-11-16",
+            },
+        )
+        assert en_note_resp.status_code in (200, 201), en_note_resp.text
+        en_doc_id = en_note_resp.json()["document_id"]
+        en_detail = client.get(f"/api/v1/documents/{en_doc_id}", headers=h_dakar).json()
+        en_ents = en_detail["entities"]
+        asp = [e for e in en_ents if e["entity_type"] == "MEDICATION" and "aspirin" in e["source_text"].lower()]
+        assert len(asp) == 1 and asp[0]["assertion_status"] == "NEGATED"
+        en_rep = client.get(f"/api/v1/documents/{en_doc_id}/report?lang=en&format=markdown", headers=h_dakar)
+        assert en_rep.status_code == 200 and "John Doe" not in en_rep.text
+        results["text_acceptance_en_fixture_and_p10"] = True
 
     return {
         "status": "PASSED",

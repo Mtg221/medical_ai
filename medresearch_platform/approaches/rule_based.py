@@ -6,6 +6,20 @@ import re
 from typing import Any
 
 from medresearch_platform.approaches.context_negex import apply_context_and_relations
+from medresearch_platform.data.lexicon_v3 import (
+    ANATOMY_EN,
+    ANATOMY_FR,
+    DIAGNOSES_EN,
+    DIAGNOSES_FR,
+    LABS_EN,
+    LABS_FR,
+    MEDICATIONS_EN,
+    MEDICATIONS_FR,
+    PROCEDURES_EN,
+    PROCEDURES_FR,
+    SYMPTOMS_EN,
+    SYMPTOMS_FR,
+)
 from medresearch_platform.data.schema import AnnotatedDocument
 from medresearch_platform.data.synthetic_v2 import (
     ANATOMIES,
@@ -20,7 +34,7 @@ from medresearch_platform.eval_harness.metrics import DocumentPrediction, Predic
 _REGEX_RULES: tuple[tuple[str, str, re.Pattern[str], float], ...] = (
     ("R_PATIENT_ID", "PATIENT_ID", re.compile(r"\bPAT-(?:EN|FR)-\d{4}\b"), 0.99),
     ("R_DATE_ISO", "DATE", re.compile(r"\b\d{4}-\d{2}-\d{2}\b"), 0.98),
-    ("R_DOSAGE", "DOSAGE", re.compile(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|UI)\b", re.IGNORECASE), 0.94),
+    ("R_DOSAGE", "DOSAGE", re.compile(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|µg|μg|g|ml|mL|L|UI|IU|mmol|mEq)\b", re.IGNORECASE), 0.94),
     (
         "R_FREQUENCY",
         "FREQUENCY",
@@ -69,6 +83,24 @@ def _build_lexicon_patterns() -> list[tuple[str, str, re.Pattern[str], float]]:
         entries.extend([("LEX_PROC", "PROCEDURE", item.en), ("LEX_PROC", "PROCEDURE", item.fr)])
     for item in ANATOMIES:
         entries.extend([("LEX_ANAT", "ANATOMY", item.en), ("LEX_ANAT", "ANATOMY", item.fr)])
+    for s3 in (*SYMPTOMS_EN, *SYMPTOMS_FR):
+        for t in s3.variants:
+            entries.append(("LEX_SYM", "SYMPTOM", t))
+    for d3 in (*DIAGNOSES_EN, *DIAGNOSES_FR):
+        for t in d3.variants:
+            entries.append(("LEX_DX", "DIAGNOSIS", t))
+    for m3 in (*MEDICATIONS_EN, *MEDICATIONS_FR):
+        for t in m3.variants:
+            entries.append(("LEX_MED", "MEDICATION", t))
+    for l3 in (*LABS_EN, *LABS_FR):
+        for t in l3.variants:
+            entries.append(("LEX_LAB", "LAB_TEST", t))
+    for p3 in (*PROCEDURES_EN, *PROCEDURES_FR):
+        for t in p3.variants:
+            entries.append(("LEX_PROC", "PROCEDURE", t))
+    for a3 in (*ANATOMY_EN, *ANATOMY_FR):
+        for t in a3.variants:
+            entries.append(("LEX_ANAT", "ANATOMY", t))
 
     # Longest match first, deduplicated
     seen: set[tuple[str, str]] = set()

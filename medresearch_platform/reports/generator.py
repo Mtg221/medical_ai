@@ -10,8 +10,21 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
+from medresearch_platform.security.privacy import deidentify_clinical_text
+
 ReportLanguage = Literal["en", "fr"]
 ReportFormat = Literal["markdown", "html", "pdf"]
+
+
+def _scrub_phi(val: Any, extra_pii: Sequence[Mapping[str, str]] | None = None) -> str:
+    text = str(val)
+    if extra_pii:
+        for item in extra_pii:
+            orig = item.get("original", "")
+            tok = item.get("token", "[PHI_REDACTED]")
+            if orig and orig in text:
+                text = text.replace(orig, tok)
+    return deidentify_clinical_text(text).scrubbed_text
 
 _LABELS: dict[ReportLanguage, dict[str, str]] = {
     "en": {
@@ -123,8 +136,9 @@ def render_markdown_report(
 ) -> str:
     """Render a traceable Markdown report in English or French."""
     lbl = _LABELS[lang]
+    extra_pii = document.get("pii_spans")
     doc_id = str(document.get("document_id", "unknown"))
-    filename = str(document.get("original_filename", "document"))
+    filename = _scrub_phi(document.get("original_filename", "document"), extra_pii)
     det_lang = str(document.get("detected_language", "unknown"))
     mode = str(document.get("extraction_mode", "NATIVE_TEXT"))
 
@@ -156,8 +170,8 @@ def render_markdown_report(
             lines.append("")
             continue
         for ent in items:
-            surf = str(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or "")
-            norm = str(ent.get("normalized_text") or ent.get("normalized_concept") or surf)
+            surf = _scrub_phi(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or "", extra_pii)
+            norm = _scrub_phi(ent.get("normalized_text") or ent.get("normalized_concept") or surf, extra_pii)
             etype = str(ent.get("entity_type", "UNKNOWN"))
             assertion = str(ent.get("assertion_status", "present"))
             conf = float(ent.get("confidence", ent.get("confidence_score", 0.0)) or 0.0)
@@ -177,8 +191,8 @@ def render_markdown_report(
     if to_verify:
         lines.append(f"## {lbl['to_verify_title']}")
         for ent in to_verify:
-            surf = str(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or "")
-            norm = str(ent.get("normalized_text") or ent.get("normalized_concept") or surf)
+            surf = _scrub_phi(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or "", extra_pii)
+            norm = _scrub_phi(ent.get("normalized_text") or ent.get("normalized_concept") or surf, extra_pii)
             etype = str(ent.get("entity_type", "UNKNOWN"))
             assertion = str(ent.get("assertion_status", "present"))
             conf = float(ent.get("confidence", ent.get("confidence_score", 0.0)) or 0.0)
@@ -201,8 +215,8 @@ def render_markdown_report(
         for rel in relations:
             src = ent_by_id.get(str(rel.get("source_entity_id", "")), {})
             tgt = ent_by_id.get(str(rel.get("target_entity_id", "")), {})
-            src_txt = str(src.get("surface_text") or src.get("source_text") or rel.get("source_entity_id") or "?")
-            tgt_txt = str(tgt.get("surface_text") or tgt.get("source_text") or rel.get("target_value") or rel.get("target_entity_id") or "?")
+            src_txt = _scrub_phi(src.get("surface_text") or src.get("source_text") or rel.get("source_entity_id") or "?", extra_pii)
+            tgt_txt = _scrub_phi(tgt.get("surface_text") or tgt.get("source_text") or rel.get("target_value") or rel.get("target_entity_id") or "?", extra_pii)
             rtype = str(rel.get("relation_type", "RELATED_TO"))
             conf = float(rel.get("confidence", 0.0) or 0.0)
             lines.append(f"- `{src_txt}` — **[{rtype}]** → `{tgt_txt}` ({lbl['confidence']}: `{conf:.2f}`)")
@@ -261,8 +275,9 @@ def render_html_report(
 ) -> str:
     """Render a self-contained, accessible HTML clinical extraction report."""
     lbl = _LABELS[lang]
+    extra_pii = document.get("pii_spans")
     doc_id = html.escape(str(document.get("document_id", "unknown")))
-    filename = html.escape(str(document.get("original_filename", "document")))
+    filename = html.escape(_scrub_phi(document.get("original_filename", "document"), extra_pii))
     det_lang = html.escape(str(document.get("detected_language", "unknown")))
     mode = html.escape(str(document.get("extraction_mode", "NATIVE_TEXT")))
 
@@ -277,8 +292,8 @@ def render_html_report(
         else:
             rows_html.append("<ul>")
             for ent in items:
-                surf = html.escape(str(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or ""))
-                norm = html.escape(str(ent.get("normalized_text") or ent.get("normalized_concept") or surf))
+                surf = html.escape(_scrub_phi(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or "", extra_pii))
+                norm = html.escape(_scrub_phi(ent.get("normalized_text") or ent.get("normalized_concept") or surf, extra_pii))
                 etype = html.escape(str(ent.get("entity_type", "UNKNOWN")))
                 assertion = str(ent.get("assertion_status", "present"))
                 conf = float(ent.get("confidence", ent.get("confidence_score", 0.0)) or 0.0)
@@ -297,8 +312,8 @@ def render_html_report(
     if to_verify:
         tv_rows: list[str] = ["<ul>"]
         for ent in to_verify:
-            surf = html.escape(str(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or ""))
-            norm = html.escape(str(ent.get("normalized_text") or ent.get("normalized_concept") or surf))
+            surf = html.escape(_scrub_phi(ent.get("surface_text") or ent.get("source_text") or ent.get("extracted_value") or "", extra_pii))
+            norm = html.escape(_scrub_phi(ent.get("normalized_text") or ent.get("normalized_concept") or surf, extra_pii))
             etype = html.escape(str(ent.get("entity_type", "UNKNOWN")))
             assertion = str(ent.get("assertion_status", "present"))
             conf = float(ent.get("confidence", ent.get("confidence_score", 0.0)) or 0.0)

@@ -10,6 +10,7 @@ from typing import Any
 
 from medresearch_platform.security.audit import record_audit_event
 from medresearch_platform.security.auth import AuthenticatedPrincipal
+from medresearch_platform.security.privacy import deidentify_clinical_text
 
 
 def submit_entity_human_review(
@@ -281,7 +282,7 @@ def export_reviewed_gold(
             for e in ents:
                 tid = f"T{t_idx}"
                 t_idx += 1
-                surf = str(e["source_text"]).replace("\n", " ")
+                surf = deidentify_clinical_text(str(e["source_text"])).scrubbed_text.replace("\n", " ")
                 brat_lines.append(f"{tid}\t{e['entity_type']} {e['char_start']} {e['char_end']}\t{surf}")
                 if str(e["assertion_status"]) not in ("AFFIRMED", "present"):
                     brat_lines.append(f"A{a_idx}\tAssertion {tid} {e['assertion_status']}")
@@ -307,14 +308,14 @@ def export_reviewed_gold(
                     "doc_id": str(d["document_id"]),
                     "language": str(d["detected_language"]),
                     "doc_type": str(d["document_type"]),
-                    "text": str(d["deidentified_preview"] or ""),
+                    "text": deidentify_clinical_text(str(d["deidentified_preview"] or "")).scrubbed_text,
                     "entities": [
                         {
                             "id": str(e["entity_id"]),
                             "type": str(e["entity_type"]),
                             "start": int(e["char_start"]),
                             "end": int(e["char_end"]),
-                            "text": str(e["source_text"]),
+                            "text": deidentify_clinical_text(str(e["source_text"])).scrubbed_text,
                             "assertion": str(e["assertion_status"]),
                             "review_status": str(e["review_status"]),
                         }

@@ -199,6 +199,7 @@ class HybridPipeline:
                         text=c.entity.text,
                         assertion=assert_lbl,
                         confidence=cal_conf,
+                        needs_review=(cal_conf < 0.65),
                     ),
                     source_stage=c.source_stage,
                 )

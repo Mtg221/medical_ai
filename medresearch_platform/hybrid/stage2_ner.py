@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 import numpy as np
@@ -25,6 +26,21 @@ from medresearch_platform.approaches.tokenizer import (
 )
 from medresearch_platform.data.schema import AnnotatedDocument
 from medresearch_platform.eval_harness.metrics import PredictedEntity
+
+_HONORIFIC_RE = re.compile(r"^(?:mme|mlle|m\.?|mr\.?|mrs\.?|ms\.?|dr\.?)(?:\s+[a-zà-öø-ÿ\-]+\.?)?$", re.IGNORECASE)
+_AGE_EXPR_RE = re.compile(r"^\d{1,3}\s*(?:ans?|years?(?:\s+old)?|mois|months?(?:\s+old)?)$", re.IGNORECASE)
+_DOSAGE_UNIT_IN_DATE_RE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|µg|μg|g|ml|mL|UI|IU|mmol|mEq)\b", re.IGNORECASE)
+
+
+def _is_spurious_neural_span(ent: PredictedEntity) -> bool:
+    txt = ent.text.strip()
+    if ent.type in ("DIAGNOSIS", "SYMPTOM") and _HONORIFIC_RE.match(txt):
+        return True
+    if _AGE_EXPR_RE.match(txt):
+        return True
+    if ent.type == "DATE" and _DOSAGE_UNIT_IN_DATE_RE.search(txt):
+        return True
+    return False
 
 
 @dataclass(frozen=True)
@@ -140,7 +156,8 @@ class Stage2EntityExtractor:
 
         merged: dict[tuple[str, int, int], CandidateEntity] = {}
         for e in neural_ents:
-            merged[(e.type, e.start, e.end)] = CandidateEntity(entity=e, source_stage="bilstm_crf")
+            if not _is_spurious_neural_span(e):
+                merged[(e.type, e.start, e.end)] = CandidateEntity(entity=e, source_stage="bilstm_crf")
 
         if self.crf_model is not None and toks:
             feats = [_token_window_features(toks, i) for i in range(len(toks))]
@@ -149,6 +166,8 @@ class Stage2EntityExtractor:
             confs = [float(m.get(t, 0.75)) for m, t in zip(marginals, pred_tags, strict=True)]
             crf_ents = decode_bio_to_entities(doc.text, toks, pred_tags, confs)
             for ce in crf_ents:
+                if _is_spurious_neural_span(ce):
+                    continue
                 key = (ce.type, ce.start, ce.end)
                 if key in merged:
                     prev = merged[key].entity
@@ -193,12 +212,19 @@ class Stage2EntityExtractor:
                 )
                 merged[key] = CandidateEntity(entity=boosted, source_stage="bilstm_crf+rule_layer")
             else:
-                # Add rule match only if it does not overlap an existing neural span
-                overlaps = any(
-                    max(re_ent.start, m.entity.start) < min(re_ent.end, m.entity.end)
-                    for m in merged.values()
-                )
-                if not overlaps:
+                overlapping_keys = [
+                    k
+                    for k, m in merged.items()
+                    if max(re_ent.start, m.entity.start) < min(re_ent.end, m.entity.end)
+                ]
+                if not overlapping_keys:
+                    merged[key] = CandidateEntity(entity=re_ent, source_stage="rule_layer")
+                elif re_ent.type in ("MEDICATION", "DOSAGE") and all(
+                    merged[k].entity.type == "DATE" or merged[k].entity.confidence < 0.65
+                    for k in overlapping_keys
+                ):
+                    for k in overlapping_keys:
+                        del merged[k]
                     merged[key] = CandidateEntity(entity=re_ent, source_stage="rule_layer")
 
         return sorted(merged.values(), key=lambda c: c.entity.start)

@@ -32,7 +32,14 @@ _PII_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "PATIENT_NAME",
         re.compile(
-            r"(?:Patient(?:\s+Name)?|Nom(?:\s+du\s+patient)?)\s*:\s*([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]+)+)",
+            r"(?:Patient(?:\s+Name)?|Nom(?:\s+du\s+patient)?)\s*:\s*([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]*(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]+)*)",
+            re.UNICODE,
+        ),
+    ),
+    (
+        "PATIENT_NAME",
+        re.compile(
+            r"\b((?:Mme|Mlle|M\.|Mr\.?|Mrs\.?|Ms\.?|Dr\.?)\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]*(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]+)*)",
             re.UNICODE,
         ),
     ),

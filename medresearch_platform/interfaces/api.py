@@ -354,8 +354,23 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
                 ).fetchall()
             ]
 
+        from medresearch_platform.security.privacy import deidentify_clinical_text
+
+        with service.db.connect() as conn:
+            pages = conn.execute(
+                "SELECT raw_text FROM document_pages WHERE document_id = ? ORDER BY page_number ASC",
+                (document_id,),
+            ).fetchall()
+            full_raw = "\n".join(str(p["raw_text"]) for p in pages)
+            deid = deidentify_clinical_text(full_raw)
+            doc_dict = dict(doc)
+            doc_dict["pii_spans"] = [
+                {"original": s.original_value, "token": s.replacement_token}
+                for s in deid.detected_spans
+            ]
+
         payload, media_type = generate_report_bytes(
-            dict(doc),
+            doc_dict,
             entities,
             relations,
             image_findings=image_findings,

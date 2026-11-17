@@ -217,8 +217,12 @@ class TransformerCandidateReranker:
         scores = self.score_candidates(candidates, doc_text=doc_text, vocab=vocab)
         kept: list[CandidateEntity] = []
         for c, sc in zip(candidates, scores, strict=True):
-            # Keep high-agreement rule/neural spans or candidates scoring >= threshold
-            if sc >= threshold or c.source_stage == "bilstm_crf+rule_layer":
+            # Keep high-agreement rule/neural spans, high-precision medication/dosage rules, or candidates scoring >= threshold
+            if (
+                sc >= threshold
+                or c.source_stage == "bilstm_crf+rule_layer"
+                or (c.source_stage == "rule_layer" and c.entity.type in ("MEDICATION", "DOSAGE") and c.entity.confidence >= 0.90)
+            ):
                 blended_conf = round(float(0.5 * c.entity.confidence + 0.5 * sc), 4)
                 kept.append(
                     CandidateEntity(
