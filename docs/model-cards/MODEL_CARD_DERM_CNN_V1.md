@@ -37,7 +37,13 @@
 
 ## 3. Locked-Test Performance (`locked_test_v3`, `n = 1,624` Labelled)
 
-- **Per-Modality (3-Seed `PyTorchDermResNet4Stage-v1.0.0` Ensemble):**
+- **Lead Result — Served-Path End-to-End (`POST /api/v1/images/upload` with `models/vision_router_v1` + `models/derm_cnn_seed1` [`full_body_site_dropout_40`], `n = 1,624`):**
+  - Router routed `89/1,624` (`5.5%`) to `other` (abstained) and `0` to `document_scan`; `skin_scored = 934`, `skin_abstained = 601`.
+  - `dermoscopic` (`n=700`): AUROC **`0.8849`** `[0.8630, 0.9099]`, Sens@90%Spec `0.6167`, BalAcc `0.7929`, ECE `0.0611`, Abstain `26.3%`
+  - `clinical` (`n=574`): AUROC **`0.7195`** `[0.6739, 0.7613]`, Sens@90%Spec **`0.2161`**, BalAcc `0.6930`, ECE `0.1189`, Abstain `29.8%`
+  - `tbp_tile` (`n=350`): AUROC **`0.4819`** `[0.4458, 0.5131]`, Abstain `95.7%` (automatic TBP abstention)
+  - Overall served-path (`n=1,624`): AUROC **`0.7842`** `[0.7646, 0.8057]`, BalAcc `0.6744`, ECE `0.0555`, Abstain `42.5%`, High-Risk Prec `0.7972` (corpus-prevalence-reweighted `3.28%` prev: `PPV=0.3837`, `NPV=0.9864`).
+- **Offline Per-Modality (Direct 3-Seed `PyTorchDermResNet4Stage-v1.0.0` Ensemble Without Router):**
   - `dermoscopic` (`n=700`): AUROC **`0.9551`** `[0.9397, 0.9690]`, ECE `0.1033`, BalAcc `0.8729` (reweighted `9.35%` prev: `PPV=0.5457`, `NPV=0.9957`)
   - `clinical` (`n=574`): AUROC **`0.7803`** `[0.7380, 0.8199]`, ECE `0.0813`, BalAcc `0.7288`; specific `dx` (`n=280`): Macro-F1 `0.3036`, Top-3 `0.7250`
   - `tbp_tile` (`n=350`): AUROC **`0.7923`** `[0.7386, 0.8388]`, ECE `0.0589`, BalAcc `0.6500` — **at corpus prevalence (`0.14%`), `PPV = 0.0327` (`3.3%`), `ECE = 0.2082` -> serving abstains automatically on `tbp_tile` inputs.**

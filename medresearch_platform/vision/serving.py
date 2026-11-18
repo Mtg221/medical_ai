@@ -300,10 +300,50 @@ def ingest_and_analyze_image(
         progress_callback("QUALITY", 45)
 
     skin_pred = None
+    modality_hint_used: str | None = None
+    metadata_mode_used = getattr(
+        skin_model,
+        "metadata_mode",
+        "full" if getattr(skin_model, "include_metadata", True) else "pixels_only",
+    )
     if triage.route_action == "skin_vision_pipeline":
         if progress_callback:
             progress_callback("ANALYSE", 75)
-        skin_pred = skin_model.predict_image(clean_im)
+        pred_cls = str(getattr(triage, "predicted_class", "") or "")
+        modality_hint_used = pred_cls.removeprefix("skin_") if pred_cls.startswith("skin_") else "clinical"
+        if modality_hint_used not in ("clinical", "dermoscopic", "tbp_tile"):
+            modality_hint_used = "clinical"
+        import inspect
+
+        sig_params = inspect.signature(skin_model.predict_image).parameters
+        if "modality_hint" in sig_params:
+            skin_pred = skin_model.predict_image(
+                clean_im,
+                modality_hint=modality_hint_used,
+                body_site=body_site,
+            )
+        elif "rec" in sig_params:
+            from medresearch_platform.vision.catalog import DermCatalogRecord
+
+            live_rec = DermCatalogRecord(
+                image_id="live_upload",
+                dataset="live",
+                modality=modality_hint_used,
+                thumb_path=None,
+                raw_path=None,
+                skin_tone="UNKNOWN",
+                diagnosis_raw=None,
+                malignancy_group="unknown",
+                body_site=body_site,
+                license_name="RESEARCH",
+                quality_ok=True,
+                confirmation=None,
+                group_key="live_upload",
+                split_assignment="live",
+            )
+            skin_pred = skin_model.predict_image(clean_im, rec=live_rec)
+        else:
+            skin_pred = skin_model.predict_image(clean_im)
         if getattr(triage, "predicted_class", "") == "skin_tbp_tile" or skin_pred.predicted_modality == "tbp_tile":
             from dataclasses import replace as _dc_replace
 
@@ -362,6 +402,9 @@ def ingest_and_analyze_image(
     )
     finding.provenance["captured_date_source"] = captured_date_source
     finding.provenance["warnings"] = warnings
+    finding.provenance["metadata_mode"] = metadata_mode_used
+    finding.provenance["modality_hint_used"] = modality_hint_used
+    finding.provenance["body_site_used"] = body_site
 
     now_iso = datetime.now(timezone.utc).isoformat()
     created_links: list[dict[str, Any]] = []

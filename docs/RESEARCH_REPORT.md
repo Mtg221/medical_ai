@@ -312,9 +312,31 @@ A confidence threshold cannot catch confident out-of-distribution mistakes; only
 - **Training & Evaluation Data:** Real skin thumbnails + rendered SYNTH-MED-V3.1 clinical notes + **`51` CC0/PD Wikimedia document scan photos** (`25` train / `26` held-out eval, `0` owner-taken phone photos) + `346` Wikimedia Commons CC0/PD everyday photos (`other`, `data/router_real/SOURCES.csv`).
 - **Held-Out Evaluation (`n = 415`):** Overall Accuracy = **`0.8819`** (`val` best `0.9284`, `T = 0.8`); `skin -> document_scan` = **`0`**, `document_scan -> skin` = **`6`**, `other -> skin` = **`2 / 69`**. On the `26` held-out CC0 document photos (`0` owner photos), `4/26` routed to `document_scan`, `16/26` to `other`, and `6/26` to `skin` (because crisp rendered notes outnumber real document photos ~10:1 in train). On `ood_check` (`n = 50`), only **`1/50`** routed to skin (`37` `other`, `12` `document_scan`).
 
-### 15.3 `locked_test_v3` Evaluation — Per-Modality First & Two Prevalence Views (`docs/results/vision/step5_v3_skin_benchmark.json`)
+### 15.3 Served-Path End-to-End Evaluation & `locked_test_v3` Benchmark (`p18_step1_served_path_eval.json`, `step5_v3_skin_benchmark.json`)
 
-**View (a) — Per-Modality Metrics on `locked_test_v3` (3-Seed `PyTorchDermResNet4Stage-v1.0.0` Ensemble, `n = 1,624`):**
+**1. Val-Only Metadata Selection (`val_v3`, `n = 1,497`, `seed=1`, `p18_step1_val_metadata_ablation.json`):**
+
+| Variant (`seed=1`) | Overall Val AUROC | `fitzpatrick17k` (`n=209`) | `isic` (`n=1,288`) | `dermoscopic` (`n=850`) | `clinical` (`n=352`) | `tbp_tile` (`n=295`) |
+|---|---:|---:|---:|---:|---:|---:|
+| `pixels_only` | `0.7835` | `0.5341` | `0.8035` | `0.8377` | `0.6358` | `0.6547` |
+| `modality_only` | `0.8251` (`+0.0416`) | `0.5810` (`+0.0469`) | `0.8450` (`+0.0415`) | `0.8588` | `0.7196` | `0.6100` |
+| **`full_body_site_dropout_40`** | **`0.8678`** (`+0.0843`) | **`0.5994`** (`+0.0653`) | **`0.8885`** (`+0.0850`) | **`0.8847`** | **`0.7876`** | **`0.6618`** |
+
+- Selected **`full_body_site_dropout_40`** (`models/derm_cnn_bsdrop40_seed1`, deployed to `models/derm_cnn_seed1`) because its AUROC gain over `pixels_only` survives within both `fitzpatrick17k` (`+0.0653`) and `isic` (`+0.0850`). `serving.py` passes the router's `modality_hint` and user `body_site` to `predict_image(...)` and logs them in `provenance`.
+
+**2. Lead Result — Served-Path End-to-End Evaluation on `locked_test_v3` (`POST /api/v1/images/upload`, `n = 1,624`, `p18_step1_served_path_eval.json`):**
+- Router disposition of the `1,624` `locked_test_v3` skin images: `skin_dermoscopic = 759`, `skin_clinical = 392`, `skin_tbp_tile = 384`, `other = 89` (`5.5%` routed away & abstained), `document_scan = 0`; `skin_scored = 934`, `skin_abstained = 601`.
+
+| Served Modality | `n` (`mal` / `ben`) | AUROC [95% CI] | Sens @ 90% Spec | Bal Acc | ECE | Brier | Abstain Rate | High-Risk Prec |
+|---|---|---|---|---|---|---|---|---|
+| **`dermoscopic`** | `700` (`300` / `400`) | **`0.8849`** [0.8630, 0.9099] | `0.6167` | `0.7929` | `0.0611` | `0.1421` | `0.2629` | `0.8500` |
+| **`clinical`** | `574` (`347` / `227`) | **`0.7195`** [0.6739, 0.7613] | **`0.2161`** | `0.6930` | `0.1189` | `0.1991` | `0.2979` | `0.7522` |
+| **`tbp_tile`** | `350` (`100` / `250`) | **`0.4819`** [0.4458, 0.5131] | `0.9200` | `0.4640` | `0.2465` | `0.2556` | `0.9571` | `0.7500` |
+| **Overall** | `1,624` | **`0.7842`** [0.7646, 0.8057] | `0.4632` | `0.6744` | `0.0555` | `0.1867` | `0.4249` | `0.7972` |
+
+- Corpus-prevalence-reweighted served overall (`3.28%` prev): `PPV = 0.3837`, `NPV = 0.9864`, `ECE = 0.4335`, `abstention = 0.8045`.
+
+**3. Offline Multi-Seed Benchmark (`step5_v3_skin_benchmark.json`, `n = 1,624`, Direct Model Calls Without Router):**
 
 | Modality | `n` (`mal` / `ben`) | AUROC [95% CI] | Sens @ 90% Spec | Bal Acc | ECE | Brier | Abstain Rate | Diagnosis Status (W2) |
 |---|---|---|---|---|---|---|---|---|

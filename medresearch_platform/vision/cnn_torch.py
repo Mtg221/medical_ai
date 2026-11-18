@@ -104,11 +104,15 @@ def _build_resnet_module(include_metadata: bool, n_dx: int, n_mod: int) -> Any:
     return DermResNet4Stage()
 
 
-def encode_metadata_vector(rec: DermCatalogRecord) -> np.ndarray:
-    """8-dim metadata vector: modality (3) + body_site group (5)."""
+def encode_metadata_vector(rec: DermCatalogRecord, *, metadata_mode: str = "full") -> np.ndarray:
+    """8-dim metadata vector: modality (3) + body_site group (5), respecting `metadata_mode`."""
     vec = np.zeros(8, dtype=np.float32)
+    if metadata_mode == "pixels_only":
+        return vec
     if rec.modality in SKIN_MODALITIES:
         vec[SKIN_MODALITIES.index(rec.modality)] = 1.0
+    if metadata_mode == "modality_only":
+        return vec
     bs = str(rec.body_site or "").lower()
     if any(k in bs for k in ("head", "neck", "face", "scalp")):
         vec[3] = 1.0
@@ -131,13 +135,24 @@ class PyTorchDermResNet:
         *,
         image_size: int = 96,
         include_metadata: bool = True,
+        metadata_mode: str | None = None,
+        body_site_dropout: float = 0.0,
         seed: int = 1,
         n_dx: int | None = None,
     ) -> None:
         import torch
 
+        if metadata_mode is None:
+            resolved_mode = "full" if include_metadata else "pixels_only"
+        else:
+            resolved_mode = str(metadata_mode)
+            if resolved_mode not in ("pixels_only", "modality_only", "full"):
+                raise ValueError(f"Unsupported metadata_mode: {resolved_mode}")
+
         self.image_size = image_size
-        self.include_metadata = include_metadata
+        self.metadata_mode = resolved_mode
+        self.include_metadata = resolved_mode != "pixels_only"
+        self.body_site_dropout = float(body_site_dropout)
         self.seed = seed
         self.n_dx = int(n_dx) if n_dx is not None else len(CORE_DX_CLASSES)
         self.architecture_name = "PyTorchDermResNet4Stage-v1.0.0"
@@ -151,7 +166,7 @@ class PyTorchDermResNet:
         np.random.seed(seed)
         random.seed(seed)
 
-        self.net = _build_resnet_module(include_metadata, self.n_dx, len(SKIN_MODALITIES))
+        self.net = _build_resnet_module(self.include_metadata, self.n_dx, len(SKIN_MODALITIES))
         self.parameter_count = sum(p.numel() for p in self.net.parameters())
         self.initial_weights_sha256 = self._weights_sha256()
 
@@ -197,7 +212,10 @@ class PyTorchDermResNet:
             y_mal = torch.tensor([lbl for _, lbl, _ in samples], dtype=torch.long)
             y_dx = torch.tensor([map_record_to_core_dx_index(r) for _, _, r in samples], dtype=torch.long)
             y_mod = torch.tensor([SKIN_MODALITIES.index(r.modality) if r.modality in SKIN_MODALITIES else 0 for _, _, r in samples], dtype=torch.long)
-            meta = torch.stack([torch.from_numpy(encode_metadata_vector(r)) for _, _, r in samples], dim=0)
+            meta = torch.stack(
+                [torch.from_numpy(encode_metadata_vector(r, metadata_mode=self.metadata_mode)) for _, _, r in samples],
+                dim=0,
+            )
             return xs, y_mal, y_dx, y_mod, meta
 
         x_tr, y_mal_tr, y_dx_tr, y_mod_tr, m_tr = _pack(train_samples)
@@ -243,6 +261,13 @@ class PyTorchDermResNet:
                 gain = rng.uniform(0.9, 1.1)
                 bias = rng.uniform(-0.05, 0.05)
                 xb = torch.clamp(xb * gain + bias, 0.0, 1.0)
+
+                if self.metadata_mode == "full" and self.body_site_dropout > 0.0:
+                    mb = mb.clone()
+                    for row_i in range(mb.shape[0]):
+                        if rng.random() < self.body_site_dropout:
+                            mb[row_i, 3:7] = 0.0
+                            mb[row_i, 7] = 1.0
 
                 opt.zero_grad()
                 l_mal, l_dx, l_mod = self.net(xb, mb if self.include_metadata else None)
@@ -349,7 +374,10 @@ class PyTorchDermResNet:
             for i in range(0, len(samples), batch_size):
                 chunk = samples[i : i + batch_size]
                 xb = torch.stack([self._arr_to_tensor(a) for a, _, _ in chunk], dim=0)
-                mb = torch.stack([torch.from_numpy(encode_metadata_vector(r)) for _, _, r in chunk], dim=0)
+                mb = torch.stack(
+                    [torch.from_numpy(encode_metadata_vector(r, metadata_mode=self.metadata_mode)) for _, _, r in chunk],
+                    dim=0,
+                )
                 l_mal, l_dx, l_mod = self.net(xb, mb if self.include_metadata else None)
                 p_mal_list.append(torch.sigmoid(l_mal / max(0.1, self.temperature_mal)).cpu().numpy())
                 p_dx_list.append(torch.softmax(l_dx / max(0.1, self.temperature_dx), dim=1).cpu().numpy())
@@ -473,7 +501,7 @@ class PyTorchDermResNet:
         try:
             x = self._arr_to_tensor(arr).unsqueeze(0).requires_grad_(True)
             m = (
-                torch.from_numpy(encode_metadata_vector(rec)).unsqueeze(0)
+                torch.from_numpy(encode_metadata_vector(rec, metadata_mode=self.metadata_mode)).unsqueeze(0)
                 if (self.include_metadata and rec is not None)
                 else (torch.zeros((1, 8), dtype=torch.float32) if self.include_metadata else None)
             )
@@ -520,6 +548,8 @@ class PyTorchDermResNet:
             "image_size": self.image_size,
             "stage_channels": [32, 64, 128, 256],
             "include_metadata": self.include_metadata,
+            "metadata_mode": self.metadata_mode,
+            "body_site_dropout": self.body_site_dropout,
             "seed": self.seed,
             "parameter_count": self.parameter_count,
             "temperature_mal": self.temperature_mal,
@@ -555,6 +585,8 @@ class PyTorchDermResNet:
         obj = cls(
             image_size=int(manifest.get("image_size", 96)),
             include_metadata=bool(manifest.get("include_metadata", True)),
+            metadata_mode=manifest.get("metadata_mode"),
+            body_site_dropout=float(manifest.get("body_site_dropout", 0.0)),
             seed=int(manifest.get("seed", 1)),
             n_dx=n_dx,
         )
