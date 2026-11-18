@@ -665,8 +665,12 @@ def _generate_v3_document(
                 if s_i > 0:
                     b.add_text("\n" if sec in {"medications", "labs"} else " ")
                 _render_template(b, tpl.pattern, pool, language, patient_id, doc_date, rng)
-        if split_name in {"train", "val"} and rng.random() < 0.45:
-            _add_v3_1_x8_generalization_sentences(b, pool=pool, language=language, rng=rng)
+        if split_name in {"train", "val"}:
+            import zlib
+
+            h_val = zlib.crc32(f"{doc_id}:{split_name}:{language}".encode("utf-8"))
+            if (h_val % 100) < 45:
+                _add_v3_1_x8_generalization_sentences(b, pool=pool, language=language, rng=random.Random(h_val))
         return AnnotatedDocument(
             doc_id=doc_id,
             patient_id=patient_id,
