@@ -32,8 +32,9 @@ def run_w9_text_reeval(
     prior = json.loads(prior_path.read_text(encoding="utf-8")) if prior_path.exists() else {}
 
     splits_out: dict[str, Any] = {}
+    locked_dir = Path("data/locked/synth_med_v3_1")
     for sp in ("val", "test_iid", "test_unseen_terms", "test_unseen_templates"):
-        docs = _load_jsonl(Path(f"data/processed/v3_1/{sp}.jsonl"))
+        docs = _load_jsonl(locked_dir / f"{sp}.jsonl")
         preds = [pipe.extract_document(d)[0] for d in docs]
         ev = evaluator.evaluate(docs, preds)
         prior_sp = prior.get("splits", {}).get(sp, {}).get("hybrid_v2", {})

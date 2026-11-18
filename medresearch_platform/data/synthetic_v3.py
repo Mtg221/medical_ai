@@ -665,11 +665,11 @@ def _generate_v3_document(
                 if s_i > 0:
                     b.add_text("\n" if sec in {"medications", "labs"} else " ")
                 _render_template(b, tpl.pattern, pool, language, patient_id, doc_date, rng)
-        if split_name in {"train", "val"}:
+        if split_name == "train":
             import zlib
 
             doc_idx = int(doc_id.rsplit("_", 1)[-1]) if doc_id.rsplit("_", 1)[-1].isdigit() else 999
-            if split_name != "train" or doc_idx > 60:
+            if doc_idx > 60:
                 h_val = zlib.crc32(f"{doc_id}:{split_name}:{language}".encode("utf-8"))
                 if (h_val % 100) < 45:
                     _add_v3_1_x8_generalization_sentences(b, pool=pool, language=language, rng=random.Random(h_val))

@@ -117,8 +117,17 @@ def build_corpus_from_config(config_path: Path) -> dict[str, Any]:
         with sp_path.open("w", encoding="utf-8") as f:
             for d in sp_docs:
                 f.write(json.dumps(d.to_dict(), ensure_ascii=False) + "\n")
+        digest = _sha256_file(sp_path)
+        if generator_ver == "v3_1" and sp in {"val", "test_iid", "test_unseen_terms", "test_unseen_templates"}:
+            locked_file = Path("data/locked/synth_med_v3_1") / f"{sp}.jsonl"
+            if locked_file.exists():
+                locked_sha = _sha256_file(locked_file)
+                if digest != locked_sha:
+                    raise RuntimeError(
+                        f"Locked SYNTH-MED-V3.1 split '{sp}' hash mismatch: generated {digest} != locked {locked_sha}"
+                    )
         split_files[sp] = str(sp_path)
-        split_hashes[sp] = _sha256_file(sp_path)
+        split_hashes[sp] = digest
 
     rendered_samples: list[dict[str, str]] = []
     if render_cfg.get("enabled", False):

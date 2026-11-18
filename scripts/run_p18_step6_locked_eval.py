@@ -12,6 +12,8 @@ from medresearch_platform.eval_harness.runner import _load_jsonl
 from medresearch_platform.hybrid.pipeline import HybridPipeline
 from medresearch_platform.vision.splits import log_locked_test_access
 
+LOCKED_DIR = Path("data/locked/synth_med_v3_1")
+
 
 def main() -> None:
     t0 = time.perf_counter()
@@ -19,7 +21,7 @@ def main() -> None:
     evaluator = Evaluator()
     splits_out: dict[str, Any] = {}
     for sp in ("val", "test_iid", "test_unseen_terms", "test_unseen_templates"):
-        docs = _load_jsonl(Path(f"data/processed/v3_1/{sp}.jsonl"))
+        docs = _load_jsonl(LOCKED_DIR / f"{sp}.jsonl")
         preds = [pipe.extract_document(d)[0] for d in docs]
         splits_out[sp] = {"n_docs": len(docs), "metrics": evaluator.evaluate(docs, preds)}
 
