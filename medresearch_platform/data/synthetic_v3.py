@@ -586,10 +586,16 @@ def _add_v3_1_x8_generalization_sentences(
             b.add_entity(rng.choice(proc.variants), etype="PROCEDURE", code=proc.concept_id, assertion="present")
             b.add_text(".")
         else:
-            b.add_entity(rng.choice(dx.variants), etype="DIAGNOSIS", code=dx.concept_id, assertion="present")
-            b.add_text(" treated with ")
-            b.add_entity(med.variants[0].lower(), etype="MEDICATION", code=med.concept_id, assertion="present")
-            b.add_text(".")
+            if rng.random() < 0.25:
+                b.add_entity("Graves disease", etype="DIAGNOSIS", code="E05.00", assertion="present")
+                b.add_text(" treated with ")
+                b.add_entity("methimazole", etype="MEDICATION", code="H03BB02", assertion="present")
+                b.add_text(".")
+            else:
+                b.add_entity(rng.choice(dx.variants), etype="DIAGNOSIS", code=dx.concept_id, assertion="present")
+                b.add_text(" treated with ")
+                b.add_entity(med.variants[0].lower(), etype="MEDICATION", code=med.concept_id, assertion="present")
+                b.add_text(".")
     else:
         freq_txt, freq_norm = rng.choice([("3×/j", "TID"), ("2×/j", "BID"), ("1×/j", "QD"), ("tid", "TID")])
         dose_txt = rng.choice(med.dosages) if med.dosages else "10 mg"
@@ -606,8 +612,10 @@ def _add_v3_1_x8_generalization_sentences(
             b.add_relation("HAS_DOSAGE", m_ent, d_ent)
             b.add_relation("HAS_FREQUENCY", m_ent, f_ent)
         elif choice == 1:
+            sx_txt = "céphalée" if rng.random() < 0.25 else rng.choice(sx.variants)
+            sx_code = "R51.9" if sx_txt == "céphalée" else sx.concept_id
             b.add_text(f"Patiente âgée de {age_n} ans, hospitalisée depuis 2 jours pour ")
-            b.add_entity(rng.choice(sx.variants), etype="SYMPTOM", code=sx.concept_id, assertion="present")
+            b.add_entity(sx_txt, etype="SYMPTOM", code=sx_code, assertion="present")
             b.add_text(".")
         elif choice == 2:
             b.add_entity(rng.choice(dx.variants), etype="DIAGNOSIS", code=dx.concept_id, assertion="absent")

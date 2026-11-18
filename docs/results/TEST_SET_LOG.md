@@ -29,4 +29,5 @@
 | `2026-11-18T14:58:19Z` | `derm-corpus:locked_test_v3` | `PyTorchDermResNet4Stage-v1.0.0` | `1624` | Step 5 single evaluation on frozen configs/vision/locked_test_v3.txt |
 | `2026-11-18T19:14:54Z` | `locked_test_v3` | `served_path_derm_cnn_bsdrop40_seed1` | `1624` | [superseded by 19:23:46Z: script bug checked HTTP 200 instead of 201] served-path evaluation X1 |
 | `2026-11-18T19:23:46Z` | `locked_test_v3` | `served_path_derm_cnn_bsdrop40_seed1` | `1624` | served-path evaluation X1 |
-| `2026-11-18T20:33:51Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | P18 Step 6 X8 data + passive excluded-by-<test> ConText fix |
+| `2026-11-18T20:33:51Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | [superseded by 20:55:29Z after fixing lexicon_v3 partition_concepts unseen-term leak] P18 Step 6 X8 data + passive excluded-by-<test> ConText fix |
+| `2026-11-18T20:55:29Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | post-hoc (test seen) — P18 Step 6 X8 data + passive excluded-by-<test> ConText fix |
