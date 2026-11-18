@@ -32,45 +32,72 @@ interface SubgroupEntry {
   small_sample_flag: string;
 }
 
-interface ModelEvalBlock {
-  training?: Record<string, unknown>;
-  locked_test?: {
-    sample_count: number;
-    auroc: number;
-    auroc_ci95: [number, number];
-    sensitivity_at_90_specificity: number;
-    sensitivity_at_95_specificity: number;
-    balanced_accuracy: number;
-    diagnosis_macro_f1: number;
-    diagnosis_top3_accuracy: number;
-    ece: number;
-    brier_score: number;
-    abstention_rate: number;
-    non_abstained_high_risk_precision: number;
-    roc_curve?: Array<{ fpr: number; tpr: number; threshold: number }>;
-    reliability_bins?: Array<{ bin: string; mean_predicted_prob: number; empirical_positive_rate: number; count: number }>;
-    subgroups?: Record<SubgroupAxis, Record<string, SubgroupEntry>>;
-  };
+interface ModelMetricsBlock {
+  sample_count: number;
+  auroc: number;
+  auroc_ci95: [number, number];
+  sensitivity_at_90_specificity: number;
+  sensitivity_at_95_specificity: number;
+  balanced_accuracy: number;
+  diagnosis_macro_f1: number;
+  diagnosis_top3_accuracy: number;
+  ece: number;
+  brier_score: number;
+  abstention_rate: number;
+  non_abstained_high_risk_precision: number;
+  roc_curve?: Array<{ fpr: number; tpr: number; threshold: number }>;
+  reliability_bins?: Array<{ bin: string; mean_predicted_prob: number; empirical_positive_rate: number; count: number }>;
+  subgroups?: Record<SubgroupAxis, Record<string, SubgroupEntry>>;
 }
 
-interface VisionSummaryPayload {
-  router_evaluation?: {
-    locked_test_evaluation?: {
-      accuracy: number;
-      macro_f1: number;
-      document_photos_sent_to_skin_model: number;
-      confusion_matrix?: {
+interface ModelEvalBlock extends Partial<ModelMetricsBlock> {
+  training?: Record<string, unknown>;
+  locked_test?: ModelMetricsBlock;
+}
+
+interface RouterEvalBlock {
+  accuracy: number;
+  macro_f1?: number;
+  document_photos_sent_to_skin_model?: number;
+  classes?: string[];
+  critical_errors?: {
+    document_scan_to_skin?: number;
+  };
+  confusion_matrix?:
+    | number[][]
+    | {
         labels: string[];
         matrix: number[][];
       };
-    };
+}
+
+interface VisionSummaryPayload {
+  router_evaluation?: RouterEvalBlock & {
+    locked_test_evaluation?: RouterEvalBlock;
   };
   skin_benchmark?: {
     dataset_splits?: Record<string, number>;
     models?: Record<string, ModelEvalBlock>;
+    seed_runs?: Record<string, { elapsed_seconds?: number }>;
+    no_meta_train_info?: { elapsed_seconds?: number };
     ablations?: Array<Record<string, unknown>>;
-    paired_significance_holm?: Array<Record<string, unknown>>;
+    paired_bootstrap_holm?: Array<{
+      reference_model: string;
+      comparator_model: string;
+      reference_auroc: number;
+      comparator_auroc: number;
+      delta_auroc: number;
+      p_value_holm: number;
+      significant_at_0_05: boolean;
+    }>;
   };
+}
+
+function resolveModelMetrics(block?: ModelEvalBlock): ModelMetricsBlock | undefined {
+  if (!block) return undefined;
+  if (block.locked_test) return block.locked_test;
+  if (typeof block.auroc === "number") return block as ModelMetricsBlock;
+  return undefined;
 }
 
 export function VisionBenchmarkPage() {
@@ -85,7 +112,12 @@ export function VisionBenchmarkPage() {
   });
 
   const skinModels = benchQuery.data?.skin_benchmark?.models ?? {};
-  const cnnTest = skinModels.derm_cnn_multitask?.locked_test;
+  const primaryModelBlock =
+    skinModels.pytorch_resnet_3seed_ensemble ??
+    skinModels.pytorch_resnet_seed1 ??
+    skinModels.derm_cnn_multitask ??
+    Object.values(skinModels)[0];
+  const cnnTest = resolveModelMetrics(primaryModelBlock);
   const rocData = cnnTest?.roc_curve ?? [];
   const calData = (cnnTest?.reliability_bins ?? []).filter((b) => b.count > 0);
   const subgroupMap = cnnTest?.subgroups?.[subgroupAxis] ?? {};
@@ -94,8 +126,21 @@ export function VisionBenchmarkPage() {
     ...stats,
   }));
 
-  const routerTest = benchQuery.data?.router_evaluation?.locked_test_evaluation;
+  const routerRaw = benchQuery.data?.router_evaluation;
+  const routerTest = routerRaw?.locked_test_evaluation ?? routerRaw;
+  const routerCmLabels = Array.isArray(routerTest?.confusion_matrix)
+    ? routerTest?.classes ?? []
+    : routerTest?.confusion_matrix?.labels ?? [];
+  const routerCmMatrix = Array.isArray(routerTest?.confusion_matrix)
+    ? routerTest.confusion_matrix
+    : routerTest?.confusion_matrix?.matrix ?? [];
+  const routerDocsToSkin =
+    routerTest?.document_photos_sent_to_skin_model ?? routerTest?.critical_errors?.document_scan_to_skin ?? 0;
+
   const ablations = benchQuery.data?.skin_benchmark?.ablations ?? [];
+  const pairedBootstrap = benchQuery.data?.skin_benchmark?.paired_bootstrap_holm ?? [];
+  const seedRuns = benchQuery.data?.skin_benchmark?.seed_runs ?? {};
+  const noMetaInfo = benchQuery.data?.skin_benchmark?.no_meta_train_info;
 
   return (
     <div className="space-y-6">
@@ -127,9 +172,15 @@ export function VisionBenchmarkPage() {
             </thead>
             <tbody>
               {Object.entries(skinModels).map(([mName, block]) => {
-                const lt = block.locked_test;
+                const lt = resolveModelMetrics(block);
                 const tr = block.training;
                 if (!lt) return null;
+                let trainSec: unknown = tr?.training_seconds;
+                if (trainSec == null && mName === "pytorch_resnet_seed1") {
+                  trainSec = seedRuns.seed1?.elapsed_seconds;
+                } else if (trainSec == null && mName === "pytorch_resnet_no_meta") {
+                  trainSec = noMetaInfo?.elapsed_seconds;
+                }
                 return (
                   <tr key={mName} className="border-b border-slate-100 dark:border-slate-800/70">
                     <td className="py-2 pr-3 font-mono font-semibold">{mName}</td>
@@ -145,7 +196,7 @@ export function VisionBenchmarkPage() {
                       {lt.ece.toFixed(4)} / {lt.brier_score.toFixed(4)}
                     </td>
                     <td className="py-2 px-2">{(lt.abstention_rate * 100).toFixed(1)}%</td>
-                    <td className="py-2 pl-2 font-mono">{String(tr?.training_seconds ?? "-")}s</td>
+                    <td className="py-2 pl-2 font-mono">{trainSec != null ? `${String(trainSec)}s` : "-"}</td>
                   </tr>
                 );
               })}
@@ -271,19 +322,19 @@ export function VisionBenchmarkPage() {
         <Card>
           <CardHeader className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">{t("visionBench.routerTitle")}</h2>
-            {routerTest && (
+            {routerTest && typeof routerTest.accuracy === "number" && (
               <Badge tone="emerald">
-                Acc {(routerTest.accuracy * 100).toFixed(1)}% · Docs→Skin: {routerTest.document_photos_sent_to_skin_model}
+                Acc {(routerTest.accuracy * 100).toFixed(1)}% · Docs→Skin: {routerDocsToSkin}
               </Badge>
             )}
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            {routerTest?.confusion_matrix && (
+            {routerCmLabels.length > 0 && routerCmMatrix.length > 0 && (
               <table className="w-full text-[11px] text-center border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800">
                     <th className="py-1 text-left">True \ Pred</th>
-                    {routerTest.confusion_matrix.labels.map((lbl) => (
+                    {routerCmLabels.map((lbl) => (
                       <th key={lbl} className="py-1 px-1 font-mono">
                         {lbl.replace("skin_", "")}
                       </th>
@@ -291,10 +342,10 @@ export function VisionBenchmarkPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {routerTest.confusion_matrix.matrix.map((row, rIdx) => (
-                    <tr key={routerTest.confusion_matrix!.labels[rIdx]} className="border-b border-slate-100 dark:border-slate-800/70">
+                  {routerCmMatrix.map((row, rIdx) => (
+                    <tr key={routerCmLabels[rIdx] ?? rIdx} className="border-b border-slate-100 dark:border-slate-800/70">
                       <td className="py-1 text-left font-mono font-medium">
-                        {routerTest.confusion_matrix!.labels[rIdx]}
+                        {routerCmLabels[rIdx]}
                       </td>
                       {row.map((val, cIdx) => (
                         <td
@@ -319,28 +370,51 @@ export function VisionBenchmarkPage() {
             <h2 className="text-sm font-semibold">{t("visionBench.ablationTitle")}</h2>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800">
-                  <th className="py-1.5 pr-2">Variant</th>
-                  <th className="py-1.5 px-2">Test AUROC</th>
-                  <th className="py-1.5 px-2">Δ AUROC</th>
-                  <th className="py-1.5 px-2">Dx Macro-F1</th>
-                  <th className="py-1.5 pl-2">Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ablations.map((row) => (
-                  <tr key={String(row.variant)} className="border-b border-slate-100 dark:border-slate-800/70">
-                    <td className="py-1.5 pr-2 font-mono">{String(row.variant)}</td>
-                    <td className="py-1.5 px-2">{Number(row.locked_test_auroc ?? 0).toFixed(4)}</td>
-                    <td className="py-1.5 px-2 font-mono">{Number(row.delta_auroc_vs_full ?? 0).toFixed(4)}</td>
-                    <td className="py-1.5 px-2">{Number(row.locked_test_diagnosis_macro_f1 ?? 0).toFixed(4)}</td>
-                    <td className="py-1.5 pl-2">{String(row.training_seconds ?? "-")}s</td>
+            {ablations.length > 0 ? (
+              <table className="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                    <th className="py-1.5 pr-2">Variant</th>
+                    <th className="py-1.5 px-2">Test AUROC</th>
+                    <th className="py-1.5 px-2">Δ AUROC</th>
+                    <th className="py-1.5 px-2">Dx Macro-F1</th>
+                    <th className="py-1.5 pl-2">Time</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {ablations.map((row) => (
+                    <tr key={String(row.variant)} className="border-b border-slate-100 dark:border-slate-800/70">
+                      <td className="py-1.5 pr-2 font-mono">{String(row.variant)}</td>
+                      <td className="py-1.5 px-2">{Number(row.locked_test_auroc ?? 0).toFixed(4)}</td>
+                      <td className="py-1.5 px-2 font-mono">{Number(row.delta_auroc_vs_full ?? 0).toFixed(4)}</td>
+                      <td className="py-1.5 px-2">{Number(row.locked_test_diagnosis_macro_f1 ?? 0).toFixed(4)}</td>
+                      <td className="py-1.5 pl-2">{String(row.training_seconds ?? "-")}s</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                    <th className="py-1.5 pr-2">Comparator</th>
+                    <th className="py-1.5 px-2">Comp AUROC</th>
+                    <th className="py-1.5 px-2">Δ AUROC</th>
+                    <th className="py-1.5 pl-2">Holm p</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pairedBootstrap.map((row) => (
+                    <tr key={row.comparator_model} className="border-b border-slate-100 dark:border-slate-800/70">
+                      <td className="py-1.5 pr-2 font-mono">{row.comparator_model}</td>
+                      <td className="py-1.5 px-2">{row.comparator_auroc.toFixed(4)}</td>
+                      <td className="py-1.5 px-2 font-mono">+{row.delta_auroc.toFixed(4)}</td>
+                      <td className="py-1.5 pl-2 font-mono">{row.p_value_holm.toFixed(4)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </CardContent>
         </Card>
       </div>

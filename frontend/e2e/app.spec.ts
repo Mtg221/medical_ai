@@ -241,6 +241,6 @@ test.describe("Phase 12B Full E2E (EN + FR) & 14-Page Light/Dark Screenshots", (
 
     // Visit Vision Eval benchmark page
     await page.locator("nav a[href='/react/vision-benchmark']").click();
-    await expect(page.getByText(/derm_cnn_multitask/i)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/pytorch_resnet_3seed_ensemble/i)).toBeVisible({ timeout: 10_000 });
   });
 });
