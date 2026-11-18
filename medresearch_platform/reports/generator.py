@@ -225,6 +225,11 @@ def render_markdown_report(
     if image_findings:
         lines.append(f"## {lbl['skin_images_title']}")
         lines.append(f"> {lbl['skin_safety']}")
+        lines.append(
+            "> Carte de chaleur Grad-CAM omise du rapport (échec du test de cohérence : décalage Adebayo 0,227 < 0,30)."
+            if lang == "fr"
+            else "> Grad-CAM heat map omitted from report (failed randomization sanity check: Adebayo shift 0.227 < 0.30)."
+        )
         lines.append("")
         for f in image_findings:
             img_id = str(f.get("image_id", "unknown"))
@@ -247,6 +252,16 @@ def render_markdown_report(
                 lines.append(
                     f"- **`{img_id}`** (`{ptype}`, site: `{site}`) | "
                     f"**ABSTAINED**: {reason} | Review: `{rev}`"
+                )
+            elif ptype == "skin_clinical":
+                clin_msg = (
+                    "Aucune catégorie de risque affichée (photo par téléphone : sensibilité servie 21,6 % < 50 % — veuillez consulter un dermatologue)"
+                    if lang == "fr"
+                    else "No risk band shown (phone photo: served sensitivity 21.6% < 50% — please see a dermatologist)"
+                )
+                lines.append(
+                    f"- **`{img_id}`** (`{ptype}`, site: `{site}`) | "
+                    f"**{clin_msg}** | Top-3: `{top3_str}` | Review: `{rev}`"
                 )
             else:
                 lines.append(
@@ -329,7 +344,15 @@ def render_html_report(
         sections_html.append(f"<section><h3>{html.escape(lbl['to_verify_title'])}</h3>{''.join(tv_rows)}</section>")
 
     if image_findings:
-        img_rows: list[str] = [f"<p class='disclaimer'>{html.escape(lbl['skin_safety'])}</p><ul>"]
+        heatmap_note = (
+            "Carte de chaleur Grad-CAM omise du rapport (échec du test de cohérence : décalage Adebayo 0,227 < 0,30)."
+            if lang == "fr"
+            else "Grad-CAM heat map omitted from report (failed randomization sanity check: Adebayo shift 0.227 < 0.30)."
+        )
+        img_rows: list[str] = [
+            f"<p class='disclaimer'>{html.escape(lbl['skin_safety'])}</p>",
+            f"<p class='disclaimer'>{html.escape(heatmap_note)}</p><ul>",
+        ]
         for f in image_findings:
             img_id = html.escape(str(f.get("image_id", "unknown")))
             ptype = html.escape(str(f.get("picture_type", "skin_dermoscopic")))
@@ -351,6 +374,17 @@ def render_html_report(
                 img_rows.append(
                     f"<li><strong>{img_id}</strong> (<code>{ptype}</code>, site: <code>{site}</code>) "
                     f"<span class='badge neg'>ABSTAINED</span> {reason} [review: <code>{rev}</code>]</li>"
+                )
+            elif ptype == "skin_clinical":
+                clin_msg = html.escape(
+                    "Aucune catégorie de risque affichée (photo par téléphone : sensibilité servie 21,6 % < 50 % — veuillez consulter un dermatologue)"
+                    if lang == "fr"
+                    else "No risk band shown (phone photo: served sensitivity 21.6% < 50% — please see a dermatologist)"
+                )
+                img_rows.append(
+                    f"<li><strong>{img_id}</strong> (<code>{ptype}</code>, site: <code>{site}</code>) "
+                    f"<span class='badge neg'>{clin_msg}</span> "
+                    f"Top-3: <code>{top3_str}</code> [review: <code>{rev}</code>]</li>"
                 )
             else:
                 img_rows.append(

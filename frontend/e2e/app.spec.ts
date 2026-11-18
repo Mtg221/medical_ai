@@ -230,6 +230,8 @@ test.describe("Phase 12B Full E2E (EN + FR) & 14-Page Light/Dark Screenshots", (
     // Navigate to Skin & Patient workspace
     await page.locator("nav a[href='/react/skin']").click();
     await expect(page.getByTestId("skin-result-card")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("gradcam-heatmap-img")).not.toBeVisible();
+    await page.getByLabel(/Experimental \(failed sanity check\)/i).check();
     await expect(page.getByTestId("gradcam-heatmap-img")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/Research tool — not a diagnosis/i).first()).toBeVisible();
 

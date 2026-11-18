@@ -44,7 +44,7 @@ const resources = {
       skin: {
         title: "Skin Image Analysis & Unified Patient Record",
         safetyNotice: "Research tool — not a diagnosis. A dermatologist must examine the lesion.",
-        heatmapToggle: "Grad-CAM Heatmap Overlay",
+        heatmapToggle: "Experimental (failed sanity check): Grad-CAM overlay",
         heatmapOpacity: "Heatmap Opacity",
         qualityTitle: "Image Quality Assessment",
         qualityPass: "Quality Passed",
@@ -122,7 +122,7 @@ const resources = {
       skin: {
         title: "Analyse d'images cutanées & Dossier patient unifié",
         safetyNotice: "Outil de recherche — ne constitue pas un diagnostic. Un dermatologue doit examiner la lésion.",
-        heatmapToggle: "Superposition carte thermique Grad-CAM",
+        heatmapToggle: "Expérimental (échec du test de cohérence) : carte Grad-CAM",
         heatmapOpacity: "Opacité de la carte thermique",
         qualityTitle: "Contrôle qualité de l'image",
         qualityPass: "Qualité conforme",

@@ -49,7 +49,8 @@
   - `tbp_tile` (`n=350`): AUROC **`0.7923`** `[0.7386, 0.8388]`, ECE `0.0589`, BalAcc `0.6500` — **at corpus prevalence (`0.14%`), `PPV = 0.0327` (`3.3%`), `ECE = 0.2082` -> serving abstains automatically on `tbp_tile` inputs.**
 - **Overall (`n = 1,624`; mixes modalities with different base rates):**
   - 3-Seed Ensemble: AUROC **`0.8855`** `[0.8705, 0.9012]` · `seed1`: `0.8275` (`seed2` best val `0.8833`) · `no_meta`: `0.7772` · `classical_logreg`: `0.7880` · `numpy_frozen_random_features`: `0.7343` · `metadata_only_logreg`: `0.6554`
-- **Grad-CAM Sanity (`n = 220` dermoscopic `val_v3` images, threshold `>= 0.30`):** `adebayo_mean_l1_shift = 0.2270` (**`adebayo_passed = false`**), `dermoscopic_center_heat_share = 0.2316` (`"Where the model looked — not proof of a diagnosis."`).
+- **Grad-CAM Sanity (`n = 220` dermoscopic `val_v3` images, threshold `>= 0.30`):** `adebayo_mean_l1_shift = 0.2270` (**`adebayo_passed = false`**), `dermoscopic_center_heat_share = 0.2316`. While failing this sanity check, the Grad-CAM overlay is **off by default in the UI** (hidden behind an `"Experimental (failed sanity check)"` toggle) and **omitted from exported patient reports**.
+- **Clinical (Phone) Photo Modality Caveat:** Served `skin_clinical` sensitivity at 90% specificity is `0.2161 < 0.50`, so the UI and reports **suppress risk bands** on `skin_clinical` photos and direct users to consult a dermatologist.
 - **Tone × Collection Shortcut Caveat:** Tones `IV–VI` malignant images come largely from `fitzpatrick17k` vs benign from `isic`; a pixel-free `tone + dataset` classifier achieves `0.9733` AUROC on Tone `VI`, so dark-skin AUROC (`0.9694`) reflects dataset-source confounding.
 
 ---

@@ -27,7 +27,7 @@ export function SkinVisionPage() {
   const queryClient = useQueryClient();
 
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
-  const [showHeatmap, setShowHeatmap] = useState<boolean>(true);
+  const [showHeatmap, setShowHeatmap] = useState<boolean>(false);
   const [heatmapOpacity, setHeatmapOpacity] = useState<number>(0.55);
   const [correctedDx, setCorrectedDx] = useState<string>("melanoma");
   const [thumbUrl, setThumbUrl] = useState<string | null>(null);
@@ -208,7 +208,9 @@ export function SkinVisionPage() {
                     <span className="font-mono font-semibold truncate">{im.image_id}</span>
                     <Badge
                       tone={
-                        im.malignancy_risk_band === "high"
+                        im.picture_type === "skin_clinical"
+                          ? "amber"
+                          : im.malignancy_risk_band === "high"
                           ? "rose"
                           : im.malignancy_risk_band === "medium"
                           ? "amber"
@@ -217,7 +219,11 @@ export function SkinVisionPage() {
                           : "slate"
                       }
                     >
-                      {im.malignancy_risk_band}
+                      {im.picture_type === "skin_clinical"
+                        ? isFr
+                          ? "voir dermatologue"
+                          : "see dermatologist"
+                        : im.malignancy_risk_band}
                     </Badge>
                   </div>
                   <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
@@ -275,24 +281,30 @@ export function SkinVisionPage() {
                     )}
                   </div>
 
-                  <p className="text-[11px] italic text-slate-600 dark:text-slate-400">
-                    {t("skin.gradcamCaption")}
-                  </p>
+                  {showHeatmap && (
+                    <>
+                      <p className="text-[11px] italic text-amber-700 dark:text-amber-300">
+                        {isFr
+                          ? "Expérimental (échec du test de cohérence : décalage Adebayo 0,227 < 0,30) — ne constitue pas une explication fiable ni la preuve d'un diagnostic."
+                          : "Experimental (failed sanity check: Adebayo shift 0.227 < 0.30) — not a reliable explanation or proof of a diagnosis."}
+                      </p>
 
-                  <div className="flex items-center gap-3 text-xs">
-                    <label htmlFor="heatmap-opacity" className="font-medium text-slate-700 dark:text-slate-300 shrink-0">
-                      {t("skin.heatmapOpacity")}: {Math.round(heatmapOpacity * 100)}%
-                    </label>
-                    <input
-                      id="heatmap-opacity"
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={Math.round(heatmapOpacity * 100)}
-                      onChange={(e) => setHeatmapOpacity(Number(e.target.value) / 100)}
-                      className="w-full"
-                    />
-                  </div>
+                      <div className="flex items-center gap-3 text-xs">
+                        <label htmlFor="heatmap-opacity" className="font-medium text-slate-700 dark:text-slate-300 shrink-0">
+                          {t("skin.heatmapOpacity")}: {Math.round(heatmapOpacity * 100)}%
+                        </label>
+                        <input
+                          id="heatmap-opacity"
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={Math.round(heatmapOpacity * 100)}
+                          onChange={(e) => setHeatmapOpacity(Number(e.target.value) / 100)}
+                          className="w-full"
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {/* Quality Badges */}
                   {quality && (
@@ -342,25 +354,41 @@ export function SkinVisionPage() {
                   >
                     <div className="flex flex-col gap-1.5">
                       <span className="text-slate-600 dark:text-slate-300">{t("skin.riskBandLabel")}</span>
-                      <Badge
-                        tone={
-                          riskBand === "high"
-                            ? "rose"
+                      {finding.picture_type === "skin_clinical" ? (
+                        <div className="space-y-2">
+                          <Badge tone="amber">
+                            {isFr ? "Veuillez consulter un dermatologue" : "Please see a dermatologist"}
+                          </Badge>
+                          <p
+                            data-testid="clinical-photo-warning"
+                            className="rounded border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 px-2.5 py-2 text-[11px] text-amber-900 dark:text-amber-200"
+                          >
+                            {isFr
+                              ? "Les photos par téléphone sont le cas le moins fiable pour ce modèle (sensibilité servie 21,6 % à 90 % de spécificité — il manque de nombreux cancers à ce seuil). Aucune catégorie de risque n'est affichée ; ne vous fiez pas à un score faible pour décider — veuillez consulter un dermatologue."
+                              : "Phone photos are the least reliable case for this model (served sensitivity 21.6% at 90% specificity — it misses many cancers at this setting). No risk band is shown; do not use a low score to decide anything — please see a dermatologist."}
+                          </p>
+                        </div>
+                      ) : (
+                        <Badge
+                          tone={
+                            riskBand === "high"
+                              ? "rose"
+                              : riskBand === "medium"
+                              ? "amber"
+                              : "slate"
+                          }
+                        >
+                          {riskBand === "high"
+                            ? t("skin.riskHigh")
                             : riskBand === "medium"
-                            ? "amber"
-                            : "slate"
-                        }
-                      >
-                        {riskBand === "high"
-                          ? t("skin.riskHigh")
-                          : riskBand === "medium"
-                          ? t("skin.riskMedium")
-                          : riskBand === "low"
-                          ? t("skin.riskLow")
-                          : t("skin.riskAbstained")}
-                        {finding.malignancy_risk_probability !== null &&
-                          ` (${(finding.malignancy_risk_probability * 100).toFixed(1)}%)`}
-                      </Badge>
+                            ? t("skin.riskMedium")
+                            : riskBand === "low"
+                            ? t("skin.riskLow")
+                            : t("skin.riskAbstained")}
+                          {finding.malignancy_risk_probability !== null &&
+                            ` (${(finding.malignancy_risk_probability * 100).toFixed(1)}%)`}
+                        </Badge>
+                      )}
                     </div>
                     {finding.abstained && (
                       <p className="text-rose-700 dark:text-rose-300">
