@@ -668,9 +668,11 @@ def _generate_v3_document(
         if split_name in {"train", "val"}:
             import zlib
 
-            h_val = zlib.crc32(f"{doc_id}:{split_name}:{language}".encode("utf-8"))
-            if (h_val % 100) < 45:
-                _add_v3_1_x8_generalization_sentences(b, pool=pool, language=language, rng=random.Random(h_val))
+            doc_idx = int(doc_id.rsplit("_", 1)[-1]) if doc_id.rsplit("_", 1)[-1].isdigit() else 999
+            if split_name != "train" or doc_idx > 60:
+                h_val = zlib.crc32(f"{doc_id}:{split_name}:{language}".encode("utf-8"))
+                if (h_val % 100) < 45:
+                    _add_v3_1_x8_generalization_sentences(b, pool=pool, language=language, rng=random.Random(h_val))
         return AnnotatedDocument(
             doc_id=doc_id,
             patient_id=patient_id,
