@@ -304,6 +304,23 @@ def ingest_and_analyze_image(
         if progress_callback:
             progress_callback("ANALYSE", 75)
         skin_pred = skin_model.predict_image(clean_im)
+        if getattr(triage, "predicted_class", "") == "skin_tbp_tile" or skin_pred.predicted_modality == "tbp_tile":
+            from dataclasses import replace as _dc_replace
+
+            skin_pred = _dc_replace(
+                skin_pred,
+                risk_band="abstained",
+                abstained=True,
+                top3_diagnoses=[],
+                abstain_reason_en=(
+                    "TBP total-body tile abstained automatically: low corpus prevalence (0.14%) yields 3.3% PPV "
+                    "and 0.208 reweighted ECE. Please capture a close-up clinical/dermoscopic photo for dermatologist review."
+                ),
+                abstain_reason_fr=(
+                    "Tuile corporelle TBP abstenue automatiquement : la faible prévalence (0,14 %) entraîne une VPP de 3,3 % "
+                    "et un ECE repondéré de 0,208. Veuillez prendre une photo clinique/dermoscopique rapprochée pour examen par un dermatologue."
+                ),
+            )
 
     if progress_callback:
         progress_callback("EXPLAIN", 90)
@@ -672,13 +689,37 @@ def get_patient_unified_record(
 
 
 def load_vision_benchmark_results(workspace_dir: Path | str | None = None) -> dict[str, Any]:
-    """Load real vision evaluation JSON files from `docs/results/vision/*.json`."""
+    """Load real vision evaluation JSON files from `docs/results/vision/*.json` (preferring latest Step 3/5 files)."""
     base = Path(workspace_dir or Path(__file__).resolve().parents[2])
-    router_path = base / "docs" / "results" / "vision" / "step2_router_eval.json"
-    skin_path = base / "docs" / "results" / "vision" / "step3_skin_benchmark.json"
+    vision_dir = base / "docs" / "results" / "vision"
+    router_path = next(
+        (
+            p
+            for p in (
+                vision_dir / "step3_real_router_eval.json",
+                vision_dir / "step2_router_eval.json",
+            )
+            if p.exists()
+        ),
+        vision_dir / "step2_router_eval.json",
+    )
+    skin_path = next(
+        (
+            p
+            for p in (
+                vision_dir / "step5_v3_skin_benchmark.json",
+                vision_dir / "step4_pytorch_skin_benchmark.json",
+                vision_dir / "step3_skin_benchmark.json",
+            )
+            if p.exists()
+        ),
+        vision_dir / "step3_skin_benchmark.json",
+    )
 
     router_data = json.loads(router_path.read_text(encoding="utf-8")) if router_path.exists() else {}
     skin_data = json.loads(skin_path.read_text(encoding="utf-8")) if skin_path.exists() else {}
+    if isinstance(skin_data, dict) and "models" not in skin_data and "view_a_test_as_sampled" in skin_data:
+        skin_data["models"] = skin_data["view_a_test_as_sampled"].get("models", {})
 
     return {
         "router_evaluation": router_data,

@@ -237,6 +237,7 @@ def run_step5_v3_benchmark(
     *,
     epochs: int = 15,
     patience: int = 3,
+    eval_only: bool = False,
     out_results_json: str | Path = "docs/results/vision/step5_v3_skin_benchmark.json",
     out_abstain_json: str | Path = "configs/vision/abstention_v3.json",
 ) -> dict[str, Any]:
@@ -271,19 +272,29 @@ def run_step5_v3_benchmark(
         }
     )
 
-    # 1. Train 3 seeds + no_meta ablation from random init
+    # 1. Train 3 seeds + no_meta ablation from random init (or load saved v3 models if eval_only)
     models: dict[int, PyTorchDermResNet] = {}
     seed_runs: dict[str, Any] = {}
     for seed in (1, 2, 3):
-        m = PyTorchDermResNet(image_size=96, include_metadata=True, seed=seed)
-        info = m.fit(train_all, val_lab, epochs=epochs, batch_size=48, lr=1e-3, patience=patience)
-        m.save(f"models/derm_cnn_seed{seed}", corpus_hash="derm-corpus-v3-grouped")
+        mdir = Path(f"models/derm_cnn_seed{seed}")
+        if eval_only and (mdir / "manifest.json").exists():
+            m = PyTorchDermResNet.load(mdir)
+            info = m.train_history or {"seed": seed, "loaded_from_disk": True}
+        else:
+            m = PyTorchDermResNet(image_size=96, include_metadata=True, seed=seed)
+            info = m.fit(train_all, val_lab, epochs=epochs, batch_size=48, lr=1e-3, patience=patience)
+            m.save(mdir, corpus_hash="derm-corpus-v3-grouped")
         models[seed] = m
         seed_runs[f"seed{seed}"] = info
 
-    nometa = PyTorchDermResNet(image_size=96, include_metadata=False, seed=1)
-    nometa_info = nometa.fit(train_all, val_lab, epochs=epochs, batch_size=48, lr=1e-3, patience=patience)
-    nometa.save("models/derm_cnn_no_meta", corpus_hash="derm-corpus-v3-grouped")
+    nometa_dir = Path("models/derm_cnn_no_meta")
+    if eval_only and (nometa_dir / "manifest.json").exists():
+        nometa = PyTorchDermResNet.load(nometa_dir)
+        nometa_info = nometa.train_history or {"seed": 1, "include_metadata": False, "loaded_from_disk": True}
+    else:
+        nometa = PyTorchDermResNet(image_size=96, include_metadata=False, seed=1)
+        nometa_info = nometa.fit(train_all, val_lab, epochs=epochs, batch_size=48, lr=1e-3, patience=patience)
+        nometa.save(nometa_dir, corpus_hash="derm-corpus-v3-grouped")
 
     # 2. Tune abstention on val_lab only
     vp_s1, _, _ = models[1].predict_batch(val_lab, batch_size=64)
@@ -325,7 +336,9 @@ def run_step5_v3_benchmark(
     pd_ens = (pd_seeds[0] + pd_seeds[1] + pd_seeds[2]) / 3.0
     pm_nometa, pd_nometa, _ = nometa.predict_batch(test_lab, batch_size=64)
     pm_cls, pd_cls = cls_model.predict_proba(test_lab)
-    pm_np, pd_np, _ = np_cnn.predict_batch(test_lab)
+    np_out = np_cnn.predict_batch(test_lab)
+    pm_np = np_out["p_malignant"]
+    pd_np = np_out["p_diagnosis"]
 
     def _abstain(p: np.ndarray) -> np.ndarray:
         return np.maximum(p, 1.0 - p) < min_conf
@@ -400,4 +413,6 @@ def run_step5_v3_benchmark(
 
 
 if __name__ == "__main__":
-    print(json.dumps(run_step5_v3_benchmark(), indent=2))
+    import sys
+
+    print(json.dumps(run_step5_v3_benchmark(eval_only="--eval-only" in sys.argv), indent=2))

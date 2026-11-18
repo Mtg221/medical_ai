@@ -1,0 +1,6 @@
+{
+  "min_confidence": 0.61,
+  "val_coverage": 0.7615,
+  "val_selective_error": 0.1895,
+  "tuned_on": "val_v3_only"
+}

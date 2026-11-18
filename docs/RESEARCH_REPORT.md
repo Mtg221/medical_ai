@@ -294,55 +294,65 @@ A confidence threshold cannot catch confident out-of-distribution mistakes; only
 
 ---
 
-## 15. Skin Image Analysis (`derm-corpus`, Steps 1–7)
+## 15. Skin Image Analysis (`derm-corpus`, Steps 1–7) & W9/W10 Text Updates
 
 > **Safety Notice (EN / FR):** Research tool — not a diagnosis. A dermatologist must examine the lesion. / Outil de recherche — ne constitue pas un diagnostic. Un dermatologue doit examiner la lésion.
 
-### 15.1 Data Card Summary, Harmonised Taxonomy & Leak-Free Splits
-- **Source Catalog ([DERM_CORPUS_CARD.md](data/DERM_CORPUS_CARD.md)):** `573,024` metadata records (`305,964` eligible with `quality_ok == true` and `research_allowed == true`) across `3` modalities (`tbp_tile`: `234,467`, `dermoscopic`: `65,758`, `clinical`: `5,739`) and `2` research-allowed datasets (`isic`: `304,254`, `skindisnet`: `1,710`).
-- **Stratified Real Corpus v2 ([DERM_CORPUS_CARD_V2.md](data/DERM_CORPUS_CARD_V2.md)):**
-  - `train`: `26,474` real thumbnails (`18,251` benign, `5,804` malignant, `2,419` masked unknown/indet; `4,519` clinical, `20,449` dermoscopic, `1,506` TBP tile).
-  - `val`: `3,000` real thumbnails (`150` per Fitzpatrick tone `I–VI`).
-  - `locked_test_v2` ([locked_test_v2.txt](../configs/vision/locked_test_v2.txt)): **`2,022`** frozen real thumbnails (`1,853` labelled `mg`: `1,064` malignant, `789` benign; `169` masked; `978` cross-split `dHash` near-duplicates dropped from test, `0` dropped from train).
-  - **Zero** lesion `group_key` (`mk`) overlap across splits (`assert_zero_lesion_overlap`) and **zero** synthetic images in any benchmark split.
-- **Harmonised Taxonomy (`configs/vision/dx_taxonomy.yaml`):** `2,063` distinct raw `dx` strings mapped to `14` harmonised classes with `mg` consistency checks (unknown/indeterminate `mg` masked, never fabricated as `"benign"`).
+### 15.1 Lesion-Similarity Grouping, Dataset Audit & `v3` Splits (`DERM_FIELDS.md`, `DERM_CORPUS_CARD_V3.md`)
+- **Raw Manifest Field & Dataset Audit ([DERM_FIELDS.md](data/DERM_FIELDS.md)):** Inspected all 14 manifest pages (`573,024` records across `isic`: `549,541`, `fitzpatrick17k`: `11,394`, `scin`: `10,379`, `skindisnet`: `1,710`). **0** records have an explicit `lesion_id` or `patient_id` (`mk` in SCIN stores rater-country counts like `us=3;india=3`). `catalog.py` filtered on `ok == true`, which excluded `fitzpatrick17k` (`11,394`, `CC-BY-NC-4.0`, `3,190` with `mg`), `scin` (`10,379`, `0` with `mg`), and `245,287` `CC-BY-NC` ISIC records. With written owner approval, the `3,190` labelled `fitzpatrick17k` clinical images (atlas labels, lower confidence) were synced and included in `v3`; `scin` (`0` `mg` labels) stayed excluded.
+- **Similarity Grouping (`configs/vision/lesion_groups_v3.json`, [lesion_grouping_stats.json](results/vision/lesion_grouping_stats.json)):** Connected components linking `(dHash <= 10 AND centred_cos >= 0.990)` or `dHash <= 2` within `(modality, body_site, diagnosis_harmonised)` yielded **`24,877`** groups across `29,856` cached thumbnails (`23,853` singletons, `982` size 2–5, largest group `1,169` = `3.92%`).
+- **Stratified `v3` Corpus ([DERM_CORPUS_CARD_V3.md](data/DERM_CORPUS_CARD_V3.md)):**
+  - `train`: `31,565` real thumbnails (`20,630` benign, `8,125` malignant, `2,810` masked `mg`; `8,003` clinical, `22,107` dermoscopic, `1,455` TBP tile).
+  - `val`: `1,497` real thumbnails (`900` benign, `597` malignant), filled strictly after `locked_test_v3`.
+  - `locked_test_v3` ([locked_test_v3.txt](../configs/vision/locked_test_v3.txt), `sha256=8191dd603b851ff551934666d88736a70a6bff1d7194de91554bddfb4a768209`): **`1,624`** labelled thumbnails (`700` dermoscopic [`400` ben / `300` mal], `574` clinical [`227` ben / `347` mal], `350` TBP tile [`250` ben / `100` mal]; Tone `I`: `75/75`, `II`: `75/84`, `III`: `75/75`, `IV`: `75/75`, `V`: `75/60`, `VI`: `75/27`). **0** group overlap across splits.
+- **Superseded History (`locked_test_v2` — W1):** `locked_test_v2` (`n=1,853`, AUROC `0.9398` seed1 / `0.9421` ensemble / `0.9461` no-meta; `classical_logreg` `0.7321`; `numpy_frozen_random_features` `0.7034`; `metadata_only_logreg` `0.6364`) is marked **superseded: images of the same lesion may cross splits (W1)** (`380` similarity groups spanned >1 `v2` split; `78` `locked_test_v2` images shared a group with `train`/`val`).
 
 ### 15.2 Real 5-Class PyTorch Picture Triage Router (`docs/results/vision/step3_real_router_eval.json`)
-- **Architecture:** `PyTorchPictureTriageCNN-v1.0.0` (`98,565` params, `96×96` RGB, random init, `pretrained_weights_used = false`, `91.6s` CPU train).
-- **Training & Evaluation Data:** Real skin thumbnails (`train` split) + rendered SYNTH-MED-V3.1 clinical notes (`document_scan`) + `346` Wikimedia Commons CC0/PD everyday photos (`other`, recorded in `data/router_real/SOURCES.csv`).
-- **Held-Out Real Evaluation (`n = 389`, `>= 69` per class):**
-  - Overall Accuracy = **`0.9280`** (`val` best accuracy `0.9363`), temperature `T = 0.7`.
-  - Critical routing errors: `skin -> document_scan` = **`0`**, `document_scan -> skin` = **`0`** (`80/80` document scans), `other -> skin` = **`2 / 69`**.
-  - **Out-of-Distribution Check (`n = 50` CC0/PD photos: cars, landscapes, hands, wounds, tattoos):** `45 / 50` routed to `other`; `5 / 50` routed to skin (`4` `skin_clinical`, `1` `skin_tbp_tile`).
-  - **Owner Phone Photos (`data/router_real/document_scan/`):** `0` supplied in this run; rendered SYNTH-MED scans used (`80/80` accuracy).
+- **Architecture:** `PyTorchPictureTriageCNN-v1.0.0` (`98,565` params, `96×96` RGB, random init, `pretrained_weights_used = false`, `164.9s` CPU train).
+- **Training & Evaluation Data:** Real skin thumbnails + rendered SYNTH-MED-V3.1 clinical notes + **`51` CC0/PD Wikimedia document scan photos** (`25` train / `26` held-out eval, `0` owner-taken phone photos) + `346` Wikimedia Commons CC0/PD everyday photos (`other`, `data/router_real/SOURCES.csv`).
+- **Held-Out Evaluation (`n = 415`):** Overall Accuracy = **`0.8819`** (`val` best `0.9284`, `T = 0.8`); `skin -> document_scan` = **`0`**, `document_scan -> skin` = **`6`**, `other -> skin` = **`2 / 69`**. On the `26` held-out CC0 document photos (`0` owner photos), `4/26` routed to `document_scan`, `16/26` to `other`, and `6/26` to `skin` (because crisp rendered notes outnumber real document photos ~10:1 in train). On `ood_check` (`n = 50`), only **`1/50`** routed to skin (`37` `other`, `12` `document_scan`).
 
-### 15.3 PyTorch 4-Stage ResNet vs. Baselines on `locked_test_v2` (`docs/results/vision/step4_pytorch_skin_benchmark.json`, `n = 1,853` Labelled)
+### 15.3 `locked_test_v3` Evaluation — Per-Modality First & Two Prevalence Views (`docs/results/vision/step5_v3_skin_benchmark.json`)
 
-`PyTorchDermResNet4Stage-v1.0.0` (`1,229,845` params, `32→64→128→256`, `96×96` RGB, all layers trained from random init) **decisively outperforms** `classical_logreg`, `numpy_frozen_random_features`, and `metadata_only_logreg` on binary malignancy AUROC ($p_{\text{Holm}} < 0.001$), while **`classical_logreg` wins on 9-class diagnosis Macro-F1 (`0.7447`)**. Removing metadata inputs (`pytorch_resnet_no_meta`) achieves AUROC `0.9461`, confirming the CNN learns directly from image pixels (`+0.3097` AUROC over `metadata_only_logreg`).
+**View (a) — Per-Modality Metrics on `locked_test_v3` (3-Seed `PyTorchDermResNet4Stage-v1.0.0` Ensemble, `n = 1,624`):**
 
-| Model (All Random-Init, `pretrained_weights_used = false`) | Params | `locked_test_v2` AUROC [95% CI] | Sens @ 90% Spec | Sens @ 95% Spec | Bal Acc | Dx Macro-F1 | Top-3 Acc | ECE | Brier | Abstain Rate |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **`pytorch_resnet_no_meta`** (`96×96` pixels only) | `1,227,341` | **`0.9461`** [0.9369, 0.9555] | **`0.8346`** | `0.6720` | **`0.8426`** | `0.0000` | `0.4053` | **`0.1420`** | **`0.1212`** | `0.0000` |
-| **`pytorch_resnet_3seed_ensemble`** (seeds 1–3) | `3×1,229,845` | `0.9421` [0.9325, 0.9528] | `0.8308` | **`0.6898`** | `0.8401` | `0.0000` | `0.3281` | `0.1441` | `0.1256` | `0.1160` |
-| **`pytorch_resnet_seed1`** (served, `T_mal = 1.1`) | `1,229,845` | `0.9398` [0.9296, 0.9508] | `0.8186` | `0.6786` | `0.8389` | `0.0000` | `0.3648` | `0.1554` | `0.1334` | `0.1284` |
-| **`classical_logreg`** (64 handcrafted features) | `72` feats | `0.7321` [0.7073, 0.7586] | `0.6222` | `0.4718` | `0.7630` | **`0.7447`** | **`0.9946`** | `0.1788` | `0.2257` | `0.0000` |
-| **`numpy_frozen_random_features`** (honestly renamed) | `130,590` | `0.7034` [0.6797, 0.7298] | `0.2387` | `0.1429` | `0.6510` | `0.5685` | `0.7728` | `0.1692` | `0.2456` | `0.0000` |
-| **`metadata_only_logreg`** (no pixels) | `10` feats | `0.6364` [0.6097, 0.6651] | `0.5216` | `0.3844` | `0.7251` | `0.3648` | `0.5742` | `0.2970` | `0.2862` | `0.0000` |
+| Modality | `n` (`mal` / `ben`) | AUROC [95% CI] | Sens @ 90% Spec | Bal Acc | ECE | Brier | Abstain Rate | Diagnosis Status (W2) |
+|---|---|---|---|---|---|---|---|---|
+| **`dermoscopic`** | `700` (`300` / `400`) | **`0.9551`** [0.9397, 0.9690] | `0.8467` | `0.8729` | `0.1033` | `0.0981` | `0.1686` | `not_enough_labelled_data` (`0` specific dx) |
+| **`clinical`** | `574` (`347` / `227`) | **`0.7803`** [0.7380, 0.8199] | `0.2478` | `0.7288` | `0.0813` | `0.1735` | `0.2003` | `evaluated` (`n=280`, Macro-F1 `0.3036`, Top-3 `0.7250`) |
+| **`tbp_tile`** | `350` (`100` / `250`) | **`0.7923`** [0.7386, 0.8388] | `0.5700` | `0.6500` | `0.0589` | `0.1592` | `0.1171` | `not_enough_labelled_data` (`0` specific dx) |
 
-- **Calibration & Single Abstention Rule (`configs/vision/abstention_v2.json`):** `min_confidence = 0.65` selected on `val` (`val_coverage = 0.8681`, `val_selective_error = 0.1020`); on `locked_test_v2`, abstention rate is `12.84%` (coverage-risk curve: `0.50` threshold -> `1.0000` cov / `0.161` err; `0.85` -> `0.604` cov / `0.056` err).
-- **Grad-CAM Sanity (Forward/Backward Hooks on `stage4`):** Adebayo weight-randomisation test `mean L1 shift = 0.3546` (caption: *"Where the model looked — not proof of a diagnosis."*).
-- *Historical Note (Exploratory, Test Set Seen):* Earlier `step3_skin_benchmark.json` runs (`n = 88` and `n = 118` from page 000 with frozen NumPy filters and `tbp_tile` benign fallback) achieved `0.8326` [`0.7569, 0.9056`] (`derm_cnn_multitask`) vs `0.8701` [`0.8000, 0.9350`] (`classical_vision`); those numbers are retained as exploratory history only and superseded by `locked_test_v2`.
+- **Overall Model Comparison (`n = 1,624`; note overall AUROC mixes modalities with very different base rates):**
+  - `pytorch_resnet_3seed_ensemble`: AUROC **`0.8855`** `[0.8705, 0.9012]`, ECE `0.0649`, Brier `0.1366` ($p_{\text{Holm}} < 0.001$ vs all baselines & single seed)
+  - `pytorch_resnet_seed1`: `0.8275` `[0.8086, 0.8483]` (`seed=1` stopped epoch 7, `val=0.8302`; `seed=2` `val=0.8833` served; `seed=3` `val=0.8825`)
+  - `classical_logreg`: `0.7880` `[0.7661, 0.8087]`, `clinical` Macro-F1 `0.3047`
+  - `pytorch_resnet_no_meta` (pixels only): `0.7772` `[0.7562, 0.8021]` (`+0.1218` over `metadata_only_logreg`)
+  - `numpy_frozen_random_features`: `0.7343` `[0.7110, 0.7609]`
+  - `metadata_only_logreg` (no pixels): `0.6554` `[0.6312, 0.6812]`
+- **View (b) — Corpus-Prevalence-Reweighted Clinical Metrics (Ensemble):**
+  - `dermoscopic` (corpus prev `9.35%`): `PPV = 0.5457`, `NPV = 0.9957`, `ECE = 0.1836`, `abstention = 0.1443`
+  - `clinical` (corpus prev `48.22%`): `PPV = 0.6997`, `NPV = 0.9186`, `ECE = 0.0990`, `abstention = 0.2026`
+  - **`tbp_tile` (corpus prev `0.14%`):** **`PPV = 0.0327` (`3.3%`)**, `NPV = 0.9992`, **`ECE = 0.2082`** -> **App abstains automatically on `tbp_tile` inputs** with EN/FR explanation.
+  - Overall reweighted (corpus prev `3.28%`): `PPV = 0.5163`, `NPV = 0.9980`, `ECE = 0.1997`, `abstention = 0.0853`.
+- **Grad-CAM Sanity (`n = 220` dermoscopic `val_v3` images, `models/derm_cnn_seed2`):** Stated threshold `adebayo_mean_l1_shift >= 0.30`. Measured `adebayo_mean_l1_shift = 0.2270` (**`adebayo_passed = false`**) and `dermoscopic_center_heat_share = 0.2316` (diffuse/partially peripheral on `96×96` inputs; caption: *"Where the model looked — not proof of a diagnosis."*).
 
-### 15.4 Subgroup Fairness Table (`pytorch_resnet_seed1` on `locked_test_v2`, `n = 1,853`)
+### 15.4 Fitzpatrick Skin Tone Fairness & Shortcut Audit (`locked_test_v3`, Ensemble)
 
-| Axis | Subgroup | `n` (`mal` / `ben`) | AUROC [95% CI] | Bal Acc | ECE | Abstain Rate | Sample Size / Class Flag |
-|---|---|---|---|---|---|---|---|
-| Skin Tone | `I` | `128` (`128` / `0`) | `—` | `—` | `—` | `0.1172` | `single class only` |
-| Skin Tone | `II` | `124` (`124` / `0`) | `—` | `—` | `—` | `0.1774` | `single class only` |
-| Skin Tone | `III` | `129` (`129` / `0`) | `—` | `—` | `—` | `0.1705` | `single class only` |
-| Skin Tone | `IV` | `44` (`30` / `14`) | `0.9286` [0.8387, 1.0000] | `0.8952` | `0.1316` | `0.1591` | `adequate (>= 30)` |
-| Skin Tone | `V` | `27` (`5` / `22`) | `1.0000` | `—` | `—` | `0.0741` | `too few to conclude (< 30)` |
-| Skin Tone | `VI` | `38` (`0` / `38`) | `—` | `—` | `—` | `0.0789` | `single class only` |
+| Tone | `n` (`mal` / `ben`) | Ensemble AUROC [95% CI] | Tone+Collection Shortcut AUROC | Flag |
+|---|---|---|---|---|
+| `I` | `150` (`75` / `75`) | `0.8027` [0.7210, 0.8635] | `0.6462` | `shortcut_flagged (>= 0.60)` |
+| `II` | `159` (`84` / `75`) | `0.8016` [0.7261, 0.8685] | `0.5633` | `adequate (>= 30)` |
+| `III` | `150` (`75` / `75`) | `0.8471` [0.7887, 0.9038] | `0.7995` | `shortcut_flagged (>= 0.60)` |
+| `IV` | `150` (`75` / `75`) | `0.8812` [0.8214, 0.9265] | `0.8828` | `shortcut_flagged (>= 0.60)` |
+| `V` | `135` (`60` / `75`) | `0.8898` [0.8062, 0.9479] | `0.9496` | `shortcut_flagged (>= 0.60)` |
+| `VI` | `102` (`27` / `75`) | `0.9694` [0.9293, 0.9972] | **`0.9733`** | **`shortcut_flagged (>= 0.60)`** |
+| `UNKNOWN` | `778` (`351` / `427`) | `0.9247` [0.9072, 0.9397] | `0.5331` | `adequate (>= 30)` |
+
+- **Critical Shortcut Finding:** Tones `IV–VI` malignant images come overwhelmingly from `fitzpatrick17k` while benign images come mostly from `isic`, allowing a pixel-free `tone + dataset` classifier to reach `0.9733` AUROC on Tone `VI`. Dark-skin AUROC (`0.9694`) therefore reflects dataset-source confounding rather than clinically verified dark-skin generalization.
+
+### 15.5 General Text Rules (W9) & P10 Redaction Recall (W10)
+- **W9 (`hybrid_v2_seed1` rebuilt & logged in `TEST_SET_LOG.md`, [w9_text_reeval.json](results/w9_text_reeval.json)):** Replaced probe-specific filters with pre-NER [person_age_detector.py](../medresearch_platform/security/person_age_detector.py) and general `rules out` / `excluded` / `éliminé` / `écarté` / `exclu` ConText triggers. On `SYNTH-MED-V3.1`: `val` strict F1 `0.9937` (`en: 0.9931`, `fr: 0.9944`); `test_iid` `0.9920` (assertion `0.7286` vs `0.7188` prior); `test_unseen_terms` **`0.9662`** (`+0.0458` over `0.9204`); `test_unseen_templates` **`0.9438`** (`+0.0128` over `0.9310`).
+- **W10 (`p10_redaction_recall.json`):** Measured on `52` hand-labelled EN+FR sentences (`111` PHI items across DOB, Senegal/FR/intl phones, untitled names, `CLINICIAN_NAME`, `IPP`/`MRN`, and EN/FR street addresses): **Recall = `1.0` (`111/111`), Precision = `1.0` (`0` false positives)**.
 | Skin Tone | `UNKNOWN` | `1,363` (`648` / `715`) | `0.9220` [0.9086, 0.9360] | `0.7908` | `0.1486` | `0.1225` | `adequate (>= 30)` |
 | Modality | `dermoscopic` | `1,160` (`443` / `717`) | **`0.9783`** [0.9710, 0.9857] | `0.9376` | `0.0481` | `0.0784` | `adequate (>= 30)` |
 | Modality | `clinical` | `399` (`333` / `66`) | `0.9029` [0.8522, 0.9340] | `0.8202` | `0.1358` | `0.1629` | `adequate (>= 30)` |

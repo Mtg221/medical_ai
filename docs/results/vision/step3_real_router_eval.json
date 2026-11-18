@@ -1,5 +1,5 @@
 {
-  "evaluated_at_utc": "2026-11-17T15:08:04Z",
+  "evaluated_at_utc": "2026-11-18T11:31:22Z",
   "classes": [
     "skin_clinical",
     "skin_dermoscopic",
@@ -7,129 +7,135 @@
     "document_scan",
     "other"
   ],
-  "total_eval": 389,
-  "accuracy": 0.928,
+  "total_eval": 415,
+  "accuracy": 0.8819,
   "confusion_matrix": [
     [
-      70,
-      3,
+      66,
       5,
+      7,
       0,
       2
     ],
     [
-      7,
-      70,
+      5,
+      72,
       0,
       0,
       3
     ],
     [
-      5,
+      1,
       0,
-      75,
+      79,
       0,
       0
     ],
     [
+      4,
+      2,
       0,
-      0,
-      0,
-      80,
-      0
+      84,
+      16
     ],
     [
       1,
       1,
       0,
-      1,
-      66
+      2,
+      65
     ]
   ],
   "critical_errors": {
     "skin_to_document_scan": 0,
-    "document_scan_to_skin": 0,
+    "document_scan_to_skin": 6,
     "other_to_skin": 2
   },
   "owner_document_photos": {
-    "total": 0,
-    "correct_document_scan": 0,
-    "routed_to_skin": 0
+    "total": 26,
+    "correct_document_scan": 4,
+    "routed_to_skin": 6,
+    "predictions": {
+      "skin_clinical": 4,
+      "other": 16,
+      "document_scan": 4,
+      "skin_dermoscopic": 2
+    }
   },
   "ood_check": {
     "total": 50,
-    "routed_to_skin": 5,
+    "routed_to_skin": 1,
     "predictions": {
-      "other": 45,
-      "skin_tbp_tile": 1,
-      "skin_clinical": 4
+      "other": 37,
+      "document_scan": 12,
+      "skin_dermoscopic": 1
     }
   },
   "training": {
     "epochs": 12,
-    "best_val_acc": 0.9363,
-    "temperature": 0.7,
-    "elapsed_seconds": 91.6,
+    "best_val_acc": 0.9284,
+    "temperature": 0.8,
+    "elapsed_seconds": 164.86,
     "history": [
       {
         "epoch": 1.0,
-        "train_loss": 0.745,
-        "val_acc": 0.6923
+        "train_loss": 0.7783,
+        "val_acc": 0.748
       },
       {
         "epoch": 2.0,
-        "train_loss": 0.5644,
-        "val_acc": 0.7719
+        "train_loss": 0.6311,
+        "val_acc": 0.7586
       },
       {
         "epoch": 3.0,
-        "train_loss": 0.4864,
-        "val_acc": 0.7878
+        "train_loss": 0.5579,
+        "val_acc": 0.7692
       },
       {
         "epoch": 4.0,
-        "train_loss": 0.4261,
-        "val_acc": 0.8037
+        "train_loss": 0.524,
+        "val_acc": 0.8223
       },
       {
         "epoch": 5.0,
-        "train_loss": 0.3994,
-        "val_acc": 0.8594
+        "train_loss": 0.4581,
+        "val_acc": 0.6286
       },
       {
         "epoch": 6.0,
-        "train_loss": 0.35,
-        "val_acc": 0.3873
+        "train_loss": 0.384,
+        "val_acc": 0.7427
       },
       {
         "epoch": 7.0,
-        "train_loss": 0.3424,
-        "val_acc": 0.6313
+        "train_loss": 0.3635,
+        "val_acc": 0.8886
       },
       {
         "epoch": 8.0,
-        "train_loss": 0.2932,
-        "val_acc": 0.8806
+        "train_loss": 0.3502,
+        "val_acc": 0.8966
       },
       {
         "epoch": 9.0,
-        "train_loss": 0.284,
-        "val_acc": 0.9151
+        "train_loss": 0.3032,
+        "val_acc": 0.7374
       },
       {
         "epoch": 10.0,
-        "train_loss": 0.2604,
-        "val_acc": 0.7135
+        "train_loss": 0.2838,
+        "val_acc": 0.8806
       },
       {
         "epoch": 11.0,
-        "train_loss": 0.2452,
-        "val_acc": 0.9363
+        "train_loss": 0.2696,
+        "val_acc": 0.9284
       },
       {
         "epoch": 12.0,
-        "train_loss": 0.2286,
-        "val_acc": 0.9363
+        "train_loss": 0.2566,
+        "val_acc": 0.9204
       }
     ],
     "pretrained_weights_used": false
@@ -147,18 +153,18 @@
     ],
     "parameter_count": 98565,
     "seed": 42,
-    "temperature": 0.7,
+    "temperature": 0.8,
     "abstain_threshold": 0.45,
     "initial_weights_sha256": "99f0bc796406213cf4ad6aa257bbf185d11deb9d2882a7e687f9489ec95e7ed3",
-    "trained_weights_sha256": "70cfbcb22f39819a409c70e5890ce74fbbbe5e7526dcc5afd948fd56d94f2b2f",
+    "trained_weights_sha256": "eb3e2b210ba361c41569a9bed72ec87ac35ee6b6260312339cfade8abec87ead",
     "pretrained_weights_used": false,
-    "saved_at_utc": "2026-11-17T15:08:00Z"
+    "saved_at_utc": "2026-11-18T11:31:09Z"
   },
   "split_sizes": {
-    "train": 2260,
+    "train": 2285,
     "val": 377,
-    "held_out_eval": 389,
+    "held_out_eval": 415,
     "ood_check": 50,
-    "owner_document_photos_total": 0
+    "owner_document_photos_total": 51
   }
 }

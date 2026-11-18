@@ -26,3 +26,4 @@
 | `2026-11-18T01:21:11Z` | `derm-corpus:locked_test_v3` | `frozen_list_sha256:8191dd603b851ff5` | `1624` | Frozen configs/vision/locked_test_v3.txt (sha256=8191dd603b851ff551934666d88736a70a6bff1d7194de91554bddfb4a768209; supersedes locked_test_v2 due to W1) |
 | `2026-11-18T01:43:02Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | [superseded by 01:50:13Z after person_age_detector lexicon fix] W9 person / age / rules-out |
 | `2026-11-18T01:50:13Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | W9 person / age / rules-out |
+| `2026-11-18T14:58:19Z` | `derm-corpus:locked_test_v3` | `PyTorchDermResNet4Stage-v1.0.0` | `1624` | Step 5 single evaluation on frozen configs/vision/locked_test_v3.txt |

@@ -571,6 +571,8 @@ class PyTorchDermResNet:
 def verify_gradcam_adebayo_and_lesion_center(
     model: PyTorchDermResNet,
     samples: list[tuple[np.ndarray, int, DermCatalogRecord]],
+    *,
+    max_images: int = 220,
 ) -> dict[str, float]:
     """
     1. Adebayo et al. (2018) model-parameter randomisation sanity test: compare Grad-CAM of trained model vs random-init model.
@@ -585,7 +587,7 @@ def verify_gradcam_adebayo_and_lesion_center(
     cy, cx = h / 2.0, h / 2.0
     center_mask = ((yy - cy) ** 2 + (xx - cx) ** 2) <= (0.35 * h) ** 2
 
-    for arr, _, rec in samples[:24]:
+    for arr, _, rec in samples[:max_images]:
         cam_tr = model.compute_gradcam(arr, rec)
         cam_rd = rand_model.compute_gradcam(arr, rec)
         l1_shifts.append(float(np.mean(np.abs(cam_tr - cam_rd))))
