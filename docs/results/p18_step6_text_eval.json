@@ -1,0 +1,951 @@
+{
+  "generated_at_utc": "2026-11-18T20:33:51Z",
+  "elapsed_seconds": 26.15,
+  "model_dir": "models/hybrid_v2_seed1",
+  "splits": {
+    "val": {
+      "n_docs": 160,
+      "metrics": {
+        "documents_evaluated": 160,
+        "strict_span": {
+          "precision": 0.98072,
+          "recall": 0.990266,
+          "f1": 0.98547,
+          "tp": 3052.0,
+          "fp": 60.0,
+          "fn": 30.0,
+          "macro_f1": 0.984568
+        },
+        "lenient_span": {
+          "precision": 0.982648,
+          "recall": 0.992213,
+          "f1": 0.987407,
+          "tp": 3058.0,
+          "fp": 54.0,
+          "fn": 24.0
+        },
+        "per_entity_type": {
+          "ANATOMY": {
+            "precision": 1.0,
+            "recall": 0.977778,
+            "f1": 0.988764,
+            "tp": 88.0,
+            "fp": 0.0,
+            "fn": 2.0
+          },
+          "DATE": {
+            "precision": 1.0,
+            "recall": 0.943396,
+            "f1": 0.970874,
+            "tp": 350.0,
+            "fp": 0.0,
+            "fn": 21.0
+          },
+          "DIAGNOSIS": {
+            "precision": 0.973034,
+            "recall": 0.986333,
+            "f1": 0.979638,
+            "tp": 433.0,
+            "fp": 12.0,
+            "fn": 6.0
+          },
+          "DOSAGE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 228.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "DURATION": {
+            "precision": 0.745665,
+            "recall": 1.0,
+            "f1": 0.854305,
+            "tp": 129.0,
+            "fp": 44.0,
+            "fn": 0.0
+          },
+          "FREQUENCY": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 228.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "LAB_TEST": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 157.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "LAB_UNIT": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 149.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "LAB_VALUE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 149.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "MEDICATION": {
+            "precision": 1.0,
+            "recall": 0.996078,
+            "f1": 0.998035,
+            "tp": 254.0,
+            "fp": 0.0,
+            "fn": 1.0
+          },
+          "PATIENT_ID": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 164.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "PROCEDURE": {
+            "precision": 0.992701,
+            "recall": 1.0,
+            "f1": 0.996337,
+            "tp": 136.0,
+            "fp": 1.0,
+            "fn": 0.0
+          },
+          "ROUTE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 213.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "SYMPTOM": {
+            "precision": 0.992042,
+            "recall": 1.0,
+            "f1": 0.996005,
+            "tp": 374.0,
+            "fp": 3.0,
+            "fn": 0.0
+          }
+        },
+        "per_language": {
+          "en": {
+            "precision": 0.981179,
+            "recall": 0.993016,
+            "f1": 0.987062,
+            "tp": 1564.0,
+            "fp": 30.0,
+            "fn": 11.0
+          },
+          "fr": {
+            "precision": 0.980237,
+            "recall": 0.987392,
+            "f1": 0.983802,
+            "tp": 1488.0,
+            "fp": 30.0,
+            "fn": 19.0
+          }
+        },
+        "per_doc_type": {
+          "consultation": {
+            "precision": 0.968153,
+            "recall": 0.987013,
+            "f1": 0.977492,
+            "tp": 456.0,
+            "fp": 15.0,
+            "fn": 6.0
+          },
+          "discharge_summary": {
+            "precision": 0.983158,
+            "recall": 0.990456,
+            "f1": 0.986793,
+            "tp": 934.0,
+            "fp": 16.0,
+            "fn": 9.0
+          },
+          "lab_report": {
+            "precision": 0.985782,
+            "recall": 0.995215,
+            "f1": 0.990476,
+            "tp": 416.0,
+            "fp": 6.0,
+            "fn": 2.0
+          },
+          "operative_note": {
+            "precision": 0.965087,
+            "recall": 0.979747,
+            "f1": 0.972362,
+            "tp": 387.0,
+            "fp": 14.0,
+            "fn": 8.0
+          },
+          "prescription": {
+            "precision": 0.991228,
+            "recall": 0.996473,
+            "f1": 0.993843,
+            "tp": 565.0,
+            "fp": 5.0,
+            "fn": 2.0
+          },
+          "radiology_report": {
+            "precision": 0.986577,
+            "recall": 0.989899,
+            "f1": 0.988235,
+            "tp": 294.0,
+            "fp": 4.0,
+            "fn": 3.0
+          }
+        },
+        "assertion": {
+          "accuracy": 0.953145,
+          "macro_f1": 0.770637,
+          "support": 3052
+        },
+        "relations": {
+          "precision": 0.807786,
+          "recall": 0.942289,
+          "f1": 0.869869,
+          "tp": 996.0,
+          "fp": 237.0,
+          "fn": 61.0
+        },
+        "timex": {
+          "precision": 0.949153,
+          "recall": 1.0,
+          "f1": 0.973913,
+          "tp": 728.0,
+          "fp": 39.0,
+          "fn": 0.0,
+          "normalization_accuracy": 0.993132
+        },
+        "doc_classification": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "support": 160
+        },
+        "calibration": {
+          "ece": 0.005757,
+          "brier": 0.014877
+        }
+      }
+    },
+    "test_iid": {
+      "n_docs": 160,
+      "metrics": {
+        "documents_evaluated": 160,
+        "strict_span": {
+          "precision": 0.987337,
+          "recall": 0.989369,
+          "f1": 0.988352,
+          "tp": 2885.0,
+          "fp": 37.0,
+          "fn": 31.0,
+          "macro_f1": 0.988858
+        },
+        "lenient_span": {
+          "precision": 0.988364,
+          "recall": 0.990398,
+          "f1": 0.98938,
+          "tp": 2888.0,
+          "fp": 34.0,
+          "fn": 28.0
+        },
+        "per_entity_type": {
+          "ANATOMY": {
+            "precision": 1.0,
+            "recall": 0.978723,
+            "f1": 0.989247,
+            "tp": 92.0,
+            "fp": 0.0,
+            "fn": 2.0
+          },
+          "DATE": {
+            "precision": 1.0,
+            "recall": 0.933702,
+            "f1": 0.965714,
+            "tp": 338.0,
+            "fp": 0.0,
+            "fn": 24.0
+          },
+          "DIAGNOSIS": {
+            "precision": 0.976501,
+            "recall": 0.992042,
+            "f1": 0.984211,
+            "tp": 374.0,
+            "fp": 9.0,
+            "fn": 3.0
+          },
+          "DOSAGE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 210.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "DURATION": {
+            "precision": 0.849057,
+            "recall": 1.0,
+            "f1": 0.918367,
+            "tp": 135.0,
+            "fp": 24.0,
+            "fn": 0.0
+          },
+          "FREQUENCY": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 210.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "LAB_TEST": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 163.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "LAB_UNIT": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 149.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "LAB_VALUE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 149.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "MEDICATION": {
+            "precision": 0.99537,
+            "recall": 0.99537,
+            "f1": 0.99537,
+            "tp": 215.0,
+            "fp": 1.0,
+            "fn": 1.0
+          },
+          "PATIENT_ID": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 163.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "PROCEDURE": {
+            "precision": 0.990196,
+            "recall": 1.0,
+            "f1": 0.995074,
+            "tp": 101.0,
+            "fp": 1.0,
+            "fn": 0.0
+          },
+          "ROUTE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 210.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "SYMPTOM": {
+            "precision": 0.994709,
+            "recall": 0.997347,
+            "f1": 0.996026,
+            "tp": 376.0,
+            "fp": 2.0,
+            "fn": 1.0
+          }
+        },
+        "per_language": {
+          "en": {
+            "precision": 0.987075,
+            "recall": 0.989093,
+            "f1": 0.988083,
+            "tp": 1451.0,
+            "fp": 19.0,
+            "fn": 16.0
+          },
+          "fr": {
+            "precision": 0.987603,
+            "recall": 0.989648,
+            "f1": 0.988625,
+            "tp": 1434.0,
+            "fp": 18.0,
+            "fn": 15.0
+          }
+        },
+        "per_doc_type": {
+          "consultation": {
+            "precision": 0.983759,
+            "recall": 0.983759,
+            "f1": 0.983759,
+            "tp": 424.0,
+            "fp": 7.0,
+            "fn": 7.0
+          },
+          "discharge_summary": {
+            "precision": 0.986652,
+            "recall": 0.991061,
+            "f1": 0.988852,
+            "tp": 887.0,
+            "fp": 12.0,
+            "fn": 8.0
+          },
+          "lab_report": {
+            "precision": 0.979798,
+            "recall": 0.984772,
+            "f1": 0.982278,
+            "tp": 388.0,
+            "fp": 8.0,
+            "fn": 6.0
+          },
+          "operative_note": {
+            "precision": 0.989247,
+            "recall": 0.989247,
+            "f1": 0.989247,
+            "tp": 368.0,
+            "fp": 4.0,
+            "fn": 4.0
+          },
+          "prescription": {
+            "precision": 0.994475,
+            "recall": 0.994475,
+            "f1": 0.994475,
+            "tp": 540.0,
+            "fp": 3.0,
+            "fn": 3.0
+          },
+          "radiology_report": {
+            "precision": 0.989324,
+            "recall": 0.989324,
+            "f1": 0.989324,
+            "tp": 278.0,
+            "fp": 3.0,
+            "fn": 3.0
+          }
+        },
+        "assertion": {
+          "accuracy": 0.943154,
+          "macro_f1": 0.73774,
+          "support": 2885
+        },
+        "relations": {
+          "precision": 0.806943,
+          "recall": 0.9417,
+          "f1": 0.869129,
+          "tp": 953.0,
+          "fp": 228.0,
+          "fn": 59.0
+        },
+        "timex": {
+          "precision": 0.995775,
+          "recall": 1.0,
+          "f1": 0.997883,
+          "tp": 707.0,
+          "fp": 3.0,
+          "fn": 0.0,
+          "normalization_accuracy": 1.0
+        },
+        "doc_classification": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "support": 160
+        },
+        "calibration": {
+          "ece": 0.003056,
+          "brier": 0.009877
+        }
+      }
+    },
+    "test_unseen_terms": {
+      "n_docs": 160,
+      "metrics": {
+        "documents_evaluated": 160,
+        "strict_span": {
+          "precision": 0.957109,
+          "recall": 0.953888,
+          "f1": 0.955496,
+          "tp": 2834.0,
+          "fp": 127.0,
+          "fn": 137.0,
+          "macro_f1": 0.955858
+        },
+        "lenient_span": {
+          "precision": 0.969943,
+          "recall": 0.966678,
+          "f1": 0.968307,
+          "tp": 2872.0,
+          "fp": 89.0,
+          "fn": 99.0
+        },
+        "per_entity_type": {
+          "ANATOMY": {
+            "precision": 0.955056,
+            "recall": 0.904255,
+            "f1": 0.928962,
+            "tp": 85.0,
+            "fp": 4.0,
+            "fn": 9.0
+          },
+          "DATE": {
+            "precision": 0.99711,
+            "recall": 0.942623,
+            "f1": 0.969101,
+            "tp": 345.0,
+            "fp": 1.0,
+            "fn": 21.0
+          },
+          "DIAGNOSIS": {
+            "precision": 0.898734,
+            "recall": 0.941645,
+            "f1": 0.919689,
+            "tp": 355.0,
+            "fp": 40.0,
+            "fn": 22.0
+          },
+          "DOSAGE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 211.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "DURATION": {
+            "precision": 0.864516,
+            "recall": 1.0,
+            "f1": 0.927336,
+            "tp": 134.0,
+            "fp": 21.0,
+            "fn": 0.0
+          },
+          "FREQUENCY": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 211.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "LAB_TEST": {
+            "precision": 0.972067,
+            "recall": 0.972067,
+            "f1": 0.972067,
+            "tp": 174.0,
+            "fp": 5.0,
+            "fn": 5.0
+          },
+          "LAB_UNIT": {
+            "precision": 0.986928,
+            "recall": 0.89881,
+            "f1": 0.94081,
+            "tp": 151.0,
+            "fp": 2.0,
+            "fn": 17.0
+          },
+          "LAB_VALUE": {
+            "precision": 0.986928,
+            "recall": 0.89881,
+            "f1": 0.94081,
+            "tp": 151.0,
+            "fp": 2.0,
+            "fn": 17.0
+          },
+          "MEDICATION": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 215.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "PATIENT_ID": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 163.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "PROCEDURE": {
+            "precision": 0.895833,
+            "recall": 0.868687,
+            "f1": 0.882051,
+            "tp": 86.0,
+            "fp": 10.0,
+            "fn": 13.0
+          },
+          "ROUTE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 211.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "SYMPTOM": {
+            "precision": 0.890625,
+            "recall": 0.912,
+            "f1": 0.901186,
+            "tp": 342.0,
+            "fp": 42.0,
+            "fn": 33.0
+          }
+        },
+        "per_language": {
+          "en": {
+            "precision": 0.953642,
+            "recall": 0.954907,
+            "f1": 0.954274,
+            "tp": 1440.0,
+            "fp": 70.0,
+            "fn": 68.0
+          },
+          "fr": {
+            "precision": 0.960717,
+            "recall": 0.952837,
+            "f1": 0.95676,
+            "tp": 1394.0,
+            "fp": 57.0,
+            "fn": 69.0
+          }
+        },
+        "per_doc_type": {
+          "consultation": {
+            "precision": 0.943794,
+            "recall": 0.957245,
+            "f1": 0.950472,
+            "tp": 403.0,
+            "fp": 24.0,
+            "fn": 18.0
+          },
+          "discharge_summary": {
+            "precision": 0.95063,
+            "recall": 0.945664,
+            "f1": 0.94814,
+            "tp": 905.0,
+            "fp": 47.0,
+            "fn": 52.0
+          },
+          "lab_report": {
+            "precision": 0.967816,
+            "recall": 0.933481,
+            "f1": 0.950339,
+            "tp": 421.0,
+            "fp": 14.0,
+            "fn": 30.0
+          },
+          "operative_note": {
+            "precision": 0.935028,
+            "recall": 0.940341,
+            "f1": 0.937677,
+            "tp": 331.0,
+            "fp": 23.0,
+            "fn": 21.0
+          },
+          "prescription": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 522.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "radiology_report": {
+            "precision": 0.929889,
+            "recall": 0.940299,
+            "f1": 0.935065,
+            "tp": 252.0,
+            "fp": 19.0,
+            "fn": 16.0
+          }
+        },
+        "assertion": {
+          "accuracy": 0.95307,
+          "macro_f1": 0.758919,
+          "support": 2834
+        },
+        "relations": {
+          "precision": 0.785362,
+          "recall": 0.908658,
+          "f1": 0.842523,
+          "tp": 955.0,
+          "fp": 261.0,
+          "fn": 96.0
+        },
+        "timex": {
+          "precision": 0.991632,
+          "recall": 1.0,
+          "f1": 0.995798,
+          "tp": 711.0,
+          "fp": 6.0,
+          "fn": 0.0,
+          "normalization_accuracy": 1.0
+        },
+        "doc_classification": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "support": 160
+        },
+        "calibration": {
+          "ece": 0.023049,
+          "brier": 0.029094
+        }
+      }
+    },
+    "test_unseen_templates": {
+      "n_docs": 160,
+      "metrics": {
+        "documents_evaluated": 160,
+        "strict_span": {
+          "precision": 0.904386,
+          "recall": 0.97749,
+          "f1": 0.939518,
+          "tp": 2866.0,
+          "fp": 303.0,
+          "fn": 66.0,
+          "macro_f1": 0.954259
+        },
+        "lenient_span": {
+          "precision": 0.916377,
+          "recall": 0.99045,
+          "f1": 0.951975,
+          "tp": 2904.0,
+          "fp": 265.0,
+          "fn": 28.0
+        },
+        "per_entity_type": {
+          "ANATOMY": {
+            "precision": 0.840426,
+            "recall": 0.975309,
+            "f1": 0.902857,
+            "tp": 79.0,
+            "fp": 15.0,
+            "fn": 2.0
+          },
+          "DATE": {
+            "precision": 0.968354,
+            "recall": 0.968354,
+            "f1": 0.968354,
+            "tp": 306.0,
+            "fp": 10.0,
+            "fn": 10.0
+          },
+          "DIAGNOSIS": {
+            "precision": 0.879433,
+            "recall": 0.956298,
+            "f1": 0.916256,
+            "tp": 372.0,
+            "fp": 51.0,
+            "fn": 17.0
+          },
+          "DOSAGE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 191.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "DURATION": {
+            "precision": 0.943396,
+            "recall": 1.0,
+            "f1": 0.970874,
+            "tp": 150.0,
+            "fp": 9.0,
+            "fn": 0.0
+          },
+          "FREQUENCY": {
+            "precision": 0.989529,
+            "recall": 0.989529,
+            "f1": 0.989529,
+            "tp": 189.0,
+            "fp": 2.0,
+            "fn": 2.0
+          },
+          "LAB_TEST": {
+            "precision": 0.917098,
+            "recall": 0.967213,
+            "f1": 0.941489,
+            "tp": 177.0,
+            "fp": 16.0,
+            "fn": 6.0
+          },
+          "LAB_UNIT": {
+            "precision": 0.993939,
+            "recall": 1.0,
+            "f1": 0.99696,
+            "tp": 164.0,
+            "fp": 1.0,
+            "fn": 0.0
+          },
+          "LAB_VALUE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 164.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "MEDICATION": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 191.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "PATIENT_ID": {
+            "precision": 0.993789,
+            "recall": 1.0,
+            "f1": 0.996885,
+            "tp": 160.0,
+            "fp": 1.0,
+            "fn": 0.0
+          },
+          "PROCEDURE": {
+            "precision": 0.829114,
+            "recall": 0.903448,
+            "f1": 0.864686,
+            "tp": 131.0,
+            "fp": 27.0,
+            "fn": 14.0
+          },
+          "ROUTE": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "tp": 191.0,
+            "fp": 0.0,
+            "fn": 0.0
+          },
+          "SYMPTOM": {
+            "precision": 0.701049,
+            "recall": 0.963942,
+            "f1": 0.811741,
+            "tp": 401.0,
+            "fp": 171.0,
+            "fn": 15.0
+          }
+        },
+        "per_language": {
+          "en": {
+            "precision": 0.913239,
+            "recall": 0.985437,
+            "f1": 0.947965,
+            "tp": 1421.0,
+            "fp": 135.0,
+            "fn": 21.0
+          },
+          "fr": {
+            "precision": 0.895846,
+            "recall": 0.969799,
+            "f1": 0.931357,
+            "tp": 1445.0,
+            "fp": 168.0,
+            "fn": 45.0
+          }
+        },
+        "per_doc_type": {
+          "consultation": {
+            "precision": 0.855292,
+            "recall": 0.963504,
+            "f1": 0.906178,
+            "tp": 396.0,
+            "fp": 67.0,
+            "fn": 15.0
+          },
+          "discharge_summary": {
+            "precision": 0.908367,
+            "recall": 0.981701,
+            "f1": 0.943611,
+            "tp": 912.0,
+            "fp": 92.0,
+            "fn": 17.0
+          },
+          "lab_report": {
+            "precision": 0.955607,
+            "recall": 0.987923,
+            "f1": 0.971496,
+            "tp": 409.0,
+            "fp": 19.0,
+            "fn": 5.0
+          },
+          "operative_note": {
+            "precision": 0.841121,
+            "recall": 0.954907,
+            "f1": 0.89441,
+            "tp": 360.0,
+            "fp": 68.0,
+            "fn": 17.0
+          },
+          "prescription": {
+            "precision": 0.968864,
+            "recall": 0.998113,
+            "f1": 0.983271,
+            "tp": 529.0,
+            "fp": 17.0,
+            "fn": 1.0
+          },
+          "radiology_report": {
+            "precision": 0.866667,
+            "recall": 0.95941,
+            "f1": 0.910683,
+            "tp": 260.0,
+            "fp": 40.0,
+            "fn": 11.0
+          }
+        },
+        "assertion": {
+          "accuracy": 0.946267,
+          "macro_f1": 0.727236,
+          "support": 2866
+        },
+        "relations": {
+          "precision": 0.725335,
+          "recall": 0.91992,
+          "f1": 0.811121,
+          "tp": 919.0,
+          "fp": 348.0,
+          "fn": 80.0
+        },
+        "timex": {
+          "precision": 0.998476,
+          "recall": 0.996956,
+          "f1": 0.997715,
+          "tp": 655.0,
+          "fp": 1.0,
+          "fn": 2.0,
+          "normalization_accuracy": 1.0
+        },
+        "doc_classification": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "support": 160
+        },
+        "calibration": {
+          "ece": 0.024562,
+          "brier": 0.02506
+        }
+      }
+    }
+  }
+}

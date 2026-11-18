@@ -126,7 +126,7 @@ test.describe("Phase 12B Full E2E (EN + FR) & 14-Page Light/Dark Screenshots", (
       buffer: makeMinimalPdfBuffer("Le patient présente une pneumonie et prend metformine 500 mg."),
     });
     await page.locator("form button[type='submit']").click();
-    await expect(page.getByText(/SUCCEEDED/).first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText(/SUCCEEDED/)).toHaveCount(2, { timeout: 25_000 });
 
     await page.locator("nav a").first().click();
     await page.getByRole("button", { name: /e2e_fr_note\.pdf/i }).first().click();

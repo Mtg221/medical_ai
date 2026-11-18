@@ -208,13 +208,23 @@ _LIST_CONJ_RE: dict[str, re.Pattern[str]] = {
 }
 
 
+_PASSIVE_EXCLUDING_PREP_RE: dict[str, re.Pattern[str]] = {
+    "en": re.compile(r"(?<!\w)(?:excluded|ruled\s+out)\s+(?:on|by)\b", flags=re.UNICODE | re.IGNORECASE),
+    "fr": re.compile(r"(?<!\w)(?:écartée?|éliminée?|exclue?)\s+par\b", flags=re.UNICODE | re.IGNORECASE),
+}
+
+
 def _apply_general_clause_scope(
     pre_window: str,
     target_lower: str,
     post_window: str,
     lang: str,
 ) -> str:
-    """Break scope on conjunction+predicate or commas that start a new clause rather than a coordinated list."""
+    """Break scope on conjunction+predicate, passive 'excluded on/by <test>', or non-list commas."""
+    prep_matches = list(_PASSIVE_EXCLUDING_PREP_RE[lang].finditer(pre_window))
+    if prep_matches:
+        pre_window = pre_window[prep_matches[-1].end() :]
+
     conj_pat = _CONJ_PREDICATE_BREAK[lang]
     m_conj = list(conj_pat.finditer(pre_window))
     if m_conj:

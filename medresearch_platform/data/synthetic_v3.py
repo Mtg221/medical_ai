@@ -545,6 +545,82 @@ def _v3_1_sections_for_doc_type(doc_type: str, rng: random.Random) -> list[tuple
     ]
 
 
+def _add_v3_1_x8_generalization_sentences(
+    b: _DocBuilder,
+    *,
+    pool: _LexiconPool,
+    language: str,
+    rng: random.Random,
+) -> None:
+    """Add diverse train/val-only prose sentences (pronouns, relatives, N-year-old ages, hospitalisation, tid/bid/qd/3x/j, excluded-by-<test>)."""
+    dx = rng.choice(pool.diagnoses)
+    sx = rng.choice(pool.symptoms)
+    med = rng.choice(pool.medications)
+    proc = rng.choice(pool.procedures)
+    rel_names = ("Ibrahima Fall", "Awa Diop", "Moussa Ndiaye", "Claire Martin", "David Brooks", "Sarah Patel")
+    rel = rng.choice(rel_names)
+    age_n = rng.randint(4, 88)
+
+    if language == "en":
+        freq_txt, freq_norm = rng.choice([("tid", "TID"), ("bid", "BID"), ("qd", "QD"), ("qid", "QID")])
+        dose_txt = rng.choice(med.dosages) if med.dosages else "10 mg"
+        choice = rng.randrange(4)
+        b.add_text("\n")
+        if choice == 0:
+            b.add_text(f"Seen with her son {rel}; ")
+            m_ent = b.add_entity(med.variants[0].lower(), etype="MEDICATION", code=med.concept_id)
+            b.add_text(" ")
+            d_ent = b.add_entity(dose_txt, etype="DOSAGE")
+            b.add_text(" ")
+            f_ent, _ = b.add_entity_with_timex(freq_txt, etype="FREQUENCY", ttype="FREQUENCY", normalized=freq_norm)
+            b.add_text(" for 7 days.")
+            b.add_relation("HAS_DOSAGE", m_ent, d_ent)
+            b.add_relation("HAS_FREQUENCY", m_ent, f_ent)
+        elif choice == 1:
+            b.add_text(f"A {age_n}-year-old patient with ")
+            b.add_entity(rng.choice(sx.variants), etype="SYMPTOM", code=sx.concept_id, assertion="present")
+            b.add_text(", hospitalized for 2 days.")
+        elif choice == 2:
+            b.add_entity(rng.choice(dx.variants), etype="DIAGNOSIS", code=dx.concept_id, assertion="absent")
+            b.add_text(" was excluded on ")
+            b.add_entity(rng.choice(proc.variants), etype="PROCEDURE", code=proc.concept_id, assertion="present")
+            b.add_text(".")
+        else:
+            b.add_entity(rng.choice(dx.variants), etype="DIAGNOSIS", code=dx.concept_id, assertion="present")
+            b.add_text(" treated with ")
+            b.add_entity(med.variants[0].lower(), etype="MEDICATION", code=med.concept_id, assertion="present")
+            b.add_text(".")
+    else:
+        freq_txt, freq_norm = rng.choice([("3×/j", "TID"), ("2×/j", "BID"), ("1×/j", "QD"), ("tid", "TID")])
+        dose_txt = rng.choice(med.dosages) if med.dosages else "10 mg"
+        choice = rng.randrange(4)
+        b.add_text("\n")
+        if choice == 0:
+            b.add_text(f"Accompagné par son fils {rel} ; ")
+            m_ent = b.add_entity(med.variants[0].lower(), etype="MEDICATION", code=med.concept_id)
+            b.add_text(" ")
+            d_ent = b.add_entity(dose_txt, etype="DOSAGE")
+            b.add_text(" ")
+            f_ent, _ = b.add_entity_with_timex(freq_txt, etype="FREQUENCY", ttype="FREQUENCY", normalized=freq_norm)
+            b.add_text(" pendant 7 jours.")
+            b.add_relation("HAS_DOSAGE", m_ent, d_ent)
+            b.add_relation("HAS_FREQUENCY", m_ent, f_ent)
+        elif choice == 1:
+            b.add_text(f"Patiente âgée de {age_n} ans, hospitalisée depuis 2 jours pour ")
+            b.add_entity(rng.choice(sx.variants), etype="SYMPTOM", code=sx.concept_id, assertion="present")
+            b.add_text(".")
+        elif choice == 2:
+            b.add_entity(rng.choice(dx.variants), etype="DIAGNOSIS", code=dx.concept_id, assertion="absent")
+            b.add_text(" écartée par ")
+            b.add_entity(rng.choice(proc.variants), etype="PROCEDURE", code=proc.concept_id, assertion="present")
+            b.add_text(".")
+        else:
+            b.add_entity(rng.choice(dx.variants), etype="DIAGNOSIS", code=dx.concept_id, assertion="present")
+            b.add_text(" traité par ")
+            b.add_entity(med.variants[0].lower(), etype="MEDICATION", code=med.concept_id, assertion="present")
+            b.add_text(".")
+
+
 def _generate_v3_document(
     *,
     doc_id: str,
@@ -581,6 +657,8 @@ def _generate_v3_document(
                 if s_i > 0:
                     b.add_text("\n" if sec in {"medications", "labs"} else " ")
                 _render_template(b, tpl.pattern, pool, language, patient_id, doc_date, rng)
+        if split_name in {"train", "val"} and rng.random() < 0.45:
+            _add_v3_1_x8_generalization_sentences(b, pool=pool, language=language, rng=rng)
         return AnnotatedDocument(
             doc_id=doc_id,
             patient_id=patient_id,
