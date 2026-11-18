@@ -230,16 +230,26 @@ def audit_derm_splits(
     }
 
 
+DEFAULT_TEST_SET_LOG_PATH = "docs/results/TEST_SET_LOG.md"
+
+
 def log_locked_test_access(
     *,
     dataset_name: str,
     model_name: str,
     reason: str,
     sample_count: int,
-    log_path: str | Path = "docs/results/TEST_SET_LOG.md",
+    log_path: str | Path | None = None,
 ) -> None:
     """Append an immutable audit entry whenever a locked test split is created or evaluated."""
-    p = Path(log_path)
+    import os
+
+    resolved = (
+        Path(log_path)
+        if log_path is not None
+        else Path(os.environ.get("MEDRESEARCH_TEST_SET_LOG_PATH", DEFAULT_TEST_SET_LOG_PATH))
+    )
+    p = resolved
     p.parent.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if not p.exists():

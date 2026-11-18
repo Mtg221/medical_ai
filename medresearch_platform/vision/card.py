@@ -129,6 +129,7 @@ def generate_derm_corpus_card(
     out_md_path: str | Path = "docs/data/DERM_CORPUS_CARD.md",
     taxonomy_path: str | Path = DEFAULT_TAXONOMY_PATH,
     log_test_set: bool = True,
+    log_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """
     Analyze the dermatology metadata catalog and local thumbnail cache, run the leak-free
@@ -155,6 +156,7 @@ def generate_derm_corpus_card(
             model_name="step1_split_creation_and_audit",
             reason="Initial deterministic lesion-grouped split audit (Step 1)",
             sample_count=int(split_audit["counts_by_split"]["locked_test"]),
+            log_path=log_path,
         )
 
     ts_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

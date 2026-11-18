@@ -1,6 +1,7 @@
 # Locked Test Set Evaluation Log
 
 > Per Phase 11 Rule 4: Model selection uses `val` only. Each locked test set is evaluated **once** per final config, and every evaluation is recorded here.
+> **Maintenance note (2026-11-17, W12):** Removed 7 spurious `step1_split_creation_and_audit` rows (`sample_count=4`) appended by earlier `pytest` runs (`2026-11-16T20:08:41Z`, `2026-11-16T20:29:09Z`, `2026-11-16T20:30:01Z`, `2026-11-16T21:11:26Z`, `2026-11-17T01:17:40Z`, `2026-11-17T01:18:30Z`, `2026-11-17T21:56:55Z`). Test runs now isolate `MEDRESEARCH_TEST_SET_LOG_PATH` to a temp file via `tests/conftest.py`.
 
 | Date (UTC) | Corpus | Split(s) Evaluated | Docs / Split | Configs | Script | Output JSON | Base Commit | Run Count | Operator |
 |---|---|---|---|---|---|---|---|---|---|
@@ -15,17 +16,10 @@
 | 2026-11-15 | `SYNTH-MED-V3.1` (`data/processed/v3_1`) | `val`, `test_iid`, `test_unseen_terms`, `test_unseen_templates` | 160 each | All 7 V3.1 approaches + `hybrid_v2` (`crf_on_ctx_nofusion`) | `scripts/generate_significance_tables.py` + `scripts/run_v3_2_hybrid_v2_val_selection.py --recompute-winner-only` | `docs/results/v3_1_*_significance.json`, `docs/results/v3_2_hybrid_v2_locked_eval.json` | `ac743d6` (J3 fix) | statistics recomputation, no new predictions (`1279.68s` for `hybrid_v2` 160-doc CI) | Automated J3 CI fix |
 | 2026-11-15 | `SYNTH-MED-V3.1` (`data/processed/v3_1`) | `val`, `test_iid`, `test_unseen_terms`, `test_unseen_templates` | 160 each (80 EN + 80 FR) | `hybrid_v2` (`configs/exp/v3_2/hybrid_v2.yaml`, seed 1) + `rule_based` | `scripts/run_k3_assertion_recheck.py` | `docs/results/v3_2_k3_assertion_recheck.json` | `edcb2c1` (with K3 fix) | 1 (`15.08s`; overall + EN + FR assertion macro-F1 after ConText word-boundary fix) | ConText word-boundary bug K3 |
 | 2026-11-15 | `SYNTH-MED-V3.1` (`data/processed/v3_1`) | `val`, `test_iid`, `test_unseen_terms`, `test_unseen_templates` | 160 each (80 EN + 80 FR) | `hybrid_v2` (`seed 1`) + `classical_crf` (`seed 1`) + `rule_based` | `scripts/run_l3_l4_assertion_recheck.py` | `docs/results/v3_2_l3_l4_assertion_recheck.json` | `90c0be6` (with L3/L4 fix) | 1 (`29.04s`; overall + EN + FR assertion macro-F1 after general clause-scope & cue fix) | assertion scope L3/L4 |
-| `2026-11-16T20:08:41Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-16T20:22:41Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `85303` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-16T20:28:56Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `85319` | Initial deterministic lesion-grouped split audit (Step 1) |
-| `2026-11-16T20:29:09Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
-| `2026-11-16T20:30:01Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-16T21:11:20Z` | `derm-router-5class:locked_test` | `PictureTriageRouterCNN-v1.0.0` | `56` | Step 2 5-class picture triage router locked-test evaluation |
-| `2026-11-16T21:11:26Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-16T22:11:13Z` | `derm-corpus:locked_test_stratified` | `DermResNetMultiTask-v1.0.0` | `88` | Step 3 skin models locked-test benchmark (CNN vs Classical vs NumPy toy CNN) |
 | `2026-11-16T22:37:15Z` | `derm-corpus:locked_test_stratified` | `DermResNetMultiTask-v1.0.0` | `118` | Step 3 skin models locked-test benchmark (CNN vs Classical vs NumPy toy CNN) |
-| `2026-11-17T01:17:40Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
-| `2026-11-17T01:18:30Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |
 | `2026-11-17T14:27:09Z` | `derm-corpus:locked_test_v2` | `frozen_list_sha256:81b0ad60676de635` | `2022` | Frozen configs/vision/locked_test_v2.txt (sha256=81b0ad60676de6355f8c621d8ece3f0696b1bc462ac6ccc928d8afe9cd54776d) |
 | `2026-11-17T21:51:33Z` | `derm-corpus:locked_test_v2` | `PyTorchDermResNet4Stage-v1.0.0` | `1853` | Step 4 final single evaluation on frozen configs/vision/locked_test_v2.txt |
-| `2026-11-17T21:56:55Z` | `derm-corpus:locked_test` | `step1_split_creation_and_audit` | `4` | Initial deterministic lesion-grouped split audit (Step 1) |

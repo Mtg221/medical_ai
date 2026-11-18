@@ -28,6 +28,7 @@ from medresearch_platform.vision.eval_vision import (
     paired_lesion_bootstrap_holm,
 )
 from medresearch_platform.vision.splits import log_locked_test_access
+from medresearch_platform.vision.sync import compute_split_counts
 
 
 def _filter_labelled_mg(
@@ -279,14 +280,18 @@ def run_step4_benchmark(
         reason="Step 4 final single evaluation on frozen configs/vision/locked_test_v2.txt",
     )
 
+    split_counts = compute_split_counts(
+        {
+            "train": [r for _, _, r in train_all],
+            "val": [r for _, _, r in val_all],
+            "locked_test_v2": [r for _, _, r in test_all],
+        }
+    )
+
     report = {
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "elapsed_seconds": round(time.perf_counter() - t0, 2),
-        "data_source": {
-            "train": {"real": len(train_all), "labelled_mg": len(train_lab), "synthetic": 0},
-            "val": {"real": len(val_all), "labelled_mg": len(val_lab), "synthetic": 0},
-            "locked_test_v2": {"real": len(test_all), "labelled_mg": len(test_lab), "synthetic": 0},
-        },
+        "data_source": split_counts,
         "models": {
             "pytorch_resnet_seed1": s1_metrics,
             "pytorch_resnet_3seed_ensemble": ens_metrics,

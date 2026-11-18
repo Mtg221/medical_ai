@@ -242,8 +242,8 @@ def test_p5_size_limits_413_and_300k_char_chunked_extraction(
     assert up.status_code == 202
     job_id = up.json()["job_id"]
 
-    # Poll until completed while checking /api/v1/health latency
-    deadline = time.perf_counter() + 60.0
+    # Poll until completed while checking /api/v1/health latency (length-scaled timeout for 4-core CPUs)
+    deadline = time.perf_counter() + 360.0
     final_job = None
     while time.perf_counter() < deadline:
         t0 = time.perf_counter()

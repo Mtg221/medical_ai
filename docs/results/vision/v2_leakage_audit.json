@@ -1,0 +1,126 @@
+{
+  "generated_at_utc": "2026-11-17T23:44:16Z",
+  "elapsed_seconds": 381.25,
+  "model": "models/derm_cnn_seed1",
+  "n_train_labelled": 18932,
+  "n_test_v2_labelled": 1853,
+  "rule": "close_neighbour = (min_dhash_dist <= 10) OR (max_cos_sim >= 0.95 AND same modality AND same diagnosis_harmonised)",
+  "overall": {
+    "all": {
+      "n": 1853,
+      "malignant": 1064,
+      "benign": 789,
+      "auroc": 0.9398
+    },
+    "close_neighbour_combined": {
+      "n": 1661,
+      "malignant": 873,
+      "benign": 788,
+      "auroc": 0.9614
+    },
+    "no_close_neighbour_combined": {
+      "n": 192,
+      "malignant": 191,
+      "benign": 1,
+      "auroc": 0.5969
+    },
+    "close_dhash_le_10": {
+      "n": 1180,
+      "malignant": 512,
+      "benign": 668,
+      "auroc": 0.9617
+    },
+    "no_close_dhash_le_10": {
+      "n": 673,
+      "malignant": 552,
+      "benign": 121,
+      "auroc": 0.8844
+    },
+    "close_emb_ge_095_same_mod_dx": {
+      "n": 1591,
+      "malignant": 805,
+      "benign": 786,
+      "auroc": 0.9701
+    },
+    "no_close_emb_ge_095_same_mod_dx": {
+      "n": 262,
+      "malignant": 259,
+      "benign": 3,
+      "auroc": 0.5328
+    }
+  },
+  "by_modality": {
+    "dermoscopic": {
+      "all": {
+        "n": 1160,
+        "malignant": 443,
+        "benign": 717,
+        "auroc": 0.9783
+      },
+      "close_neighbour": {
+        "n": 1157,
+        "malignant": 441,
+        "benign": 716,
+        "auroc": 0.9788
+      },
+      "no_close_neighbour": {
+        "n": 3,
+        "malignant": 2,
+        "benign": 1,
+        "auroc": 0.5
+      }
+    },
+    "clinical": {
+      "all": {
+        "n": 399,
+        "malignant": 333,
+        "benign": 66,
+        "auroc": 0.9029
+      },
+      "close_neighbour": {
+        "n": 397,
+        "malignant": 331,
+        "benign": 66,
+        "auroc": 0.9039
+      },
+      "no_close_neighbour": {
+        "n": 2,
+        "malignant": 2,
+        "benign": 0,
+        "auroc": null
+      }
+    },
+    "tbp_tile": {
+      "all": {
+        "n": 294,
+        "malignant": 288,
+        "benign": 6,
+        "auroc": 0.7095
+      },
+      "close_neighbour": {
+        "n": 107,
+        "malignant": 101,
+        "benign": 6,
+        "auroc": 0.7393
+      },
+      "no_close_neighbour": {
+        "n": 187,
+        "malignant": 187,
+        "benign": 0,
+        "auroc": null
+      }
+    }
+  },
+  "min_dhash_quantiles": {
+    "p05": 5.0,
+    "p25": 7.0,
+    "p50": 9.0,
+    "p75": 12.0
+  },
+  "max_cos_any_quantiles": {
+    "p25": 0.9862,
+    "p50": 0.9911,
+    "p75": 0.9952,
+    "p95": 0.9983
+  }
+}

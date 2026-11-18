@@ -1,0 +1,614 @@
+{
+  "generated_at_utc": "2026-11-17T23:51:58Z",
+  "elapsed_seconds": 378.0,
+  "model": "models/derm_cnn_seed1",
+  "n_train_labelled": 18932,
+  "n_test_v2_labelled": 1853,
+  "min_per_class_for_auroc": 20,
+  "dhash_min_distance_quantiles_test_vs_train": {
+    "p05": 5.0,
+    "p25": 7.0,
+    "p50": 9.0,
+    "p75": 12.0,
+    "p95": 15.0
+  },
+  "dhash_null_min_distance_quantiles": {
+    "train_bit_marginals": {
+      "p05": 9.0,
+      "p25": 12.0,
+      "p50": 13.0,
+      "p75": 15.0,
+      "p95": 17.0
+    },
+    "uniform_bits": {
+      "p05": 15.0,
+      "p25": 17.0,
+      "p50": 18.0,
+      "p75": 19.0,
+      "p95": 20.0
+    }
+  },
+  "frac_test_with_dhash_le": {
+    "0": 0.0,
+    "1": 0.0005,
+    "2": 0.0011,
+    "4": 0.0216,
+    "6": 0.2105
+  },
+  "frac_null_marginals_with_dhash_le": {
+    "0": 0.0,
+    "1": 0.0,
+    "2": 0.0,
+    "4": 0.0005,
+    "6": 0.0027
+  },
+  "centred_max_cos_quantiles": {
+    "p05": 0.928,
+    "p25": 0.964,
+    "p50": 0.979,
+    "p75": 0.99,
+    "p95": 0.997
+  },
+  "overall": {
+    "all": {
+      "n": 1853,
+      "malignant": 1064,
+      "benign": 789,
+      "auroc": 0.9398,
+      "auroc_note": null
+    },
+    "dhash_le_0": {
+      "near": {
+        "n": 0,
+        "malignant": 0,
+        "benign": 0,
+        "auroc": null,
+        "auroc_note": "not reported: needs >= 20 per class"
+      },
+      "far": {
+        "n": 1853,
+        "malignant": 1064,
+        "benign": 789,
+        "auroc": 0.9398,
+        "auroc_note": null
+      }
+    },
+    "dhash_le_1": {
+      "near": {
+        "n": 1,
+        "malignant": 0,
+        "benign": 1,
+        "auroc": null,
+        "auroc_note": "not reported: needs >= 20 per class"
+      },
+      "far": {
+        "n": 1852,
+        "malignant": 1064,
+        "benign": 788,
+        "auroc": 0.9398,
+        "auroc_note": null
+      }
+    },
+    "dhash_le_2": {
+      "near": {
+        "n": 2,
+        "malignant": 0,
+        "benign": 2,
+        "auroc": null,
+        "auroc_note": "not reported: needs >= 20 per class"
+      },
+      "far": {
+        "n": 1851,
+        "malignant": 1064,
+        "benign": 787,
+        "auroc": 0.9398,
+        "auroc_note": null
+      }
+    },
+    "dhash_le_4": {
+      "near": {
+        "n": 40,
+        "malignant": 10,
+        "benign": 30,
+        "auroc": null,
+        "auroc_note": "not reported: needs >= 20 per class"
+      },
+      "far": {
+        "n": 1813,
+        "malignant": 1054,
+        "benign": 759,
+        "auroc": 0.9394,
+        "auroc_note": null
+      }
+    },
+    "dhash_le_6": {
+      "near": {
+        "n": 390,
+        "malignant": 131,
+        "benign": 259,
+        "auroc": 0.9652,
+        "auroc_note": null
+      },
+      "far": {
+        "n": 1463,
+        "malignant": 933,
+        "benign": 530,
+        "auroc": 0.9342,
+        "auroc_note": null
+      }
+    },
+    "emb_top_5pct": {
+      "centred_cos_threshold": 0.9968,
+      "near": {
+        "n": 93,
+        "malignant": 16,
+        "benign": 77,
+        "auroc": null,
+        "auroc_note": "not reported: needs >= 20 per class"
+      },
+      "far": {
+        "n": 1760,
+        "malignant": 1048,
+        "benign": 712,
+        "auroc": 0.935,
+        "auroc_note": null
+      }
+    },
+    "emb_top_10pct": {
+      "centred_cos_threshold": 0.9949,
+      "near": {
+        "n": 186,
+        "malignant": 54,
+        "benign": 132,
+        "auroc": 0.9756,
+        "auroc_note": null
+      },
+      "far": {
+        "n": 1667,
+        "malignant": 1010,
+        "benign": 657,
+        "auroc": 0.9339,
+        "auroc_note": null
+      }
+    },
+    "emb_top_25pct": {
+      "centred_cos_threshold": 0.9902,
+      "near": {
+        "n": 464,
+        "malignant": 183,
+        "benign": 281,
+        "auroc": 0.9678,
+        "auroc_note": null
+      },
+      "far": {
+        "n": 1389,
+        "malignant": 881,
+        "benign": 508,
+        "auroc": 0.9276,
+        "auroc_note": null
+      }
+    }
+  },
+  "by_modality": {
+    "dermoscopic": {
+      "all": {
+        "n": 1160,
+        "malignant": 443,
+        "benign": 717,
+        "auroc": 0.9783,
+        "auroc_note": null
+      },
+      "dhash_le_0": {
+        "near": {
+          "n": 0,
+          "malignant": 0,
+          "benign": 0,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 1160,
+          "malignant": 443,
+          "benign": 717,
+          "auroc": 0.9783,
+          "auroc_note": null
+        }
+      },
+      "dhash_le_1": {
+        "near": {
+          "n": 1,
+          "malignant": 0,
+          "benign": 1,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 1159,
+          "malignant": 443,
+          "benign": 716,
+          "auroc": 0.9783,
+          "auroc_note": null
+        }
+      },
+      "dhash_le_2": {
+        "near": {
+          "n": 2,
+          "malignant": 0,
+          "benign": 2,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 1158,
+          "malignant": 443,
+          "benign": 715,
+          "auroc": 0.9783,
+          "auroc_note": null
+        }
+      },
+      "dhash_le_4": {
+        "near": {
+          "n": 37,
+          "malignant": 8,
+          "benign": 29,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 1123,
+          "malignant": 435,
+          "benign": 688,
+          "auroc": 0.978,
+          "auroc_note": null
+        }
+      },
+      "dhash_le_6": {
+        "near": {
+          "n": 339,
+          "malignant": 103,
+          "benign": 236,
+          "auroc": 0.9683,
+          "auroc_note": null
+        },
+        "far": {
+          "n": 821,
+          "malignant": 340,
+          "benign": 481,
+          "auroc": 0.9814,
+          "auroc_note": null
+        }
+      },
+      "emb_top_5pct": {
+        "centred_cos_threshold": 0.9974,
+        "near": {
+          "n": 58,
+          "malignant": 3,
+          "benign": 55,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 1102,
+          "malignant": 440,
+          "benign": 662,
+          "auroc": 0.9765,
+          "auroc_note": null
+        }
+      },
+      "emb_top_10pct": {
+        "centred_cos_threshold": 0.9954,
+        "near": {
+          "n": 116,
+          "malignant": 15,
+          "benign": 101,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 1044,
+          "malignant": 428,
+          "benign": 616,
+          "auroc": 0.9743,
+          "auroc_note": null
+        }
+      },
+      "emb_top_25pct": {
+        "centred_cos_threshold": 0.9914,
+        "near": {
+          "n": 290,
+          "malignant": 62,
+          "benign": 228,
+          "auroc": 0.9983,
+          "auroc_note": null
+        },
+        "far": {
+          "n": 870,
+          "malignant": 381,
+          "benign": 489,
+          "auroc": 0.9683,
+          "auroc_note": null
+        }
+      }
+    },
+    "clinical": {
+      "all": {
+        "n": 399,
+        "malignant": 333,
+        "benign": 66,
+        "auroc": 0.9029,
+        "auroc_note": null
+      },
+      "dhash_le_0": {
+        "near": {
+          "n": 0,
+          "malignant": 0,
+          "benign": 0,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 399,
+          "malignant": 333,
+          "benign": 66,
+          "auroc": 0.9029,
+          "auroc_note": null
+        }
+      },
+      "dhash_le_1": {
+        "near": {
+          "n": 0,
+          "malignant": 0,
+          "benign": 0,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 399,
+          "malignant": 333,
+          "benign": 66,
+          "auroc": 0.9029,
+          "auroc_note": null
+        }
+      },
+      "dhash_le_2": {
+        "near": {
+          "n": 0,
+          "malignant": 0,
+          "benign": 0,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 399,
+          "malignant": 333,
+          "benign": 66,
+          "auroc": 0.9029,
+          "auroc_note": null
+        }
+      },
+      "dhash_le_4": {
+        "near": {
+          "n": 2,
+          "malignant": 1,
+          "benign": 1,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 397,
+          "malignant": 332,
+          "benign": 65,
+          "auroc": 0.9032,
+          "auroc_note": null
+        }
+      },
+      "dhash_le_6": {
+        "near": {
+          "n": 44,
+          "malignant": 21,
+          "benign": 23,
+          "auroc": 0.9752,
+          "auroc_note": null
+        },
+        "far": {
+          "n": 355,
+          "malignant": 312,
+          "benign": 43,
+          "auroc": 0.8673,
+          "auroc_note": null
+        }
+      },
+      "emb_top_5pct": {
+        "centred_cos_threshold": 0.9944,
+        "near": {
+          "n": 20,
+          "malignant": 6,
+          "benign": 14,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 379,
+          "malignant": 327,
+          "benign": 52,
+          "auroc": 0.877,
+          "auroc_note": null
+        }
+      },
+      "emb_top_10pct": {
+        "centred_cos_threshold": 0.9914,
+        "near": {
+          "n": 40,
+          "malignant": 17,
+          "benign": 23,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 359,
+          "malignant": 316,
+          "benign": 43,
+          "auroc": 0.8509,
+          "auroc_note": null
+        }
+      },
+      "emb_top_25pct": {
+        "centred_cos_threshold": 0.9848,
+        "near": {
+          "n": 100,
+          "malignant": 68,
+          "benign": 32,
+          "auroc": 0.9936,
+          "auroc_note": null
+        },
+        "far": {
+          "n": 299,
+          "malignant": 265,
+          "benign": 34,
+          "auroc": 0.8097,
+          "auroc_note": null
+        }
+      }
+    },
+    "tbp_tile": {
+      "all": {
+        "n": 294,
+        "malignant": 288,
+        "benign": 6,
+        "auroc": null,
+        "auroc_note": "not reported: needs >= 20 per class"
+      },
+      "dhash_le_0": {
+        "near": {
+          "n": 0,
+          "malignant": 0,
+          "benign": 0,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 294,
+          "malignant": 288,
+          "benign": 6,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        }
+      },
+      "dhash_le_1": {
+        "near": {
+          "n": 0,
+          "malignant": 0,
+          "benign": 0,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 294,
+          "malignant": 288,
+          "benign": 6,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        }
+      },
+      "dhash_le_2": {
+        "near": {
+          "n": 0,
+          "malignant": 0,
+          "benign": 0,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 294,
+          "malignant": 288,
+          "benign": 6,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        }
+      },
+      "dhash_le_4": {
+        "near": {
+          "n": 1,
+          "malignant": 1,
+          "benign": 0,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 293,
+          "malignant": 287,
+          "benign": 6,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        }
+      },
+      "dhash_le_6": {
+        "near": {
+          "n": 7,
+          "malignant": 7,
+          "benign": 0,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 287,
+          "malignant": 281,
+          "benign": 6,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        }
+      },
+      "emb_top_5pct": {
+        "centred_cos_threshold": 0.9963,
+        "near": {
+          "n": 15,
+          "malignant": 15,
+          "benign": 0,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 279,
+          "malignant": 273,
+          "benign": 6,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        }
+      },
+      "emb_top_10pct": {
+        "centred_cos_threshold": 0.9947,
+        "near": {
+          "n": 30,
+          "malignant": 29,
+          "benign": 1,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 264,
+          "malignant": 259,
+          "benign": 5,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        }
+      },
+      "emb_top_25pct": {
+        "centred_cos_threshold": 0.9907,
+        "near": {
+          "n": 74,
+          "malignant": 71,
+          "benign": 3,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        },
+        "far": {
+          "n": 220,
+          "malignant": 217,
+          "benign": 3,
+          "auroc": null,
+          "auroc_note": "not reported: needs >= 20 per class"
+        }
+      }
+    }
+  }
+}

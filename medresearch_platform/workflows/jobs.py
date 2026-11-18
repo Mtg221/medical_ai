@@ -207,7 +207,11 @@ def execute_document_upload_job(
     force_new: bool = False,
 ) -> None:
     """Background worker that parses/OCRs, extracts, normalizes, and persists an uploaded document with timeout."""
-    timeout_s = float(getattr(service.config, "job_timeout_seconds", 120.0))
+    compute_timeout = getattr(service.config, "compute_document_job_timeout", None)
+    if callable(compute_timeout):
+        timeout_s = float(compute_timeout(len(raw_bytes)))
+    else:
+        timeout_s = float(getattr(service.config, "job_timeout_seconds", 120.0))
 
     def _on_stage(stage: str, pct: int) -> None:
         jobs.update_job(job_id, status="RUNNING", progress_pct=pct, current_stage=stage)

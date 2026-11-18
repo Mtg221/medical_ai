@@ -42,6 +42,12 @@ class PlatformConfig:
     pseudonym_vault_key: str = field(repr=False)
     max_document_chars: int = 500_000
     job_timeout_seconds: float = 120.0
+    job_timeout_per_100k_bytes_seconds: float = 90.0
+
+    def compute_document_job_timeout(self, payload_bytes: int) -> float:
+        """Derive document job timeout from base timeout plus document byte length."""
+        extra = (max(0, int(payload_bytes)) / 100_000.0) * float(self.job_timeout_per_100k_bytes_seconds)
+        return float(self.job_timeout_seconds) + extra
 
     @classmethod
     def from_env(cls, workspace_dir: Path | str | None = None) -> PlatformConfig:
@@ -106,6 +112,9 @@ class PlatformConfig:
             pseudonym_vault_key=vault_secret,
             max_document_chars=int(os.environ.get("MEDRESEARCH_MAX_DOCUMENT_CHARS", "500000")),
             job_timeout_seconds=float(os.environ.get("MEDRESEARCH_JOB_TIMEOUT_SECONDS", "120.0")),
+            job_timeout_per_100k_bytes_seconds=float(
+                os.environ.get("MEDRESEARCH_JOB_TIMEOUT_PER_100K_BYTES_SECONDS", "90.0")
+            ),
         )
 
     def ensure_directories(self) -> None:

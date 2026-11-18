@@ -1,6 +1,6 @@
 # Dermatology Corpus Sampling Plan (`derm-corpus` v2)
 
-> **Status:** Drafted for owner approval before bulk download (`medextract derm sync --plan docs/data/DERM_SAMPLING_PLAN.md`).  
+> **Status:** Approved by: owner (guest777) on 2026-11-18 (recorded after the fact, via in-session answer "Yes, approve the v2 plan as written"). The v2 bulk sync itself ran earlier, before this approval was recorded (W13). `locked_test_v2` is superseded pending the `locked_test_v3` plan, which needs its own separate written approval.  
 > **Target Hardware:** Intel Core i7-9750H, 32 GB RAM, CPU-only.  
 > **Rules:** Real images only (`ok == true`, research-allowed licence only), lesion-grouped splits (`mk` group key), zero fabricated labels (`mg` unknown/indeterminate masked), cross-split dHash deduplication (drop near-duplicates from test, not train).
 

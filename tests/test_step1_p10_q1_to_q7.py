@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from medresearch_platform.data.schema import AnnotatedDocument
 from medresearch_platform.hybrid.pipeline import HybridPipeline
 from medresearch_platform.reports.generator import render_html_report, render_markdown_report
@@ -44,12 +42,9 @@ def test_p10_deidentify_names_and_redact_in_reports() -> None:
     assert "Jean Dupont" not in html_out
 
 
-def test_q1_to_q7_and_r2_a2_probes_on_hybrid_v2() -> None:
-    model_dir = Path("models/hybrid_v2_seed1")
-    if not (model_dir / "manifest.json").exists():
-        pytest.skip("models/hybrid_v2_seed1 not present in fresh checkout")
-
-    pipe = HybridPipeline.load(model_dir)
+def test_q1_to_q7_and_r2_a2_probes_on_hybrid_v2(isolated_test_models: tuple[Path, Path]) -> None:
+    hybrid_dir, _ = isolated_test_models
+    pipe = HybridPipeline.load(hybrid_dir)
 
     # Probe 0: FR note with honorific, age, diagnosis, medication + µg dosage
     doc0 = AnnotatedDocument(

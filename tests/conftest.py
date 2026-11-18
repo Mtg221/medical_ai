@@ -65,6 +65,8 @@ def ensure_v3_and_v3_1_corpora(tmp_path_factory: pytest.TempPathFactory) -> None
         os.environ["MEDRESEARCH_SQLITE_PATH"] = str(temp_db)
     if "MEDRESEARCH_STORAGE_DIR" not in os.environ:
         os.environ["MEDRESEARCH_STORAGE_DIR"] = str(session_runtime / "storage")
+    if "MEDRESEARCH_TEST_SET_LOG_PATH" not in os.environ:
+        os.environ["MEDRESEARCH_TEST_SET_LOG_PATH"] = str(session_runtime / "TEST_SET_LOG.md")
 
     model_root = tmp_path_factory.mktemp("test_models")
     hybrid_dir, crf_dir = ensure_corpora_and_test_models(model_root)

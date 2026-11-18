@@ -705,7 +705,7 @@ def freeze_locked_test_v2(
     test_records: list[DermCatalogRecord],
     *,
     out_path: str | Path = "configs/vision/locked_test_v2.txt",
-    log_path: str | Path = "docs/results/TEST_SET_LOG.md",
+    log_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Write sorted frozen test image IDs to `configs/vision/locked_test_v2.txt` and log SHA-256."""
     from medresearch_platform.vision.splits import log_locked_test_access
@@ -725,6 +725,37 @@ def freeze_locked_test_v2(
     return {"path": str(p), "n_ids": len(ids), "sha256": sha256}
 
 
+def compute_split_counts(
+    split_records: dict[str, list[DermCatalogRecord]],
+) -> dict[str, dict[str, Any]]:
+    """Single canonical split-count summary shared by data cards and benchmark JSONs (W6)."""
+    from collections import Counter
+
+    out: dict[str, dict[str, Any]] = {}
+    for sp, recs in split_records.items():
+        mg_c = Counter(r.malignancy_group for r in recs)
+        mod_c = Counter(r.modality for r in recs)
+        tone_c = Counter(r.skin_tone for r in recs)
+        ds_c = Counter(r.dataset for r in recs)
+        labelled_mg = int(mg_c["benign"] + mg_c["malignant"])
+        masked_mg = int(mg_c["unknown"] + mg_c["indeterminate"])
+        out[sp] = {
+            "total": len(recs),
+            "real": len(recs),
+            "synthetic": 0,
+            "benign": int(mg_c["benign"]),
+            "malignant": int(mg_c["malignant"]),
+            "labelled_mg": labelled_mg,
+            "masked_mg": masked_mg,
+            "clinical": int(mod_c["clinical"]),
+            "dermoscopic": int(mod_c["dermoscopic"]),
+            "tbp_tile": int(mod_c["tbp_tile"]),
+            "tones": {t: int(tone_c[t]) for t in ("I", "II", "III", "IV", "V", "VI", "UNKNOWN")},
+            "datasets": dict(ds_c),
+        }
+    return out
+
+
 def write_derm_v2_data_card(
     split_records: dict[str, list[DermCatalogRecord]],
     *,
@@ -732,8 +763,7 @@ def write_derm_v2_data_card(
     dropped_near_dups: int = 0,
 ) -> Path:
     """Write data card with exact counts per split x tone x modality x mg x dataset."""
-    from collections import Counter
-
+    counts = compute_split_counts(split_records)
     lines = [
         "# Dermatology Corpus Data Card (Sampling Plan v2)",
         "",
@@ -745,23 +775,21 @@ def write_derm_v2_data_card(
         "|---|---|---|---|---|---|---|---|",
     ]
     for sp in ("train", "val", "locked_test_v2"):
-        recs = split_records.get(sp, [])
-        mg_c = Counter(r.malignancy_group for r in recs)
-        mod_c = Counter(r.modality for r in recs)
-        masked = mg_c["unknown"] + mg_c["indeterminate"]
+        c = counts.get(sp, {})
         lines.append(
-            f"| `{sp}` | {len(recs)} | {mg_c['benign']} | {mg_c['malignant']} | {masked} | "
-            f"{mod_c['clinical']} | {mod_c['dermoscopic']} | {mod_c['tbp_tile']} |"
+            f"| `{sp}` | {c.get('total', 0)} | {c.get('benign', 0)} | {c.get('malignant', 0)} | "
+            f"{c.get('masked_mg', 0)} | {c.get('clinical', 0)} | {c.get('dermoscopic', 0)} | {c.get('tbp_tile', 0)} |"
         )
     lines.extend(["", "## Fitzpatrick Skin Tone & Dataset Breakdown", ""])
     lines.append("| Split | Tone I | Tone II | Tone III | Tone IV | Tone V | Tone VI | UNKNOWN | Datasets |")
     lines.append("|---|---|---|---|---|---|---|---|---|")
     for sp in ("train", "val", "locked_test_v2"):
-        recs = split_records.get(sp, [])
-        tc = Counter(r.skin_tone for r in recs)
-        dc = dict(Counter(r.dataset for r in recs))
+        c = counts.get(sp, {})
+        tones = c.get("tones", {})
+        ds_c = c.get("datasets", {})
         lines.append(
-            f"| `{sp}` | {tc['I']} | {tc['II']} | {tc['III']} | {tc['IV']} | {tc['V']} | {tc['VI']} | {tc['UNKNOWN']} | `{dc}` |"
+            f"| `{sp}` | {tones.get('I', 0)} | {tones.get('II', 0)} | {tones.get('III', 0)} | "
+            f"{tones.get('IV', 0)} | {tones.get('V', 0)} | {tones.get('VI', 0)} | {tones.get('UNKNOWN', 0)} | `{ds_c}` |"
         )
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
