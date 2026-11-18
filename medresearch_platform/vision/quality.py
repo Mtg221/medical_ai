@@ -282,3 +282,96 @@ def calibrate_quality_thresholds_on_val(
         "val_degraded_count": len(neg_imgs),
         "val_quality_f1": round(best_f1, 4),
     }
+
+
+def detect_dense_text_lines(image: Image.Image | np.ndarray) -> dict[str, Any]:
+    """
+    Fast pre-skin safety check for dense horizontal text lines (documents, receipts, forms, screens).
+    Uses optional Tesseract line detection when available plus a deterministic NumPy stroke-row detector.
+    """
+    from PIL import ImageFilter
+
+    arr_u8, _, _ = _to_rgb_uint8(image)
+    pil = Image.fromarray(arr_u8)
+
+    # 1. Optional fast Tesseract word/line check when binary + pytesseract exist
+    ocr_lines = 0
+    ocr_words = 0
+    try:
+        import shutil
+
+        if shutil.which("tesseract"):
+            import pytesseract  # type: ignore[import-untyped]
+
+            data = pytesseract.image_to_data(pil, output_type=pytesseract.Output.DICT, timeout=3)
+            line_keys: set[tuple[int, int, int]] = set()
+            for txt, conf, b, p, ln in zip(
+                data.get("text", []),
+                data.get("conf", []),
+                data.get("block_num", []),
+                data.get("par_num", []),
+                data.get("line_num", []),
+            ):
+                tok = str(txt or "").strip()
+                try:
+                    c_val = float(conf)
+                except Exception:
+                    c_val = -1.0
+                if len(tok) >= 2 and any(ch.isalpha() for ch in tok) and c_val >= 45.0:
+                    ocr_words += 1
+                    line_keys.add((int(b), int(p), int(ln)))
+            ocr_lines = len(line_keys)
+    except Exception:
+        ocr_lines = 0
+        ocr_words = 0
+
+    # 2. Pure-NumPy high-contrast horizontal text-line stroke detector (works without Tesseract)
+    gray_pil = pil.convert("L").resize((256, 256), Image.Resampling.BILINEAR)
+    gray = np.asarray(gray_pil, dtype=np.float32)
+    local_bg = np.asarray(gray_pil.filter(ImageFilter.BoxBlur(6)), dtype=np.float32)
+    ink = local_bg - gray  # dark text on lighter background
+
+    # Crisp vertical glyph strokes (horizontal transitions across dark ink)
+    dx = np.abs(np.diff(gray, axis=1, prepend=gray[:, :1]))
+    stroke_mask = (dx >= 22.0) & (np.abs(ink) >= 12.0)
+    crossings_per_row = np.sum(stroke_mask, axis=1)
+    mean_row_ink = np.mean(np.clip(ink, 0.0, 255.0), axis=1)
+
+    # Text rows have frequent sharp horizontal transitions and localized dark ink
+    text_row = (crossings_per_row >= 18) & (mean_row_ink >= 1.5)
+    # Count distinct horizontal line bands (contiguous True runs of height 2..14 px)
+    band_count = 0
+    run_len = 0
+    for flag in text_row:
+        if flag:
+            run_len += 1
+        else:
+            if 2 <= run_len <= 16:
+                band_count += 1
+            run_len = 0
+    if 2 <= run_len <= 16:
+        band_count += 1
+
+    # Paper/light background check: documents typically have substantial bright neutral area and low skin redness
+    r_ch = arr_u8[:, :, 0].astype(np.float32)
+    g_ch = arr_u8[:, :, 1].astype(np.float32)
+    b_ch = arr_u8[:, :, 2].astype(np.float32)
+    bright_neutral = float(np.mean((np.min(arr_u8, axis=2) >= 145) & (np.abs(r_ch - b_ch) < 35)))
+    redness_dom = float(np.mean((r_ch > g_ch + 12) & (r_ch > b_ch + 18)))
+
+    numpy_dense_text = (
+        (band_count >= 6 and int(np.sum(text_row)) >= 18 and redness_dom < 0.45)
+        or (band_count >= 4 and bright_neutral >= 0.40 and int(np.sum(text_row)) >= 14)
+    )
+    ocr_dense_text = (ocr_lines >= 3 and ocr_words >= 10)
+    has_dense_text = bool(ocr_dense_text or numpy_dense_text)
+
+    return {
+        "has_dense_text": has_dense_text,
+        "text_line_bands": int(band_count),
+        "text_rows": int(np.sum(text_row)),
+        "bright_neutral_fraction": round(bright_neutral, 4),
+        "redness_dominant_fraction": round(redness_dom, 4),
+        "ocr_lines": int(ocr_lines),
+        "ocr_words": int(ocr_words),
+    }

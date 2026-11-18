@@ -31,11 +31,11 @@ def run_step3_real_router(
     *,
     meta_dir: str | Path = "var/cache/derm/meta",
     thumbs_dir: str | Path = "var/cache/derm/thumbs",
-    locked_test_path: str | Path = "configs/vision/locked_test_v2.txt",
+    locked_test_path: str | Path = "configs/vision/locked_test_v3.txt",
     router_real_dir: str | Path = "data/router_real",
     out_model_dir: str | Path = "models/vision_router_v1",
     out_eval_json: str | Path = "docs/results/vision/step3_real_router_eval.json",
-    epochs: int = 12,
+    epochs: int = 16,
     seed: int = 42,
 ) -> dict[str, Any]:
     rng = random.Random(seed)
@@ -73,19 +73,26 @@ def run_step3_real_router(
         val_items.extend((p, cls_idx) for p in val_p)
         eval_items.extend((p, cls_idx) for p in eval_p)
 
-    # 2. document_scan: rendered SYNTH-MED notes + owner-taken photos (if any)
+    # 2. document_scan: phone-photo-augmented rendered SYNTH-MED notes + real CC0/owner photos
     doc_cls_idx = ROUTER_CLASSES.index("document_scan")
-    doc_tr = render_synth_med_document_pages("data/processed/v3_1/train.jsonl", r_base / "document_scan_rendered" / "train", max_docs=240, seed=seed)
-    doc_va = render_synth_med_document_pages("data/processed/v3_1/val.jsonl", r_base / "document_scan_rendered" / "val", max_docs=80, seed=seed + 1)
-    doc_te = render_synth_med_document_pages("data/processed/v3_1/test_iid.jsonl", r_base / "document_scan_rendered" / "eval", max_docs=80, seed=seed + 2)
+    doc_tr = render_synth_med_document_pages("data/processed/v3_1/train.jsonl", r_base / "document_scan_rendered_v2" / "train", max_docs=240, seed=seed, phone_photo_aug=True)
+    doc_va = render_synth_med_document_pages("data/processed/v3_1/val.jsonl", r_base / "document_scan_rendered_v2" / "val", max_docs=80, seed=seed + 1, phone_photo_aug=True)
+    doc_te = render_synth_med_document_pages("data/processed/v3_1/test_iid.jsonl", r_base / "document_scan_rendered_v2" / "eval", max_docs=80, seed=seed + 2, phone_photo_aug=True)
     train_items.extend((p, doc_cls_idx) for p in doc_tr)
     val_items.extend((p, doc_cls_idx) for p in doc_va)
     eval_items.extend((p, doc_cls_idx) for p in doc_te)
 
     owner_doc_paths = _gather_images(r_base / "document_scan")
-    # Also evaluate owner photos separately; if >= 50, split half into train/val and half into eval
+    rng.shuffle(owner_doc_paths)
     owner_eval_paths = owner_doc_paths
-    if len(owner_doc_paths) >= 50:
+    if len(owner_doc_paths) >= 100:
+        n_doc_eval = max(60, len(owner_doc_paths) // 4)
+        n_doc_val = min(35, len(owner_doc_paths) // 8)
+        owner_eval_paths = owner_doc_paths[:n_doc_eval]
+        val_items.extend((p, doc_cls_idx) for p in owner_doc_paths[n_doc_eval : n_doc_eval + n_doc_val])
+        train_items.extend((p, doc_cls_idx) for p in owner_doc_paths[n_doc_eval + n_doc_val :])
+        eval_items.extend((p, doc_cls_idx) for p in owner_eval_paths)
+    elif len(owner_doc_paths) >= 50:
         half = len(owner_doc_paths) // 2
         train_items.extend((p, doc_cls_idx) for p in owner_doc_paths[:half])
         owner_eval_paths = owner_doc_paths[half:]

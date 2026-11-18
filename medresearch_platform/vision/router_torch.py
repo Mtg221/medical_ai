@@ -33,12 +33,60 @@ def is_torch_available() -> bool:
         return False
 
 
+def _apply_phone_photo_augmentations(im: Image.Image, rng: np.random.Generator, *, add_hand: bool) -> Image.Image:
+    """Apply realistic smartphone-capture artifacts: table background, perspective tilt, shadow, crumple, and optional hand edge."""
+    w, h = im.size
+    # Place page onto a warm desk/table canvas so edges & perspective show
+    bg_tone = (int(rng.integers(95, 165)), int(rng.integers(80, 145)), int(rng.integers(70, 130)))
+    canvas = Image.new("RGB", (w, h), color=bg_tone)
+    scale = float(rng.uniform(0.76, 0.90))
+    pw, ph = max(64, int(w * scale)), max(64, int(h * scale))
+    page_resized = im.resize((pw, ph), Image.Resampling.BILINEAR)
+    ox = (w - pw) // 2 + int(rng.integers(-18, 19))
+    oy = (h - ph) // 2 + int(rng.integers(-22, 23))
+    canvas.paste(page_resized, (max(0, min(w - pw, ox)), max(0, min(h - ph, oy))))
+
+    # Perspective warp
+    dx1, dy1 = float(rng.uniform(-0.06, 0.06)) * w, float(rng.uniform(-0.05, 0.05)) * h
+    dx2, dy2 = float(rng.uniform(-0.06, 0.06)) * w, float(rng.uniform(-0.05, 0.05)) * h
+    src = [(0.0, 0.0), (float(w), 0.0), (float(w), float(h)), (0.0, float(h))]
+    dst = [(dx1, dy1), (w - dx2, dy1 * 0.5), (w + dx2 * 0.5, h - dy2), (-dx1 * 0.5, h + dy2 * 0.5)]
+    # Solve 8-parameter projective transform
+    matrix_rows: list[list[float]] = []
+    rhs: list[float] = []
+    for (x, y), (u, v) in zip(dst, src):
+        matrix_rows.append([x, y, 1.0, 0.0, 0.0, 0.0, -u * x, -u * y])
+        rhs.append(u)
+        matrix_rows.append([0.0, 0.0, 0.0, x, y, 1.0, -v * x, -v * y])
+        rhs.append(v)
+    coeffs = np.linalg.solve(np.asarray(matrix_rows, dtype=np.float64), np.asarray(rhs, dtype=np.float64)).tolist()
+    warped = canvas.transform((w, h), Image.Transform.PERSPECTIVE, coeffs, Image.Resampling.BILINEAR)
+
+    if add_hand:
+        d = ImageDraw.Draw(warped)
+        skin_rgb = (int(rng.integers(110, 215)), int(rng.integers(75, 165)), int(rng.integers(55, 140)))
+        if rng.random() < 0.5:
+            d.ellipse([(-int(0.08 * w), int(0.55 * h)), (int(0.18 * w), int(0.88 * h))], fill=skin_rgb)
+        else:
+            d.ellipse([(int(0.82 * w), int(0.45 * h)), (int(1.08 * w), int(0.82 * h))], fill=skin_rgb)
+
+    arr = np.asarray(warped, dtype=np.float32)
+    # Shadow band + crumple fold waves
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    shadow_center = float(rng.uniform(0.25, 0.75)) * w + 0.35 * yy
+    shadow = 1.0 - float(rng.uniform(0.18, 0.38)) * np.exp(-((xx - shadow_center) ** 2) / (2.0 * (0.22 * w) ** 2))
+    crumple = 1.0 + float(rng.uniform(0.02, 0.06)) * np.sin(0.08 * xx + 0.11 * yy + float(rng.uniform(0, 6.28)))
+    arr = np.clip(arr * (shadow * crumple)[:, :, None], 0, 255).astype(np.uint8)
+    return Image.fromarray(arr)
+
+
 def render_synth_med_document_pages(
     jsonl_path: str | Path,
     out_dir: str | Path,
     *,
     max_docs: int = 120,
     seed: int = 42,
+    phone_photo_aug: bool = True,
 ) -> list[Path]:
     """Render real SYNTH-MED notes as realistic scanned/printed document images (with skew, paper grain, lighting)."""
     p_in = Path(jsonl_path)
@@ -86,16 +134,22 @@ def render_synth_med_document_pages(
             if y > 600:
                 break
 
-        # Print-style scan noise: slight rotation, uneven illumination, paper grain
-        angle = float(rng.uniform(-2.5, 2.5))
-        im = im.rotate(angle, resample=Image.Resampling.BILINEAR, fillcolor=(bg_val - 12, bg_val - 14, bg_val - 16))
-        arr = np.asarray(im, dtype=np.float32)
-        grad_x = np.linspace(float(rng.uniform(-14, 6)), float(rng.uniform(-6, 14)), arr.shape[1], dtype=np.float32)[None, :, None]
-        noise = rng.normal(0.0, 5.5, size=arr.shape).astype(np.float32)
-        arr = np.clip(arr + grad_x + noise, 0, 255).astype(np.uint8)
-        noisy_im = Image.fromarray(arr).filter(ImageFilter.GaussianBlur(radius=float(rng.uniform(0.2, 0.7))))
+        # Print-style scan noise or realistic phone-photo capture augmentation
+        if phone_photo_aug and (idx % 5 != 0):
+            im = _apply_phone_photo_augmentations(im, rng, add_hand=(idx % 3 == 0))
+            noisy_im = im.filter(ImageFilter.GaussianBlur(radius=float(rng.uniform(0.35, 1.05))))
+            q = int(rng.integers(45, 76))
+        else:
+            angle = float(rng.uniform(-2.5, 2.5))
+            im = im.rotate(angle, resample=Image.Resampling.BILINEAR, fillcolor=(bg_val - 12, bg_val - 14, bg_val - 16))
+            arr = np.asarray(im, dtype=np.float32)
+            grad_x = np.linspace(float(rng.uniform(-14, 6)), float(rng.uniform(-6, 14)), arr.shape[1], dtype=np.float32)[None, :, None]
+            noise = rng.normal(0.0, 5.5, size=arr.shape).astype(np.float32)
+            arr = np.clip(arr + grad_x + noise, 0, 255).astype(np.uint8)
+            noisy_im = Image.fromarray(arr).filter(ImageFilter.GaussianBlur(radius=float(rng.uniform(0.2, 0.7))))
+            q = int(rng.integers(75, 92))
         noisy_im.thumbnail((256, 256), Image.Resampling.BILINEAR)
-        noisy_im.save(out_path, format="JPEG", quality=int(rng.integers(75, 92)))
+        noisy_im.save(out_path, format="JPEG", quality=q)
         saved.append(out_path)
     return saved
 
@@ -370,6 +424,19 @@ class PyTorchPictureTriageRouter:
         return obj
 
 
+def _predict_with_text_safety_guard(router: PyTorchPictureTriageRouter, im: Image.Image) -> tuple[str, str]:
+    """Return `(raw_router_class, served_class_after_text_guard)`."""
+    from medresearch_platform.vision.quality import detect_dense_text_lines
+
+    dec = router.triage_image(im)
+    raw_cls = dec.predicted_class
+    served_cls = raw_cls
+    if raw_cls in ("skin_clinical", "skin_dermoscopic", "skin_tbp_tile"):
+        if detect_dense_text_lines(im).get("has_dense_text"):
+            served_cls = "document_scan"
+    return raw_cls, served_cls
+
+
 def evaluate_real_router(
     router: PyTorchPictureTriageRouter,
     eval_items: list[tuple[Path, int]],
@@ -377,19 +444,22 @@ def evaluate_real_router(
     ood_paths: list[Path] | None = None,
     owner_doc_paths: list[Path] | None = None,
 ) -> dict[str, Any]:
-    """Evaluate router on held-out real images + OOD check, reporting confusion matrix and critical routing errors."""
+    """Evaluate router (+ pre-skin text-presence safety guard) on held-out real images + OOD check."""
     n_cls = len(ROUTER_CLASSES)
     cm = [[0 for _ in range(n_cls)] for _ in range(n_cls)]
+    cm_raw = [[0 for _ in range(n_cls)] for _ in range(n_cls)]
     correct = 0
     total = 0
 
     for path, true_idx in eval_items:
         try:
             with Image.open(path) as im:
-                dec = router.triage_image(im)
+                raw_cls, served_cls = _predict_with_text_safety_guard(router, im)
         except Exception:
             continue
-        pred_idx = ROUTER_CLASSES.index(dec.predicted_class)
+        raw_idx = ROUTER_CLASSES.index(raw_cls)
+        pred_idx = ROUTER_CLASSES.index(served_cls)
+        cm_raw[true_idx][raw_idx] += 1
         cm[true_idx][pred_idx] += 1
         total += 1
         if pred_idx == true_idx:
@@ -401,6 +471,7 @@ def evaluate_real_router(
 
     skin_to_doc = sum(cm[si][doc_idx] for si in skin_indices)
     doc_to_skin = sum(cm[doc_idx][si] for si in skin_indices)
+    raw_doc_to_skin = sum(cm_raw[doc_idx][si] for si in skin_indices)
     other_to_skin = sum(cm[other_idx][si] for si in skin_indices)
 
     ood_summary: dict[str, Any] = {"total": 0, "routed_to_skin": 0, "predictions": {}}
@@ -409,8 +480,8 @@ def evaluate_real_router(
         for op in ood_paths:
             try:
                 with Image.open(op) as im:
-                    dec = router.triage_image(im)
-                ood_counts[dec.predicted_class] += 1
+                    _, served_cls = _predict_with_text_safety_guard(router, im)
+                ood_counts[served_cls] += 1
             except Exception:
                 continue
         ood_summary = {
@@ -419,21 +490,25 @@ def evaluate_real_router(
             "predictions": dict(ood_counts),
         }
 
-    owner_doc_summary: dict[str, Any] = {"total": 0, "correct_document_scan": 0, "routed_to_skin": 0}
+    owner_doc_summary: dict[str, Any] = {"total": 0, "correct_document_scan": 0, "routed_to_skin": 0, "raw_router_to_skin": 0}
     if owner_doc_paths:
         o_counts: Counter[str] = Counter()
+        o_raw_counts: Counter[str] = Counter()
         for dp in owner_doc_paths:
             try:
                 with Image.open(dp) as im:
-                    dec = router.triage_image(im)
-                o_counts[dec.predicted_class] += 1
+                    raw_cls, served_cls = _predict_with_text_safety_guard(router, im)
+                o_counts[served_cls] += 1
+                o_raw_counts[raw_cls] += 1
             except Exception:
                 continue
         owner_doc_summary = {
             "total": sum(o_counts.values()),
             "correct_document_scan": o_counts["document_scan"],
             "routed_to_skin": sum(o_counts[c] for c in ("skin_clinical", "skin_dermoscopic", "skin_tbp_tile")),
+            "raw_router_to_skin": sum(o_raw_counts[c] for c in ("skin_clinical", "skin_dermoscopic", "skin_tbp_tile")),
             "predictions": dict(o_counts),
+            "raw_predictions": dict(o_raw_counts),
         }
 
     return {
@@ -445,6 +520,7 @@ def evaluate_real_router(
         "critical_errors": {
             "skin_to_document_scan": skin_to_doc,
             "document_scan_to_skin": doc_to_skin,
+            "raw_router_document_scan_to_skin": raw_doc_to_skin,
             "other_to_skin": other_to_skin,
         },
         "owner_document_photos": owner_doc_summary,

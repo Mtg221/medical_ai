@@ -273,6 +273,23 @@ def ingest_and_analyze_image(
 
     triage = router_model.triage_image(clean_im)
 
+    # Step 2 text-presence safety check: dense text lines must NEVER reach the skin model
+    text_check: dict[str, Any] | None = None
+    if triage.route_action == "skin_vision_pipeline":
+        from dataclasses import replace as _dc_replace
+
+        from medresearch_platform.vision.quality import detect_dense_text_lines
+
+        text_check = detect_dense_text_lines(clean_im)
+        if text_check.get("has_dense_text"):
+            triage = _dc_replace(
+                triage,
+                predicted_class="document_scan",
+                route_action="ocr_text_pipeline",
+                label_en="Document / printed text detected (text-presence safety guard)",
+                label_fr="Document / texte imprimé détecté (garde de sécurité texte)",
+            )
+
     # Bidirectional routing: if a document photo is uploaded to /api/v1/images/upload, route to OCR + text pipeline
     if triage.predicted_class == "document_scan" and allow_document_reroute:
         doc_res = service.ingest_document(
@@ -291,6 +308,7 @@ def ingest_and_analyze_image(
             "triage": triage.to_dict(),
             "document_result": doc_res,
             "exif_stripped": True,
+            "text_presence_check": text_check,
         }
 
     # Check skin model availability before writing any files to storage (V8)
@@ -405,6 +423,8 @@ def ingest_and_analyze_image(
     finding.provenance["metadata_mode"] = metadata_mode_used
     finding.provenance["modality_hint_used"] = modality_hint_used
     finding.provenance["body_site_used"] = body_site
+    if text_check is not None:
+        finding.provenance["text_presence_check"] = text_check
 
     now_iso = datetime.now(timezone.utc).isoformat()
     created_links: list[dict[str, Any]] = []

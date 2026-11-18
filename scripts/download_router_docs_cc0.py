@@ -13,18 +13,28 @@ from download_router_cc0 import _is_cc0_or_pd, _search_commons
 from PIL import Image
 
 DOC_QUERIES: list[tuple[str, str, int]] = [
-    ("prescription", "medical prescription paper", 15),
-    ("form", "printed form document paper", 15),
-    ("letter", "typed letter page document", 15),
-    ("receipt", "paper receipt invoice", 15),
-    ("notes", "handwritten medical note paper", 15),
+    ("prescription", "medical prescription paper", 50),
+    ("form", "printed form document paper", 50),
+    ("letter", "typed letter page document", 50),
+    ("receipt", "paper receipt invoice", 50),
+    ("notes", "handwritten medical note paper", 50),
+    ("book_page", "printed book page text", 50),
+    ("newspaper", "newspaper page printed text", 50),
+    ("handwritten", "handwritten letter document", 50),
+    ("certificate", "printed certificate document", 50),
+    ("screen_doc", "computer screen text document", 50),
+    ("typewritten", "typewritten page document", 50),
+    ("medical_chart", "medical chart hospital form", 50),
+    ("printed_sheet", "printed sheet paper text", 50),
+    ("application", "application form paper", 50),
+    ("report_page", "printed report document page", 50),
 ]
 
 
 def download_cc0_document_scans(
     out_dir: str | Path = "data/router_real/document_scan",
     sources_csv: str | Path = "data/router_real/SOURCES.csv",
-    target_total: int = 60,
+    target_total: int = 420,
 ) -> dict[str, int]:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -46,7 +56,7 @@ def download_cc0_document_scans(
         for tag, query, cap in DOC_QUERIES:
             if downloaded >= target_total:
                 break
-            pages = _search_commons(client, query, limit=60, offset=0)
+            pages = _search_commons(client, query, limit=120, offset=0)
             taken = 0
             for page in pages:
                 if taken >= cap or downloaded >= target_total:

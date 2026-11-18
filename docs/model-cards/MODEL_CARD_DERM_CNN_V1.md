@@ -31,7 +31,7 @@
   - `val`: `1,497` real thumbnails (`900` benign, `597` malignant), filled after `locked_test_v3`.
   - `locked_test_v3` ([locked_test_v3.txt](../../configs/vision/locked_test_v3.txt)): **`1,624`** labelled thumbnails (`700` dermoscopic, `574` clinical, `350` TBP tile; Tone `I–IV` `75/75+`, Tone `V` `75/60`, Tone `VI` `75/27`). **0** lesion-group overlap (`lesion_groups_v3.json`, `24,877` groups).
   - *Superseded:* `locked_test_v2` (`n=1,853`) is retained as historical only because 380 similarity groups spanned >1 `v2` split (W1).
-- **Router Real Dataset:** Real skin thumbnails + rendered SYNTH-MED notes + `51` CC0/PD Wikimedia document scan photos (`25` train / `26` eval; `0` owner-taken photos) + `346` Wikimedia CC0/PD everyday photos (`other`) + `50` OOD check images (`data/router_real/SOURCES.csv`).
+- **Router Real Dataset:** Real skin thumbnails + phone-photo-augmented rendered SYNTH-MED notes + `334` CC0/PD Wikimedia document scan photos (`217` train / `34` val / `83` held-out eval; `0` owner-taken photos) + `346` Wikimedia CC0/PD everyday photos (`other`) + `50` OOD check images (`data/router_real/SOURCES.csv`), paired with pre-skin `detect_dense_text_lines()` (`document_scan -> skin = 0 / 83`).
 
 ---
 
