@@ -15,31 +15,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
 
 from medresearch_platform.vision.catalog import DermCatalogRecord
+from medresearch_platform.vision.dx_mapping import (
+    CORE_DX_CLASSES,
+    MASKED_DX_INDEX,
+    map_record_to_core_dx_index,
+)
 from medresearch_platform.vision.quality import _to_rgb_uint8
 from medresearch_platform.vision.vision_classifier import encode_derm_metadata
-
-CORE_DX_CLASSES: tuple[str, ...] = (
-    "melanoma",
-    "basal_cell_carcinoma",
-    "squamous_cell_carcinoma",
-    "actinic_keratosis",
-    "nevus",
-    "seborrheic_keratosis",
-    "dermatofibroma",
-    "vascular_lesion",
-    "other",
-)
-
-
-def map_record_to_core_dx_index(rec: DermCatalogRecord) -> int:
-    dx = rec.diagnosis_harmonised
-    if dx in CORE_DX_CLASSES:
-        return CORE_DX_CLASSES.index(dx)
-    if dx == "malignant_unspecified" or rec.malignancy_group == "malignant":
-        return CORE_DX_CLASSES.index("melanoma")
-    if dx == "benign_unspecified" or rec.malignancy_group == "benign":
-        return CORE_DX_CLASSES.index("nevus")
-    return CORE_DX_CLASSES.index("other")
 
 
 def _rgb_to_hsv_and_lab(rgb_01: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -310,16 +292,17 @@ class ClassicalSkinClassifier:
         self.mal_clf = self._build_estimator(is_multiclass=False)
         self.mal_clf.fit(X_scaled, y_mal)
 
-        unique_dx = sorted(set(y_dx.tolist()))
+        dx_mask = y_dx != MASKED_DX_INDEX
+        unique_dx = sorted(set(y_dx[dx_mask].tolist())) if np.any(dx_mask) else []
         self.dx_classes_ = unique_dx
-        if len(unique_dx) >= 2:
+        if len(unique_dx) >= 2 and int(np.sum(dx_mask)) >= 20:
             self.dx_clf = LogisticRegression(
                 C=0.8,
                 class_weight="balanced",
                 max_iter=500,
                 random_state=self.seed,
             )
-            self.dx_clf.fit(X_scaled, y_dx)
+            self.dx_clf.fit(X_scaled[dx_mask], y_dx[dx_mask])
         else:
             self.dx_clf = None
 
@@ -327,6 +310,7 @@ class ClassicalSkinClassifier:
             "variant": self.variant,
             "feature_dim": int(X.shape[1]),
             "train_samples": len(samples),
+            "dx_labelled_samples": int(np.sum(dx_mask)),
             "training_seconds": round(time.perf_counter() - t0, 3),
             "pretrained_weights_used": False,
         }
@@ -339,13 +323,11 @@ class ClassicalSkinClassifier:
         X_scaled = self.scaler.transform(X)
         mal_probs = self.mal_clf.predict_proba(X_scaled)[:, 1]
 
-        dx_probs = np.full((len(samples), len(CORE_DX_CLASSES)), 1e-4, dtype=np.float64)
+        dx_probs = np.full((len(samples), len(CORE_DX_CLASSES)), 1.0 / len(CORE_DX_CLASSES), dtype=np.float64)
         if self.dx_clf is not None:
             raw_dx_p = self.dx_clf.predict_proba(X_scaled)
+            dx_probs.fill(1e-4)
             for col_idx, cls_id in enumerate(self.dx_clf.classes_):
                 dx_probs[:, int(cls_id)] = raw_dx_p[:, col_idx]
-        else:
-            dx_probs[:, 0] = mal_probs
-            dx_probs[:, 4] = 1.0 - mal_probs
         dx_probs /= np.sum(dx_probs, axis=1, keepdims=True)
         return mal_probs, dx_probs

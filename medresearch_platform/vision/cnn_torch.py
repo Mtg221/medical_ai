@@ -14,9 +14,12 @@ import numpy as np
 from PIL import Image
 
 from medresearch_platform.vision.catalog import DermCatalogRecord
-from medresearch_platform.vision.classical_skin import CORE_DX_CLASSES
+from medresearch_platform.vision.dx_mapping import (
+    CORE_DX_CLASSES,
+    MASKED_DX_INDEX,
+    map_record_to_core_dx_index,
+)
 
-CORE_DX_TO_IDX: dict[str, int] = {c: i for i, c in enumerate(CORE_DX_CLASSES)}
 SKIN_MODALITIES: tuple[str, ...] = ("clinical", "dermoscopic", "tbp_tile")
 
 
@@ -129,22 +132,26 @@ class PyTorchDermResNet:
         image_size: int = 96,
         include_metadata: bool = True,
         seed: int = 1,
+        n_dx: int | None = None,
     ) -> None:
         import torch
 
         self.image_size = image_size
         self.include_metadata = include_metadata
         self.seed = seed
+        self.n_dx = int(n_dx) if n_dx is not None else len(CORE_DX_CLASSES)
         self.architecture_name = "PyTorchDermResNet4Stage-v1.0.0"
         self.temperature_mal = 1.0
         self.temperature_dx = 1.0
         self.abstain_min_confidence = 0.55
+        self.dx_head_supported = False
+        self.train_history: dict[str, Any] = {}
 
         torch.manual_seed(seed)
         np.random.seed(seed)
         random.seed(seed)
 
-        self.net = _build_resnet_module(include_metadata, len(CORE_DX_CLASSES), len(SKIN_MODALITIES))
+        self.net = _build_resnet_module(include_metadata, self.n_dx, len(SKIN_MODALITIES))
         self.parameter_count = sum(p.numel() for p in self.net.parameters())
         self.initial_weights_sha256 = self._weights_sha256()
 
@@ -188,7 +195,7 @@ class PyTorchDermResNet:
         def _pack(samples: list[tuple[np.ndarray, int, DermCatalogRecord]]) -> tuple[torch.Tensor, ...]:
             xs = torch.stack([self._arr_to_tensor(a) for a, _, _ in samples], dim=0)
             y_mal = torch.tensor([lbl for _, lbl, _ in samples], dtype=torch.long)
-            y_dx = torch.tensor([CORE_DX_TO_IDX.get(r.diagnosis_harmonised, CORE_DX_TO_IDX["other"]) for _, _, r in samples], dtype=torch.long)
+            y_dx = torch.tensor([map_record_to_core_dx_index(r) for _, _, r in samples], dtype=torch.long)
             y_mod = torch.tensor([SKIN_MODALITIES.index(r.modality) if r.modality in SKIN_MODALITIES else 0 for _, _, r in samples], dtype=torch.long)
             meta = torch.stack([torch.from_numpy(encode_metadata_vector(r)) for _, _, r in samples], dim=0)
             return xs, y_mal, y_dx, y_mod, meta
@@ -244,7 +251,8 @@ class PyTorchDermResNet:
                     loss_mal = bce(l_mal[mask], ymb[mask].float()).mean()
                 else:
                     loss_mal = torch.tensor(0.0)
-                loss_dx = ce(l_dx, ydb)
+                dx_mask = ydb != MASKED_DX_INDEX
+                loss_dx = ce(l_dx[dx_mask], ydb[dx_mask]) if dx_mask.any() else torch.tensor(0.0)
                 loss_mod = ce(l_mod, ymodb)
                 loss = loss_mal + 0.35 * loss_dx + 0.15 * loss_mod
                 loss.backward()
@@ -290,21 +298,33 @@ class PyTorchDermResNet:
                         best_t = float(t)
                 self.temperature_mal = round(best_t, 3)
 
-            best_tdx = 1.0
-            best_nll_dx = float("inf")
-            for t in np.linspace(0.5, 2.5, 21):
-                nll_dx = float(ce(vl_dx / float(t), y_dx_va).item())
-                if nll_dx < best_nll_dx:
-                    best_nll_dx = nll_dx
-                    best_tdx = float(t)
-            self.temperature_dx = round(best_tdx, 3)
+            dx_va_mask = y_dx_va != MASKED_DX_INDEX
+            if dx_va_mask.any():
+                best_tdx = 1.0
+                best_nll_dx = float("inf")
+                for t in np.linspace(0.5, 2.5, 21):
+                    nll_dx = float(ce(vl_dx[dx_va_mask] / float(t), y_dx_va[dx_va_mask]).item())
+                    if nll_dx < best_nll_dx:
+                        best_nll_dx = nll_dx
+                        best_tdx = float(t)
+                self.temperature_dx = round(best_tdx, 3)
 
-        return {
+        dx_tr_valid = y_dx_tr[y_dx_tr != MASKED_DX_INDEX].numpy()
+        cls_counts = (
+            np.bincount(dx_tr_valid, minlength=len(CORE_DX_CLASSES))
+            if len(dx_tr_valid)
+            else np.zeros(len(CORE_DX_CLASSES), dtype=np.int64)
+        )
+        self.dx_head_supported = bool(int(np.sum(cls_counts >= 30)) >= 2)
+
+        train_info = {
             "seed": self.seed,
             "include_metadata": self.include_metadata,
             "parameter_count": self.parameter_count,
             "epochs_run": len(history),
             "best_val_auroc": round(best_val_auroc, 4),
+            "dx_labelled_train_count": int(len(dx_tr_valid)),
+            "dx_head_supported": self.dx_head_supported,
             "temperature_mal": self.temperature_mal,
             "temperature_dx": self.temperature_dx,
             "elapsed_seconds": round(time.perf_counter() - t0, 2),
@@ -312,6 +332,8 @@ class PyTorchDermResNet:
             "initial_weights_sha256": self.initial_weights_sha256,
             "pretrained_weights_used": False,
         }
+        self.train_history = train_info
+        return train_info
 
     def predict_batch(
         self,
@@ -404,7 +426,7 @@ class PyTorchDermResNet:
         return SkinPredictionResult(
             malignancy_probability=round(p_mal, 4),
             risk_band=risk_band,
-            top3_diagnoses=top3 if not abstained else [],
+            top3_diagnoses=top3 if (not abstained and self.dx_head_supported) else [],
             predicted_modality=SKIN_MODALITIES[int(np.argmax(mod_probs))],
             modality_probabilities={m: round(float(mod_probs[i]), 4) for i, m in enumerate(SKIN_MODALITIES)},
             energy_score=round(float(-np.log(max(conf, 1e-6))), 4),
@@ -483,10 +505,18 @@ class PyTorchDermResNet:
         p.mkdir(parents=True, exist_ok=True)
         weights_path = p / "weights_torch.pt"
         torch.save(self.net.state_dict(), weights_path)
+        import subprocess
+
+        try:
+            git_commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True, stderr=subprocess.DEVNULL).strip()
+        except Exception:
+            git_commit = "unknown"
+
         trained_sha = hashlib.sha256(weights_path.read_bytes()).hexdigest()
         manifest = {
             "architecture_name": self.architecture_name,
             "backend": "pytorch_cpu",
+            "git_commit": git_commit,
             "image_size": self.image_size,
             "stage_channels": [32, 64, 128, 256],
             "include_metadata": self.include_metadata,
@@ -495,6 +525,8 @@ class PyTorchDermResNet:
             "temperature_mal": self.temperature_mal,
             "temperature_dx": self.temperature_dx,
             "abstain_min_confidence": self.abstain_min_confidence,
+            "dx_head_supported": self.dx_head_supported,
+            "train_history": self.train_history,
             "initial_weights_sha256": self.initial_weights_sha256,
             "trained_weights_sha256": trained_sha,
             "corpus_hash": corpus_hash,
@@ -518,16 +550,21 @@ class PyTorchDermResNet:
         actual_sha = hashlib.sha256(weights_path.read_bytes()).hexdigest()
         if not expected_sha or expected_sha != actual_sha:
             raise ValueError(f"PyTorch skin model SHA-256 mismatch in {p}")
+        state_dict = torch.load(weights_path, map_location="cpu")
+        n_dx = int(state_dict["fc_dx.weight"].shape[0]) if "fc_dx.weight" in state_dict else len(CORE_DX_CLASSES)
         obj = cls(
             image_size=int(manifest.get("image_size", 96)),
             include_metadata=bool(manifest.get("include_metadata", True)),
             seed=int(manifest.get("seed", 1)),
+            n_dx=n_dx,
         )
-        obj.net.load_state_dict(torch.load(weights_path, map_location="cpu"))
+        obj.net.load_state_dict(state_dict)
         obj.net.eval()
         obj.temperature_mal = float(manifest.get("temperature_mal", 1.0))
         obj.temperature_dx = float(manifest.get("temperature_dx", 1.0))
         obj.abstain_min_confidence = float(manifest.get("abstain_min_confidence", 0.55))
+        obj.dx_head_supported = bool(manifest.get("dx_head_supported", False))
+        obj.train_history = dict(manifest.get("train_history") or {})
         return obj
 
 

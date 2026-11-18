@@ -181,7 +181,11 @@ class HybridPipeline:
         enriched_cands: list[CandidateEntity] = []
         for c in fused_cands:
             ctx_lbl = classify_assertion_context(doc.text, c.entity.start, c.entity.end, language=s1.language)
-            if use_assertion_bilstm and self.assertion_model is not None:
+            if ctx_lbl == "present" and doc.language in ("en", "fr") and doc.language != s1.language:
+                ctx_lbl = classify_assertion_context(doc.text, c.entity.start, c.entity.end, language=doc.language)
+            if ctx_lbl != "present":
+                assert_lbl = ctx_lbl
+            elif use_assertion_bilstm and self.assertion_model is not None:
                 probs = self.assertion_model.predict_proba(
                     doc.text, c.entity.start, c.entity.end, vocab, toks=doc_toks
                 )

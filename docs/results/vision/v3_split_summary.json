@@ -1,0 +1,205 @@
+{
+  "locked_test_v3_sha256": "8191dd603b851ff551934666d88736a70a6bff1d7194de91554bddfb4a768209",
+  "counts": {
+    "train": {
+      "total": 31565,
+      "real": 31565,
+      "synthetic": 0,
+      "benign": 20630,
+      "malignant": 8125,
+      "labelled_mg": 28755,
+      "masked_mg": 2810,
+      "clinical": 8003,
+      "dermoscopic": 22107,
+      "tbp_tile": 1455,
+      "tones": {
+        "I": 1562,
+        "II": 4103,
+        "III": 2054,
+        "IV": 1104,
+        "V": 814,
+        "VI": 662,
+        "UNKNOWN": 21266
+      },
+      "datasets": {
+        "fitzpatrick17k": 2613,
+        "isic": 27242,
+        "skindisnet": 1710
+      }
+    },
+    "val": {
+      "total": 1497,
+      "real": 1497,
+      "synthetic": 0,
+      "benign": 900,
+      "malignant": 597,
+      "labelled_mg": 1497,
+      "masked_mg": 0,
+      "clinical": 352,
+      "dermoscopic": 850,
+      "tbp_tile": 295,
+      "tones": {
+        "I": 100,
+        "II": 124,
+        "III": 100,
+        "IV": 100,
+        "V": 61,
+        "VI": 55,
+        "UNKNOWN": 957
+      },
+      "datasets": {
+        "fitzpatrick17k": 209,
+        "isic": 1288
+      }
+    },
+    "locked_test_v3": {
+      "total": 1624,
+      "real": 1624,
+      "synthetic": 0,
+      "benign": 877,
+      "malignant": 747,
+      "labelled_mg": 1624,
+      "masked_mg": 0,
+      "clinical": 574,
+      "dermoscopic": 700,
+      "tbp_tile": 350,
+      "tones": {
+        "I": 150,
+        "II": 159,
+        "III": 150,
+        "IV": 150,
+        "V": 135,
+        "VI": 102,
+        "UNKNOWN": 778
+      },
+      "datasets": {
+        "fitzpatrick17k": 368,
+        "isic": 1256
+      }
+    }
+  },
+  "tone_x_mg": {
+    "train": {
+      "I": {
+        "benign": 1081,
+        "malignant": 446
+      },
+      "II": {
+        "benign": 2113,
+        "malignant": 1760
+      },
+      "III": {
+        "benign": 1381,
+        "malignant": 562
+      },
+      "IV": {
+        "benign": 961,
+        "malignant": 130
+      },
+      "V": {
+        "benign": 789,
+        "malignant": 22
+      },
+      "VI": {
+        "benign": 652,
+        "malignant": 10
+      }
+    },
+    "val": {
+      "I": {
+        "benign": 50,
+        "malignant": 50
+      },
+      "II": {
+        "benign": 50,
+        "malignant": 74
+      },
+      "III": {
+        "benign": 50,
+        "malignant": 50
+      },
+      "IV": {
+        "benign": 50,
+        "malignant": 50
+      },
+      "V": {
+        "benign": 50,
+        "malignant": 11
+      },
+      "VI": {
+        "benign": 50,
+        "malignant": 5
+      }
+    },
+    "locked_test_v3": {
+      "I": {
+        "benign": 75,
+        "malignant": 75
+      },
+      "II": {
+        "benign": 75,
+        "malignant": 84
+      },
+      "III": {
+        "benign": 75,
+        "malignant": 75
+      },
+      "IV": {
+        "benign": 75,
+        "malignant": 75
+      },
+      "V": {
+        "benign": 75,
+        "malignant": 60
+      },
+      "VI": {
+        "benign": 75,
+        "malignant": 27
+      }
+    }
+  },
+  "modality_x_mg": {
+    "train": {
+      "dermoscopic": {
+        "benign": 16350,
+        "malignant": 5405
+      },
+      "clinical": {
+        "benign": 2974,
+        "malignant": 2571
+      },
+      "tbp_tile": {
+        "benign": 1306,
+        "malignant": 149
+      }
+    },
+    "val": {
+      "dermoscopic": {
+        "benign": 500,
+        "malignant": 350
+      },
+      "clinical": {
+        "benign": 150,
+        "malignant": 202
+      },
+      "tbp_tile": {
+        "benign": 250,
+        "malignant": 45
+      }
+    },
+    "locked_test_v3": {
+      "dermoscopic": {
+        "benign": 400,
+        "malignant": 300
+      },
+      "clinical": {
+        "benign": 227,
+        "malignant": 347
+      },
+      "tbp_tile": {
+        "benign": 250,
+        "malignant": 100
+      }
+    }
+  }
+}

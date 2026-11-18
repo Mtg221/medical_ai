@@ -387,9 +387,13 @@ class DermResNetMultiTask:
         if use_class_balancing:
             mal_counts = np.bincount(y_mal, minlength=2).astype(np.float64)
             mal_weights = len(y_mal) / (2.0 * np.maximum(1.0, mal_counts))
-            dx_counts = np.bincount(y_dx, minlength=len(CORE_DX_CLASSES)).astype(np.float64)
-            dx_weights = len(y_dx) / (len(CORE_DX_CLASSES) * np.maximum(1.0, dx_counts))
-            dx_weights = np.clip(dx_weights, 0.3, 4.0)
+            valid_dx = y_dx[y_dx >= 0]
+            if len(valid_dx) > 0:
+                dx_counts = np.bincount(valid_dx, minlength=len(CORE_DX_CLASSES)).astype(np.float64)
+                dx_weights = len(valid_dx) / (len(CORE_DX_CLASSES) * np.maximum(1.0, dx_counts))
+                dx_weights = np.clip(dx_weights, 0.3, 4.0)
+            else:
+                dx_weights = np.ones((len(CORE_DX_CLASSES),), dtype=np.float64)
         else:
             mal_weights = np.ones((2,), dtype=np.float64)
             dx_weights = np.ones((len(CORE_DX_CLASSES),), dtype=np.float64)
@@ -432,11 +436,19 @@ class DermResNetMultiTask:
 
                 if self.multi_task:
                     p_dx = softmax(l_dx, axis=-1)
-                    w_d = dx_weights[y_dx[idxs]]
-                    loss_dx = float(-np.mean(w_d * np.log(np.clip(p_dx[np.arange(bsz), y_dx[idxs]], 1e-12, 1.0))))
-                    d_dx = p_dx.copy()
-                    d_dx[np.arange(bsz), y_dx[idxs]] -= 1.0
-                    d_dx *= (0.35 * w_d[:, None] / float(bsz))
+                    yb_dx = y_dx[idxs]
+                    dx_valid_mask = yb_dx >= 0
+                    d_dx = np.zeros_like(l_dx)
+                    if np.any(dx_valid_mask):
+                        v_rows = np.where(dx_valid_mask)[0]
+                        v_lbls = yb_dx[dx_valid_mask]
+                        w_d = dx_weights[v_lbls]
+                        loss_dx = float(-np.mean(w_d * np.log(np.clip(p_dx[v_rows, v_lbls], 1e-12, 1.0))))
+                        d_dx[v_rows] = p_dx[v_rows]
+                        d_dx[v_rows, v_lbls] -= 1.0
+                        d_dx[v_rows] *= (0.35 * w_d[:, None] / float(max(1, len(v_rows))))
+                    else:
+                        loss_dx = 0.0
 
                     p_mod = softmax(l_mod, axis=-1)
                     loss_mod = float(-np.mean(np.log(np.clip(p_mod[np.arange(bsz), y_mod[idxs]], 1e-12, 1.0))))

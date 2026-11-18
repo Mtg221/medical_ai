@@ -21,5 +21,8 @@
 | `2026-11-16T21:11:20Z` | `derm-router-5class:locked_test` | `PictureTriageRouterCNN-v1.0.0` | `56` | Step 2 5-class picture triage router locked-test evaluation |
 | `2026-11-16T22:11:13Z` | `derm-corpus:locked_test_stratified` | `DermResNetMultiTask-v1.0.0` | `88` | Step 3 skin models locked-test benchmark (CNN vs Classical vs NumPy toy CNN) |
 | `2026-11-16T22:37:15Z` | `derm-corpus:locked_test_stratified` | `DermResNetMultiTask-v1.0.0` | `118` | Step 3 skin models locked-test benchmark (CNN vs Classical vs NumPy toy CNN) |
-| `2026-11-17T14:27:09Z` | `derm-corpus:locked_test_v2` | `frozen_list_sha256:81b0ad60676de635` | `2022` | Frozen configs/vision/locked_test_v2.txt (sha256=81b0ad60676de6355f8c621d8ece3f0696b1bc462ac6ccc928d8afe9cd54776d) |
-| `2026-11-17T21:51:33Z` | `derm-corpus:locked_test_v2` | `PyTorchDermResNet4Stage-v1.0.0` | `1853` | Step 4 final single evaluation on frozen configs/vision/locked_test_v2.txt |
+| `2026-11-17T14:27:09Z` | `derm-corpus:locked_test_v2` | `frozen_list_sha256:81b0ad60676de635` | `2022` | [superseded: images of the same lesion may cross splits (W1)] Frozen configs/vision/locked_test_v2.txt (sha256=81b0ad60676de6355f8c621d8ece3f0696b1bc462ac6ccc928d8afe9cd54776d) |
+| `2026-11-17T21:51:33Z` | `derm-corpus:locked_test_v2` | `PyTorchDermResNet4Stage-v1.0.0` | `1853` | [superseded: images of the same lesion may cross splits (W1)] Step 4 final single evaluation on frozen configs/vision/locked_test_v2.txt |
+| `2026-11-18T01:21:11Z` | `derm-corpus:locked_test_v3` | `frozen_list_sha256:8191dd603b851ff5` | `1624` | Frozen configs/vision/locked_test_v3.txt (sha256=8191dd603b851ff551934666d88736a70a6bff1d7194de91554bddfb4a768209; supersedes locked_test_v2 due to W1) |
+| `2026-11-18T01:43:02Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | [superseded by 01:50:13Z after person_age_detector lexicon fix] W9 person / age / rules-out |
+| `2026-11-18T01:50:13Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | W9 person / age / rules-out |

@@ -16,15 +16,17 @@ from medresearch_platform.vision.catalog import (
     MALIGNANCY_CLASSES,
     DermCatalogRecord,
 )
-from medresearch_platform.vision.classical_skin import (
-    CORE_DX_CLASSES,
-    ClassicalSkinClassifier,
-    map_record_to_core_dx_index,
-)
+from medresearch_platform.vision.classical_skin import ClassicalSkinClassifier
 from medresearch_platform.vision.cnn_multitask import (
     MAJOR_BODY_SITES,
     DermResNetMultiTask,
     verify_gradcam_lesion_mask_sanity,
+)
+from medresearch_platform.vision.dx_mapping import (
+    CORE_DX_CLASSES,
+    MASKED_DX_INDEX,
+    MIN_DX_EVAL_SUPPORT,
+    map_record_to_core_dx_index,
 )
 from medresearch_platform.vision.splits import (
     SMALL_GROUP_THRESHOLD,
@@ -194,22 +196,38 @@ def compute_comprehensive_metrics(
     tnr = float(np.mean(preds_mal[neg_mask] == 0)) if np.any(neg_mask) else 0.0
     bal_acc = 0.5 * (tpr + tnr)
 
-    # Diagnosis macro-F1 and top-3 accuracy
+    # Honest diagnosis evaluation: only on records with a real specific harmonised diagnosis (y_dx != -1)
+    dx_valid_mask = y_dx != MASKED_DX_INDEX
+    dx_labelled_count = int(np.sum(dx_valid_mask))
     dx_pred1 = np.argmax(p_dx, axis=-1)
     dx_top3 = np.argsort(-p_dx, axis=-1)[:, :3]
-    top3_hits = [int(y_dx[i]) in dx_top3[i].tolist() for i in range(len(y_dx))]
-    top3_acc = float(np.mean(top3_hits)) if top3_hits else 0.0
+    if dx_labelled_count > 0:
+        valid_indices = np.where(dx_valid_mask)[0]
+        top3_hits = [int(y_dx[i]) in dx_top3[i].tolist() for i in valid_indices]
+        top3_acc: float | None = float(np.mean(top3_hits))
+    else:
+        top3_acc = None
 
-    present_dx = sorted(set(y_dx.tolist()))
+    present_dx = sorted(set(y_dx[dx_valid_mask].tolist())) if dx_labelled_count > 0 else []
     f1_per_dx: dict[str, float] = {}
+    dx_support_by_class: dict[str, int] = {}
+    dx_per_class_status: dict[str, str] = {}
     for cls_i in present_dx:
-        tp = int(np.sum((dx_pred1 == cls_i) & (y_dx == cls_i)))
-        fp = int(np.sum((dx_pred1 == cls_i) & (y_dx != cls_i)))
-        fn = int(np.sum((dx_pred1 != cls_i) & (y_dx == cls_i)))
+        cls_name = CORE_DX_CLASSES[cls_i]
+        support = int(np.sum(y_dx[dx_valid_mask] == cls_i))
+        dx_support_by_class[cls_name] = support
+        if support < MIN_DX_EVAL_SUPPORT:
+            dx_per_class_status[cls_name] = f"too_few_to_conclude (< {MIN_DX_EVAL_SUPPORT})"
+            continue
+        dx_per_class_status[cls_name] = "adequate"
+        tp = int(np.sum((dx_pred1[dx_valid_mask] == cls_i) & (y_dx[dx_valid_mask] == cls_i)))
+        fp = int(np.sum((dx_pred1[dx_valid_mask] == cls_i) & (y_dx[dx_valid_mask] != cls_i)))
+        fn = int(np.sum((dx_pred1[dx_valid_mask] != cls_i) & (y_dx[dx_valid_mask] == cls_i)))
         pr = tp / max(1, tp + fp)
         rc = tp / max(1, tp + fn)
-        f1_per_dx[CORE_DX_CLASSES[cls_i]] = round((2 * pr * rc) / max(1e-9, pr + rc), 4) if (pr + rc) > 0 else 0.0
-    macro_f1_dx = float(np.mean(list(f1_per_dx.values()))) if f1_per_dx else 0.0
+        f1_per_dx[cls_name] = round((2 * pr * rc) / max(1e-9, pr + rc), 4) if (pr + rc) > 0 else 0.0
+    macro_f1_dx: float | None = float(np.mean(list(f1_per_dx.values()))) if f1_per_dx else None
+    dx_status = "evaluated" if f1_per_dx else "not_enough_labelled_data"
 
     ece, rel_bins = compute_ece_and_reliability(y_mal, p_mal, n_bins=10)
     brier = float(np.mean((p_mal - y_mal) ** 2))
@@ -233,9 +251,13 @@ def compute_comprehensive_metrics(
         "sensitivity_at_90_specificity": round(sens_90, 4),
         "sensitivity_at_95_specificity": round(sens_95, 4),
         "balanced_accuracy": round(bal_acc, 4),
-        "diagnosis_macro_f1": round(macro_f1_dx, 4),
-        "diagnosis_top3_accuracy": round(top3_acc, 4),
+        "diagnosis_status": dx_status,
+        "diagnosis_labelled_count": dx_labelled_count,
+        "diagnosis_macro_f1": round(macro_f1_dx, 4) if macro_f1_dx is not None else None,
+        "diagnosis_top3_accuracy": round(top3_acc, 4) if top3_acc is not None else None,
         "diagnosis_per_class_f1": f1_per_dx,
+        "diagnosis_support_by_class": dx_support_by_class,
+        "diagnosis_per_class_status": dx_per_class_status,
         "ece": round(ece, 4),
         "brier_score": round(brier, 4),
         "abstention_rate": round(abstain_rate, 4),
@@ -391,6 +413,9 @@ def load_stratified_skin_dataset(
     max_samples: int | None = None,
     include_masked_mg: bool = False,
     locked_test_list_path: str | Path = "configs/vision/locked_test_v2.txt",
+    val_list_path: str | Path | None = None,
+    lesion_groups_path: str | Path | None = None,
+    include_fitzpatrick17k_labelled: bool = False,
     min_real_samples: int = 12,
     seed: int = 42,
 ) -> dict[str, list[tuple[np.ndarray, int, DermCatalogRecord]]]:
@@ -401,6 +426,9 @@ def load_stratified_skin_dataset(
     - Never fabricates malignancy labels for `tbp_tile` or `unknown`/`indeterminate` (`-1` if `include_masked_mg=True`).
     - Never falls back silently to synthetic images.
     """
+    import json
+    from dataclasses import replace as dc_replace
+
     from medresearch_platform.vision.catalog import iter_derm_catalog
 
     _ = seed
@@ -422,12 +450,28 @@ def load_stratified_skin_dataset(
     if lt_path.exists():
         frozen_test_ids = {ln.strip() for ln in lt_path.read_text(encoding="utf-8").splitlines() if ln.strip()}
 
+    val_ids: set[str] = set()
+    if val_list_path is not None and Path(val_list_path).exists():
+        val_ids = {ln.strip() for ln in Path(val_list_path).read_text(encoding="utf-8").splitlines() if ln.strip()}
+
+    image_to_group: dict[str, str] = {}
+    if lesion_groups_path is not None and Path(lesion_groups_path).exists():
+        lg_raw = json.loads(Path(lesion_groups_path).read_text(encoding="utf-8"))
+        image_to_group = dict(lg_raw.get("image_to_group", lg_raw))
+
     matched_records: list[tuple[Path, DermCatalogRecord]] = []
     for rec in iter_derm_catalog(
         meta_base,
-        require_quality_ok=True,
+        require_quality_ok=False,
         require_research_licence=True,
     ):
+        is_allowed_fitz = (
+            include_fitzpatrick17k_labelled
+            and rec.dataset == "fitzpatrick17k"
+            and rec.malignancy_group in ("benign", "malignant")
+        )
+        if not rec.quality_ok and not is_allowed_fitz:
+            continue
         if not rec.thumb_path:
             continue
         local_p = existing_map.get(str(rec.thumb_path).lstrip("/"))
@@ -435,6 +479,8 @@ def load_stratified_skin_dataset(
             continue
         if rec.malignancy_group not in ("benign", "malignant") and not include_masked_mg:
             continue
+        if rec.image_id in image_to_group:
+            rec = dc_replace(rec, group_key=image_to_group[rec.image_id])
         matched_records.append((local_p, rec))
         if max_samples is not None and len(matched_records) >= max_samples:
             break
@@ -456,9 +502,17 @@ def load_stratified_skin_dataset(
             "silent synthetic fallback is disabled. Run `medextract derm sync --plan docs/data/DERM_SAMPLING_PLAN.md`."
         )
 
-    if frozen_test_ids:
+    if frozen_test_ids and val_ids:
         test_groups = {s[2].group_key for s in samples if s[2].image_id in frozen_test_ids}
+        val_groups = {s[2].group_key for s in samples if s[2].image_id in val_ids and s[2].group_key not in test_groups}
         splits: dict[str, list[tuple[np.ndarray, int, DermCatalogRecord]]] = {
+            "train": [s for s in samples if s[2].group_key not in test_groups and s[2].group_key not in val_groups],
+            "val": [s for s in samples if s[2].group_key in val_groups],
+            "locked_test": [s for s in samples if s[2].group_key in test_groups],
+        }
+    elif frozen_test_ids:
+        test_groups = {s[2].group_key for s in samples if s[2].image_id in frozen_test_ids}
+        splits = {
             "train": [s for s in samples if s[2].group_key not in test_groups and s[2].split_assignment == "train"],
             "val": [s for s in samples if s[2].group_key not in test_groups and s[2].split_assignment == "val"],
             "locked_test": [s for s in samples if s[2].group_key in test_groups],

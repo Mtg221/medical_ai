@@ -373,7 +373,13 @@ export function SkinVisionPage() {
                   <div className="space-y-1.5">
                     <h3 className="font-semibold text-slate-800 dark:text-slate-200">{t("skin.top3Title")}</h3>
                     {finding.top3_diagnoses.length === 0 ? (
-                      <p className="text-slate-500">{t("skin.noCandidatesAbstained")}</p>
+                      <p className="text-slate-500">
+                        {finding.abstained
+                          ? t("skin.noCandidatesAbstained")
+                          : isFr
+                            ? "Diagnostic : pas assez de données étiquetées"
+                            : "diagnosis: not enough labelled data"}
+                      </p>
                     ) : (
                       <ul className="space-y-1.5">
                         {finding.top3_diagnoses.map((cand) => (

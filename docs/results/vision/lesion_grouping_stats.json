@@ -1,0 +1,98 @@
+{
+  "generated_at_utc": "2026-11-18T01:20:45Z",
+  "elapsed_seconds": 339.6,
+  "rule": {
+    "dhash_link_max": 10,
+    "emb_centred_cos_link_min": 0.99,
+    "bucket": "same modality, same lower-cased body_site (missing -> 'unknown'), and same diagnosis_harmonised"
+  },
+  "n_images": 29856,
+  "n_links_checked_true": 56032,
+  "n_groups": 24877,
+  "largest_group_sizes": [
+    1169,
+    596,
+    532,
+    394,
+    377,
+    121,
+    100,
+    80,
+    72,
+    36
+  ],
+  "largest_group_share_of_pool": 0.0392,
+  "group_size_histogram": {
+    "1": 23853,
+    "2-5": 982,
+    "6-20": 29,
+    "21-100": 7,
+    ">100": 6
+  },
+  "v2_groups_spanning_more_than_one_split": 380,
+  "v2_test_labelled": 1853,
+  "v2_test_images_whose_group_has_train_or_val": 78,
+  "v2_test_auroc_by_group_overlap": {
+    "all": {
+      "leaky": {
+        "n": 78,
+        "malignant": 5,
+        "benign": 73,
+        "auroc": null
+      },
+      "clean": {
+        "n": 1775,
+        "malignant": 1059,
+        "benign": 716,
+        "auroc": 0.9342
+      }
+    },
+    "dermoscopic": {
+      "leaky": {
+        "n": 76,
+        "malignant": 4,
+        "benign": 72,
+        "auroc": null
+      },
+      "clean": {
+        "n": 1084,
+        "malignant": 439,
+        "benign": 645,
+        "auroc": 0.976
+      }
+    },
+    "clinical": {
+      "leaky": {
+        "n": 2,
+        "malignant": 1,
+        "benign": 1,
+        "auroc": null
+      },
+      "clean": {
+        "n": 397,
+        "malignant": 332,
+        "benign": 65,
+        "auroc": 0.9011
+      }
+    },
+    "tbp_tile": {
+      "leaky": {
+        "n": 0,
+        "malignant": 0,
+        "benign": 0,
+        "auroc": null
+      },
+      "clean": {
+        "n": 294,
+        "malignant": 288,
+        "benign": 6,
+        "auroc": null
+      }
+    }
+  },
+  "caveats": [
+    "only locally cached thumbnails are grouped (not the 573,024-record corpus)",
+    "embedding is from a CNN trained on part of this pool",
+    "auroc reported only when each class has >= 20 images"
+  ]
+}

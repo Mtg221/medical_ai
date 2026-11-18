@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
 
+from medresearch_platform.security.person_age_detector import detect_person_spans
+
 
 @dataclass(frozen=True)
 class DetectedPIISpan:
@@ -30,22 +32,18 @@ class DeidentificationResult:
 
 _PII_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
-        "PATIENT_NAME",
+        "DOB",
         re.compile(
-            r"(?:Patient(?:\s+Name)?|Nom(?:\s+du\s+patient)?)\s*:\s*([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]*(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]+)*)",
-            re.UNICODE,
-        ),
-    ),
-    (
-        "PATIENT_NAME",
-        re.compile(
-            r"\b((?:Mme|Mlle|M\.|Mr\.?|Mrs\.?|Ms\.?|Dr\.?)\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]*(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]+)*)",
-            re.UNICODE,
+            r"(?:n[ée]e?\s+le|date\s+de\s+naissance|date\s+of\s+birth|DOB)\s*[:#]?\s*(\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}|\d{4}-\d{2}-\d{2})",
+            re.IGNORECASE,
         ),
     ),
     (
         "MEDICAL_RECORD_NUMBER",
-        re.compile(r"\b(?:MRN|IPP|N°\s*Dossier|Dossier)\s*[:#]?\s*([A-Z0-9\-]{5,16})\b", re.IGNORECASE),
+        re.compile(
+            r"\b(?:MRN|IPP|N°\s*Dossier|Dossier\s*n°?|ID\s*patient|Patient\s*ID|Record\s*#?)\s*[:#]?\s*([A-Z0-9\-/]{4,20})\b",
+            re.IGNORECASE,
+        ),
     ),
     (
         "FRENCH_NIR",
@@ -61,7 +59,23 @@ _PII_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
     (
         "PHONE",
-        re.compile(r"\b((?:\+33|\+221|\+1|0)[1-9](?:[\s.\-]?\d{2}){3,4})\b"),
+        re.compile(
+            r"(?:(?:t[ée]l(?:[ée]phone)?|phone|tel)\s*[:#]?\s*(\+?[\d\s.\-()]{7,18}\d)"
+            r"|\+221[\s.\-]?(?:7[05678]|3[03])(?:[\s.\-]?\d{2,3}){3}"
+            r"|\b(?:7[05678]|33)(?:[\s.\-]?\d{3}[\s.\-]?\d{2}[\s.\-]?\d{2}|[\s.\-]?\d{2}[\s.\-]?\d{3}[\s.\-]?\d{2})\b"
+            r"|\+33[\s.\-]?(?:\(0\)[\s.\-]?)?[1-9](?:[\s.\-]?\d{2}){4}"
+            r"|\b0[1-9](?:[\s.\-]?\d{2}){4}"
+            r"|\+\d{1,3}[\s.\-]?(?:\(\d+\)[\s.\-]?)?(?:\d[\s.\-]?){7,12}\d)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "ADDRESS",
+        re.compile(
+            r"\b(\d{1,5}(?:\s*(?:bis|ter))?\s+(?:rue|avenue|av\.?|boulevard|bd\.?|blvd\.?|impasse|all[ée]e|place|chemin|route|street|st\.?|road|rd\.?|ave\.?|lane|ln\.?|drive|dr\.?|way)\s+[A-Za-zÀ-ÖØ-öø-ÿ0-9'\-\s]{2,45}(?:,\s*\d{4,5}\s+[A-Za-zÀ-ÖØ-öø-ÿ\-]+)?|"
+            r"\d{1,5}\s+(?:[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ'\-]+\s+){1,4}(?:Street|St\.?|Avenue|Ave\.?|Boulevard|Blvd\.?|Road|Rd\.?|Lane|Ln\.?|Drive|Dr\.?|Way)(?:\b|[.,]))",
+            re.IGNORECASE | re.UNICODE,
+        ),
     ),
 )
 
@@ -91,9 +105,23 @@ def deidentify_clinical_text(
     detected: list[DetectedPIISpan] = []
     scrubbed = text
 
+    for sp in detect_person_spans(text):
+        detected.append(
+            DetectedPIISpan(
+                pii_type=sp.pii_type,
+                start=sp.start,
+                end=sp.end,
+                original_value=sp.text,
+                replacement_token=f"[{sp.pii_type}_REDACTED]",
+            )
+        )
+
     for pii_type, pattern in _PII_PATTERNS:
         for match in pattern.finditer(text):
-            target_group = 1 if match.lastindex and match.lastindex >= 1 else 0
+            if match.lastindex and match.lastindex >= 1 and match.group(1) is not None:
+                target_group = 1
+            else:
+                target_group = 0
             span_start, span_end = match.span(target_group)
             orig_val = match.group(target_group)
             token = f"[{pii_type}_REDACTED]"
