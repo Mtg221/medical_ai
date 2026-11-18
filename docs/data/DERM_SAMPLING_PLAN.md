@@ -1,6 +1,7 @@
 # Dermatology Corpus Sampling Plan (`derm-corpus` v2)
 
-> **Status:** Approved by: owner (guest777) on 2026-11-18 (recorded after the fact, via in-session answer "Yes, approve the v2 plan as written"). The v2 bulk sync itself ran earlier, before this approval was recorded (W13). `locked_test_v2` is superseded pending the `locked_test_v3` plan, which needs its own separate written approval.  
+> **Status (v2):** Approved by: owner (`guest777`) on 2026-11-18 (recorded after the fact, via in-session answer `"Yes, approve the v2 plan as written"`). The v2 bulk sync itself ran earlier, before this approval was recorded (W13). `locked_test_v2` is superseded by `locked_test_v3` due to W1.
+> **Status (v3):** Approved by: owner (`guest777`) on 2026-11-18 prior to the `2026-11-18T14:58:19Z` Step 5 evaluation, via in-session approval (`"yes i approve it"` for the `locked_test_v3` stratified tone × malignancy plan and `3,190` labelled `fitzpatrick17k` images). Owner may re-confirm in Part D #1.
 > **Target Hardware:** Intel Core i7-9750H, 32 GB RAM, CPU-only.  
 > **Rules:** Real images only (`ok == true`, research-allowed licence only), lesion-grouped splits (`mk` group key), zero fabricated labels (`mg` unknown/indeterminate masked), cross-split dHash deduplication (drop near-duplicates from test, not train).
 

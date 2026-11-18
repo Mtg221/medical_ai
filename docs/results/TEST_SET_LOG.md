@@ -1,6 +1,6 @@
 # Locked Test Set Evaluation Log
 
-> Per Phase 11 Rule 4: Model selection uses `val` only. Each locked test set is evaluated **once** per final config, and every evaluation is recorded here.
+> **Rule (X6):** A locked test set is evaluated **once** per frozen model. Model selection uses `val` only, and every locked-test access is recorded here. If code or lexicons change after a test evaluation, the subsequent number MUST be labelled **`post-hoc (test seen)`** in the report.
 > **Maintenance note (2026-11-17, W12):** Removed 7 spurious `step1_split_creation_and_audit` rows (`sample_count=4`) appended by earlier `pytest` runs (`2026-11-16T20:08:41Z`, `2026-11-16T20:29:09Z`, `2026-11-16T20:30:01Z`, `2026-11-16T21:11:26Z`, `2026-11-17T01:17:40Z`, `2026-11-17T01:18:30Z`, `2026-11-17T21:56:55Z`). Test runs now isolate `MEDRESEARCH_TEST_SET_LOG_PATH` to a temp file via `tests/conftest.py`.
 
 | Date (UTC) | Corpus | Split(s) Evaluated | Docs / Split | Configs | Script | Output JSON | Base Commit | Run Count | Operator |
@@ -24,8 +24,8 @@
 | `2026-11-17T14:27:09Z` | `derm-corpus:locked_test_v2` | `frozen_list_sha256:81b0ad60676de635` | `2022` | [superseded: images of the same lesion may cross splits (W1)] Frozen configs/vision/locked_test_v2.txt (sha256=81b0ad60676de6355f8c621d8ece3f0696b1bc462ac6ccc928d8afe9cd54776d) |
 | `2026-11-17T21:51:33Z` | `derm-corpus:locked_test_v2` | `PyTorchDermResNet4Stage-v1.0.0` | `1853` | [superseded: images of the same lesion may cross splits (W1)] Step 4 final single evaluation on frozen configs/vision/locked_test_v2.txt |
 | `2026-11-18T01:21:11Z` | `derm-corpus:locked_test_v3` | `frozen_list_sha256:8191dd603b851ff5` | `1624` | Frozen configs/vision/locked_test_v3.txt (sha256=8191dd603b851ff551934666d88736a70a6bff1d7194de91554bddfb4a768209; supersedes locked_test_v2 due to W1) |
-| `2026-11-18T01:43:02Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | [superseded by 01:50:13Z after person_age_detector lexicon fix] W9 person / age / rules-out |
-| `2026-11-18T01:50:13Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | W9 person / age / rules-out |
+| `2026-11-18T01:43:02Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | [superseded by 01:50:13Z after person_age_detector lexicon fix; JSON overwritten before commit] W9 person / age / rules-out |
+| `2026-11-18T01:50:13Z` | `SYNTH-MED-V3.1:{val,test_iid,test_unseen_terms,test_unseen_templates}` | `hybrid_v2_seed1` | `480` | post-hoc (test seen) — W9 person / age / rules-out after person_age_detector lexicon fix |
 | `2026-11-18T14:58:19Z` | `derm-corpus:locked_test_v3` | `PyTorchDermResNet4Stage-v1.0.0` | `1624` | Step 5 single evaluation on frozen configs/vision/locked_test_v3.txt |
 | `2026-11-18T19:14:54Z` | `locked_test_v3` | `served_path_derm_cnn_bsdrop40_seed1` | `1624` | [superseded by 19:23:46Z: script bug checked HTTP 200 instead of 201] served-path evaluation X1 |
 | `2026-11-18T19:23:46Z` | `locked_test_v3` | `served_path_derm_cnn_bsdrop40_seed1` | `1624` | served-path evaluation X1 |
