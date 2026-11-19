@@ -52,6 +52,8 @@ class BiLSTMAssertionClassifier:
         self.vocab_size = vocab_size
         self.emb_dim = emb_dim
         self.hidden_dim = hidden_dim
+        # Per-class calibrated probability thresholds (class 0 = present; >1.0 means abstain/defer to ConText)
+        self.class_thresholds: dict[str, float] = {cls_name: 0.85 for cls_name in ASSERTION_CLASSES}
         self.params: dict[str, np.ndarray] = {
             "E": rng.normal(0.0, 0.1, size=(vocab_size + 2, emb_dim)),
             "Wf_x": rng.normal(0.0, np.sqrt(1.0 / in_dim), size=(in_dim, 4 * hidden_dim)),
@@ -170,17 +172,65 @@ class BiLSTMAssertionClassifier:
         rng.shuffle(present)
         keep_present = present[: max(200, min(len(present), max_examples - len(non_present)))]
         examples = non_present + keep_present
+        rng.shuffle(examples)
+
+        # Hold out 15% of examples to calibrate per-class precision thresholds so Stage 3b never hurts ConText
+        n_cal = max(1, int(0.15 * len(examples))) if len(examples) >= 20 else 0
+        cal_examples = examples[:n_cal]
+        tr_examples = examples[n_cal:] if n_cal > 0 else examples
+
         counts = np.ones(len(ASSERTION_CLASSES), dtype=np.float64)
-        for _, _, _, y in examples:
+        for _, _, _, y in tr_examples:
             counts[y] += 1.0
 
-        weights = np.clip((len(examples) / (len(ASSERTION_CLASSES) * counts)) ** 0.75, 0.5, 8.0)
+        weights = np.clip((len(tr_examples) / (len(ASSERTION_CLASSES) * counts)) ** 0.75, 0.5, 8.0)
         opt = _AdamW(self.params, lr=0.015)
         for _ in range(epochs):
-            for idx in rng.permutation(len(examples)):
-                w_ids, flags, pidx, y = examples[int(idx)]
+            for idx in rng.permutation(len(tr_examples)):
+                w_ids, flags, pidx, y = tr_examples[int(idx)]
                 self.step_example(w_ids, flags, pidx, y, float(weights[y]), opt)
+
+        if cal_examples:
+            cal_probs = np.array(
+                [_softmax(self.forward(w, f, p)[0]) for w, f, p, _ in cal_examples],
+                dtype=np.float64,
+            )
+            cal_y = np.array([y for _, _, _, y in cal_examples], dtype=np.int64)
+            new_thresholds: dict[str, float] = {"present": 0.50}
+            for cls_idx, cls_name in enumerate(ASSERTION_CLASSES):
+                if cls_idx == 0:
+                    continue
+                chosen = 1.01  # abstain unless validation precision >= 0.80 with >= 2 hits
+                for th in (0.65, 0.75, 0.82, 0.88, 0.92):
+                    pred_mask = (np.argmax(cal_probs, axis=1) == cls_idx) & (cal_probs[:, cls_idx] >= th)
+                    n_pred = int(np.sum(pred_mask))
+                    if n_pred >= 2:
+                        prec = float(np.sum(cal_y[pred_mask] == cls_idx)) / n_pred
+                        if prec >= 0.80:
+                            chosen = th
+                            break
+                new_thresholds[cls_name] = chosen
+            self.class_thresholds = new_thresholds
         return self
+
+    def predict_calibrated(
+        self,
+        text: str,
+        start: int,
+        end: int,
+        vocab: TrainOnlyVocabulary,
+        *,
+        fallback_label: str = "present",
+        toks: list[Any] | None = None,
+    ) -> str:
+        """Predict an assertion label only when calibrated class precision passes threshold."""
+        probs = self.predict_proba(text, start, end, vocab, toks=toks)
+        best_idx = int(np.argmax(probs))
+        best_cls = ASSERTION_CLASSES[best_idx]
+        if best_cls == "present":
+            return fallback_label
+        th = float(self.class_thresholds.get(best_cls, 0.85))
+        return best_cls if float(probs[best_idx]) >= th else fallback_label
 
     def predict_proba(
         self,

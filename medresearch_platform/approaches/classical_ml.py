@@ -11,9 +11,15 @@ import numpy as np
 import sklearn_crfsuite
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import FeatureUnion
 from sklearn.svm import LinearSVC
 
 from medresearch_platform.approaches.context_negex import apply_context_and_relations
+from medresearch_platform.approaches.ocr_augment import build_ocr_augmented_train_set
+from medresearch_platform.approaches.self_supervised import (
+    SelfSupervisedMedicalEmbeddings,
+    load_optional_self_supervised,
+)
 from medresearch_platform.approaches.tokenizer import (
     Token,
     align_entities_to_bio,
@@ -46,31 +52,97 @@ def _word_shape(word: str) -> str:
     return "".join(chars)
 
 
-def _token_window_features(tokens: list[Token], idx: int) -> dict[str, Any]:
+_MED_DISORDER_SUFFIXES = (
+    "itis", "ite", "osis", "ose", "oma", "ome", "pathy", "pathie",
+    "emia", "émie", "algia", "algie", "penia", "pénie", "megaly", "mégalie",
+)
+_MED_PROC_SUFFIXES = (
+    "ectomy", "ectomie", "scopy", "scopie", "graphy", "graphie",
+    "plasty", "plastie", "otomy", "otomie", "gram", "gramme", "metry", "métrie",
+)
+_MED_DRUG_SUFFIXES = (
+    "cillin", "cilline", "mycin", "mycine", "statin", "statine", "pril",
+    "olol", "prazole", "sartan", "dipine", "mab", "nib", "vir", "pam", "lam",
+)
+_MED_UNIT_TOKENS = frozenset(
+    {
+        "mg", "g", "kg", "mcg", "ug", "µg", "ml", "l", "dl", "iu", "ui",
+        "mmol", "meq", "mmhg", "bpm", "%", "cp", "comprimé", "comprimés",
+        "gélule", "gélules", "sachet", "sachets", "goutte", "gouttes",
+        "milligramme", "milligrammes", "gramme", "grammes",
+    }
+)
+
+
+def _token_window_features(
+    tokens: list[Token],
+    idx: int,
+    *,
+    sem_model: SelfSupervisedMedicalEmbeddings | None = None,
+) -> dict[str, Any]:
     tok = tokens[idx].text
+    low = tok.lower()
     feats: dict[str, Any] = {
         "bias": 1.0,
-        "word.lower": tok.lower(),
+        "word.lower": low,
         "word.shape": _word_shape(tok),
         "word.isupper": tok.isupper(),
         "word.istitle": tok.istitle(),
         "word.isdigit": tok.isdigit(),
         "word.has_digit": any(c.isdigit() for c in tok),
-        "word.pref2": tok[:2].lower(),
-        "word.pref3": tok[:3].lower(),
-        "word.suff2": tok[-2:].lower(),
-        "word.suff3": tok[-3:].lower(),
+        "word.has_hyphen": "-" in tok,
+        "word.has_slash": "/" in tok,
+        "word.len_bin": min(len(tok), 15),
+        "word.pref2": low[:2],
+        "word.pref3": low[:3],
+        "word.pref4": low[:4],
+        "word.suff2": low[-2:],
+        "word.suff3": low[-3:],
+        "word.suff4": low[-4:],
+        "word.suff5": low[-5:],
+        "word.is_med_disorder_suff": low.endswith(_MED_DISORDER_SUFFIXES),
+        "word.is_med_proc_suff": low.endswith(_MED_PROC_SUFFIXES),
+        "word.is_med_drug_suff": low.endswith(_MED_DRUG_SUFFIXES),
+        "word.is_unit": low in _MED_UNIT_TOKENS,
     }
+    if sem_model is not None:
+        cl = sem_model.get_clusters(low)
+        if cl is not None:
+            feats["w0.sem64"] = f"c{cl[0]}"
+            feats["w0.sem16"] = f"g{cl[1]}"
+
     for offset in (-2, -1, 1, 2):
         j = idx + offset
         key = f"w{offset:+d}"
         if 0 <= j < len(tokens):
             ntok = tokens[j].text
-            feats[f"{key}.lower"] = ntok.lower()
+            nlow = ntok.lower()
+            feats[f"{key}.lower"] = nlow
             feats[f"{key}.shape"] = _word_shape(ntok)
+            if offset in (-1, 1):
+                feats[f"{key}.is_unit"] = nlow in _MED_UNIT_TOKENS
+                feats[f"{key}.has_digit"] = any(c.isdigit() for c in ntok)
+                if sem_model is not None:
+                    ncl = sem_model.get_clusters(nlow)
+                    if ncl is not None:
+                        feats[f"{key}.sem64"] = f"c{ncl[0]}"
         else:
             feats[f"{key}.bos_eos"] = True
+
+    if idx > 0:
+        feats["bg.prev"] = f"{tokens[idx - 1].text.lower()}|{low}"
+    if idx + 1 < len(tokens):
+        feats["bg.next"] = f"{low}|{tokens[idx + 1].text.lower()}"
     return feats
+
+
+def _build_doc_vectorizer() -> FeatureUnion:
+    return FeatureUnion(
+        [
+            ("word", TfidfVectorizer(ngram_range=(1, 2), max_features=4000, sublinear_tf=True)),
+            ("char", TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), max_features=4000, sublinear_tf=True)),
+        ]
+    )
 
 
 def _to_int32_csr(mat: Any) -> Any:
@@ -84,7 +156,7 @@ def _doc_classifier_fit_predict(
     eval_docs: list[AnnotatedDocument],
     seed: int,
 ) -> list[str]:
-    vec = TfidfVectorizer(ngram_range=(1, 2), max_features=4000, sublinear_tf=True)
+    vec = _build_doc_vectorizer()
     x_tr = _to_int32_csr(vec.fit_transform([d.text for d in train_docs]))
     y_tr = [d.doc_type for d in train_docs]
     clf = LinearSVC(random_state=seed, class_weight="balanced")
@@ -172,9 +244,14 @@ class ClassicalCRFModel:
             max_iterations=int(self.cfg.get("max_iterations", 80)),
             all_possible_transitions=True,
         )
-        self.doc_vec = TfidfVectorizer(ngram_range=(1, 2), max_features=4000, sublinear_tf=True)
+        self.doc_vec: Any = _build_doc_vectorizer()
         self.doc_clf = LinearSVC(random_state=seed, class_weight="balanced")
         self._single_dtype: str | None = None
+        self.sem_model: SelfSupervisedMedicalEmbeddings | None = (
+            load_optional_self_supervised(self.cfg.get("self_supervised_path"))
+            if bool(self.cfg.get("use_self_supervised", False))
+            else None
+        )
         self.corpus_id = str(self.cfg.get("dataset_dir", "in_memory"))
         self.corpus_hash = ""
         self.manifest: dict[str, Any] = {}
@@ -183,12 +260,18 @@ class ClassicalCRFModel:
     def fit(self, train_docs: list[AnnotatedDocument]) -> ClassicalCRFModel:
         tr_subset = _select_train_docs(train_docs, self.seed, self.cfg)
         self.corpus_hash = compute_corpus_hash(tr_subset)
+        ocr_ratio = float(self.cfg.get("ocr_augment_ratio", 0.0))
+        fit_docs = (
+            build_ocr_augmented_train_set(tr_subset, ratio=ocr_ratio, seed=self.seed)
+            if ocr_ratio > 0.0
+            else tr_subset
+        )
         x_train = []
         y_train = []
-        for d in tr_subset:
+        for d in fit_docs:
             toks = tokenize_with_offsets(d.text)
             tags = align_entities_to_bio(toks, d.entities)
-            x_train.append([_token_window_features(toks, i) for i in range(len(toks))])
+            x_train.append([_token_window_features(toks, i, sem_model=self.sem_model) for i in range(len(toks))])
             y_train.append(tags)
         self.crf.fit(x_train, y_train)
 
@@ -213,7 +296,7 @@ class ClassicalCRFModel:
         toks = tokenize_with_offsets(d.text)
         if not toks:
             return DocumentPrediction(d.doc_id, d.language, d.doc_type, predicted_doc_type=dt_pred)
-        feats = [_token_window_features(toks, i) for i in range(len(toks))]
+        feats = [_token_window_features(toks, i, sem_model=self.sem_model) for i in range(len(toks))]
         pred_tags = list(self.crf.predict_single(feats))
         marginals = self.crf.predict_marginals_single(feats)
         confs = [float(m.get(t, 0.75)) for m, t in zip(marginals, pred_tags, strict=True)]

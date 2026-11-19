@@ -228,6 +228,11 @@ export function WorkspacePage() {
         </CardHeader>
 
         <CardContent className="max-h-[70vh] overflow-y-auto space-y-2.5">
+          {reviewMutation.isError && (
+            <div role="alert" className="rounded border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+              Review failed: {reviewMutation.error instanceof Error ? reviewMutation.error.message : "Unknown error"}
+            </div>
+          )}
           {rightTab === "entities" &&
             detail?.entities.map((ent) => {
               const tStyle = getEntityTypeStyle(ent.entity_type);
@@ -273,7 +278,7 @@ export function WorkspacePage() {
                       variant="outline"
                       onClick={(e) => {
                         e.stopPropagation();
-                        reviewMutation.mutate({ entityId: ent.entity_id, decision: "APPROVE" });
+                        reviewMutation.mutate({ entityId: ent.entity_id, decision: "APPROVE_AS_GROUND_TRUTH" });
                       }}
                     >
                       <Check className="h-3 w-3 text-emerald-700" aria-hidden="true" />

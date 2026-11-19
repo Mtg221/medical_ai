@@ -17,7 +17,12 @@ from medresearch_platform.approaches.neural_seq import (
     _ortho_features,
     _softmax,
 )
+from medresearch_platform.approaches.ocr_augment import build_ocr_augmented_train_set
 from medresearch_platform.approaches.rule_based import predict_rule_based
+from medresearch_platform.approaches.self_supervised import (
+    SelfSupervisedMedicalEmbeddings,
+    load_optional_self_supervised,
+)
 from medresearch_platform.approaches.tokenizer import (
     TrainOnlyVocabulary,
     align_entities_to_bio,
@@ -138,6 +143,9 @@ class Stage2EntityExtractor:
         lr: float = 0.018,
         max_train_docs: int | None = None,
         use_crf_ensemble: bool = False,
+        use_self_supervised: bool = False,
+        self_supervised_path: str | None = None,
+        ocr_augment_ratio: float = 0.0,
         seed: int = 42,
     ) -> None:
         self.hidden_dim = hidden_dim
@@ -145,10 +153,16 @@ class Stage2EntityExtractor:
         self.lr = lr
         self.max_train_docs = max_train_docs
         self.use_crf_ensemble = use_crf_ensemble
+        self.use_self_supervised = use_self_supervised
+        self.self_supervised_path = self_supervised_path
+        self.ocr_augment_ratio = ocr_augment_ratio
         self.seed = seed
         self.vocab = TrainOnlyVocabulary(max_size=6000, min_freq=1)
         self.model: NeuralBiLSTMCRFTagger | None = None
         self.crf_model: sklearn_crfsuite.CRF | None = None
+        self.sem_model: SelfSupervisedMedicalEmbeddings | None = (
+            load_optional_self_supervised(self_supervised_path) if use_self_supervised else None
+        )
         self.heldout_es_doc_ids: set[str] = set()
 
     def fit(self, train_docs: list[AnnotatedDocument]) -> Stage2EntityExtractor:
@@ -161,12 +175,19 @@ class Stage2EntityExtractor:
         es_docs = subset[:n_es]
         self.heldout_es_doc_ids = {d.doc_id for d in es_docs}
         tr_docs = subset[n_es:] if len(subset) > n_es else subset
+        if self.ocr_augment_ratio > 0.0:
+            tr_docs = build_ocr_augmented_train_set(tr_docs, ratio=self.ocr_augment_ratio, seed=self.seed)
 
         tr_seqs = _encode_docs(tr_docs, self.vocab)
         es_seqs = _encode_docs(es_docs, self.vocab)
         cw = _compute_class_weights(tr_seqs)
 
         model = NeuralBiLSTMCRFTagger(len(self.vocab), emb_dim=24, hidden_dim=self.hidden_dim, seed=self.seed)
+        if self.sem_model is not None:
+            proj, matched = self.sem_model.project_to_vocab(self.vocab.word_to_id, 24)
+            if matched > 0:
+                mask = np.linalg.norm(proj, axis=1) > 0.0
+                model.params["E"][mask] = proj[mask]
         opt = _AdamW(model.params, lr=self.lr)
         best_loss = float("inf")
         best_params = {k: v.copy() for k, v in model.params.items()}
@@ -196,13 +217,18 @@ class Stage2EntityExtractor:
         self.model = model
 
         if self.use_crf_ensemble:
+            crf_docs = (
+                build_ocr_augmented_train_set(subset, ratio=self.ocr_augment_ratio, seed=self.seed + 7)
+                if self.ocr_augment_ratio > 0.0
+                else subset
+            )
             x_crf = []
             y_crf = []
-            for d in subset:
+            for d in crf_docs:
                 toks = tokenize_with_offsets(d.text)
                 if not toks:
                     continue
-                x_crf.append([_token_window_features(toks, i) for i in range(len(toks))])
+                x_crf.append([_token_window_features(toks, i, sem_model=self.sem_model) for i in range(len(toks))])
                 y_crf.append(align_entities_to_bio(toks, d.entities))
             crf = sklearn_crfsuite.CRF(
                 algorithm="lbfgs",
@@ -245,7 +271,7 @@ class Stage2EntityExtractor:
                 merged[(e.type, e.start, e.end)] = CandidateEntity(entity=e, source_stage="bilstm_crf")
 
         if self.crf_model is not None and toks:
-            feats = [_token_window_features(toks, i) for i in range(len(toks))]
+            feats = [_token_window_features(toks, i, sem_model=self.sem_model) for i in range(len(toks))]
             pred_tags = list(self.crf_model.predict_single(feats))
             marginals = self.crf_model.predict_marginals_single(feats)
             confs = [float(m.get(t, 0.75)) for m, t in zip(marginals, pred_tags, strict=True)]

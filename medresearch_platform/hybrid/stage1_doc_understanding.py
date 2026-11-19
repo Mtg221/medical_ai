@@ -9,6 +9,7 @@ from typing import Any
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import FeatureUnion
 from sklearn.svm import LinearSVC
 
 from medresearch_platform.data.schema import AnnotatedDocument
@@ -36,7 +37,12 @@ class Stage1DocumentUnderstanding:
         self.seed = seed
         self.lang_vec = TfidfVectorizer(analyzer="char", ngram_range=(2, 4), max_features=3000)
         self.lang_clf = LogisticRegression(max_iter=300, random_state=seed)
-        self.doc_vec = TfidfVectorizer(ngram_range=(1, 2), max_features=4000, sublinear_tf=True)
+        self.doc_vec: Any = FeatureUnion(
+            [
+                ("word", TfidfVectorizer(ngram_range=(1, 2), max_features=4000, sublinear_tf=True)),
+                ("char", TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), max_features=4000, sublinear_tf=True)),
+            ]
+        )
         self.doc_clf = LinearSVC(random_state=seed, class_weight="balanced")
         self._fitted = False
 

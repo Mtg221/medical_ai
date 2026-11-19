@@ -35,13 +35,22 @@ def build_reviews_router(service: MedicalResearchPlatformService) -> APIRouter:
         except PermissionError as exc:
             return auth_error_response(exc)
 
+        decision_aliases = {
+            "approve": "APPROVE_AS_GROUND_TRUTH",
+            "correct": "CORRECT_AND_APPROVE",
+            "flag": "FLAG_AMBIGUOUS",
+            "reject": "REJECT",
+        }
+        normalized_decision = decision_aliases.get(
+            body.review_decision.lower().strip(), body.review_decision
+        )
         try:
             with service.db.transaction() as conn:
                 res = submit_entity_human_review(
                     conn,
                     principal=principal,
                     entity_id=entity_id,
-                    review_decision=body.review_decision,
+                    review_decision=normalized_decision,
                     corrected_entity_type=body.corrected_entity_type,
                     corrected_assertion_status=body.corrected_assertion_status,
                     corrected_temporal_status=body.corrected_temporal_status,

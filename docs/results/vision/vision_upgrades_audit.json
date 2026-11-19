@@ -1,0 +1,209 @@
+{
+  "evaluated_at_utc": "2026-11-19T15:09:44Z",
+  "note": "post-hoc (test seen) \u2014 val_v3-only per-modality temperature calibration + biopsy-confirmed (histopathology) audit on locked_test_v3",
+  "models": {
+    "bsdrop40_1seed": {
+      "val_fitted_modality_temperatures": {
+        "dermoscopic": 1.0,
+        "clinical": 1.2,
+        "tbp_tile": 0.75
+      },
+      "overall_raw": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.8672,
+        "sens_at_90_spec": 0.5596,
+        "ece": 0.0504,
+        "brier": 0.1471
+      },
+      "overall_per_modality_calibrated": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.8662,
+        "sens_at_90_spec": 0.5622,
+        "ece": 0.0488,
+        "brier": 0.1469
+      },
+      "by_modality_raw": {
+        "dermoscopic": {
+          "n": 700,
+          "malignant": 300,
+          "benign": 400,
+          "auroc": 0.9347,
+          "sens_at_90_spec": 0.77,
+          "ece": 0.077,
+          "brier": 0.1114
+        },
+        "clinical": {
+          "n": 574,
+          "malignant": 347,
+          "benign": 227,
+          "auroc": 0.7568,
+          "sens_at_90_spec": 0.2392,
+          "ece": 0.0735,
+          "brier": 0.1821
+        },
+        "tbp_tile": {
+          "n": 350,
+          "malignant": 100,
+          "benign": 250,
+          "auroc": 0.7559,
+          "sens_at_90_spec": 0.5,
+          "ece": 0.0626,
+          "brier": 0.161
+        }
+      },
+      "by_modality_calibrated": {
+        "dermoscopic": {
+          "n": 700,
+          "malignant": 300,
+          "benign": 400,
+          "auroc": 0.9347,
+          "sens_at_90_spec": 0.77,
+          "ece": 0.077,
+          "brier": 0.1114
+        },
+        "clinical": {
+          "n": 574,
+          "malignant": 347,
+          "benign": 227,
+          "auroc": 0.7568,
+          "sens_at_90_spec": 0.2392,
+          "ece": 0.0697,
+          "brier": 0.1819
+        },
+        "tbp_tile": {
+          "n": 350,
+          "malignant": 100,
+          "benign": 250,
+          "auroc": 0.7559,
+          "sens_at_90_spec": 0.5,
+          "ece": 0.0605,
+          "brier": 0.1605
+        }
+      },
+      "histopathology_confirmed_all": {
+        "n": 591,
+        "malignant": 491,
+        "benign": 100,
+        "auroc": 0.7246,
+        "sens_at_90_spec": 0.3849,
+        "ece": 0.1854,
+        "brier": 0.1789
+      },
+      "histopathology_confirmed_dermoscopic": {
+        "n": 359,
+        "malignant": 300,
+        "benign": 59,
+        "auroc": 0.7354,
+        "sens_at_90_spec": 0.3733,
+        "ece": 0.1254,
+        "brier": 0.1389
+      }
+    },
+    "ensemble_3seed_bsdrop40_s2_s3": {
+      "val_fitted_modality_temperatures": {
+        "dermoscopic": 0.9,
+        "clinical": 1.2,
+        "tbp_tile": 0.8
+      },
+      "overall_raw": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.8867,
+        "sens_at_90_spec": 0.6345,
+        "ece": 0.0495,
+        "brier": 0.1333
+      },
+      "overall_per_modality_calibrated": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.8873,
+        "sens_at_90_spec": 0.6319,
+        "ece": 0.0361,
+        "brier": 0.1324
+      },
+      "by_modality_raw": {
+        "dermoscopic": {
+          "n": 700,
+          "malignant": 300,
+          "benign": 400,
+          "auroc": 0.954,
+          "sens_at_90_spec": 0.85,
+          "ece": 0.0887,
+          "brier": 0.0946
+        },
+        "clinical": {
+          "n": 574,
+          "malignant": 347,
+          "benign": 227,
+          "auroc": 0.7818,
+          "sens_at_90_spec": 0.2507,
+          "ece": 0.0654,
+          "brier": 0.1695
+        },
+        "tbp_tile": {
+          "n": 350,
+          "malignant": 100,
+          "benign": 250,
+          "auroc": 0.7917,
+          "sens_at_90_spec": 0.54,
+          "ece": 0.0422,
+          "brier": 0.1513
+        }
+      },
+      "by_modality_calibrated": {
+        "dermoscopic": {
+          "n": 700,
+          "malignant": 300,
+          "benign": 400,
+          "auroc": 0.954,
+          "sens_at_90_spec": 0.85,
+          "ece": 0.0733,
+          "brier": 0.0916
+        },
+        "clinical": {
+          "n": 574,
+          "malignant": 347,
+          "benign": 227,
+          "auroc": 0.7818,
+          "sens_at_90_spec": 0.2507,
+          "ece": 0.0736,
+          "brier": 0.1701
+        },
+        "tbp_tile": {
+          "n": 350,
+          "malignant": 100,
+          "benign": 250,
+          "auroc": 0.7917,
+          "sens_at_90_spec": 0.54,
+          "ece": 0.0666,
+          "brier": 0.1521
+        }
+      },
+      "histopathology_confirmed_all": {
+        "n": 591,
+        "malignant": 491,
+        "benign": 100,
+        "auroc": 0.7668,
+        "sens_at_90_spec": 0.4582,
+        "ece": 0.1777,
+        "brier": 0.1705
+      },
+      "histopathology_confirmed_dermoscopic": {
+        "n": 359,
+        "malignant": 300,
+        "benign": 59,
+        "auroc": 0.7932,
+        "sens_at_90_spec": 0.4667,
+        "ece": 0.1027,
+        "brier": 0.1246
+      }
+    }
+  },
+  "elapsed_s": 1059.33
+}

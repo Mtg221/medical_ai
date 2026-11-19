@@ -16,7 +16,7 @@ from medresearch_platform.approaches.context_negex import (
 )
 from medresearch_platform.approaches.neural_seq import NeuralBiLSTMCRFTagger
 from medresearch_platform.approaches.tokenizer import tokenize_with_offsets
-from medresearch_platform.data.schema import ASSERTION_CLASSES, AnnotatedDocument
+from medresearch_platform.data.schema import AnnotatedDocument
 from medresearch_platform.eval_harness.metrics import (
     DocumentPrediction,
     PredictedEntity,
@@ -62,6 +62,9 @@ class HybridPipeline:
             lr=float(self.cfg.get("lr", 0.018)),
             max_train_docs=int(raw_max) if raw_max is not None else None,
             use_crf_ensemble=bool(self.cfg.get("use_crf_ensemble", False)),
+            use_self_supervised=bool(self.cfg.get("use_self_supervised", False)),
+            self_supervised_path=self.cfg.get("self_supervised_path"),
+            ocr_augment_ratio=float(self.cfg.get("ocr_augment_ratio", 0.0)),
             seed=seed,
         )
         self.assertion_model: BiLSTMAssertionClassifier | None = None
@@ -231,11 +234,9 @@ class HybridPipeline:
             if ctx_lbl != "present":
                 assert_lbl = ctx_lbl
             elif use_assertion_bilstm and self.assertion_model is not None:
-                probs = self.assertion_model.predict_proba(
-                    doc.text, c.entity.start, c.entity.end, vocab, toks=doc_toks
+                assert_lbl = self.assertion_model.predict_calibrated(
+                    doc.text, c.entity.start, c.entity.end, vocab, fallback_label=ctx_lbl, toks=doc_toks
                 )
-                best_idx = int(probs.argmax(axis=0))
-                assert_lbl = ASSERTION_CLASSES[best_idx] if float(probs[best_idx]) >= 0.75 else ctx_lbl
             else:
                 assert_lbl = ctx_lbl
             cal_conf = self.scaler.calibrate(c.entity.confidence)

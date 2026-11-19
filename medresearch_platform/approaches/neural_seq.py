@@ -8,6 +8,8 @@ from typing import Any
 import numpy as np
 
 from medresearch_platform.approaches.context_negex import apply_context_and_relations
+from medresearch_platform.approaches.ocr_augment import build_ocr_augmented_train_set
+from medresearch_platform.approaches.self_supervised import load_optional_self_supervised
 from medresearch_platform.approaches.tokenizer import (
     BIO_TAGS,
     ID_TO_TAG,
@@ -799,6 +801,9 @@ def _train_and_predict_neural(
     n_es = max(1, int(0.12 * len(train_subset)))
     es_docs = train_subset[:n_es]
     tr_docs = train_subset[n_es:] if len(train_subset) > n_es else train_subset
+    ocr_ratio = float(cfg.get("ocr_augment_ratio", 0.0))
+    if ocr_ratio > 0.0:
+        tr_docs = build_ocr_augmented_train_set(tr_docs, ratio=ocr_ratio, seed=seed)
 
     tr_seqs = _encode_docs(tr_docs, vocab)
     es_seqs = _encode_docs(es_docs, vocab)
@@ -837,6 +842,14 @@ def _train_and_predict_neural(
         )
     else:
         raise ValueError(f"Unknown neural model_kind {model_kind!r}")
+
+    if bool(cfg.get("use_self_supervised", False)) and "E" in model.params:
+        sem = load_optional_self_supervised(cfg.get("self_supervised_path"))
+        if sem is not None:
+            proj, matched = sem.project_to_vocab(vocab.word_to_id, int(model.params["E"].shape[1]))
+            if matched > 0:
+                mask = np.linalg.norm(proj, axis=1) > 0.0
+                model.params["E"][mask] = proj[mask]
 
     opt = _AdamW(model.params, lr=lr)
     best_es_loss = float("inf")
