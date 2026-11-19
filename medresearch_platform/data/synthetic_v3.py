@@ -577,9 +577,18 @@ def _add_v3_1_x8_generalization_sentences(
             b.add_relation("HAS_DOSAGE", m_ent, d_ent)
             b.add_relation("HAS_FREQUENCY", m_ent, f_ent)
         elif choice == 1:
-            b.add_text(f"A {age_n}-year-old patient with ")
-            b.add_entity(rng.choice(sx.variants), etype="SYMPTOM", code=sx.concept_id, assertion="present")
-            b.add_text(", hospitalized for 2 days.")
+            if rng.random() < 0.35:
+                b.add_text("A 5-day-old infant with ")
+                b.add_entity(rng.choice(sx.variants), etype="SYMPTOM", code=sx.concept_id, assertion="present")
+                b.add_text(" for ")
+                b.add_entity("3 weeks", etype="DURATION", assertion="present")
+                b.add_text(".")
+            else:
+                b.add_text(f"A {age_n}-year-old patient with ")
+                b.add_entity(rng.choice(sx.variants), etype="SYMPTOM", code=sx.concept_id, assertion="present")
+                b.add_text(", hospitalized for ")
+                b.add_entity("2 days", etype="DURATION", assertion="present")
+                b.add_text(".")
         elif choice == 2:
             b.add_entity(rng.choice(dx.variants), etype="DIAGNOSIS", code=dx.concept_id, assertion="absent")
             b.add_text(" was excluded on ")
@@ -614,9 +623,18 @@ def _add_v3_1_x8_generalization_sentences(
         elif choice == 1:
             sx_txt = "céphalée" if rng.random() < 0.25 else rng.choice(sx.variants)
             sx_code = "R51.9" if sx_txt == "céphalée" else sx.concept_id
-            b.add_text(f"Patiente âgée de {age_n} ans, hospitalisée depuis 2 jours pour ")
-            b.add_entity(sx_txt, etype="SYMPTOM", code=sx_code, assertion="present")
-            b.add_text(".")
+            if rng.random() < 0.35:
+                b.add_text("Nourrisson âgé de 5 jours, suivi depuis ")
+                b.add_entity("3 semaines", etype="DURATION", assertion="present")
+                b.add_text(" pour ")
+                b.add_entity(sx_txt, etype="SYMPTOM", code=sx_code, assertion="present")
+                b.add_text(".")
+            else:
+                b.add_text(f"Patiente âgée de {age_n} ans, hospitalisée depuis ")
+                b.add_entity("2 jours", etype="DURATION", assertion="present")
+                b.add_text(" pour ")
+                b.add_entity(sx_txt, etype="SYMPTOM", code=sx_code, assertion="present")
+                b.add_text(".")
         elif choice == 2:
             b.add_entity(rng.choice(dx.variants), etype="DIAGNOSIS", code=dx.concept_id, assertion="absent")
             b.add_text(" écartée par ")

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 import numpy as np
@@ -36,6 +37,94 @@ from medresearch_platform.security.person_age_detector import (
 class CandidateEntity:
     entity: PredictedEntity
     source_stage: str  # "bilstm_crf", "rule_layer", or "bilstm_crf+rule_layer"
+
+
+_NON_ENTITY_AGE_NOUNS: frozenset[str] = frozenset(
+    {
+        "boy",
+        "girl",
+        "infant",
+        "toddler",
+        "child",
+        "teenager",
+        "newborn",
+        "neonate",
+        "nourrisson",
+        "enfant",
+        "garçon",
+        "fille",
+        "bébé",
+        "adolescent",
+        "adolescente",
+    }
+)
+
+_TIME_UNIT_WORDS: frozenset[str] = frozenset(
+    {
+        "semaine",
+        "semaines",
+        "week",
+        "weeks",
+        "jour",
+        "jours",
+        "day",
+        "days",
+        "mois",
+        "month",
+        "months",
+        "an",
+        "ans",
+        "year",
+        "years",
+        "année",
+        "années",
+        "heure",
+        "heures",
+        "hour",
+        "hours",
+        "matin",
+        "soir",
+        "nuit",
+    }
+)
+
+_ASSERTION_CUE_WORDS: frozenset[str] = frozenset(
+    {
+        "ruled",
+        "excluded",
+        "écartée",
+        "écarté",
+        "éliminée",
+        "éliminé",
+        "exclu",
+        "exclue",
+        "denied",
+        "denies",
+        "nie",
+        "absence",
+        "sans",
+        "without",
+    }
+)
+
+_DURATION_AFTER_PREP_RE = re.compile(
+    r"\b(?:depuis|pendant|for|since)\s+((?:\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|quelques|several|a\s+few)\s+"
+    r"(?:heures?|jours?|semaines?|mois|ans?|années?|hours?|days?|weeks?|months?|years?))\b",
+    re.IGNORECASE | re.UNICODE,
+)
+
+
+def _is_disallowed_entity(ent: PredictedEntity) -> bool:
+    low = ent.text.strip().lower()
+    if not low:
+        return True
+    if low in _NON_ENTITY_AGE_NOUNS:
+        return True
+    if low in _ASSERTION_CUE_WORDS:
+        return True
+    if ent.type in {"MEDICATION", "SYMPTOM", "DIAGNOSIS"} and low in _TIME_UNIT_WORDS:
+        return True
+    return False
 
 
 class Stage2EntityExtractor:
@@ -187,42 +276,69 @@ class Stage2EntityExtractor:
                             del merged[k]
                         merged[key] = CandidateEntity(entity=ce, source_stage="crf_override")
 
-        if not use_rules_layer:
-            return sorted(merged.values(), key=lambda c: c.entity.start)
+        if use_rules_layer:
+            rule_pred = predict_rule_based([], [doc], self.seed, {})[0]
+            for re_ent in rule_pred.entities:
+                if span_overlaps(re_ent.start, re_ent.end, blocked_spans):
+                    continue
+                key = (re_ent.type, re_ent.start, re_ent.end)
+                if key in merged:
+                    prev = merged[key].entity
+                    boosted = PredictedEntity(
+                        type=prev.type,
+                        start=prev.start,
+                        end=prev.end,
+                        text=prev.text,
+                        assertion=prev.assertion,
+                        confidence=round(min(0.99, max(prev.confidence, re_ent.confidence) + 0.04), 4),
+                    )
+                    merged[key] = CandidateEntity(entity=boosted, source_stage="bilstm_crf+rule_layer")
+                else:
+                    overlapping_keys = [
+                        k
+                        for k, m in merged.items()
+                        if max(re_ent.start, m.entity.start) < min(re_ent.end, m.entity.end)
+                    ]
+                    if not overlapping_keys:
+                        merged[key] = CandidateEntity(entity=re_ent, source_stage="rule_layer")
+                    elif (
+                        re_ent.type in ("MEDICATION", "DOSAGE") or re_ent.confidence >= 0.90
+                    ) and all(
+                        merged[k].entity.type == "DATE" or merged[k].entity.confidence < 0.65
+                        for k in overlapping_keys
+                    ):
+                        for k in overlapping_keys:
+                            del merged[k]
+                        merged[key] = CandidateEntity(entity=re_ent, source_stage="rule_layer")
 
-        rule_pred = predict_rule_based([], [doc], self.seed, {})[0]
+        # Filter disallowed non-clinical tokens (age nouns, bare time words, assertion cue verbs)
+        for k in list(merged.keys()):
+            if _is_disallowed_entity(merged[k].entity):
+                del merged[k]
 
-        for re_ent in rule_pred.entities:
-            if span_overlaps(re_ent.start, re_ent.end, blocked_spans):
+        # Emit typed DURATION spans after depuis/pendant/for/since when not already covered
+        for m in _DURATION_AFTER_PREP_RE.finditer(doc.text):
+            ds, de = m.start(1), m.end(1)
+            if span_overlaps(ds, de, blocked_spans):
                 continue
-            key = (re_ent.type, re_ent.start, re_ent.end)
-            if key in merged:
-                prev = merged[key].entity
-                boosted = PredictedEntity(
-                    type=prev.type,
-                    start=prev.start,
-                    end=prev.end,
-                    text=prev.text,
-                    assertion=prev.assertion,
-                    confidence=round(min(0.99, max(prev.confidence, re_ent.confidence) + 0.04), 4),
+            overlapping_keys = [
+                k for k, c in merged.items() if max(ds, c.entity.start) < min(de, c.entity.end)
+            ]
+            if any(merged[k].entity.type in {"DURATION", "DATE"} for k in overlapping_keys):
+                continue
+            for k in overlapping_keys:
+                if merged[k].entity.type in {"MEDICATION", "SYMPTOM", "DIAGNOSIS"} or merged[k].entity.text.lower() in _TIME_UNIT_WORDS:
+                    del merged[k]
+            still_overlapping = any(max(ds, c.entity.start) < min(de, c.entity.end) for c in merged.values())
+            if not still_overlapping:
+                dur_ent = PredictedEntity(
+                    type="DURATION",
+                    start=ds,
+                    end=de,
+                    text=doc.text[ds:de],
+                    assertion="present",
+                    confidence=0.92,
                 )
-                merged[key] = CandidateEntity(entity=boosted, source_stage="bilstm_crf+rule_layer")
-            else:
-                overlapping_keys = [
-                    k
-                    for k, m in merged.items()
-                    if max(re_ent.start, m.entity.start) < min(re_ent.end, m.entity.end)
-                ]
-                if not overlapping_keys:
-                    merged[key] = CandidateEntity(entity=re_ent, source_stage="rule_layer")
-                elif (
-                    re_ent.type in ("MEDICATION", "DOSAGE") or re_ent.confidence >= 0.90
-                ) and all(
-                    merged[k].entity.type == "DATE" or merged[k].entity.confidence < 0.65
-                    for k in overlapping_keys
-                ):
-                    for k in overlapping_keys:
-                        del merged[k]
-                    merged[key] = CandidateEntity(entity=re_ent, source_stage="rule_layer")
+                merged[("DURATION", ds, de)] = CandidateEntity(entity=dur_ent, source_stage="rule_layer")
 
         return sorted(merged.values(), key=lambda c: c.entity.start)

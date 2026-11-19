@@ -15,29 +15,60 @@ class PersonSpan:
     text: str
 
 
+# Single person-name token supporting apostrophes (O'Connor, N'Diaye), CamelCase (McAllister),
+# and hyphenated compounds (Morales-Gomez, Jean-Luc, Claire-Marie, Al-Mansoor).
+_NAME_TOK = (
+    r"(?:[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{0,3}['’][A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{1,20}"
+    r"|[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{1,20}(?:[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{1,20})?)"
+    r"(?:-[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{1,20})*"
+)
+_INITIAL_TOK = r"[A-ZÀ-ÖØ-Ý]\."
+_NAME_PART = rf"(?:{_NAME_TOK}|{_INITIAL_TOK})"
+
 _CLINICIAN_TITLE_RE = re.compile(
-    r"\b((?:Dr\.?|Docteur|Pr\.?|Prof\.?)\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]{1,20}(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]{1,20})?)\b",
+    rf"\b((?:Dr\.?|Docteur|Pr\.?|Prof\.?)\s+(?:{_INITIAL_TOK}\s+){{0,2}}{_NAME_TOK}(?:\s+(?:{_INITIAL_TOK}\s+)?{_NAME_TOK}){{0,2}})\b",
     re.UNICODE,
 )
 
 _PATIENT_LABELLED_RE = re.compile(
-    r"(?:Patient(?:\s+Name)?|Nom(?:\s+du\s+patient)?|Prénom)\s*:\s*([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]*(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]*)*)",
+    rf"(?:Patient(?:\s+Name)?|Nom(?:\s+du\s+patient)?|Prénom)\s*:\s*((?:{_NAME_TOK}|[A-ZÀ-ÖØ-Ý]\.?)(?:\s+{_NAME_PART}){{0,3}})",
     re.UNICODE,
 )
 
 _PATIENT_HONORIFIC_RE = re.compile(
-    r"\b((?:Mme|Mlle|M\.|Mr\.?|Mrs\.?|Ms\.?|Miss|Monsieur|Madame)\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]*(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]+)*)(?=\W|$)",
+    rf"\b((?:Mme|Mlle|M\.|Mr\.?|Mrs\.?|Ms\.?|Miss|Monsieur|Madame)\s+(?:{_NAME_TOK}|[A-ZÀ-ÖØ-Ý]\.?)(?:\s+{_NAME_PART}){{0,3}})(?=\W|$)",
     re.UNICODE,
 )
 
 _UNTITLED_NAME_PAIR_RE = re.compile(
-    r"(?<![\-/])\b([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]{1,20}(?:\s+[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]{1,20})+)\b(?![\-/])",
+    rf"(?<![\-/])\b({_NAME_TOK}(?:\s+{_INITIAL_TOK})?(?:\s+{_NAME_TOK})+)\b(?![\-/])",
     re.UNICODE,
 )
 
 _AGE_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\b\d{1,3}[-\s](?:days?|weeks?|months?|years?)[-\s]old\b", re.IGNORECASE),
     re.compile(r"\b\d{1,3}\s*(?:ans?|years?(?:\s+old)?|y/?o|yrs?|months?\s+old|mois\s+d'[aâ]ge)\b", re.IGNORECASE),
-    re.compile(r"\b(?:aged|age|âgée?|âgé)\s*(?:de\s+)?\d{1,3}(?:\s*(?:ans?|years?(?:\s+old)?|mois|months?))?\b", re.IGNORECASE),
+    re.compile(
+        r"\b(?:aged|age|âgée?|âgé)\s*(?:de\s+)?\d{1,3}(?:\s*(?:ans?|jours?|semaines?|mois|days?|weeks?|months?|years?(?:\s+old)?))?\b",
+        re.IGNORECASE,
+    ),
+)
+
+_RELATIVE_PERSON_RE = re.compile(
+    rf"\b((?:his|her|their)\s+(?:wife|husband|spouse|partner|son|daughter|mother|father|mom|dad|brother|sister|parent|grandmother|grandfather)"
+    rf"|(?:son|sa)\s+(?:épouse|époux|femme|mari|conjointe?|fils|fille|mère|père|frère|sœur|soeur|grand-mère|grand-père))"
+    rf"(?:\s+({_NAME_TOK}(?:\s+{_NAME_PART}){{0,3}}))?(?=\W|$)",
+    re.IGNORECASE | re.UNICODE,
+)
+
+_EPONYM_DISEASE_RE = re.compile(
+    r"\b(?:(?:maladie|syndrome|chorée|paralysie|lymphome|sarcome|tumeur|néphropathie|artérite|thyroïdite)\s+(?:de\s+|d'|du\s+)?)?"
+    r"(?:Down|Graves|Crohn|Parkinson|Hashimoto|Alzheimer|Addison|Cushing|Hodgkin|Kawasaki|Marfan|"
+    r"Sjögren|Sjogren|Ménière|Meniere|Guillain-Barré|Raynaud|Bell|Huntington|Tourette|Whipple|"
+    r"Paget|Wilson|Takayasu|Behçet|Behcet|Turner|Klinefelter|Peyronie|Dupuytren|Bouveret|"
+    r"Basedow|Charcot|Horton|Berger|Kaposi|Ewing)(?:'s|’s)?"
+    r"(?:\s+(?:disease|syndrome|lymphoma|sarcoma|thyroiditis|nephropathy|chorea|palsy))?\b",
+    re.UNICODE,
 )
 
 _NON_NAME_WORDS: frozenset[str] = frozenset(
@@ -252,36 +283,49 @@ def _medical_lexicon_words() -> tuple[frozenset[str], frozenset[str]]:
 
 
 def detect_person_spans(text: str) -> list[PersonSpan]:
-    """Detect clinician names (Dr/Pr) and patient names (titled, labelled, or untitled First Last pairs)."""
+    """Detect clinician names (Dr/Pr) and patient names (titled, labelled, relative+name, or untitled First Last pairs)."""
+    protected_eponyms = [(m.start(), m.end()) for m in _EPONYM_DISEASE_RE.finditer(text)]
     spans: list[PersonSpan] = []
 
+    def _overlaps_eponym(s: int, e: int) -> bool:
+        return any(not (e <= es or s >= ee) for es, ee in protected_eponyms)
+
     for m in _CLINICIAN_TITLE_RE.finditer(text):
-        spans.append(PersonSpan("CLINICIAN_NAME", m.start(1), m.end(1), m.group(1)))
+        if not _overlaps_eponym(m.start(1), m.end(1)):
+            spans.append(PersonSpan("CLINICIAN_NAME", m.start(1), m.end(1), m.group(1)))
 
     for m in _PATIENT_LABELLED_RE.finditer(text):
-        spans.append(PersonSpan("PATIENT_NAME", m.start(1), m.end(1), m.group(1)))
+        if not _overlaps_eponym(m.start(1), m.end(1)):
+            spans.append(PersonSpan("PATIENT_NAME", m.start(1), m.end(1), m.group(1)))
 
     for m in _PATIENT_HONORIFIC_RE.finditer(text):
-        spans.append(PersonSpan("PATIENT_NAME", m.start(1), m.end(1), m.group(1)))
+        if not _overlaps_eponym(m.start(1), m.end(1)):
+            spans.append(PersonSpan("PATIENT_NAME", m.start(1), m.end(1), m.group(1)))
+
+    for m in _RELATIVE_PERSON_RE.finditer(text):
+        if m.group(2) and not _overlaps_eponym(m.start(0), m.end(0)):
+            spans.append(PersonSpan("PATIENT_NAME", m.start(0), m.end(0), m.group(0)))
 
     med_phrases, med_words = _medical_lexicon_words()
+    _tok_pat = re.compile(rf"{_NAME_TOK}|{_INITIAL_TOK}", re.UNICODE)
     for m in _UNTITLED_NAME_PAIR_RE.finditer(text):
-        word_matches = list(re.finditer(r"[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ\-]{1,20}", m.group(1)))
+        word_matches = list(_tok_pat.finditer(m.group(1)))
         while word_matches and word_matches[0].group(0).lower() in med_words:
             word_matches.pop(0)
         while word_matches and word_matches[-1].group(0).lower() in med_words:
             word_matches.pop()
-        if len(word_matches) < 2 or len(word_matches) > 3:
+        non_initial = [wm for wm in word_matches if not wm.group(0).endswith(".")]
+        if len(non_initial) < 2 or len(word_matches) > 4:
             continue
         s = m.start(1) + word_matches[0].start()
         e = m.start(1) + word_matches[-1].end()
-        if any(not (e <= sp.start or s >= sp.end) for sp in spans):
+        if _overlaps_eponym(s, e) or any(not (e <= sp.start or s >= sp.end) for sp in spans):
             continue
         cand = text[s:e]
         low = cand.lower()
         if low in med_phrases:
             continue
-        toks = [wm.group(0).lower() for wm in word_matches]
+        toks = [wm.group(0).lower() for wm in non_initial]
         if any(t in med_words for t in toks):
             continue
         spans.append(PersonSpan("PATIENT_NAME", s, e, cand))
@@ -297,11 +341,18 @@ def detect_person_spans(text: str) -> list[PersonSpan]:
     return out
 
 
+_DURATION_PREFIX_RE = re.compile(r"(?:^|\W)(?:for|since|depuis|pendant|dans|in|over|during)\s+$", re.IGNORECASE)
+_EXPLICIT_AGE_MARKER_RE = re.compile(r"(?:old|y/?o|âgée?|aged|d'[aâ]ge)", re.IGNORECASE)
+
+
 def detect_age_spans(text: str) -> list[tuple[int, int]]:
     """Detect EN/FR age expression character spans `(start, end)`."""
     raw: list[tuple[int, int]] = []
     for pat in _AGE_PATTERNS:
         for m in pat.finditer(text):
+            prefix = text[: m.start()]
+            if _DURATION_PREFIX_RE.search(prefix) and not _EXPLICIT_AGE_MARKER_RE.search(m.group(0)):
+                continue
             raw.append((m.start(), m.end()))
     raw.sort()
     return raw
