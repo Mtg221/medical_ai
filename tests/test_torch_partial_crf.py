@@ -107,3 +107,75 @@ def test_torch_partial_crf_loss_nonnegative_and_save_load(tmp_path: Path) -> Non
     preds_a = model.predict_entities(docs[0].text)
     preds_b = loaded.predict_entities(docs[0].text)
     assert [(e.type, e.start, e.end) for e in preds_a] == [(e.type, e.start, e.end) for e in preds_b]
+
+    from medresearch_platform.approaches.torch_ner import ensemble_torch_ner_predictions
+
+    ens_preds = ensemble_torch_ner_predictions([model, loaded], docs[0].text)
+    assert [(e.type, e.start, e.end) for e in ens_preds] == [(e.type, e.start, e.end) for e in preds_a]
+
+
+def test_biomedical_public_domain_converters_bc5cdr_and_ncbi() -> None:
+    from medresearch_platform.data.converters import from_bc5cdr_iob, from_ncbi_disease_pubtator
+
+    ncbi_raw = (
+        "10192393|t|A common human skin tumour is caused by mutations.\n"
+        "10192393|a|Colon cancers arise from APC mutations.\n"
+        "10192393\t15\t26\tskin tumour\tDiseaseClass\tD012878\n"
+        "10192393\t50\t63\tColon cancers\tDiseaseClass\tD003110\n"
+    )
+    ncbi_docs = from_ncbi_disease_pubtator(ncbi_raw, split="train")
+    assert len(ncbi_docs) == 1
+    assert ncbi_docs[0].validate_spans() == []
+    assert [e.text for e in ncbi_docs[0].entities] == ["skin tumour", "Colon cancers"]
+    assert infer_annotated_types(ncbi_docs[0]) == frozenset({"DIAGNOSIS"})
+
+    bc_raw = "\n".join(
+        [
+            "Selegiline\tB-Chemical",
+            "induced\tO",
+            "postural\tB-Disease",
+            "hypotension\tI-Disease",
+            ".\tO",
+            "",
+            "Metformin\tB-Chemical",
+            "treats\tO",
+            "diabetes\tB-Disease",
+            ".\tO",
+        ]
+    )
+    bc_docs = from_bc5cdr_iob(bc_raw, split="train", sentences_per_doc=8)
+    assert len(bc_docs) == 1
+    assert bc_docs[0].validate_spans() == []
+    assert [(e.type, e.text) for e in bc_docs[0].entities] == [
+        ("MEDICATION", "Selegiline"),
+        ("DIAGNOSIS", "postural hypotension"),
+        ("MEDICATION", "Metformin"),
+        ("DIAGNOSIS", "diabetes"),
+    ]
+    assert infer_annotated_types(bc_docs[0]) == frozenset({"DIAGNOSIS", "MEDICATION"})
+
+
+@pytest.mark.skipif(not is_torch_available(), reason="PyTorch not installed in active interpreter")
+def test_calibrated_vision_ensemble_predict_image_contract() -> None:
+    import numpy as np
+    from PIL import Image
+
+    from medresearch_platform.vision.cnn_torch import PyTorchDermResNet
+    from medresearch_platform.vision.ensemble import CalibratedVisionEnsemble
+
+    m1 = PyTorchDermResNet(image_size=64, include_metadata=True, seed=1, device="cpu")
+    m2 = PyTorchDermResNet(image_size=64, include_metadata=True, seed=2, device="cpu")
+    ens = CalibratedVisionEnsemble([m1, m2])
+
+    arr = np.full((128, 128, 3), fill_value=180, dtype=np.uint8)
+    arr[40:88, 40:88] = [120, 70, 60]
+    im = Image.fromarray(arr, mode="RGB")
+
+    res = ens.predict_image(im, modality_hint="dermoscopic", body_site="torso")
+    payload = res.to_dict()
+    assert payload["risk_band"] in {"low", "medium", "high", "abstained"}
+    assert "Ensemble2" in payload["model_name"]
+    assert payload["pretrained_weights_used"] is False
+    cam, mean_val = ens.compute_gradcam_heatmap(im)
+    assert cam.shape == (64, 64)
+    assert 0.0 <= mean_val <= 1.0

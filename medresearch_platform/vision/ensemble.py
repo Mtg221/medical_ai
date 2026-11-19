@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -39,7 +40,8 @@ class CalibratedVisionEnsemble:
             raise ValueError("CalibratedVisionEnsemble requires at least one model.")
         self.models = models
         self.modality_temperatures = dict(modality_temperatures or DEFAULT_MODALITY_TEMPERATURES)
-        self.model_version = f"PyTorchDermResNet4Stage-Ensemble{len(models)}-v1.0.0"
+        self.architecture_name = f"PyTorchDermResNet4Stage-Ensemble{len(models)}-v1.0.0"
+        self.model_version = self.architecture_name
         self.backend = "pytorch_cpu"
         self.image_size = int(models[0].image_size)
         self.manifest = {
@@ -57,8 +59,24 @@ class CalibratedVisionEnsemble:
         *,
         modality_temperatures: dict[str, float] | None = None,
     ) -> CalibratedVisionEnsemble:
-        loaded = [PyTorchDermResNet.load(d) for d in model_dirs]
-        return cls(loaded, modality_temperatures=modality_temperatures)
+        loaded = [PyTorchDermResNet.load(d, device="cpu") for d in model_dirs]
+        temps = modality_temperatures
+        if temps is None and model_dirs:
+            cal_path = model_dirs[0].parent / "derm_ensemble_calibration.json"
+            if cal_path.exists():
+                try:
+                    raw = json.loads(cal_path.read_text(encoding="utf-8"))
+                    if isinstance(raw, dict) and isinstance(raw.get("modality_temperatures"), dict):
+                        temps = {str(k): float(v) for k, v in raw["modality_temperatures"].items()}
+                except Exception:
+                    temps = None
+        return cls(loaded, modality_temperatures=temps)
+
+    def compute_gradcam_heatmap(self, image: Image.Image) -> tuple[np.ndarray, float]:
+        return self.models[0].compute_gradcam_heatmap(image)
+
+    def render_gradcam_overlay_png(self, image: Image.Image, cam_grid: np.ndarray) -> bytes:
+        return self.models[0].render_gradcam_overlay_png(image, cam_grid)
 
     def predict_image(
         self,
@@ -77,6 +95,7 @@ class CalibratedVisionEnsemble:
         mod_key = str(modality_hint or getattr(lead, "predicted_modality", "dermoscopic")).lower()
         temp = float(self.modality_temperatures.get(mod_key, 1.0))
         cal_prob = _apply_temperature(mean_prob, temp)
+        conf = round(max(cal_prob, 1.0 - cal_prob), 4)
 
         # Aggregate diagnosis distributions across ensemble members
         dx_sums: dict[str, float] = {}
@@ -86,22 +105,26 @@ class CalibratedVisionEnsemble:
                 dx_sums[name] = dx_sums.get(name, 0.0) + float(item["probability"])
         top3_pairs = sorted(dx_sums.items(), key=lambda kv: kv[1], reverse=True)[:3]
         top3: list[dict[str, Any]] = [
-            {"diagnosis": k, "probability": round(v / len(results), 4)} for k, v in top3_pairs
+            {"rank": r_idx + 1, "diagnosis": k, "probability": round(v / len(results), 4)}
+            for r_idx, (k, v) in enumerate(top3_pairs)
         ]
 
-        if cal_prob >= 0.65:
+        abstained = bool(lead.abstained) or (conf < float(self.models[0].abstain_min_confidence))
+        if abstained:
+            risk_band = "abstained"
+        elif cal_prob >= 0.65:
             risk_band = "high"
-        elif cal_prob <= 0.35:
-            risk_band = "low"
+        elif cal_prob >= 0.35:
+            risk_band = "medium"
         else:
-            risk_band = "indeterminate"
+            risk_band = "low"
 
-        abstained = bool(lead.abstained) or (risk_band == "indeterminate" and mod_key == "dermoscopic")
         return replace(
             lead,
             malignancy_probability=cal_prob,
-            malignancy_risk_band=risk_band if not abstained else "abstained",
+            confidence=conf,
+            risk_band=risk_band,
             abstained=abstained,
-            top3_diagnoses=top3 or lead.top3_diagnoses,
-            model_version=self.model_version,
+            top3_diagnoses=(top3 or lead.top3_diagnoses) if not abstained else [],
+            model_name=self.architecture_name,
         )

@@ -20,8 +20,10 @@ from typing import Any
 import httpx
 
 from medresearch_platform.data.converters import (
+    from_bc5cdr_iob,
     from_e3c_xmi,
     from_maccrobat_brat,
+    from_ncbi_disease_pubtator,
     from_pxcorpus_row,
 )
 from medresearch_platform.data.schema import AnnotatedDocument
@@ -29,6 +31,16 @@ from medresearch_platform.data.schema import AnnotatedDocument
 MACCROBAT2020_URL = "https://ndownloader.figshare.com/files/21489405"
 E3C_ZIP_URL = "https://github.com/hltfbk/E3C-Corpus/archive/refs/heads/main.zip"
 PXCORPUS_ROWS_API = "https://datasets-server.huggingface.co/rows"
+NCBI_DISEASE_URLS = {
+    "train": "https://www.ncbi.nlm.nih.gov/CBBresearch/Dogan/DISEASE/NCBItrainset_corpus.zip",
+    "val": "https://www.ncbi.nlm.nih.gov/CBBresearch/Dogan/DISEASE/NCBIdevelopset_corpus.zip",
+    "test": "https://www.ncbi.nlm.nih.gov/CBBresearch/Dogan/DISEASE/NCBItestset_corpus.zip",
+}
+BC5CDR_IOB_URLS = {
+    "train": "https://raw.githubusercontent.com/cambridgeltl/MTL-Bioinformatics-2016/master/data/BC5CDR-IOB/train.tsv",
+    "val": "https://raw.githubusercontent.com/cambridgeltl/MTL-Bioinformatics-2016/master/data/BC5CDR-IOB/devel.tsv",
+    "test": "https://raw.githubusercontent.com/cambridgeltl/MTL-Bioinformatics-2016/master/data/BC5CDR-IOB/test.tsv",
+}
 
 
 def _sha256_file(path: Path) -> str:
@@ -165,6 +177,38 @@ def load_e3c(client: httpx.Client, raw_dir: Path) -> list[AnnotatedDocument]:
     return docs
 
 
+def load_ncbi_disease(client: httpx.Client, raw_dir: Path) -> list[AnnotatedDocument]:
+    docs: list[AnnotatedDocument] = []
+    for sp, url in NCBI_DISEASE_URLS.items():
+        zip_path = _download_file(client, url, raw_dir / f"ncbi_disease_{sp}.zip")
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            txt_names = [n for n in zf.namelist() if n.endswith(".txt")]
+            if not txt_names:
+                continue
+            raw_txt = zf.read(txt_names[0]).decode("utf-8", errors="replace")
+            parsed = from_ncbi_disease_pubtator(raw_txt, split=sp)
+            for doc in parsed:
+                errs = doc.validate_spans()
+                if errs:
+                    raise ValueError(f"NCBI Disease span validation failed on {doc.doc_id}: {errs[:3]}")
+                docs.append(doc)
+    return docs
+
+
+def load_bc5cdr(client: httpx.Client, raw_dir: Path) -> list[AnnotatedDocument]:
+    docs: list[AnnotatedDocument] = []
+    for sp, url in BC5CDR_IOB_URLS.items():
+        tsv_path = _download_file(client, url, raw_dir / f"bc5cdr_{sp}.tsv")
+        raw_txt = tsv_path.read_text(encoding="utf-8", errors="replace")
+        parsed = from_bc5cdr_iob(raw_txt, split=sp)
+        for doc in parsed:
+            errs = doc.validate_spans()
+            if errs:
+                raise ValueError(f"BC5CDR span validation failed on {doc.doc_id}: {errs[:3]}")
+            docs.append(doc)
+    return docs
+
+
 def _write_jsonl(path: Path, docs: list[AnnotatedDocument]) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as fh:
@@ -196,6 +240,14 @@ def build_open_clinical_corpora(
             e3c_docs = load_e3c(client, raw_dir)
             by_corpus["e3c"] = e3c_docs
             all_docs.extend(e3c_docs)
+        if "bc5cdr" in corpora:
+            bc_docs = load_bc5cdr(client, raw_dir)
+            by_corpus["bc5cdr"] = bc_docs
+            all_docs.extend(bc_docs)
+        if "ncbi_disease" in corpora:
+            ncbi_docs = load_ncbi_disease(client, raw_dir)
+            by_corpus["ncbi_disease"] = ncbi_docs
+            all_docs.extend(ncbi_docs)
 
     splits_out: dict[str, list[AnnotatedDocument]] = {"train": [], "val": [], "test": []}
     for d in all_docs:
@@ -244,7 +296,7 @@ def main() -> None:
         "--corpora",
         type=str,
         default="maccrobat,pxcorpus,e3c",
-        help="Comma-separated list of corpora: maccrobat,pxcorpus,e3c",
+        help="Comma-separated list of corpora: maccrobat,pxcorpus,e3c,bc5cdr,ncbi_disease",
     )
     parser.add_argument(
         "--permissive-only",

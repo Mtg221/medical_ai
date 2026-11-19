@@ -78,6 +78,15 @@ def is_torch_available() -> bool:
         return False
 
 
+def resolve_torch_device(device: str | None = "auto") -> Any:
+    """Resolve 'auto' to CUDA when available, otherwise CPU (or explicit device string)."""
+    import torch
+
+    if device is None or str(device).strip().lower() in ("", "auto"):
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return torch.device(str(device))
+
+
 def infer_annotated_types(doc: AnnotatedDocument) -> frozenset[str]:
     """Return the exact entity-type subset annotated by `doc.source`."""
     meta_types = doc.metadata.get("annotated_types")
@@ -337,6 +346,7 @@ class PyTorchCharCNNBiLSTMCRF:
         self_supervised_path: str | None = None,
         ocr_augment_ratio: float = 0.0,
         seed: int = 42,
+        device: str | None = "auto",
     ) -> None:
         self.word_emb_dim = word_emb_dim
         self.char_emb_dim = char_emb_dim
@@ -352,8 +362,10 @@ class PyTorchCharCNNBiLSTMCRF:
         self.self_supervised_path = self_supervised_path
         self.ocr_augment_ratio = ocr_augment_ratio
         self.seed = seed
+        self.device_spec = device
+        self._device: Any = None
 
-        self.vocab = TrainOnlyVocabulary(max_size=12000, min_freq=1)
+        self.vocab = TrainOnlyVocabulary(max_size=24000, min_freq=1)
         self.char_to_id: dict[str, int] = {"<PAD>": 0, "<UNK>": 1}
         self.cluster_vocab_size: int = 66  # 0=PAD/OOV, 1..64=fine clusters, 65=fallback
         self.sem_model: SelfSupervisedMedicalEmbeddings | None = (
@@ -362,6 +374,7 @@ class PyTorchCharCNNBiLSTMCRF:
         self.net: Any = None
         self.initial_weights_sha256: str = ""
         self.trained_weights_sha256: str = ""
+        self.training_device: str = "cpu"
         self._fitted = False
 
     def _cluster_id(self, word: str) -> int:
@@ -392,7 +405,13 @@ class PyTorchCharCNNBiLSTMCRF:
             item["allowed"] = build_allowed_tag_mask(y_ids, annotated_types)
         return item
 
-    def _collate_batch(self, items: list[dict[str, Any]], *, word_drop_p: float = 0.0) -> dict[str, Any]:
+    def _collate_batch(
+        self,
+        items: list[dict[str, Any]],
+        *,
+        word_drop_p: float = 0.0,
+        device: Any = None,
+    ) -> dict[str, Any]:
         import torch
 
         bsz = len(items)
@@ -421,6 +440,7 @@ class PyTorchCharCNNBiLSTMCRF:
             if allowed is not None:
                 allowed[i, :L, :] = it["allowed"]
 
+        target_dev = device if device is not None else self._device
         out: dict[str, Any] = {
             "w": torch.from_numpy(w),
             "c": torch.from_numpy(c),
@@ -430,6 +450,8 @@ class PyTorchCharCNNBiLSTMCRF:
         }
         if allowed is not None:
             out["allowed"] = torch.from_numpy(allowed)
+        if target_dev is not None:
+            out = {k: v.to(target_dev, non_blocking=(target_dev.type == "cuda")) for k, v in out.items()}
         return out
 
     def fit(self, train_docs: list[AnnotatedDocument], *, verbose: bool = False) -> PyTorchCharCNNBiLSTMCRF:
@@ -437,10 +459,17 @@ class PyTorchCharCNNBiLSTMCRF:
             raise RuntimeError("PyTorch is required for PyTorchCharCNNBiLSTMCRF (install .[vision]).")
         import torch
 
+        dev = resolve_torch_device(self.device_spec)
+        self._device = dev
+        self.training_device = str(dev)
+
         random.seed(self.seed)
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
-        torch.set_num_threads(min(6, max(1, torch.get_num_threads())))
+        if dev.type == "cuda":
+            torch.cuda.manual_seed_all(self.seed)
+        else:
+            torch.set_num_threads(min(6, max(1, torch.get_num_threads())))
 
         fit_docs = (
             build_ocr_augmented_train_set(train_docs, ratio=self.ocr_augment_ratio, seed=self.seed)
@@ -478,7 +507,7 @@ class PyTorchCharCNNBiLSTMCRF:
             hidden_dim=self.hidden_dim,
             num_layers=self.num_layers,
             dropout=self.dropout,
-        )
+        ).to(dev)
         self.initial_weights_sha256 = self._weights_sha256()
 
         optimizer = torch.optim.AdamW(self.net.parameters(), lr=self.lr, weight_decay=1e-4)
@@ -495,7 +524,7 @@ class PyTorchCharCNNBiLSTMCRF:
             tr_losses: list[float] = []
             for start in range(0, len(order), self.batch_size):
                 b_items = [tr_chunks[int(i)] for i in order[start : start + self.batch_size]]
-                batch = self._collate_batch(b_items, word_drop_p=0.10)
+                batch = self._collate_batch(b_items, word_drop_p=0.10, device=dev)
                 optimizer.zero_grad()
                 emissions = self.net.forward_emissions(batch["w"], batch["c"], batch["o"], batch["cl"])
                 loss = self.net.partial_crf_loss(emissions, batch["allowed"], batch["mask"])
@@ -510,13 +539,17 @@ class PyTorchCharCNNBiLSTMCRF:
                 es_losses: list[float] = []
                 with torch.no_grad():
                     for start in range(0, len(es_chunks), self.batch_size):
-                        batch = self._collate_batch(es_chunks[start : start + self.batch_size], word_drop_p=0.0)
+                        batch = self._collate_batch(
+                            es_chunks[start : start + self.batch_size],
+                            word_drop_p=0.0,
+                            device=dev,
+                        )
                         em = self.net.forward_emissions(batch["w"], batch["c"], batch["o"], batch["cl"])
                         es_losses.append(float(self.net.partial_crf_loss(em, batch["allowed"], batch["mask"]).item()))
                 mean_es = float(np.mean(es_losses))
                 if verbose:
                     print(
-                        f"  [CharCNNBiLSTMCRF] ep={ep+1}/{self.epochs} tr_loss={np.mean(tr_losses):.4f} "
+                        f"  [CharCNNBiLSTMCRF dev={dev}] ep={ep+1}/{self.epochs} tr_loss={np.mean(tr_losses):.4f} "
                         f"es_loss={mean_es:.4f} ({time.perf_counter()-t_ep:.1f}s)",
                         flush=True,
                     )
@@ -531,7 +564,7 @@ class PyTorchCharCNNBiLSTMCRF:
             else:
                 best_state = {k: v.detach().cpu().clone() for k, v in self.net.state_dict().items()}
 
-        self.net.load_state_dict(best_state)
+        self.net.load_state_dict({k: v.to(dev) for k, v in best_state.items()})
         self.net.eval()
         self.trained_weights_sha256 = self._weights_sha256()
         self._fitted = True
@@ -553,12 +586,13 @@ class PyTorchCharCNNBiLSTMCRF:
         if not toks:
             return []
         self.net.eval()
+        dev = self._device if self._device is not None else next(self.net.parameters()).device
         all_tags: list[str] = []
         all_confs: list[float] = []
         with torch.no_grad():
             for s, e in _chunk_tokens_for_training(toks):
                 chunk_item = self._encode_chunk(toks[s:e])
-                batch = self._collate_batch([chunk_item], word_drop_p=0.0)
+                batch = self._collate_batch([chunk_item], word_drop_p=0.0, device=dev)
                 em = self.net.forward_emissions(batch["w"], batch["c"], batch["o"], batch["cl"])
                 paths, confs = self.net.viterbi_decode(em, batch["mask"])
                 all_tags.extend(ID_TO_TAG[tid] for tid in paths[0])
@@ -573,10 +607,12 @@ class PyTorchCharCNNBiLSTMCRF:
         out_dir = Path(model_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         weights_path = out_dir / "char_cnn_bilstm_crf.pt"
-        torch.save(self.net.state_dict(), weights_path)
+        cpu_state = {k: v.detach().cpu() for k, v in self.net.state_dict().items()}
+        torch.save(cpu_state, weights_path)
         meta = {
             "model_type": "pytorch_char_cnn_bilstm_crf",
             "pretrained_weights_used": False,
+            "training_device": self.training_device,
             "initial_weights_sha256": self.initial_weights_sha256,
             "trained_weights_sha256": self.trained_weights_sha256,
             "weights_file_sha256": hashlib.sha256(weights_path.read_bytes()).hexdigest(),
@@ -605,7 +641,7 @@ class PyTorchCharCNNBiLSTMCRF:
         return out_dir
 
     @classmethod
-    def load(cls, model_dir: Path | str) -> PyTorchCharCNNBiLSTMCRF:
+    def load(cls, model_dir: Path | str, *, device: str | None = "cpu") -> PyTorchCharCNNBiLSTMCRF:
         if not is_torch_available():
             raise RuntimeError("PyTorch is required to load PyTorchCharCNNBiLSTMCRF.")
         import torch
@@ -617,6 +653,7 @@ class PyTorchCharCNNBiLSTMCRF:
         if actual_sha != meta.get("weights_file_sha256"):
             raise ValueError(f"SHA-256 mismatch for {weights_path}")
 
+        dev = resolve_torch_device(device)
         cfg = meta["config"]
         obj = cls(
             word_emb_dim=int(cfg["word_emb_dim"]),
@@ -629,7 +666,10 @@ class PyTorchCharCNNBiLSTMCRF:
             use_self_supervised=bool(cfg.get("use_self_supervised", True)),
             self_supervised_path=cfg.get("self_supervised_path"),
             seed=int(cfg["seed"]),
+            device=str(dev),
         )
+        obj._device = dev
+        obj.training_device = str(meta.get("training_device", "cpu"))
         obj.cluster_vocab_size = int(cfg["cluster_vocab_size"])
         obj.vocab.max_size = int(meta["vocab"]["max_size"])
         obj.vocab.min_freq = int(meta["vocab"]["min_freq"])
@@ -646,14 +686,56 @@ class PyTorchCharCNNBiLSTMCRF:
             hidden_dim=obj.hidden_dim,
             num_layers=obj.num_layers,
             dropout=obj.dropout,
-        )
+        ).to(dev)
         state = torch.load(weights_path, map_location="cpu")
-        obj.net.load_state_dict(state)
+        obj.net.load_state_dict({k: v.to(dev) for k, v in state.items()})
         obj.net.eval()
         obj.initial_weights_sha256 = str(meta.get("initial_weights_sha256", ""))
         obj.trained_weights_sha256 = str(meta.get("trained_weights_sha256", ""))
         obj._fitted = True
         return obj
+
+
+def ensemble_torch_ner_predictions(
+    models: list[PyTorchCharCNNBiLSTMCRF],
+    text: str,
+) -> list[PredictedEntity]:
+    """Consensus multi-seed span ensemble for PyTorchCharCNNBiLSTMCRF models."""
+    if not models:
+        return []
+    if len(models) == 1:
+        return models[0].predict_entities(text)
+
+    n_models = len(models)
+    votes: dict[tuple[str, int, int], list[PredictedEntity]] = {}
+    for m in models:
+        for ent in m.predict_entities(text):
+            votes.setdefault((ent.type, ent.start, ent.end), []).append(ent)
+
+    min_votes = max(1, (n_models + 1) // 2)
+    candidates: list[tuple[int, float, PredictedEntity]] = []
+    for (_etype, _s, _e), ents in votes.items():
+        mean_conf = float(np.mean([e.confidence for e in ents]))
+        if len(ents) >= min_votes or mean_conf >= 0.88:
+            boost = 0.04 * (len(ents) - 1)
+            merged_ent = PredictedEntity(
+                type=ents[0].type,
+                start=ents[0].start,
+                end=ents[0].end,
+                text=ents[0].text,
+                assertion=ents[0].assertion,
+                confidence=round(min(0.99, mean_conf + boost), 4),
+            )
+            candidates.append((len(ents), merged_ent.confidence, merged_ent))
+
+    # Greedy non-overlapping selection ordered by vote count then confidence
+    candidates.sort(key=lambda x: (-x[0], -x[1], x[2].start))
+    selected: list[PredictedEntity] = []
+    for _cnt, _conf, ent in candidates:
+        if any(max(ent.start, s.start) < min(ent.end, s.end) for s in selected):
+            continue
+        selected.append(ent)
+    return sorted(selected, key=lambda x: x.start)
 
 
 def predict_torch_char_cnn_bilstm_crf(

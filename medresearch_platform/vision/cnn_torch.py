@@ -23,6 +23,14 @@ from medresearch_platform.vision.dx_mapping import (
 SKIN_MODALITIES: tuple[str, ...] = ("clinical", "dermoscopic", "tbp_tile")
 
 
+def _resolve_device(device: str | None = "auto") -> Any:
+    import torch
+
+    if device is None or str(device).strip().lower() in ("", "auto"):
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return torch.device(str(device))
+
+
 def _compute_binary_auroc(y_true: np.ndarray, y_score: np.ndarray) -> float:
     mask = (y_true == 0) | (y_true == 1)
     yt = y_true[mask]
@@ -139,6 +147,7 @@ class PyTorchDermResNet:
         body_site_dropout: float = 0.0,
         seed: int = 1,
         n_dx: int | None = None,
+        device: str | None = "auto",
     ) -> None:
         import torch
 
@@ -161,12 +170,15 @@ class PyTorchDermResNet:
         self.abstain_min_confidence = 0.55
         self.dx_head_supported = False
         self.train_history: dict[str, Any] = {}
+        self._device = _resolve_device(device)
 
         torch.manual_seed(seed)
+        if self._device.type == "cuda":
+            torch.cuda.manual_seed_all(seed)
         np.random.seed(seed)
         random.seed(seed)
 
-        self.net = _build_resnet_module(self.include_metadata, self.n_dx, len(SKIN_MODALITIES))
+        self.net = _build_resnet_module(self.include_metadata, self.n_dx, len(SKIN_MODALITIES)).to(self._device)
         self.parameter_count = sum(p.numel() for p in self.net.parameters())
         self.initial_weights_sha256 = self._weights_sha256()
 
@@ -199,6 +211,8 @@ class PyTorchDermResNet:
         batch_size: int = 48,
         lr: float = 1e-3,
         patience: int = 4,
+        max_samples_per_epoch: int = 12000,
+        use_amp: bool = True,
     ) -> dict[str, Any]:
         import torch
         import torch.nn as nn
@@ -206,6 +220,10 @@ class PyTorchDermResNet:
 
         t0 = time.perf_counter()
         rng = random.Random(self.seed)
+        dev = self._device
+        is_cuda = dev.type == "cuda"
+        amp_enabled = bool(use_amp and is_cuda)
+        scaler = torch.cuda.amp.GradScaler(enabled=amp_enabled) if is_cuda else None
 
         def _pack(samples: list[tuple[np.ndarray, int, DermCatalogRecord]]) -> tuple[torch.Tensor, ...]:
             xs = torch.stack([self._arr_to_tensor(a) for a, _, _ in samples], dim=0)
@@ -231,16 +249,40 @@ class PyTorchDermResNet:
             torch.tensor(w_pos, dtype=torch.float32),
             torch.where(y_mal_tr == 0, torch.tensor(w_neg, dtype=torch.float32), torch.tensor(1.0, dtype=torch.float32)),
         )
-        sampler = WeightedRandomSampler(sample_weights.tolist(), num_samples=min(len(y_mal_tr), 12000), replacement=True)
-        loader = DataLoader(TensorDataset(x_tr, y_mal_tr, y_dx_tr, y_mod_tr, m_tr), batch_size=batch_size, sampler=sampler)
+        sampler = WeightedRandomSampler(
+            sample_weights.tolist(),
+            num_samples=min(len(y_mal_tr), max_samples_per_epoch),
+            replacement=True,
+        )
+        loader = DataLoader(
+            TensorDataset(x_tr, y_mal_tr, y_dx_tr, y_mod_tr, m_tr),
+            batch_size=batch_size,
+            sampler=sampler,
+            pin_memory=is_cuda,
+        )
 
         bce = nn.BCEWithLogitsLoss(reduction="none")
         ce = nn.CrossEntropyLoss()
         opt = torch.optim.AdamW(self.net.parameters(), lr=lr, weight_decay=1e-4)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1, epochs))
 
+        def _eval_val_logits() -> tuple[torch.Tensor, torch.Tensor]:
+            mal_parts: list[torch.Tensor] = []
+            dx_parts: list[torch.Tensor] = []
+            val_bs = max(64, batch_size)
+            self.net.eval()
+            with torch.no_grad():
+                for i in range(0, len(x_va), val_bs):
+                    xv = x_va[i : i + val_bs].to(dev, non_blocking=is_cuda)
+                    mv = m_va[i : i + val_bs].to(dev, non_blocking=is_cuda) if self.include_metadata else None
+                    with torch.cuda.amp.autocast(enabled=amp_enabled):
+                        lm, ld, _ = self.net(xv, mv)
+                    mal_parts.append(lm.float().cpu())
+                    dx_parts.append(ld.float().cpu())
+            return torch.cat(mal_parts, dim=0), torch.cat(dx_parts, dim=0)
+
         best_val_auroc = -1.0
-        best_state = {k: v.clone() for k, v in self.net.state_dict().items()}
+        best_state = {k: v.detach().cpu().clone() for k, v in self.net.state_dict().items()}
         stale = 0
         history: list[dict[str, float]] = []
 
@@ -250,6 +292,12 @@ class PyTorchDermResNet:
             ep_loss = 0.0
             n_batches = 0
             for xb, ymb, ydb, ymodb, mb in loader:
+                xb = xb.to(dev, non_blocking=is_cuda)
+                ymb = ymb.to(dev, non_blocking=is_cuda)
+                ydb = ydb.to(dev, non_blocking=is_cuda)
+                ymodb = ymodb.to(dev, non_blocking=is_cuda)
+                mb = mb.to(dev, non_blocking=is_cuda)
+
                 # Augmentations: flip H/V, 90-deg rot, subtle brightness/contrast jitter
                 if rng.random() < 0.5:
                     xb = torch.flip(xb, dims=[3])
@@ -270,69 +318,77 @@ class PyTorchDermResNet:
                             mb[row_i, 7] = 1.0
 
                 opt.zero_grad()
-                l_mal, l_dx, l_mod = self.net(xb, mb if self.include_metadata else None)
-                mask = (ymb == 0) | (ymb == 1)
-                if mask.any():
-                    loss_mal = bce(l_mal[mask], ymb[mask].float()).mean()
+                with torch.cuda.amp.autocast(enabled=amp_enabled):
+                    l_mal, l_dx, l_mod = self.net(xb, mb if self.include_metadata else None)
+                    mask = (ymb == 0) | (ymb == 1)
+                    if mask.any():
+                        loss_mal = bce(l_mal[mask], ymb[mask].float()).mean()
+                    else:
+                        loss_mal = torch.tensor(0.0, device=dev)
+                    dx_mask = ydb != MASKED_DX_INDEX
+                    loss_dx = ce(l_dx[dx_mask], ydb[dx_mask]) if dx_mask.any() else torch.tensor(0.0, device=dev)
+                    loss_mod = ce(l_mod, ymodb)
+                    loss = loss_mal + 0.35 * loss_dx + 0.15 * loss_mod
+
+                if scaler is not None and amp_enabled:
+                    scaler.scale(loss).backward()
+                    scaler.step(opt)
+                    scaler.update()
                 else:
-                    loss_mal = torch.tensor(0.0)
-                dx_mask = ydb != MASKED_DX_INDEX
-                loss_dx = ce(l_dx[dx_mask], ydb[dx_mask]) if dx_mask.any() else torch.tensor(0.0)
-                loss_mod = ce(l_mod, ymodb)
-                loss = loss_mal + 0.35 * loss_dx + 0.15 * loss_mod
-                loss.backward()
-                opt.step()
+                    loss.backward()
+                    opt.step()
                 ep_loss += float(loss.item())
                 n_batches += 1
             scheduler.step()
 
-            self.net.eval()
-            with torch.no_grad():
-                vl_mal, _, _ = self.net(x_va, m_va if self.include_metadata else None)
-                vp_mal = torch.sigmoid(vl_mal).cpu().numpy()
-                val_auroc = _compute_binary_auroc(y_mal_va.numpy(), vp_mal)
+            vl_mal, _ = _eval_val_logits()
+            vp_mal = torch.sigmoid(vl_mal).numpy()
+            val_auroc = _compute_binary_auroc(y_mal_va.numpy(), vp_mal)
 
             ep_sec = round(time.perf_counter() - ep_t0, 2)
             mean_loss = round(ep_loss / max(1, n_batches), 4)
-            print(f"[seed={self.seed} meta={self.include_metadata}] epoch {ep}/{epochs}: loss={mean_loss:.4f} val_auroc={val_auroc:.4f} ({ep_sec}s)", flush=True)
+            print(
+                f"[seed={self.seed} dev={dev} img={self.image_size} meta={self.include_metadata}] "
+                f"epoch {ep}/{epochs}: loss={mean_loss:.4f} val_auroc={val_auroc:.4f} ({ep_sec}s)",
+                flush=True,
+            )
             history.append({"epoch": float(ep), "loss": mean_loss, "val_auroc": round(val_auroc, 4), "sec": ep_sec})
 
             if val_auroc > best_val_auroc + 1e-4:
                 best_val_auroc = val_auroc
-                best_state = {k: v.clone() for k, v in self.net.state_dict().items()}
+                best_state = {k: v.detach().cpu().clone() for k, v in self.net.state_dict().items()}
                 stale = 0
             else:
                 stale += 1
                 if stale >= patience:
                     break
 
-        self.net.load_state_dict(best_state)
+        self.net.load_state_dict({k: v.to(dev) for k, v in best_state.items()})
         self.net.eval()
 
         # Fit scalar temperature on val malignancy logits (masked)
-        with torch.no_grad():
-            vl_mal, vl_dx, _ = self.net(x_va, m_va if self.include_metadata else None)
-            mask = (y_mal_va == 0) | (y_mal_va == 1)
-            if mask.any():
-                best_t = 1.0
-                best_nll = float("inf")
-                for t in np.linspace(0.5, 2.5, 21):
-                    nll = float(bce(vl_mal[mask] / float(t), y_mal_va[mask].float()).mean().item())
-                    if nll < best_nll:
-                        best_nll = nll
-                        best_t = float(t)
-                self.temperature_mal = round(best_t, 3)
+        vl_mal, vl_dx = _eval_val_logits()
+        mask = (y_mal_va == 0) | (y_mal_va == 1)
+        if mask.any():
+            best_t = 1.0
+            best_nll = float("inf")
+            for t in np.linspace(0.5, 2.5, 21):
+                nll = float(bce(vl_mal[mask] / float(t), y_mal_va[mask].float()).mean().item())
+                if nll < best_nll:
+                    best_nll = nll
+                    best_t = float(t)
+            self.temperature_mal = round(best_t, 3)
 
-            dx_va_mask = y_dx_va != MASKED_DX_INDEX
-            if dx_va_mask.any():
-                best_tdx = 1.0
-                best_nll_dx = float("inf")
-                for t in np.linspace(0.5, 2.5, 21):
-                    nll_dx = float(ce(vl_dx[dx_va_mask] / float(t), y_dx_va[dx_va_mask]).item())
-                    if nll_dx < best_nll_dx:
-                        best_nll_dx = nll_dx
-                        best_tdx = float(t)
-                self.temperature_dx = round(best_tdx, 3)
+        dx_va_mask = y_dx_va != MASKED_DX_INDEX
+        if dx_va_mask.any():
+            best_tdx = 1.0
+            best_nll_dx = float("inf")
+            for t in np.linspace(0.5, 2.5, 21):
+                nll_dx = float(ce(vl_dx[dx_va_mask] / float(t), y_dx_va[dx_va_mask]).item())
+                if nll_dx < best_nll_dx:
+                    best_nll_dx = nll_dx
+                    best_tdx = float(t)
+            self.temperature_dx = round(best_tdx, 3)
 
         dx_tr_valid = y_dx_tr[y_dx_tr != MASKED_DX_INDEX].numpy()
         cls_counts = (
@@ -369,15 +425,16 @@ class PyTorchDermResNet:
         import torch
 
         self.net.eval()
+        dev = self._device
         p_mal_list, p_dx_list, p_mod_list = [], [], []
         with torch.no_grad():
             for i in range(0, len(samples), batch_size):
                 chunk = samples[i : i + batch_size]
-                xb = torch.stack([self._arr_to_tensor(a) for a, _, _ in chunk], dim=0)
+                xb = torch.stack([self._arr_to_tensor(a) for a, _, _ in chunk], dim=0).to(dev)
                 mb = torch.stack(
                     [torch.from_numpy(encode_metadata_vector(r, metadata_mode=self.metadata_mode)) for _, _, r in chunk],
                     dim=0,
-                )
+                ).to(dev)
                 l_mal, l_dx, l_mod = self.net(xb, mb if self.include_metadata else None)
                 p_mal_list.append(torch.sigmoid(l_mal / max(0.1, self.temperature_mal)).cpu().numpy())
                 p_dx_list.append(torch.softmax(l_dx / max(0.1, self.temperature_dx), dim=1).cpu().numpy())
@@ -498,12 +555,13 @@ class PyTorchDermResNet:
 
         h_f = self.net.stage4.register_forward_hook(fwd_hook)
         h_b = self.net.stage4.register_full_backward_hook(bwd_hook)
+        dev = self._device
         try:
-            x = self._arr_to_tensor(arr).unsqueeze(0).requires_grad_(True)
+            x = self._arr_to_tensor(arr).unsqueeze(0).to(dev).requires_grad_(True)
             m = (
-                torch.from_numpy(encode_metadata_vector(rec, metadata_mode=self.metadata_mode)).unsqueeze(0)
+                torch.from_numpy(encode_metadata_vector(rec, metadata_mode=self.metadata_mode)).unsqueeze(0).to(dev)
                 if (self.include_metadata and rec is not None)
-                else (torch.zeros((1, 8), dtype=torch.float32) if self.include_metadata else None)
+                else (torch.zeros((1, 8), dtype=torch.float32, device=dev) if self.include_metadata else None)
             )
             self.net.zero_grad()
             l_mal, _, _ = self.net(x, m)
@@ -532,7 +590,8 @@ class PyTorchDermResNet:
         p = Path(out_dir)
         p.mkdir(parents=True, exist_ok=True)
         weights_path = p / "weights_torch.pt"
-        torch.save(self.net.state_dict(), weights_path)
+        cpu_state = {k: v.detach().cpu() for k, v in self.net.state_dict().items()}
+        torch.save(cpu_state, weights_path)
         import subprocess
 
         try:
@@ -543,7 +602,7 @@ class PyTorchDermResNet:
         trained_sha = hashlib.sha256(weights_path.read_bytes()).hexdigest()
         manifest = {
             "architecture_name": self.architecture_name,
-            "backend": "pytorch_cpu",
+            "backend": f"pytorch_{self._device.type}",
             "git_commit": git_commit,
             "image_size": self.image_size,
             "stage_channels": [32, 64, 128, 256],
@@ -567,7 +626,7 @@ class PyTorchDermResNet:
         return manifest
 
     @classmethod
-    def load(cls, model_dir: str | Path) -> PyTorchDermResNet:
+    def load(cls, model_dir: str | Path, *, device: str | None = "cpu") -> PyTorchDermResNet:
         import torch
 
         p = Path(model_dir)
@@ -589,8 +648,9 @@ class PyTorchDermResNet:
             body_site_dropout=float(manifest.get("body_site_dropout", 0.0)),
             seed=int(manifest.get("seed", 1)),
             n_dx=n_dx,
+            device=device,
         )
-        obj.net.load_state_dict(state_dict)
+        obj.net.load_state_dict({k: v.to(obj._device) for k, v in state_dict.items()})
         obj.net.eval()
         obj.temperature_mal = float(manifest.get("temperature_mal", 1.0))
         obj.temperature_dx = float(manifest.get("temperature_dx", 1.0))

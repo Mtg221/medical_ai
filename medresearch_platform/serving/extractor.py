@@ -103,18 +103,45 @@ class ExtractionService:
         )
         self._hybrid: HybridPipeline | None = None
         self._classical_crf: ClassicalCRFModel | None = None
-        self._torch_ner: Any = None
+        self._torch_ner_models: list[Any] | None = None
+
+    def _discover_torch_ner_dirs(self) -> list[Path]:
+        raw_env = os.environ.get("MEDRESEARCH_TORCH_NER_DIR", "").strip()
+        if "," in raw_env:
+            return [Path(p.strip()) for p in raw_env.split(",") if p.strip() and Path(p.strip()).exists()]
+        if raw_env:
+            p = Path(raw_env)
+            return [p] if p.exists() else []
+        # Auto-discover multi-seed hospital checkpoints (seed1, seed2, seed3, ...)
+        base_parent = self.torch_ner_dir.parent
+        discovered = sorted(
+            d for d in base_parent.glob("hospital_char_cnn_bilstm_crf_seed*")
+            if d.is_dir() and (d / "manifest.json").exists()
+        )
+        if discovered:
+            return discovered
+        return [self.torch_ner_dir] if self.torch_ner_dir.exists() else []
+
+    def _get_torch_ner_models(self) -> list[Any]:
+        if self._torch_ner_models is None:
+            dirs = self._discover_torch_ner_dirs()
+            if not dirs:
+                self._torch_ner_models = []
+            else:
+                from medresearch_platform.approaches.torch_ner import (
+                    PyTorchCharCNNBiLSTMCRF,
+                    is_torch_available,
+                )
+
+                if is_torch_available():
+                    self._torch_ner_models = [PyTorchCharCNNBiLSTMCRF.load(d, device="cpu") for d in dirs]
+                else:
+                    self._torch_ner_models = []
+        return self._torch_ner_models
 
     def _get_torch_ner(self) -> Any:
-        if self._torch_ner is None and self.torch_ner_dir.exists():
-            from medresearch_platform.approaches.torch_ner import (
-                PyTorchCharCNNBiLSTMCRF,
-                is_torch_available,
-            )
-
-            if is_torch_available():
-                self._torch_ner = PyTorchCharCNNBiLSTMCRF.load(self.torch_ner_dir)
-        return self._torch_ner
+        models = self._get_torch_ner_models()
+        return models[0] if models else None
 
     def _get_hybrid(self) -> HybridPipeline:
         if self._hybrid is None:
@@ -183,14 +210,20 @@ class ExtractionService:
                 "files_sha256": c.manifest.get("files", {}),
                 "model_dir": str(self.classical_crf_dir),
             })
-        t_ner = self._get_torch_ner()
-        if t_ner is not None:
+        t_models = self._get_torch_ner_models()
+        if t_models:
+            t_ner = t_models[0]
             out.append({
                 "model_id": "hospital_char_cnn_bilstm_crf",
                 "name": "hospital_char_cnn_bilstm_crf",
                 "model_type": "pytorch_char_cnn_bilstm_crf",
                 "seed": t_ner.seed,
-                "cfg": {"pretrained_weights_used": False, "partial_label_marginal_crf": True},
+                "num_seeds": len(t_models),
+                "cfg": {
+                    "pretrained_weights_used": False,
+                    "partial_label_marginal_crf": True,
+                    "ensemble_seeds": [m.seed for m in t_models],
+                },
                 "review_threshold": self.get_review_threshold(None),
                 "corpus_id": "SYNTH-MED-V3.1+open_clinical",
                 "corpus_hash": t_ner.trained_weights_sha256[:16],
@@ -225,14 +258,15 @@ class ExtractionService:
 
         source_stage_by_key: dict[tuple[str, int, int], str] = {}
         eff_approach = os.environ.get("MEDRESEARCH_DEFAULT_APPROACH", approach) if approach == "hybrid_v2" else approach
-        if eff_approach == "hospital_ensemble" and self._get_torch_ner() is not None:
+        t_models = self._get_torch_ner_models() if eff_approach == "hospital_ensemble" else []
+        if eff_approach == "hospital_ensemble" and t_models:
             from medresearch_platform.approaches.context_negex import apply_context_and_relations
+            from medresearch_platform.approaches.torch_ner import ensemble_torch_ner_predictions
             from medresearch_platform.eval_harness.metrics import PredictedEntity
 
             model = self._get_hybrid()
-            t_ner = self._get_torch_ner()
             pred_h, payload = model.extract_document(doc)
-            torch_ents = t_ner.predict_entities(doc.text)
+            torch_ents = ensemble_torch_ner_predictions(t_models, doc.text)
             merged: dict[tuple[str, int, int], PredictedEntity] = {}
             for e in torch_ents:
                 merged[(e.type, e.start, e.end)] = e

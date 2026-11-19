@@ -1,7 +1,11 @@
-"""Train & benchmark unified hospital NER model: From-Scratch PyTorch Char-CNN + BiLSTM + Partial-Label Marginal CRF + Dual-Expert Ensemble."""
+"""Train & benchmark unified hospital NER model: From-Scratch PyTorch Char-CNN + BiLSTM + Partial-Label Marginal CRF + Multi-Seed Dual-Expert Ensemble.
+
+Runs automatically on CUDA GPU when available (e.g., Kaggle T4/P100) and saves CPU-loadable checkpoints with SHA-256 verification.
+"""
 
 from __future__ import annotations
 
+import argparse
 import json
 import time
 from datetime import datetime, timezone
@@ -10,7 +14,10 @@ from typing import Any
 
 from medresearch_platform.approaches.classical_ml import ClassicalCRFModel
 from medresearch_platform.approaches.context_negex import apply_context_and_relations
-from medresearch_platform.approaches.torch_ner import PyTorchCharCNNBiLSTMCRF
+from medresearch_platform.approaches.torch_ner import (
+    PyTorchCharCNNBiLSTMCRF,
+    ensemble_torch_ner_predictions,
+)
 from medresearch_platform.data.schema import AnnotatedDocument
 from medresearch_platform.eval_harness.metrics import DocumentPrediction, Evaluator, PredictedEntity
 from medresearch_platform.eval_harness.runner import _load_jsonl
@@ -82,47 +89,109 @@ def _eval_split(
     return out
 
 
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Train from-scratch hospital Partial-Label Char-CNN-BiLSTM-CRF (CPU or CUDA GPU).")
+    p.add_argument("--seeds", type=str, default="1", help="Comma-separated random seeds (e.g. 1,2,3 on GPU).")
+    p.add_argument("--epochs", type=int, default=14)
+    p.add_argument("--batch-size", type=int, default=16)
+    p.add_argument("--lr", type=float, default=0.003)
+    p.add_argument("--word-emb-dim", type=int, default=48)
+    p.add_argument("--char-emb-dim", type=int, default=16)
+    p.add_argument("--char-filters", type=int, default=16)
+    p.add_argument("--cluster-emb-dim", type=int, default=16)
+    p.add_argument("--hidden-dim", type=int, default=96)
+    p.add_argument("--num-layers", type=int, default=2)
+    p.add_argument("--dropout", type=float, default=0.25)
+    p.add_argument("--ocr-augment-ratio", type=float, default=0.15)
+    p.add_argument("--device", type=str, default="auto", help="'auto' (CUDA if available else CPU), 'cuda', or 'cpu'.")
+    p.add_argument("--open-dir", type=Path, default=Path("data/processed/open_clinical"))
+    p.add_argument("--out-models-dir", type=Path, default=Path("models"))
+    p.add_argument("--out-report", type=Path, default=Path("docs/results/hospital_partial_crf_benchmark.json"))
+    p.add_argument(
+        "--clinical-eval-only",
+        action="store_true",
+        help="Evaluate open_clinical_test only on clinical sources (maccrobat2020, pxcorpus, e3c_layer1) if biomedical corpora were added.",
+    )
+    return p.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
+    seeds = [int(s.strip()) for s in args.seeds.split(",") if s.strip()]
     t0 = time.perf_counter()
     ev = Evaluator()
+
     synth_train = _load_jsonl(Path("data/processed/v3_1/train.jsonl"))
     synth_val = _load_jsonl(Path("data/processed/v3_1/val.jsonl"))
     synth_unseen = _load_jsonl(Path("data/processed/v3_1/test_unseen_terms.jsonl"))
-    open_train = _load_jsonl(Path("data/processed/open_clinical/train.jsonl"))
-    open_test = _load_jsonl(Path("data/processed/open_clinical/test.jsonl"))
+    open_train = _load_jsonl(args.open_dir / "train.jsonl")
+    open_test_all = _load_jsonl(args.open_dir / "test.jsonl")
     llm_80 = _load_jsonl(Path("data/processed/realistic_llm/eval.jsonl"))
 
-    unified_train = synth_train + open_train
-    print(f"Training unified hospital Char-CNN-BiLSTM-PartialCRF on {len(unified_train)} EN+FR docs...", flush=True)
+    open_test = (
+        [d for d in open_test_all if d.source in {"maccrobat2020", "pxcorpus", "e3c_layer1"}]
+        if args.clinical_eval_only
+        else open_test_all
+    )
 
-    t_tr = time.perf_counter()
-    torch_model = PyTorchCharCNNBiLSTMCRF(
-        word_emb_dim=48,
-        char_emb_dim=16,
-        char_filters=16,
-        cluster_emb_dim=16,
-        hidden_dim=96,
-        num_layers=2,
-        dropout=0.25,
-        lr=0.003,
-        epochs=14,
-        batch_size=16,
-        use_self_supervised=True,
-        ocr_augment_ratio=0.15,
-        seed=1,
-    ).fit(unified_train, verbose=True)
-    torch_train_s = round(time.perf_counter() - t_tr, 2)
-    saved_dir = torch_model.save(Path("models/hospital_char_cnn_bilstm_crf_seed1"))
-    print(f"Saved {saved_dir} in {torch_train_s}s", flush=True)
+    unified_train = synth_train + open_train
+    src_counts: dict[str, int] = {}
+    for d in unified_train:
+        src_counts[d.source] = src_counts.get(d.source, 0) + 1
+    print(
+        f"Training {len(seeds)}-seed hospital Char-CNN-BiLSTM-PartialCRF (device={args.device}) "
+        f"on {len(unified_train)} EN+FR docs: {src_counts}",
+        flush=True,
+    )
+
+    torch_models: list[PyTorchCharCNNBiLSTMCRF] = []
+    seed_meta: list[dict[str, Any]] = []
+    t_tr_total = time.perf_counter()
+    for sd in seeds:
+        t_sd = time.perf_counter()
+        m = PyTorchCharCNNBiLSTMCRF(
+            word_emb_dim=args.word_emb_dim,
+            char_emb_dim=args.char_emb_dim,
+            char_filters=args.char_filters,
+            cluster_emb_dim=args.cluster_emb_dim,
+            hidden_dim=args.hidden_dim,
+            num_layers=args.num_layers,
+            dropout=args.dropout,
+            lr=args.lr,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            use_self_supervised=True,
+            ocr_augment_ratio=args.ocr_augment_ratio,
+            seed=sd,
+            device=args.device,
+        ).fit(unified_train, verbose=True)
+        sd_sec = round(time.perf_counter() - t_sd, 2)
+        saved_dir = m.save(args.out_models_dir / f"hospital_char_cnn_bilstm_crf_seed{sd}")
+        print(f"Saved {saved_dir} (device={m.training_device}) in {sd_sec}s", flush=True)
+        torch_models.append(m)
+        seed_meta.append(
+            {
+                "seed": sd,
+                "training_device": m.training_device,
+                "train_seconds": sd_sec,
+                "initial_weights_sha256": m.initial_weights_sha256,
+                "trained_weights_sha256": m.trained_weights_sha256,
+                "saved_dir": str(saved_dir),
+            }
+        )
+    torch_train_s = round(time.perf_counter() - t_tr_total, 2)
 
     # Also fit upgraded full-schema CRF (with E3C Layer 3 clusters + OCR aug) for ensemble comparison
     t_crf = time.perf_counter()
     crf_synth = ClassicalCRFModel(
         seed=1, cfg={"use_self_supervised": True, "ocr_augment_ratio": 0.30}
     ).fit(synth_train)
+    open_clinical_only_train = [
+        d for d in open_train if d.source in {"maccrobat2020", "pxcorpus", "e3c_layer1"}
+    ] or open_train
     crf_open = ClassicalCRFModel(
         seed=1, cfg={"use_self_supervised": True, "ocr_augment_ratio": 0.15}
-    ).fit(open_train)
+    ).fit(open_clinical_only_train)
     crf_train_s = round(time.perf_counter() - t_crf, 2)
 
     splits = {
@@ -134,10 +203,26 @@ def main() -> None:
 
     report: dict[str, Any] = {
         "evaluated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "note": "post-hoc (test seen) — Hospital unified Partial-Label Marginal Char-CNN-BiLSTM-CRF trained from scratch on SYNTH-MED-V3.1 (600) + open_clinical (1,645)",
+        "note": (
+            f"post-hoc (test seen) — Hospital {len(seeds)}-seed Partial-Label Marginal Char-CNN-BiLSTM-CRF "
+            f"trained from scratch on {len(unified_train)} EN+FR docs"
+        ),
         "pretrained_weights_used": False,
-        "initial_weights_sha256": torch_model.initial_weights_sha256,
-        "trained_weights_sha256": torch_model.trained_weights_sha256,
+        "seeds": seeds,
+        "train_source_counts": src_counts,
+        "hyperparams": {
+            "word_emb_dim": args.word_emb_dim,
+            "char_emb_dim": args.char_emb_dim,
+            "char_filters": args.char_filters,
+            "hidden_dim": args.hidden_dim,
+            "num_layers": args.num_layers,
+            "epochs": args.epochs,
+            "batch_size": args.batch_size,
+            "lr": args.lr,
+        },
+        "models": seed_meta,
+        "initial_weights_sha256": seed_meta[0]["initial_weights_sha256"],
+        "trained_weights_sha256": seed_meta[0]["trained_weights_sha256"],
         "torch_train_seconds": torch_train_s,
         "crf_train_seconds": crf_train_s,
         "splits": {},
@@ -148,7 +233,7 @@ def main() -> None:
         preds_ens: list[DocumentPrediction] = []
         for d in sp_docs:
             crf_pred = (crf_open if sp_name == "open_clinical_test" else crf_synth).predict_document(d)
-            t_ents = torch_model.predict_entities(d.text)
+            t_ents = ensemble_torch_ner_predictions(torch_models, d.text)
             t_enr, t_rel, t_tx = apply_context_and_relations(d, t_ents)
             preds_torch.append(
                 DocumentPrediction(
@@ -187,9 +272,9 @@ def main() -> None:
         )
 
     report["total_elapsed_s"] = round(time.perf_counter() - t0, 2)
-    out = Path("docs/results/hospital_partial_crf_benchmark.json")
-    out.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print(f"Wrote {out} in {report['total_elapsed_s']}s")
+    args.out_report.parent.mkdir(parents=True, exist_ok=True)
+    args.out_report.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(f"Wrote {args.out_report} in {report['total_elapsed_s']}s")
 
 
 if __name__ == "__main__":

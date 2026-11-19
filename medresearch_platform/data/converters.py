@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import xml.etree.ElementTree as ET
 from collections import Counter
 from typing import Any
@@ -663,3 +664,245 @@ def from_e3c_xmi(
             "doi": doc_doi,
         },
     )
+
+
+def from_ncbi_disease_pubtator(
+    raw_text: str,
+    *,
+    split: str = "train",
+) -> list[AnnotatedDocument]:
+    """Parse official NCBI Disease PubTator corpus (NIH/NLM, Public Domain) into AnnotatedDocuments."""
+    docs: list[AnnotatedDocument] = []
+    blocks = re.split(r"\r?\n\s*\r?\n", raw_text.strip())
+    for block in blocks:
+        lines = [ln for ln in block.splitlines() if ln.strip()]
+        if not lines:
+            continue
+        pmid = ""
+        title = ""
+        abstract = ""
+        raw_ents: list[EntitySpan] = []
+
+        for ln in lines:
+            if "|t|" in ln and not title:
+                pmid, title = ln.split("|t|", 1)
+                pmid = pmid.strip()
+            elif "|a|" in ln and not abstract:
+                p_a, abstract = ln.split("|a|", 1)
+                if not pmid:
+                    pmid = p_a.strip()
+            elif "\t" in ln:
+                parts = ln.split("\t")
+                if len(parts) < 5:
+                    continue
+                try:
+                    start = int(parts[1])
+                    end = int(parts[2])
+                except ValueError:
+                    continue
+                mention = parts[3]
+                mesh = parts[5].strip() if len(parts) >= 6 else ""
+                raw_ents.append(
+                    EntitySpan(
+                        id=f"d_{start}_{end}",
+                        type="DIAGNOSIS",
+                        start=start,
+                        end=end,
+                        text=mention,
+                        assertion="present",
+                        normalized_code=mesh or None,
+                        normalized_system="MeSH" if mesh else None,
+                    )
+                )
+
+        if not pmid or not (title or abstract):
+            continue
+        full_text = f"{title} {abstract}".strip() if (title and abstract) else (title or abstract)
+        aligned: list[EntitySpan] = []
+        n_txt = len(full_text)
+        for ent in raw_ents:
+            s, e = ent.start, ent.end
+            if 0 <= s < e <= n_txt and full_text[s:e] == ent.text:
+                aligned.append(ent)
+                continue
+            # Tolerate minor 1-3 char title/abstract delimiter drift in PubTator
+            lo = max(0, s - 4)
+            hi = min(n_txt, e + 4)
+            idx = full_text.find(ent.text, lo, hi)
+            if idx != -1:
+                aligned.append(
+                    EntitySpan(
+                        id=ent.id,
+                        type=ent.type,
+                        start=idx,
+                        end=idx + len(ent.text),
+                        text=full_text[idx : idx + len(ent.text)],
+                        assertion=ent.assertion,
+                        normalized_code=ent.normalized_code,
+                        normalized_system=ent.normalized_system,
+                    )
+                )
+
+        kept = _dedupe_non_overlapping_entities(aligned)
+        entities = [
+            EntitySpan(
+                id=f"e{i}",
+                type=e.type,
+                start=e.start,
+                end=e.end,
+                text=e.text,
+                assertion=e.assertion,
+                normalized_code=e.normalized_code,
+                normalized_system=e.normalized_system,
+            )
+            for i, e in enumerate(kept, start=1)
+        ]
+        doc_id = f"ncbi_disease_{split}_{pmid}"
+        docs.append(
+            AnnotatedDocument(
+                doc_id=doc_id,
+                patient_id=f"pat_{doc_id}",
+                language="en",
+                doc_type="discharge_summary",
+                document_date="2014-01-01",
+                source="ncbi_disease",
+                split=split,
+                text=full_text,
+                entities=entities,
+                metadata={
+                    "corpus": "NCBI-Disease",
+                    "license": "Public-Domain",
+                    "pmid": pmid,
+                    "annotated_types": ["DIAGNOSIS"],
+                },
+            )
+        )
+    return docs
+
+
+_NO_SPACE_BEFORE = {".", ",", ";", ":", "?", "!", ")", "]", "}", "%", "'", "'s"}
+_NO_SPACE_AFTER = {"(", "[", "{", "/", "-"}
+
+
+def from_bc5cdr_iob(
+    raw_text: str,
+    *,
+    split: str = "train",
+    sentences_per_doc: int = 8,
+) -> list[AnnotatedDocument]:
+    """Parse BC5CDR BIO-tagged TSV (BioCreative V CDR, Public Domain) into AnnotatedDocuments."""
+    tag_map = {"Disease": "DIAGNOSIS", "Chemical": "MEDICATION"}
+    sentences: list[list[tuple[str, str]]] = []
+    cur: list[tuple[str, str]] = []
+    for line in raw_text.splitlines():
+        s = line.strip()
+        if not s:
+            if cur:
+                sentences.append(cur)
+                cur = []
+            continue
+        parts = s.split("\t")
+        if len(parts) < 2:
+            parts = s.split()
+        if len(parts) < 2:
+            continue
+        cur.append((parts[0], parts[-1]))
+    if cur:
+        sentences.append(cur)
+
+    docs: list[AnnotatedDocument] = []
+    for chunk_idx in range(0, len(sentences), max(1, sentences_per_doc)):
+        group = sentences[chunk_idx : chunk_idx + max(1, sentences_per_doc)]
+        text_parts: list[str] = []
+        cursor = 0
+        entities: list[EntitySpan] = []
+        active_type: str | None = None
+        active_start = -1
+        active_end = -1
+
+        def _flush_entity() -> None:
+            nonlocal active_type, active_start, active_end
+            if active_type is not None and active_end > active_start:
+                full_so_far = "".join(text_parts)
+                span_txt = full_so_far[active_start:active_end]
+                if span_txt.strip():
+                    entities.append(
+                        EntitySpan(
+                            id=f"e{len(entities) + 1}",
+                            type=active_type,
+                            start=active_start,
+                            end=active_end,
+                            text=span_txt,
+                            assertion="present",
+                        )
+                    )
+            active_type = None
+            active_start = -1
+            active_end = -1
+
+        for s_i, sent in enumerate(group):
+            if s_i > 0:
+                _flush_entity()
+                text_parts.append(" ")
+                cursor += 1
+            prev_tok = ""
+            for t_i, (tok, tag) in enumerate(sent):
+                need_space = (
+                    t_i > 0
+                    and tok not in _NO_SPACE_BEFORE
+                    and prev_tok not in _NO_SPACE_AFTER
+                    and tok != "-"
+                )
+                if need_space:
+                    text_parts.append(" ")
+                    cursor += 1
+                tok_start = cursor
+                text_parts.append(tok)
+                cursor += len(tok)
+                tok_end = cursor
+                prev_tok = tok
+
+                if tag.startswith("B-"):
+                    _flush_entity()
+                    mapped = tag_map.get(tag[2:])
+                    if mapped is not None:
+                        active_type = mapped
+                        active_start = tok_start
+                        active_end = tok_end
+                elif tag.startswith("I-"):
+                    mapped = tag_map.get(tag[2:])
+                    if mapped is not None and active_type == mapped:
+                        active_end = tok_end
+                    else:
+                        _flush_entity()
+                        if mapped is not None:
+                            active_type = mapped
+                            active_start = tok_start
+                            active_end = tok_end
+                else:
+                    _flush_entity()
+            _flush_entity()
+
+        full_text = "".join(text_parts).strip()
+        if not full_text:
+            continue
+        doc_id = f"bc5cdr_{split}_{chunk_idx // max(1, sentences_per_doc):04d}"
+        docs.append(
+            AnnotatedDocument(
+                doc_id=doc_id,
+                patient_id=f"pat_{doc_id}",
+                language="en",
+                doc_type="discharge_summary",
+                document_date="2015-01-01",
+                source="bc5cdr",
+                split=split,
+                text=full_text,
+                entities=entities,
+                metadata={
+                    "corpus": "BC5CDR",
+                    "license": "Public-Domain",
+                    "annotated_types": ["DIAGNOSIS", "MEDICATION"],
+                },
+            )
+        )
+    return docs
