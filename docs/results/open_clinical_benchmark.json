@@ -1,0 +1,1634 @@
+{
+  "evaluated_at_utc": "2026-11-19T12:21:09Z",
+  "dataset": "data/processed/open_clinical",
+  "train_docs": 1645,
+  "test_docs": 443,
+  "train_sha256": "de46574e477ff5fd4f30e8975bd9d8808793826bfa0c9606032ba548b95ddeb0",
+  "test_sha256": "188a3f4aa86923631dbea6dcd1ad662496ca7ba9dfbb5a451f7ebabfbc7c334b",
+  "seed": 1,
+  "epochs": 6,
+  "aux_epochs": 4,
+  "pretrained_weights_used": false,
+  "approaches": {
+    "rule_based": {
+      "elapsed_seconds": 4.93,
+      "overall": {
+        "num_docs": 443,
+        "strict_span": {
+          "precision": 0.285714,
+          "recall": 0.049394,
+          "f1": 0.084227,
+          "tp": 212.0,
+          "fp": 530.0,
+          "fn": 4080.0,
+          "macro_f1": 0.064364
+        },
+        "lenient_span": {
+          "precision": 0.487871,
+          "recall": 0.084343,
+          "f1": 0.143822,
+          "tp": 362.0,
+          "fp": 380.0,
+          "fn": 3930.0
+        },
+        "per_language": {
+          "en": {
+            "precision": 0.336134,
+            "recall": 0.062943,
+            "f1": 0.10603,
+            "tp": 160.0,
+            "fp": 316.0,
+            "fn": 2382.0
+          },
+          "fr": {
+            "precision": 0.195489,
+            "recall": 0.029714,
+            "f1": 0.051587,
+            "tp": 52.0,
+            "fp": 214.0,
+            "fn": 1698.0
+          }
+        },
+        "per_entity_type": {
+          "ANATOMY": {
+            "precision": 0.374046,
+            "recall": 0.086879,
+            "f1": 0.141007,
+            "tp": 49.0,
+            "fp": 82.0,
+            "fn": 515.0
+          },
+          "DATE": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0.0,
+            "fp": 0.0,
+            "fn": 112.0
+          },
+          "DIAGNOSIS": {
+            "precision": 0.291667,
+            "recall": 0.060738,
+            "f1": 0.100539,
+            "tp": 28.0,
+            "fp": 68.0,
+            "fn": 433.0
+          },
+          "DOSAGE": {
+            "precision": 0.081081,
+            "recall": 0.019608,
+            "f1": 0.031579,
+            "tp": 9.0,
+            "fp": 102.0,
+            "fn": 450.0
+          },
+          "DURATION": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0.0,
+            "fp": 67.0,
+            "fn": 326.0
+          },
+          "FREQUENCY": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0.0,
+            "fp": 19.0,
+            "fn": 389.0
+          },
+          "LAB_TEST": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0.0,
+            "fp": 81.0,
+            "fn": 0.0
+          },
+          "LAB_UNIT": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0.0,
+            "fp": 27.0,
+            "fn": 0.0
+          },
+          "LAB_VALUE": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0.0,
+            "fp": 0.0,
+            "fn": 417.0
+          },
+          "MEDICATION": {
+            "precision": 0.7875,
+            "recall": 0.161954,
+            "f1": 0.268657,
+            "tp": 63.0,
+            "fp": 17.0,
+            "fn": 326.0
+          },
+          "PROCEDURE": {
+            "precision": 0.468085,
+            "recall": 0.030261,
+            "f1": 0.056848,
+            "tp": 22.0,
+            "fp": 25.0,
+            "fn": 705.0
+          },
+          "ROUTE": {
+            "precision": 0.333333,
+            "recall": 0.045455,
+            "f1": 0.08,
+            "tp": 1.0,
+            "fp": 2.0,
+            "fn": 21.0
+          },
+          "SYMPTOM": {
+            "precision": 0.5,
+            "recall": 0.093897,
+            "f1": 0.158103,
+            "tp": 40.0,
+            "fp": 40.0,
+            "fn": 386.0
+          }
+        },
+        "timex": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0.0,
+          "fp": 86.0,
+          "fn": 827.0,
+          "normalization_accuracy": 0.0
+        }
+      },
+      "by_corpus": {
+        "e3c_layer1": {
+          "num_docs": 18,
+          "strict_span": {
+            "precision": 0.073171,
+            "recall": 0.025918,
+            "f1": 0.038278,
+            "tp": 12.0,
+            "fp": 152.0,
+            "fn": 451.0,
+            "macro_f1": 0.009799
+          },
+          "lenient_span": {
+            "precision": 0.158537,
+            "recall": 0.056156,
+            "f1": 0.082935,
+            "tp": 26.0,
+            "fp": 138.0,
+            "fn": 437.0
+          },
+          "timex": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0.0,
+            "fp": 0.0,
+            "fn": 30.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.106383,
+              "recall": 0.065789,
+              "f1": 0.081301,
+              "tp": 5.0,
+              "fp": 42.0,
+              "fn": 71.0
+            },
+            "fr": {
+              "precision": 0.059829,
+              "recall": 0.018088,
+              "f1": 0.027778,
+              "tp": 7.0,
+              "fp": 110.0,
+              "fn": 380.0
+            }
+          }
+        },
+        "maccrobat2020": {
+          "num_docs": 28,
+          "strict_span": {
+            "precision": 0.361305,
+            "recall": 0.062855,
+            "f1": 0.107081,
+            "tp": 155.0,
+            "fp": 274.0,
+            "fn": 2311.0,
+            "macro_f1": 0.087699
+          },
+          "lenient_span": {
+            "precision": 0.501166,
+            "recall": 0.087186,
+            "f1": 0.148532,
+            "tp": 215.0,
+            "fp": 214.0,
+            "fn": 2251.0
+          },
+          "timex": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0.0,
+            "fp": 3.0,
+            "fn": 155.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.361305,
+              "recall": 0.062855,
+              "f1": 0.107081,
+              "tp": 155.0,
+              "fp": 274.0,
+              "fn": 2311.0
+            }
+          }
+        },
+        "pxcorpus": {
+          "num_docs": 397,
+          "strict_span": {
+            "precision": 0.302013,
+            "recall": 0.033015,
+            "f1": 0.059524,
+            "tp": 45.0,
+            "fp": 104.0,
+            "fn": 1318.0,
+            "macro_f1": 0.033712
+          },
+          "lenient_span": {
+            "precision": 0.812081,
+            "recall": 0.088775,
+            "f1": 0.160053,
+            "tp": 121.0,
+            "fp": 28.0,
+            "fn": 1242.0
+          },
+          "timex": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0.0,
+            "fp": 83.0,
+            "fn": 642.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "fr": {
+              "precision": 0.302013,
+              "recall": 0.033015,
+              "f1": 0.059524,
+              "tp": 45.0,
+              "fp": 104.0,
+              "fn": 1318.0
+            }
+          }
+        }
+      }
+    },
+    "classical_ml": {
+      "elapsed_seconds": 62.29,
+      "overall": {
+        "num_docs": 443,
+        "strict_span": {
+          "precision": 0.545254,
+          "recall": 0.575489,
+          "f1": 0.559964,
+          "tp": 2470.0,
+          "fp": 2060.0,
+          "fn": 1822.0,
+          "macro_f1": 0.577797
+        },
+        "lenient_span": {
+          "precision": 0.690728,
+          "recall": 0.729031,
+          "f1": 0.709363,
+          "tp": 3129.0,
+          "fp": 1401.0,
+          "fn": 1163.0
+        },
+        "per_language": {
+          "en": {
+            "precision": 0.394161,
+            "recall": 0.403619,
+            "f1": 0.398834,
+            "tp": 1026.0,
+            "fp": 1577.0,
+            "fn": 1516.0
+          },
+          "fr": {
+            "precision": 0.749351,
+            "recall": 0.825143,
+            "f1": 0.785423,
+            "tp": 1444.0,
+            "fp": 483.0,
+            "fn": 306.0
+          }
+        },
+        "per_entity_type": {
+          "ANATOMY": {
+            "precision": 0.324534,
+            "recall": 0.370567,
+            "f1": 0.346026,
+            "tp": 209.0,
+            "fp": 435.0,
+            "fn": 355.0
+          },
+          "DATE": {
+            "precision": 0.4,
+            "recall": 0.5,
+            "f1": 0.444444,
+            "tp": 56.0,
+            "fp": 84.0,
+            "fn": 56.0
+          },
+          "DIAGNOSIS": {
+            "precision": 0.340952,
+            "recall": 0.388286,
+            "f1": 0.363083,
+            "tp": 179.0,
+            "fp": 346.0,
+            "fn": 282.0
+          },
+          "DOSAGE": {
+            "precision": 0.792415,
+            "recall": 0.864924,
+            "f1": 0.827083,
+            "tp": 397.0,
+            "fp": 104.0,
+            "fn": 62.0
+          },
+          "DURATION": {
+            "precision": 0.79564,
+            "recall": 0.895706,
+            "f1": 0.842713,
+            "tp": 292.0,
+            "fp": 75.0,
+            "fn": 34.0
+          },
+          "FREQUENCY": {
+            "precision": 0.906329,
+            "recall": 0.920308,
+            "f1": 0.913265,
+            "tp": 358.0,
+            "fp": 37.0,
+            "fn": 31.0
+          },
+          "LAB_VALUE": {
+            "precision": 0.408745,
+            "recall": 0.515588,
+            "f1": 0.455992,
+            "tp": 215.0,
+            "fp": 311.0,
+            "fn": 202.0
+          },
+          "MEDICATION": {
+            "precision": 0.801047,
+            "recall": 0.786632,
+            "f1": 0.793774,
+            "tp": 306.0,
+            "fp": 76.0,
+            "fn": 83.0
+          },
+          "PROCEDURE": {
+            "precision": 0.426791,
+            "recall": 0.376891,
+            "f1": 0.400292,
+            "tp": 274.0,
+            "fp": 368.0,
+            "fn": 453.0
+          },
+          "ROUTE": {
+            "precision": 0.545455,
+            "recall": 0.545455,
+            "f1": 0.545455,
+            "tp": 12.0,
+            "fp": 10.0,
+            "fn": 10.0
+          },
+          "SYMPTOM": {
+            "precision": 0.445596,
+            "recall": 0.403756,
+            "f1": 0.423645,
+            "tp": 172.0,
+            "fp": 214.0,
+            "fn": 254.0
+          }
+        },
+        "timex": {
+          "precision": 0.853018,
+          "recall": 0.785973,
+          "f1": 0.818125,
+          "tp": 650.0,
+          "fp": 112.0,
+          "fn": 177.0,
+          "normalization_accuracy": 0.0
+        }
+      },
+      "by_corpus": {
+        "e3c_layer1": {
+          "num_docs": 18,
+          "strict_span": {
+            "precision": 0.277299,
+            "recall": 0.416847,
+            "f1": 0.333046,
+            "tp": 193.0,
+            "fp": 503.0,
+            "fn": 270.0,
+            "macro_f1": 0.183402
+          },
+          "lenient_span": {
+            "precision": 0.477011,
+            "recall": 0.717063,
+            "f1": 0.572908,
+            "tp": 332.0,
+            "fp": 364.0,
+            "fn": 131.0
+          },
+          "timex": {
+            "precision": 0.652174,
+            "recall": 0.5,
+            "f1": 0.566038,
+            "tp": 15.0,
+            "fp": 8.0,
+            "fn": 15.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.139241,
+              "recall": 0.289474,
+              "f1": 0.188034,
+              "tp": 22.0,
+              "fp": 136.0,
+              "fn": 54.0
+            },
+            "fr": {
+              "precision": 0.317844,
+              "recall": 0.44186,
+              "f1": 0.36973,
+              "tp": 171.0,
+              "fp": 367.0,
+              "fn": 216.0
+            }
+          }
+        },
+        "maccrobat2020": {
+          "num_docs": 28,
+          "strict_span": {
+            "precision": 0.410634,
+            "recall": 0.407137,
+            "f1": 0.408878,
+            "tp": 1004.0,
+            "fp": 1441.0,
+            "fn": 1462.0,
+            "macro_f1": 0.370015
+          },
+          "lenient_span": {
+            "precision": 0.602863,
+            "recall": 0.597729,
+            "f1": 0.600285,
+            "tp": 1474.0,
+            "fp": 971.0,
+            "fn": 992.0
+          },
+          "timex": {
+            "precision": 0.195122,
+            "recall": 0.103226,
+            "f1": 0.135021,
+            "tp": 16.0,
+            "fp": 66.0,
+            "fn": 139.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.410634,
+              "recall": 0.407137,
+              "f1": 0.408878,
+              "tp": 1004.0,
+              "fp": 1441.0,
+              "fn": 1462.0
+            }
+          }
+        },
+        "pxcorpus": {
+          "num_docs": 397,
+          "strict_span": {
+            "precision": 0.916487,
+            "recall": 0.933969,
+            "f1": 0.925145,
+            "tp": 1273.0,
+            "fp": 116.0,
+            "fn": 90.0,
+            "macro_f1": 0.574134
+          },
+          "lenient_span": {
+            "precision": 0.952484,
+            "recall": 0.970653,
+            "f1": 0.961483,
+            "tp": 1323.0,
+            "fp": 66.0,
+            "fn": 40.0
+          },
+          "timex": {
+            "precision": 0.942161,
+            "recall": 0.964174,
+            "f1": 0.953041,
+            "tp": 619.0,
+            "fp": 38.0,
+            "fn": 23.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "fr": {
+              "precision": 0.916487,
+              "recall": 0.933969,
+              "f1": 0.925145,
+              "tp": 1273.0,
+              "fp": 116.0,
+              "fn": 90.0
+            }
+          }
+        }
+      }
+    },
+    "classical_crf": {
+      "elapsed_seconds": 38.14,
+      "overall": {
+        "num_docs": 443,
+        "strict_span": {
+          "precision": 0.723003,
+          "recall": 0.563141,
+          "f1": 0.633137,
+          "tp": 2417.0,
+          "fp": 926.0,
+          "fn": 1875.0,
+          "macro_f1": 0.637626
+        },
+        "lenient_span": {
+          "precision": 0.825307,
+          "recall": 0.642824,
+          "f1": 0.722724,
+          "tp": 2759.0,
+          "fp": 584.0,
+          "fn": 1533.0
+        },
+        "per_language": {
+          "en": {
+            "precision": 0.569158,
+            "recall": 0.380409,
+            "f1": 0.456025,
+            "tp": 967.0,
+            "fp": 732.0,
+            "fn": 1575.0
+          },
+          "fr": {
+            "precision": 0.881995,
+            "recall": 0.828571,
+            "f1": 0.854449,
+            "tp": 1450.0,
+            "fp": 194.0,
+            "fn": 300.0
+          }
+        },
+        "per_entity_type": {
+          "ANATOMY": {
+            "precision": 0.495979,
+            "recall": 0.328014,
+            "f1": 0.394877,
+            "tp": 185.0,
+            "fp": 188.0,
+            "fn": 379.0
+          },
+          "DATE": {
+            "precision": 0.6875,
+            "recall": 0.589286,
+            "f1": 0.634615,
+            "tp": 66.0,
+            "fp": 30.0,
+            "fn": 46.0
+          },
+          "DIAGNOSIS": {
+            "precision": 0.490305,
+            "recall": 0.383948,
+            "f1": 0.430657,
+            "tp": 177.0,
+            "fp": 184.0,
+            "fn": 284.0
+          },
+          "DOSAGE": {
+            "precision": 0.919169,
+            "recall": 0.867102,
+            "f1": 0.892377,
+            "tp": 398.0,
+            "fp": 35.0,
+            "fn": 61.0
+          },
+          "DURATION": {
+            "precision": 0.913313,
+            "recall": 0.904908,
+            "f1": 0.909091,
+            "tp": 295.0,
+            "fp": 28.0,
+            "fn": 31.0
+          },
+          "FREQUENCY": {
+            "precision": 0.96,
+            "recall": 0.92545,
+            "f1": 0.942408,
+            "tp": 360.0,
+            "fp": 15.0,
+            "fn": 29.0
+          },
+          "LAB_VALUE": {
+            "precision": 0.651652,
+            "recall": 0.520384,
+            "f1": 0.578667,
+            "tp": 217.0,
+            "fp": 116.0,
+            "fn": 200.0
+          },
+          "MEDICATION": {
+            "precision": 0.860058,
+            "recall": 0.758355,
+            "f1": 0.806011,
+            "tp": 295.0,
+            "fp": 48.0,
+            "fn": 94.0
+          },
+          "PROCEDURE": {
+            "precision": 0.604119,
+            "recall": 0.363136,
+            "f1": 0.453608,
+            "tp": 264.0,
+            "fp": 173.0,
+            "fn": 463.0
+          },
+          "ROUTE": {
+            "precision": 0.75,
+            "recall": 0.409091,
+            "f1": 0.529412,
+            "tp": 9.0,
+            "fp": 3.0,
+            "fn": 13.0
+          },
+          "SYMPTOM": {
+            "precision": 0.587549,
+            "recall": 0.35446,
+            "f1": 0.442167,
+            "tp": 151.0,
+            "fp": 106.0,
+            "fn": 275.0
+          }
+        },
+        "timex": {
+          "precision": 0.938395,
+          "recall": 0.792019,
+          "f1": 0.859016,
+          "tp": 655.0,
+          "fp": 43.0,
+          "fn": 172.0,
+          "normalization_accuracy": 0.0
+        }
+      },
+      "by_corpus": {
+        "e3c_layer1": {
+          "num_docs": 18,
+          "strict_span": {
+            "precision": 0.469767,
+            "recall": 0.436285,
+            "f1": 0.452408,
+            "tp": 202.0,
+            "fp": 228.0,
+            "fn": 261.0,
+            "macro_f1": 0.245565
+          },
+          "lenient_span": {
+            "precision": 0.653488,
+            "recall": 0.606911,
+            "f1": 0.629339,
+            "tp": 281.0,
+            "fp": 149.0,
+            "fn": 182.0
+          },
+          "timex": {
+            "precision": 0.882353,
+            "recall": 0.5,
+            "f1": 0.638298,
+            "tp": 15.0,
+            "fp": 2.0,
+            "fn": 15.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.236364,
+              "recall": 0.342105,
+              "f1": 0.27957,
+              "tp": 26.0,
+              "fp": 84.0,
+              "fn": 50.0
+            },
+            "fr": {
+              "precision": 0.55,
+              "recall": 0.45478,
+              "f1": 0.497878,
+              "tp": 176.0,
+              "fp": 144.0,
+              "fn": 211.0
+            }
+          }
+        },
+        "maccrobat2020": {
+          "num_docs": 28,
+          "strict_span": {
+            "precision": 0.592196,
+            "recall": 0.38159,
+            "f1": 0.464118,
+            "tp": 941.0,
+            "fp": 648.0,
+            "fn": 1525.0,
+            "macro_f1": 0.425765
+          },
+          "lenient_span": {
+            "precision": 0.740717,
+            "recall": 0.477291,
+            "f1": 0.580518,
+            "tp": 1177.0,
+            "fp": 412.0,
+            "fn": 1289.0
+          },
+          "timex": {
+            "precision": 0.365385,
+            "recall": 0.122581,
+            "f1": 0.183575,
+            "tp": 19.0,
+            "fp": 33.0,
+            "fn": 136.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.592196,
+              "recall": 0.38159,
+              "f1": 0.464118,
+              "tp": 941.0,
+              "fp": 648.0,
+              "fn": 1525.0
+            }
+          }
+        },
+        "pxcorpus": {
+          "num_docs": 397,
+          "strict_span": {
+            "precision": 0.962236,
+            "recall": 0.934703,
+            "f1": 0.948269,
+            "tp": 1274.0,
+            "fp": 50.0,
+            "fn": 89.0,
+            "macro_f1": 0.789232
+          },
+          "lenient_span": {
+            "precision": 0.982628,
+            "recall": 0.954512,
+            "f1": 0.968366,
+            "tp": 1301.0,
+            "fp": 23.0,
+            "fn": 62.0
+          },
+          "timex": {
+            "precision": 0.987281,
+            "recall": 0.96729,
+            "f1": 0.977183,
+            "tp": 621.0,
+            "fp": 8.0,
+            "fn": 21.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "fr": {
+              "precision": 0.962236,
+              "recall": 0.934703,
+              "f1": 0.948269,
+              "tp": 1274.0,
+              "fp": 50.0,
+              "fn": 89.0
+            }
+          }
+        }
+      }
+    },
+    "bilstm_crf": {
+      "elapsed_seconds": 233.73,
+      "overall": {
+        "num_docs": 443,
+        "strict_span": {
+          "precision": 0.564861,
+          "recall": 0.52959,
+          "f1": 0.546657,
+          "tp": 2273.0,
+          "fp": 1751.0,
+          "fn": 2019.0,
+          "macro_f1": 0.540522
+        },
+        "lenient_span": {
+          "precision": 0.668738,
+          "recall": 0.62698,
+          "f1": 0.647186,
+          "tp": 2691.0,
+          "fp": 1333.0,
+          "fn": 1601.0
+        },
+        "per_language": {
+          "en": {
+            "precision": 0.399559,
+            "recall": 0.356806,
+            "f1": 0.376974,
+            "tp": 907.0,
+            "fp": 1363.0,
+            "fn": 1635.0
+          },
+          "fr": {
+            "precision": 0.778791,
+            "recall": 0.780571,
+            "f1": 0.77968,
+            "tp": 1366.0,
+            "fp": 388.0,
+            "fn": 384.0
+          }
+        },
+        "per_entity_type": {
+          "ANATOMY": {
+            "precision": 0.394799,
+            "recall": 0.296099,
+            "f1": 0.338399,
+            "tp": 167.0,
+            "fp": 256.0,
+            "fn": 397.0
+          },
+          "DATE": {
+            "precision": 0.565789,
+            "recall": 0.383929,
+            "f1": 0.457447,
+            "tp": 43.0,
+            "fp": 33.0,
+            "fn": 69.0
+          },
+          "DIAGNOSIS": {
+            "precision": 0.534483,
+            "recall": 0.067245,
+            "f1": 0.119461,
+            "tp": 31.0,
+            "fp": 27.0,
+            "fn": 430.0
+          },
+          "DOSAGE": {
+            "precision": 0.884354,
+            "recall": 0.849673,
+            "f1": 0.866667,
+            "tp": 390.0,
+            "fp": 51.0,
+            "fn": 69.0
+          },
+          "DURATION": {
+            "precision": 0.626327,
+            "recall": 0.904908,
+            "f1": 0.740276,
+            "tp": 295.0,
+            "fp": 176.0,
+            "fn": 31.0
+          },
+          "FREQUENCY": {
+            "precision": 0.884131,
+            "recall": 0.902314,
+            "f1": 0.89313,
+            "tp": 351.0,
+            "fp": 46.0,
+            "fn": 38.0
+          },
+          "LAB_VALUE": {
+            "precision": 0.5323,
+            "recall": 0.494005,
+            "f1": 0.512438,
+            "tp": 206.0,
+            "fp": 181.0,
+            "fn": 211.0
+          },
+          "MEDICATION": {
+            "precision": 0.885246,
+            "recall": 0.694087,
+            "f1": 0.778098,
+            "tp": 270.0,
+            "fp": 35.0,
+            "fn": 119.0
+          },
+          "PROCEDURE": {
+            "precision": 0.340122,
+            "recall": 0.459422,
+            "f1": 0.390872,
+            "tp": 334.0,
+            "fp": 648.0,
+            "fn": 393.0
+          },
+          "ROUTE": {
+            "precision": 0.777778,
+            "recall": 0.318182,
+            "f1": 0.451613,
+            "tp": 7.0,
+            "fp": 2.0,
+            "fn": 15.0
+          },
+          "SYMPTOM": {
+            "precision": 0.376842,
+            "recall": 0.420188,
+            "f1": 0.397336,
+            "tp": 179.0,
+            "fp": 296.0,
+            "fn": 247.0
+          }
+        },
+        "timex": {
+          "precision": 0.74424,
+          "recall": 0.781137,
+          "f1": 0.762242,
+          "tp": 646.0,
+          "fp": 222.0,
+          "fn": 181.0,
+          "normalization_accuracy": 0.0
+        }
+      },
+      "by_corpus": {
+        "e3c_layer1": {
+          "num_docs": 18,
+          "strict_span": {
+            "precision": 0.229541,
+            "recall": 0.24838,
+            "f1": 0.238589,
+            "tp": 115.0,
+            "fp": 386.0,
+            "fn": 348.0,
+            "macro_f1": 0.144858
+          },
+          "lenient_span": {
+            "precision": 0.339321,
+            "recall": 0.367171,
+            "f1": 0.352697,
+            "tp": 170.0,
+            "fp": 331.0,
+            "fn": 293.0
+          },
+          "timex": {
+            "precision": 0.283019,
+            "recall": 0.5,
+            "f1": 0.361446,
+            "tp": 15.0,
+            "fp": 38.0,
+            "fn": 15.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.125926,
+              "recall": 0.223684,
+              "f1": 0.161137,
+              "tp": 17.0,
+              "fp": 118.0,
+              "fn": 59.0
+            },
+            "fr": {
+              "precision": 0.26776,
+              "recall": 0.25323,
+              "f1": 0.260292,
+              "tp": 98.0,
+              "fp": 268.0,
+              "fn": 289.0
+            }
+          }
+        },
+        "maccrobat2020": {
+          "num_docs": 28,
+          "strict_span": {
+            "precision": 0.416862,
+            "recall": 0.360908,
+            "f1": 0.386872,
+            "tp": 890.0,
+            "fp": 1245.0,
+            "fn": 1576.0,
+            "macro_f1": 0.272249
+          },
+          "lenient_span": {
+            "precision": 0.567681,
+            "recall": 0.491484,
+            "f1": 0.526842,
+            "tp": 1212.0,
+            "fp": 923.0,
+            "fn": 1254.0
+          },
+          "timex": {
+            "precision": 0.128788,
+            "recall": 0.109677,
+            "f1": 0.118467,
+            "tp": 17.0,
+            "fp": 115.0,
+            "fn": 138.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.416862,
+              "recall": 0.360908,
+              "f1": 0.386872,
+              "tp": 890.0,
+              "fp": 1245.0,
+              "fn": 1576.0
+            }
+          }
+        },
+        "pxcorpus": {
+          "num_docs": 397,
+          "strict_span": {
+            "precision": 0.913545,
+            "recall": 0.930301,
+            "f1": 0.921847,
+            "tp": 1268.0,
+            "fp": 120.0,
+            "fn": 95.0,
+            "macro_f1": 0.661167
+          },
+          "lenient_span": {
+            "precision": 0.943084,
+            "recall": 0.960382,
+            "f1": 0.951654,
+            "tp": 1309.0,
+            "fp": 79.0,
+            "fn": 54.0
+          },
+          "timex": {
+            "precision": 0.898975,
+            "recall": 0.956386,
+            "f1": 0.926792,
+            "tp": 614.0,
+            "fp": 69.0,
+            "fn": 28.0,
+            "normalization_accuracy": 0.0
+          },
+          "per_language": {
+            "fr": {
+              "precision": 0.913545,
+              "recall": 0.930301,
+              "f1": 0.921847,
+              "tp": 1268.0,
+              "fp": 120.0,
+              "fn": 95.0
+            }
+          }
+        }
+      }
+    },
+    "hybrid_v2": {
+      "elapsed_seconds": 224.38,
+      "overall": {
+        "num_docs": 443,
+        "strict_span": {
+          "precision": 0.689362,
+          "recall": 0.56617,
+          "f1": 0.621722,
+          "tp": 2430.0,
+          "fp": 1095.0,
+          "fn": 1862.0,
+          "macro_f1": 0.620432
+        },
+        "lenient_span": {
+          "precision": 0.797163,
+          "recall": 0.654706,
+          "f1": 0.718946,
+          "tp": 2810.0,
+          "fp": 715.0,
+          "fn": 1482.0
+        },
+        "per_language": {
+          "en": {
+            "precision": 0.538936,
+            "recall": 0.378442,
+            "f1": 0.44465,
+            "tp": 962.0,
+            "fp": 823.0,
+            "fn": 1580.0
+          },
+          "fr": {
+            "precision": 0.843678,
+            "recall": 0.838857,
+            "f1": 0.841261,
+            "tp": 1468.0,
+            "fp": 272.0,
+            "fn": 282.0
+          }
+        },
+        "per_entity_type": {
+          "ANATOMY": {
+            "precision": 0.456731,
+            "recall": 0.336879,
+            "f1": 0.387755,
+            "tp": 190.0,
+            "fp": 226.0,
+            "fn": 374.0
+          },
+          "DATE": {
+            "precision": 0.6875,
+            "recall": 0.491071,
+            "f1": 0.572917,
+            "tp": 55.0,
+            "fp": 25.0,
+            "fn": 57.0
+          },
+          "DIAGNOSIS": {
+            "precision": 0.488827,
+            "recall": 0.37961,
+            "f1": 0.42735,
+            "tp": 175.0,
+            "fp": 183.0,
+            "fn": 286.0
+          },
+          "DOSAGE": {
+            "precision": 0.821501,
+            "recall": 0.882353,
+            "f1": 0.85084,
+            "tp": 405.0,
+            "fp": 88.0,
+            "fn": 54.0
+          },
+          "DURATION": {
+            "precision": 0.80163,
+            "recall": 0.904908,
+            "f1": 0.850144,
+            "tp": 295.0,
+            "fp": 73.0,
+            "fn": 31.0
+          },
+          "FREQUENCY": {
+            "precision": 0.928021,
+            "recall": 0.928021,
+            "f1": 0.928021,
+            "tp": 361.0,
+            "fp": 28.0,
+            "fn": 28.0
+          },
+          "LAB_VALUE": {
+            "precision": 0.618644,
+            "recall": 0.52518,
+            "f1": 0.568093,
+            "tp": 219.0,
+            "fp": 135.0,
+            "fn": 198.0
+          },
+          "MEDICATION": {
+            "precision": 0.837398,
+            "recall": 0.794344,
+            "f1": 0.815303,
+            "tp": 309.0,
+            "fp": 60.0,
+            "fn": 80.0
+          },
+          "PROCEDURE": {
+            "precision": 0.606061,
+            "recall": 0.357634,
+            "f1": 0.449827,
+            "tp": 260.0,
+            "fp": 169.0,
+            "fn": 467.0
+          },
+          "ROUTE": {
+            "precision": 0.75,
+            "recall": 0.409091,
+            "f1": 0.529412,
+            "tp": 9.0,
+            "fp": 3.0,
+            "fn": 13.0
+          },
+          "SYMPTOM": {
+            "precision": 0.59144,
+            "recall": 0.356808,
+            "f1": 0.445095,
+            "tp": 152.0,
+            "fp": 105.0,
+            "fn": 274.0
+          }
+        },
+        "timex": {
+          "precision": 0.916137,
+          "recall": 0.871826,
+          "f1": 0.893432,
+          "tp": 721.0,
+          "fp": 66.0,
+          "fn": 106.0,
+          "normalization_accuracy": 0.984127
+        }
+      },
+      "by_corpus": {
+        "e3c_layer1": {
+          "num_docs": 18,
+          "strict_span": {
+            "precision": 0.445652,
+            "recall": 0.442765,
+            "f1": 0.444204,
+            "tp": 205.0,
+            "fp": 255.0,
+            "fn": 258.0,
+            "macro_f1": 0.246894
+          },
+          "lenient_span": {
+            "precision": 0.619565,
+            "recall": 0.615551,
+            "f1": 0.617551,
+            "tp": 285.0,
+            "fp": 175.0,
+            "fn": 178.0
+          },
+          "timex": {
+            "precision": 0.72,
+            "recall": 0.6,
+            "f1": 0.654545,
+            "tp": 18.0,
+            "fp": 7.0,
+            "fn": 12.0,
+            "normalization_accuracy": 0.722222
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.232143,
+              "recall": 0.342105,
+              "f1": 0.276596,
+              "tp": 26.0,
+              "fp": 86.0,
+              "fn": 50.0
+            },
+            "fr": {
+              "precision": 0.514368,
+              "recall": 0.462532,
+              "f1": 0.487075,
+              "tp": 179.0,
+              "fp": 169.0,
+              "fn": 208.0
+            }
+          }
+        },
+        "maccrobat2020": {
+          "num_docs": 28,
+          "strict_span": {
+            "precision": 0.559474,
+            "recall": 0.379562,
+            "f1": 0.452283,
+            "tp": 936.0,
+            "fp": 737.0,
+            "fn": 1530.0,
+            "macro_f1": 0.410464
+          },
+          "lenient_span": {
+            "precision": 0.715481,
+            "recall": 0.485401,
+            "f1": 0.578401,
+            "tp": 1197.0,
+            "fp": 476.0,
+            "fn": 1269.0
+          },
+          "timex": {
+            "precision": 0.626866,
+            "recall": 0.541935,
+            "f1": 0.581315,
+            "tp": 84.0,
+            "fp": 50.0,
+            "fn": 71.0,
+            "normalization_accuracy": 1.0
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.559474,
+              "recall": 0.379562,
+              "f1": 0.452283,
+              "tp": 936.0,
+              "fp": 737.0,
+              "fn": 1530.0
+            }
+          }
+        },
+        "pxcorpus": {
+          "num_docs": 397,
+          "strict_span": {
+            "precision": 0.926006,
+            "recall": 0.945708,
+            "f1": 0.935753,
+            "tp": 1289.0,
+            "fp": 103.0,
+            "fn": 74.0,
+            "macro_f1": 0.781704
+          },
+          "lenient_span": {
+            "precision": 0.954023,
+            "recall": 0.974321,
+            "f1": 0.964065,
+            "tp": 1328.0,
+            "fp": 64.0,
+            "fn": 35.0
+          },
+          "timex": {
+            "precision": 0.985669,
+            "recall": 0.964174,
+            "f1": 0.974803,
+            "tp": 619.0,
+            "fp": 9.0,
+            "fn": 23.0,
+            "normalization_accuracy": 1.0
+          },
+          "per_language": {
+            "fr": {
+              "precision": 0.926006,
+              "recall": 0.945708,
+              "f1": 0.935753,
+              "tp": 1289.0,
+              "fp": 103.0,
+              "fn": 74.0
+            }
+          }
+        }
+      }
+    },
+    "hybrid_v2_oof_stage5": {
+      "elapsed_seconds": 545.44,
+      "calibrated_rerank_threshold": 0.35,
+      "calibrated_temperature": 2.0,
+      "overall": {
+        "num_docs": 443,
+        "strict_span": {
+          "precision": 0.724323,
+          "recall": 0.504427,
+          "f1": 0.594699,
+          "tp": 2165.0,
+          "fp": 824.0,
+          "fn": 2127.0,
+          "macro_f1": 0.58862
+        },
+        "lenient_span": {
+          "precision": 0.82101,
+          "recall": 0.571761,
+          "f1": 0.674083,
+          "tp": 2454.0,
+          "fp": 535.0,
+          "fn": 1838.0
+        },
+        "per_language": {
+          "en": {
+            "precision": 0.552204,
+            "recall": 0.280881,
+            "f1": 0.37236,
+            "tp": 714.0,
+            "fp": 579.0,
+            "fn": 1828.0
+          },
+          "fr": {
+            "precision": 0.855542,
+            "recall": 0.829143,
+            "f1": 0.842136,
+            "tp": 1451.0,
+            "fp": 245.0,
+            "fn": 299.0
+          }
+        },
+        "per_entity_type": {
+          "ANATOMY": {
+            "precision": 0.477564,
+            "recall": 0.264184,
+            "f1": 0.340183,
+            "tp": 149.0,
+            "fp": 163.0,
+            "fn": 415.0
+          },
+          "DATE": {
+            "precision": 0.753623,
+            "recall": 0.464286,
+            "f1": 0.574586,
+            "tp": 52.0,
+            "fp": 17.0,
+            "fn": 60.0
+          },
+          "DIAGNOSIS": {
+            "precision": 0.491803,
+            "recall": 0.260304,
+            "f1": 0.340426,
+            "tp": 120.0,
+            "fp": 124.0,
+            "fn": 341.0
+          },
+          "DOSAGE": {
+            "precision": 0.832645,
+            "recall": 0.877996,
+            "f1": 0.854719,
+            "tp": 403.0,
+            "fp": 81.0,
+            "fn": 56.0
+          },
+          "DURATION": {
+            "precision": 0.830028,
+            "recall": 0.898773,
+            "f1": 0.863034,
+            "tp": 293.0,
+            "fp": 60.0,
+            "fn": 33.0
+          },
+          "FREQUENCY": {
+            "precision": 0.930412,
+            "recall": 0.928021,
+            "f1": 0.929215,
+            "tp": 361.0,
+            "fp": 27.0,
+            "fn": 28.0
+          },
+          "LAB_VALUE": {
+            "precision": 0.633562,
+            "recall": 0.443645,
+            "f1": 0.521862,
+            "tp": 185.0,
+            "fp": 107.0,
+            "fn": 232.0
+          },
+          "MEDICATION": {
+            "precision": 0.855072,
+            "recall": 0.758355,
+            "f1": 0.803815,
+            "tp": 295.0,
+            "fp": 50.0,
+            "fn": 94.0
+          },
+          "PROCEDURE": {
+            "precision": 0.604938,
+            "recall": 0.269601,
+            "f1": 0.372978,
+            "tp": 196.0,
+            "fp": 128.0,
+            "fn": 531.0
+          },
+          "ROUTE": {
+            "precision": 0.75,
+            "recall": 0.409091,
+            "f1": 0.529412,
+            "tp": 9.0,
+            "fp": 3.0,
+            "fn": 13.0
+          },
+          "SYMPTOM": {
+            "precision": 0.614458,
+            "recall": 0.239437,
+            "f1": 0.344595,
+            "tp": 102.0,
+            "fp": 64.0,
+            "fn": 324.0
+          }
+        },
+        "timex": {
+          "precision": 0.916137,
+          "recall": 0.871826,
+          "f1": 0.893432,
+          "tp": 721.0,
+          "fp": 66.0,
+          "fn": 106.0,
+          "normalization_accuracy": 0.984127
+        }
+      },
+      "by_corpus": {
+        "e3c_layer1": {
+          "num_docs": 18,
+          "strict_span": {
+            "precision": 0.469496,
+            "recall": 0.382289,
+            "f1": 0.421429,
+            "tp": 177.0,
+            "fp": 200.0,
+            "fn": 286.0,
+            "macro_f1": 0.232981
+          },
+          "lenient_span": {
+            "precision": 0.65252,
+            "recall": 0.531317,
+            "f1": 0.585714,
+            "tp": 246.0,
+            "fp": 131.0,
+            "fn": 217.0
+          },
+          "timex": {
+            "precision": 0.72,
+            "recall": 0.6,
+            "f1": 0.654545,
+            "tp": 18.0,
+            "fp": 7.0,
+            "fn": 12.0,
+            "normalization_accuracy": 0.722222
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.220588,
+              "recall": 0.197368,
+              "f1": 0.208333,
+              "tp": 15.0,
+              "fp": 53.0,
+              "fn": 61.0
+            },
+            "fr": {
+              "precision": 0.524272,
+              "recall": 0.418605,
+              "f1": 0.465517,
+              "tp": 162.0,
+              "fp": 147.0,
+              "fn": 225.0
+            }
+          }
+        },
+        "maccrobat2020": {
+          "num_docs": 28,
+          "strict_span": {
+            "precision": 0.570612,
+            "recall": 0.283455,
+            "f1": 0.378759,
+            "tp": 699.0,
+            "fp": 526.0,
+            "fn": 1767.0,
+            "macro_f1": 0.35852
+          },
+          "lenient_span": {
+            "precision": 0.720816,
+            "recall": 0.35807,
+            "f1": 0.478461,
+            "tp": 883.0,
+            "fp": 342.0,
+            "fn": 1583.0
+          },
+          "timex": {
+            "precision": 0.626866,
+            "recall": 0.541935,
+            "f1": 0.581315,
+            "tp": 84.0,
+            "fp": 50.0,
+            "fn": 71.0,
+            "normalization_accuracy": 1.0
+          },
+          "per_language": {
+            "en": {
+              "precision": 0.570612,
+              "recall": 0.283455,
+              "f1": 0.378759,
+              "tp": 699.0,
+              "fp": 526.0,
+              "fn": 1767.0
+            }
+          }
+        },
+        "pxcorpus": {
+          "num_docs": 397,
+          "strict_span": {
+            "precision": 0.929344,
+            "recall": 0.945708,
+            "f1": 0.937455,
+            "tp": 1289.0,
+            "fp": 98.0,
+            "fn": 74.0,
+            "macro_f1": 0.782576
+          },
+          "lenient_span": {
+            "precision": 0.955299,
+            "recall": 0.97212,
+            "f1": 0.963636,
+            "tp": 1325.0,
+            "fp": 62.0,
+            "fn": 38.0
+          },
+          "timex": {
+            "precision": 0.985669,
+            "recall": 0.964174,
+            "f1": 0.974803,
+            "tp": 619.0,
+            "fp": 9.0,
+            "fn": 23.0,
+            "normalization_accuracy": 1.0
+          },
+          "per_language": {
+            "fr": {
+              "precision": 0.929344,
+              "recall": 0.945708,
+              "f1": 0.937455,
+              "tp": 1289.0,
+              "fp": 98.0,
+              "fn": 74.0
+            }
+          }
+        }
+      }
+    }
+  }
+}
