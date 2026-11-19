@@ -8,11 +8,25 @@
 
 ## Local Checks Before Every Push
 
+Run the exact CI suite locally before every push:
+
 ```bash
-ruff check medresearch_platform scripts tests
-mypy medresearch_platform
-pytest -q
-npm --prefix frontend test && npm --prefix frontend run build
+# macOS / Linux
+make check            # or: bash scripts/check_all.sh
+
+# Windows (PowerShell)
+pwsh scripts/check_all.ps1
+```
+
+Install the optional local pre-push hook so `git push` runs `scripts/check_all.sh` automatically:
+
+```bash
+cat <<'EOF' > .git/hooks/pre-push
+#!/usr/bin/env bash
+set -euo pipefail
+bash scripts/check_all.sh
+EOF
+chmod +x .git/hooks/pre-push
 ```
 
 - Never commit `.env`, `var/`, `models/`, or corpus/clinical images (`data/router_real/`, `var/cache/derm/`).
