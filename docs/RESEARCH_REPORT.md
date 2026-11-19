@@ -339,6 +339,18 @@ A confidence threshold cannot catch confident out-of-distribution mistakes; only
 
 - Corpus-prevalence-reweighted served overall (`3.28%` prev): `PPV = 0.3837`, `NPV = 0.9864`, `ECE = 0.4335`, `abstention = 0.8045`.
 
+**2b. Explaining the Offline-vs-Served Gap (Y2, [`p19_step2_served_gap.json`](results/vision/p19_step2_served_gap.json), `post-hoc (test seen) — gap analysis`):**
+- **Val-Only Ensemble vs. Latency Decision (`val_v3`, `n = 1,497`):** `bsdrop40` 1-seed achieves `0.8678` overall (`0.8847` dermoscopic, `0.7876` clinical) at `33.17 ms/image` on CPU, whereas a 3-seed ensemble (`bsdrop40 + seed2 + seed3`) reaches `0.8842` overall (`0.9031` dermoscopic, `0.7926` clinical) at `115.36 ms/image` (`3.5×` CPU latency). We keep `bsdrop40` 1-seed in `serving.py` to avoid mixing `bsdrop40` with non-dropout checkpoints and to preserve `3.5×` faster CPU latency.
+
+| Setting (`locked_test_v3`, `n = 1,624`, **`post-hoc (test seen)`**) | Overall AUROC | Dermoscopic (`n=700`) | Clinical (`n=574`) | TBP Tile (`n=350`) |
+|---|---:|---:|---:|---:|
+| **(4) Direct 3-seed ensemble + true metadata** | `0.8867` | `0.9540` | `0.7818` | `0.7917` |
+| **(1) Direct `bsdrop40` 1-seed + true metadata** | `0.8672` | `0.9347` | `0.7568` | `0.7559` |
+| **(2) Direct `bsdrop40` 1-seed + router modality + user `body_site`** | `0.8652` | `0.9342` | `0.7602` | `0.7559` |
+| **(3) Full `POST /api/v1/images/upload` served pipeline** | `0.7842` | `0.8849` | `0.7195` | `0.4819` |
+
+- **Gap Explanation (2 sentences):** Serving a single `bsdrop40` checkpoint instead of a 3-seed ensemble accounts for `-0.0193` dermoscopic AUROC (`-0.0195` overall), while using router-predicted modality instead of ground-truth modality costs almost nothing (`-0.0005` dermoscopic). The remaining `-0.0493` dermoscopic (`-0.0810` overall, `-0.2740` TBP) drop in `POST /api/v1/images/upload` comes from router abstentions and non-skin rejections (`42.5%` overall abstention, `95.7%` on `tbp_tile`, `5.5%` routed to `other`), for which the served API assigns neutral `p = 0.5` rather than scoring the lesion.
+
 **3. Offline Multi-Seed Benchmark (`step5_v3_skin_benchmark.json`, `n = 1,624`, Direct Model Calls Without Router):**
 
 | Modality | `n` (`mal` / `ben`) | AUROC [95% CI] | Sens @ 90% Spec | Bal Acc | ECE | Brier | Abstain Rate | Diagnosis Status (W2) |
