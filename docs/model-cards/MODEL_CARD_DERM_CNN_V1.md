@@ -9,6 +9,8 @@
 > **Clinical & Scientific Safety Notice (EN / FR)**
 > - **EN:** Research tool — not a diagnosis. A dermatologist must examine the lesion.
 > - **FR :** Outil de recherche — ne constitue pas un diagnostic. Un dermatologue doit examiner la lésion.
+> - **Served Image Scope (EN):** In practice, the image tool only gives a risk band for dermoscopic photos (served AUROC 0.8849); clinical phone photos get no risk band (AUROC 0.7195), TBP tiles abstain (AUROC 0.4819), and at corpus prevalence served abstention is 80.45% (ECE 0.4335).
+> - **Périmètre image servi (FR) :** En pratique, l'outil d'imagerie ne fournit une catégorie de risque que pour les photos dermoscopiques (AUROC servie 0.8849) ; les photos cliniques ne reçoivent pas de catégorie de risque (AUROC 0.7195), les tuiles TBP s'abstiennent (AUROC 0.4819) et, à la prévalence du corpus, l'abstention servie est de 80.45% (ECE 0.4335).
 
 ---
 

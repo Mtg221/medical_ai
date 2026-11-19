@@ -109,6 +109,12 @@ export function UploadJobsPage() {
           <p className="mt-1 font-mono">medextract derm train --seed 1 --out models/derm_cnn_seed1</p>
         </div>
       )}
+      <div
+        role="note"
+        className="rounded-lg border border-sky-200 bg-sky-50/70 px-3 py-2 text-xs text-slate-700 dark:border-sky-900 dark:bg-sky-950/30 dark:text-slate-200"
+      >
+        {t("upload.servedCapabilityNotice")}
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader className="flex items-center gap-2">
