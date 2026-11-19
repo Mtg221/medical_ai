@@ -20,7 +20,7 @@ def test_locked_synth_med_v3_1_hashes_match_manifest_and_generator() -> None:
     for sp in LOCKED_SPLITS:
         locked_file = LOCKED_DIR / f"{sp}.jsonl"
         assert locked_file.exists(), f"Missing locked split file: {locked_file}"
-        actual_sha = hashlib.sha256(locked_file.read_bytes()).hexdigest()
+        actual_sha = hashlib.sha256(locked_file.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
         assert actual_sha == expected_hashes[sp], f"Locked file tampered: {sp}"
 
         gen_bytes = ("\n".join(json.dumps(d.to_dict(), ensure_ascii=False) for d in splits[sp]) + "\n").encode("utf-8")
