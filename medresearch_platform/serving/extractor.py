@@ -98,8 +98,23 @@ class ExtractionService:
             if classical_crf_dir is not None
             else Path(os.environ.get("MEDRESEARCH_CLASSICAL_CRF_DIR", "models/classical_crf_seed1"))
         )
+        self.torch_ner_dir = Path(
+            os.environ.get("MEDRESEARCH_TORCH_NER_DIR", "models/hospital_char_cnn_bilstm_crf_seed1")
+        )
         self._hybrid: HybridPipeline | None = None
         self._classical_crf: ClassicalCRFModel | None = None
+        self._torch_ner: Any = None
+
+    def _get_torch_ner(self) -> Any:
+        if self._torch_ner is None and self.torch_ner_dir.exists():
+            from medresearch_platform.approaches.torch_ner import (
+                PyTorchCharCNNBiLSTMCRF,
+                is_torch_available,
+            )
+
+            if is_torch_available():
+                self._torch_ner = PyTorchCharCNNBiLSTMCRF.load(self.torch_ner_dir)
+        return self._torch_ner
 
     def _get_hybrid(self) -> HybridPipeline:
         if self._hybrid is None:
@@ -168,6 +183,22 @@ class ExtractionService:
                 "files_sha256": c.manifest.get("files", {}),
                 "model_dir": str(self.classical_crf_dir),
             })
+        t_ner = self._get_torch_ner()
+        if t_ner is not None:
+            out.append({
+                "model_id": "hospital_char_cnn_bilstm_crf",
+                "name": "hospital_char_cnn_bilstm_crf",
+                "model_type": "pytorch_char_cnn_bilstm_crf",
+                "seed": t_ner.seed,
+                "cfg": {"pretrained_weights_used": False, "partial_label_marginal_crf": True},
+                "review_threshold": self.get_review_threshold(None),
+                "corpus_id": "SYNTH-MED-V3.1+open_clinical",
+                "corpus_hash": t_ner.trained_weights_sha256[:16],
+                "git_commit": "local",
+                "saved_at_utc": "",
+                "files_sha256": {"char_cnn_bilstm_crf.pt": t_ner.trained_weights_sha256},
+                "model_dir": str(self.torch_ner_dir),
+            })
         return out
 
     def extract(
@@ -193,7 +224,58 @@ class ExtractionService:
         )
 
         source_stage_by_key: dict[tuple[str, int, int], str] = {}
-        if approach == "hybrid_v2":
+        eff_approach = os.environ.get("MEDRESEARCH_DEFAULT_APPROACH", approach) if approach == "hybrid_v2" else approach
+        if eff_approach == "hospital_ensemble" and self._get_torch_ner() is not None:
+            from medresearch_platform.approaches.context_negex import apply_context_and_relations
+            from medresearch_platform.eval_harness.metrics import PredictedEntity
+
+            model = self._get_hybrid()
+            t_ner = self._get_torch_ner()
+            pred_h, payload = model.extract_document(doc)
+            torch_ents = t_ner.predict_entities(doc.text)
+            merged: dict[tuple[str, int, int], PredictedEntity] = {}
+            for e in torch_ents:
+                merged[(e.type, e.start, e.end)] = e
+                source_stage_by_key[(e.type, e.start, e.end)] = "torch_char_cnn_bilstm_crf"
+            for he in pred_h.entities:
+                key = (he.type, he.start, he.end)
+                if key in merged:
+                    prev = merged[key]
+                    merged[key] = PredictedEntity(
+                        type=prev.type,
+                        start=prev.start,
+                        end=prev.end,
+                        text=prev.text,
+                        assertion=he.assertion,
+                        confidence=round(min(0.99, max(prev.confidence, he.confidence) + 0.05), 4),
+                    )
+                    source_stage_by_key[key] = "hospital_ensemble(torch+hybrid_v2)"
+                else:
+                    overlaps = [k for k, m in merged.items() if max(he.start, m.start) < min(he.end, m.end)]
+                    if not overlaps and he.confidence >= 0.72:
+                        merged[key] = he
+                        source_stage_by_key[key] = "hybrid_v2"
+                    elif overlaps and all(he.confidence > merged[k].confidence + 0.12 for k in overlaps):
+                        for k in overlaps:
+                            del merged[k]
+                        merged[key] = he
+                        source_stage_by_key[key] = "hybrid_v2"
+            ens_ents = sorted(merged.values(), key=lambda x: x.start)
+            enriched_ents, ens_rels, _ = apply_context_and_relations(doc, ens_ents)
+            pred = DocumentPrediction(
+                doc_id=doc.doc_id,
+                language=doc.language,
+                doc_type=doc.doc_type,
+                predicted_doc_type=pred_h.predicted_doc_type,
+                entities=enriched_ents,
+                relations=pred_h.relations or ens_rels,
+                timex=pred_h.timex,
+            )
+            manifest = model.manifest
+            model_name = "hospital_ensemble"
+            model_version = f"seed{model.seed}+torch_partial_crf"
+            warnings = tuple(payload.get("validation", {}).get("warnings", []))
+        elif eff_approach == "hybrid_v2" or approach == "hybrid_v2":
             model = self._get_hybrid()
             pred, payload = model.extract_document(doc)
             for item in payload.get("records", []):

@@ -160,11 +160,30 @@ class VisionServingEngine:
                 manifest = json.loads((m_dir / "manifest.json").read_text(encoding="utf-8"))
                 if manifest.get("backend") == "pytorch_cpu":
                     from medresearch_platform.vision.cnn_torch import PyTorchDermResNet
+                    from medresearch_platform.vision.ensemble import CalibratedVisionEnsemble
                     from medresearch_platform.vision.router_torch import is_torch_available
 
                     if not is_torch_available():
                         raise RuntimeError("PyTorch is not installed for pytorch_cpu skin model.")
-                    self._skin_model = PyTorchDermResNet.load(m_dir)
+
+                    use_ens = os.environ.get("MEDRESEARCH_VISION_ENSEMBLE", "1") != "0"
+                    custom_dir_set = bool(os.environ.get("MEDRESEARCH_VISION_SKIN_DIR"))
+                    ens_dirs = [
+                        self.workspace_dir / "models" / "derm_cnn_bsdrop40_seed1",
+                        self.workspace_dir / "models" / "derm_cnn_seed2",
+                        self.workspace_dir / "models" / "derm_cnn_seed3",
+                    ]
+                    if (
+                        use_ens
+                        and not custom_dir_set
+                        and all(
+                            self._check_model_dir(d, "weights.npz", "weights_torch.pt")
+                            for d in ens_dirs
+                        )
+                    ):
+                        self._skin_model = CalibratedVisionEnsemble.load_dirs(ens_dirs)
+                    else:
+                        self._skin_model = PyTorchDermResNet.load(m_dir)
                 else:
                     self._skin_model = DermResNetMultiTask.load(m_dir)
             except Exception as exc:
