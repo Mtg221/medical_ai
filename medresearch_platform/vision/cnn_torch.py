@@ -223,7 +223,20 @@ class PyTorchDermResNet:
         dev = self._device
         is_cuda = dev.type == "cuda"
         amp_enabled = bool(use_amp and is_cuda)
-        scaler = torch.cuda.amp.GradScaler(enabled=amp_enabled) if is_cuda else None
+        if is_cuda:
+            amp_scaler_cls = getattr(getattr(torch, "amp", None), "GradScaler", None)
+            scaler: Any = (
+                amp_scaler_cls("cuda", enabled=amp_enabled)
+                if amp_scaler_cls is not None
+                else torch.cuda.amp.GradScaler(enabled=amp_enabled)
+            )
+        else:
+            scaler = None
+
+        def _autocast_ctx() -> Any:
+            if is_cuda and hasattr(torch, "amp") and hasattr(torch.amp, "autocast"):
+                return torch.amp.autocast("cuda", enabled=amp_enabled)
+            return torch.cuda.amp.autocast(enabled=amp_enabled)
 
         def _pack(samples: list[tuple[np.ndarray, int, DermCatalogRecord]]) -> tuple[torch.Tensor, ...]:
             xs = torch.stack([self._arr_to_tensor(a) for a, _, _ in samples], dim=0)
@@ -275,7 +288,7 @@ class PyTorchDermResNet:
                 for i in range(0, len(x_va), val_bs):
                     xv = x_va[i : i + val_bs].to(dev, non_blocking=is_cuda)
                     mv = m_va[i : i + val_bs].to(dev, non_blocking=is_cuda) if self.include_metadata else None
-                    with torch.cuda.amp.autocast(enabled=amp_enabled):
+                    with _autocast_ctx():
                         lm, ld, _ = self.net(xv, mv)
                     mal_parts.append(lm.float().cpu())
                     dx_parts.append(ld.float().cpu())
@@ -318,7 +331,7 @@ class PyTorchDermResNet:
                             mb[row_i, 7] = 1.0
 
                 opt.zero_grad()
-                with torch.cuda.amp.autocast(enabled=amp_enabled):
+                with _autocast_ctx():
                     l_mal, l_dx, l_mod = self.net(xb, mb if self.include_metadata else None)
                     mask = (ymb == 0) | (ymb == 1)
                     if mask.any():
