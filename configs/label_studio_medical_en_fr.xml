@@ -17,6 +17,9 @@
     <Label value="DATE" background="#475569"/>
     <Label value="PATIENT_ID" background="#334155"/>
   </Labels>
+  <Labels name="timex" toName="text">
+    <Label value="RELATIVE" background="#64748b"/>
+  </Labels>
   <Choices name="assertion" toName="text" perRegion="true" choice="single">
     <Choice value="present"/>
     <Choice value="absent"/>

@@ -149,6 +149,7 @@ class Stage2EntityExtractor:
         self.vocab = TrainOnlyVocabulary(max_size=6000, min_freq=1)
         self.model: NeuralBiLSTMCRFTagger | None = None
         self.crf_model: sklearn_crfsuite.CRF | None = None
+        self.heldout_es_doc_ids: set[str] = set()
 
     def fit(self, train_docs: list[AnnotatedDocument]) -> Stage2EntityExtractor:
         self.vocab.fit(train_docs)
@@ -158,6 +159,7 @@ class Stage2EntityExtractor:
         subset = shuffled if self.max_train_docs is None else shuffled[: self.max_train_docs]
         n_es = max(1, int(0.12 * len(subset)))
         es_docs = subset[:n_es]
+        self.heldout_es_doc_ids = {d.doc_id for d in es_docs}
         tr_docs = subset[n_es:] if len(subset) > n_es else subset
 
         tr_seqs = _encode_docs(tr_docs, self.vocab)

@@ -30,11 +30,20 @@ _TYPE_TO_IDX: dict[str, int] = {t: i for i, t in enumerate(ENTITY_TYPES)}
 class TransformerCandidateReranker:
     """Text-reading random-init self-attention reranker over candidate entities in a document."""
 
-    def __init__(self, *, vocab_size: int = 6000, emb_dim: int = 16, d_model: int = 24, seed: int = 42) -> None:
+    def __init__(
+        self,
+        *,
+        vocab_size: int = 6000,
+        emb_dim: int = 16,
+        d_model: int = 24,
+        threshold: float = 0.25,
+        seed: int = 42,
+    ) -> None:
         rng = np.random.default_rng(seed)
         self.vocab_size = vocab_size
         self.emb_dim = emb_dim
         self.d_model = d_model
+        self.threshold = float(threshold)
         # Per-candidate input: span_emb + left_ctx_emb + right_ctx_emb + char_ortho + 19 metadata
         self.meta_dim = len(ENTITY_TYPES) + 5
         in_dim = 3 * emb_dim + CHAR_FEAT_DIM + self.meta_dim
@@ -96,8 +105,12 @@ class TransformerCandidateReranker:
             if t_idx is not None:
                 mat[i, meta_offset + t_idx] = 1.0
             mat[i, base + 0] = 1.0 if "bilstm_crf" in c.source_stage else 0.0
-            mat[i, base + 1] = 1.0 if "rule_layer" in c.source_stage else 0.0
-            mat[i, base + 2] = 1.0 if c.source_stage == "bilstm_crf+rule_layer" else 0.0
+            mat[i, base + 1] = (
+                1.0
+                if any(tok in c.source_stage for tok in ("rule_layer", "crf_backoff", "crf_override"))
+                else 0.0
+            )
+            mat[i, base + 2] = 1.0 if "+" in c.source_stage else 0.0
             mat[i, base + 3] = float(c.entity.confidence)
             mat[i, base + 4] = min(len(c.entity.text), 40) / 40.0
         return mat, tok_groups
@@ -120,14 +133,25 @@ class TransformerCandidateReranker:
         *,
         doc_text: str = "",
         vocab: TrainOnlyVocabulary | None = None,
+        sample_weights: np.ndarray | None = None,
     ) -> tuple[float, dict[str, np.ndarray]]:
         x_raw, tok_groups = self._featurize(candidates, doc_text=doc_text, vocab=vocab)
         logits, cache = self.forward(x_raw)
         probs = _sigmoid(logits)
         n = len(labels)
-        loss = float(-np.mean(labels * np.log(np.maximum(probs, 1e-12)) + (1.0 - labels) * np.log(np.maximum(1.0 - probs, 1e-12))))
+        per_item = -(
+            labels * np.log(np.maximum(probs, 1e-12))
+            + (1.0 - labels) * np.log(np.maximum(1.0 - probs, 1e-12))
+        )
+        if sample_weights is not None:
+            w = np.asarray(sample_weights, dtype=np.float64)
+            w_sum = max(float(np.sum(w)), 1e-12)
+            loss = float(np.sum(w * per_item) / w_sum)
+            d_logits = (probs - labels) * w / w_sum
+        else:
+            loss = float(np.mean(per_item))
+            d_logits = (probs - labels) / max(1, n)
 
-        d_logits = (probs - labels) / max(1, n)
         grads: dict[str, np.ndarray] = {k: np.zeros_like(v) for k, v in self.params.items()}
         grads["W_out"] = cache["h"].T @ d_logits[:, None]
         grads["b_out"] = np.array([np.sum(d_logits)], dtype=np.float64)
@@ -164,8 +188,15 @@ class TransformerCandidateReranker:
         *,
         doc_text: str = "",
         vocab: TrainOnlyVocabulary | None = None,
+        sample_weights: np.ndarray | None = None,
     ) -> float:
-        loss, grads = self.loss_and_grads(candidates, labels, doc_text=doc_text, vocab=vocab)
+        loss, grads = self.loss_and_grads(
+            candidates,
+            labels,
+            doc_text=doc_text,
+            vocab=vocab,
+            sample_weights=sample_weights,
+        )
         opt.step(self.params, grads)
         return loss
 
@@ -180,15 +211,60 @@ class TransformerCandidateReranker:
         rng = np.random.default_rng(seed)
         opt = _AdamW(self.params, lr=0.015)
         items = [(d, c) for d, c in doc_candidates if c]
+        if not items:
+            return self
+
+        # Compute class-balanced weights across OOF candidates so rare false positives produce real gradients
+        n_pos = 0
+        n_neg = 0
+        doc_labels: list[np.ndarray] = []
+        for doc, cands in items:
+            gold_keys = {(e.type, e.start, e.end) for e in doc.entities}
+            y = np.array(
+                [1.0 if (c.entity.type, c.entity.start, c.entity.end) in gold_keys else 0.0 for c in cands],
+                dtype=np.float64,
+            )
+            doc_labels.append(y)
+            n_pos += int(np.sum(y == 1.0))
+            n_neg += int(np.sum(y == 0.0))
+
+        neg_weight = min(4.0, max(1.0, n_pos / max(1, n_neg))) if n_neg > 0 else 1.0
+        pos_weight = 1.0
+
         for _ in range(epochs):
             for idx in rng.permutation(len(items)):
-                doc, cands = items[int(idx)]
-                gold_keys = {(e.type, e.start, e.end) for e in doc.entities}
-                y = np.array(
-                    [1.0 if (c.entity.type, c.entity.start, c.entity.end) in gold_keys else 0.0 for c in cands],
-                    dtype=np.float64,
-                )
-                self.step_doc(cands, y, opt, doc_text=doc.text, vocab=vocab)
+                i = int(idx)
+                doc, cands = items[i]
+                y = doc_labels[i]
+                sw = np.where(y > 0.5, pos_weight, neg_weight)
+                self.step_doc(cands, y, opt, doc_text=doc.text, vocab=vocab, sample_weights=sw)
+
+        # Calibrate operating threshold on OOF candidates by maximizing exact span F1
+        if n_neg > 0 and n_pos > 0:
+            doc_scores = [
+                self.score_candidates(cands, doc_text=doc.text, vocab=vocab) for doc, cands in items
+            ]
+            best_t = self.threshold
+            best_f1 = -1.0
+            total_gold = sum(len(doc.entities) for doc, _ in items)
+            for cand_t in (0.25, 0.35, 0.45, 0.50, 0.55, 0.60):
+                tp = 0
+                fp = 0
+                for (_, cands), y, scs in zip(items, doc_labels, doc_scores, strict=True):
+                    for c, yi, sc in zip(cands, y, scs, strict=True):
+                        kept = sc >= cand_t or ("+" in c.source_stage and c.entity.confidence >= 0.85)
+                        if kept:
+                            if yi > 0.5:
+                                tp += 1
+                            else:
+                                fp += 1
+                prec = tp / max(1, tp + fp)
+                rec = tp / max(1, total_gold)
+                f1 = (2.0 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
+                if f1 > best_f1 + 1e-6:
+                    best_f1 = f1
+                    best_t = cand_t
+            self.threshold = float(best_t)
         return self
 
     def score_candidates(
@@ -210,18 +286,23 @@ class TransformerCandidateReranker:
         *,
         doc_text: str = "",
         vocab: TrainOnlyVocabulary | None = None,
-        threshold: float = 0.25,
+        threshold: float | None = None,
     ) -> list[CandidateEntity]:
         if not candidates:
             return []
+        eff_threshold = self.threshold if threshold is None else float(threshold)
         scores = self.score_candidates(candidates, doc_text=doc_text, vocab=vocab)
         kept: list[CandidateEntity] = []
         for c, sc in zip(candidates, scores, strict=True):
-            # Keep high-agreement rule/neural spans, high-precision medication/dosage rules, or candidates scoring >= threshold
+            # Keep candidates above calibrated threshold, high-confidence multi-source agreement, or high-precision medication/dosage rules
             if (
-                sc >= threshold
-                or c.source_stage == "bilstm_crf+rule_layer"
-                or (c.source_stage == "rule_layer" and c.entity.type in ("MEDICATION", "DOSAGE") and c.entity.confidence >= 0.90)
+                sc >= eff_threshold
+                or ("+" in c.source_stage and c.entity.confidence >= 0.85)
+                or (
+                    c.source_stage == "rule_layer"
+                    and c.entity.type in ("MEDICATION", "DOSAGE")
+                    and c.entity.confidence >= 0.90
+                )
             ):
                 blended_conf = round(float(0.5 * c.entity.confidence + 0.5 * sc), 4)
                 kept.append(

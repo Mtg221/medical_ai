@@ -116,6 +116,7 @@ Per `DECISIONS/ADR-0010-pytorch-cpu-for-vision.md`, the platform starts cleanly 
 - [docs/MASTER_PROMPT.md](docs/MASTER_PROMPT.md) — Project roadmap, constraints, and phase definitions
 - [docs/EXTERNAL_COMPONENTS.md](docs/EXTERNAL_COMPONENTS.md) — Allowed non-model utilities (`Tesseract`, `pypdfium2`, `pdfplumber`, `OpenCV`, `pypdf`, `python-docx`)
 - [schema/medical_extraction.schema.json](schema/medical_extraction.schema.json) — Pydantic v2 JSON Schema contract
+- [ARCHITECTURE.md](ARCHITECTURE.md) — Current modular monolith architecture & domain boundaries
 - [PROJECT_STATUS.md](PROJECT_STATUS.md) — Honest phase & capability status
-- [DECISIONS/](DECISIONS/) — Architecture Decision Records (`ADR-0001` to `ADR-0008`)
+- [DECISIONS/](DECISIONS/) — Architecture Decision Records (`ADR-0001` to `ADR-0010`)
 - [extras/](extras/) — Frozen non-core modules isolated per `ADR-0008`

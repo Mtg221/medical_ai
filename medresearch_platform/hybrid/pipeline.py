@@ -74,6 +74,40 @@ class HybridPipeline:
         self.manifest: dict[str, Any] = {}
         self._fitted = False
 
+    def _collect_stage2_oof_candidates(
+        self,
+        shuffled_docs: list[AnnotatedDocument],
+    ) -> list[tuple[AnnotatedDocument, list[CandidateEntity]]]:
+        """Generate strictly out-of-fold Stage 2 candidates to avoid in-sample stacking collapse."""
+        n_folds = max(2, int(self.cfg.get("stage5_oof_folds", 2)))
+        oof_cap = int(self.cfg.get("stage5_oof_max_docs", 120))
+        pool = shuffled_docs[:oof_cap]
+        if len(pool) < n_folds * 2:
+            return [(d, self.stage2.predict(d, use_rules_layer=True)) for d in pool]
+
+        fold_epochs = max(2, min(4, int(self.cfg.get("epochs", 10)) // 2))
+        oof_pairs: list[tuple[AnnotatedDocument, list[CandidateEntity]]] = []
+        fold_size = max(1, len(pool) // n_folds)
+        for fold_idx in range(n_folds):
+            val_start = fold_idx * fold_size
+            val_end = len(pool) if fold_idx == n_folds - 1 else (fold_idx + 1) * fold_size
+            val_fold = pool[val_start:val_end]
+            val_ids = {d.doc_id for d in val_fold}
+            tr_fold = [d for d in shuffled_docs if d.doc_id not in val_ids]
+            if not tr_fold or not val_fold:
+                continue
+            fold_s2 = Stage2EntityExtractor(
+                hidden_dim=int(self.cfg.get("hidden_dim", 32)),
+                epochs=fold_epochs,
+                lr=float(self.cfg.get("lr", 0.018)),
+                max_train_docs=int(self.cfg["max_train_docs"]) if self.cfg.get("max_train_docs") is not None else None,
+                use_crf_ensemble=bool(self.cfg.get("use_crf_ensemble", False)),
+                seed=self.seed + 101 * (fold_idx + 1),
+            ).fit(tr_fold)
+            for d in val_fold:
+                oof_pairs.append((d, fold_s2.predict(d, use_rules_layer=True)))
+        return oof_pairs
+
     def fit(self, train_docs: list[AnnotatedDocument]) -> HybridPipeline:
         self.corpus_hash = compute_corpus_hash(train_docs)
         self.stage1.fit(train_docs)
@@ -91,23 +125,30 @@ class HybridPipeline:
         )
         self.temporal_crf.fit(train_docs)
 
-        # Fit Transformer reranker & temperature scaler on shuffled EN+FR slices of train_docs
+        # Fit Transformer reranker & temperature scaler on out-of-fold Stage 2 predictions
         rng = np.random.default_rng(self.seed)
         shuffled_docs = list(train_docs)
         rng.shuffle(shuffled_docs)
         self.reranker = TransformerCandidateReranker(vocab_size=len(vocab), seed=self.seed)
+        oof_pairs: list[tuple[AnnotatedDocument, list[CandidateEntity]]] = []
         if bool(self.cfg.get("use_transformer_fusion", True)):
-            cand_pairs = [(d, self.stage2.predict(d, use_rules_layer=True)) for d in shuffled_docs[:80]]
+            oof_pairs = self._collect_stage2_oof_candidates(shuffled_docs)
             self.reranker.fit_on_candidates(
-                cand_pairs, vocab=vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
+                oof_pairs, vocab=vocab, epochs=int(self.cfg.get("aux_epochs", 6)), seed=self.seed
             )
 
-        # Fit temperature scaler on held-out slice of train_docs
+        # Fit temperature scaler on out-of-fold predictions when available, else held-out Stage 2 early-stop docs
         cal_confs: list[float] = []
         cal_hits: list[int] = []
-        for d in shuffled_docs[80:120]:
+        if oof_pairs:
+            cal_source = oof_pairs
+        else:
+            es_docs = [d for d in shuffled_docs if d.doc_id in self.stage2.heldout_es_doc_ids]
+            cal_docs = es_docs if es_docs else shuffled_docs[80:120]
+            cal_source = [(d, self.stage2.predict(d, use_rules_layer=True)) for d in cal_docs]
+        for d, cands in cal_source:
             gold_keys = {(e.type, e.start, e.end) for e in d.entities}
-            for c in self.stage2.predict(d, use_rules_layer=True):
+            for c in cands:
                 cal_confs.append(c.entity.confidence)
                 cal_hits.append(1 if (c.entity.type, c.entity.start, c.entity.end) in gold_keys else 0)
         self.scaler.fit(cal_confs, cal_hits)
@@ -168,8 +209,12 @@ class HybridPipeline:
         t0 = time.perf_counter()
         vocab = self.stage2.vocab
         if use_transformer_fusion:
+            raw_thresh = self.cfg.get("rerank_threshold", None)
             fused_cands = self.reranker.rerank(
-                cands, doc_text=doc.text, vocab=vocab, threshold=float(self.cfg.get("rerank_threshold", 0.25))
+                cands,
+                doc_text=doc.text,
+                vocab=vocab,
+                threshold=float(raw_thresh) if raw_thresh is not None else None,
             )
         else:
             fused_cands = cands
@@ -500,6 +545,7 @@ class HybridPipeline:
                 "vocab_size": self.reranker.vocab_size,
                 "emb_dim": self.reranker.emb_dim,
                 "d_model": self.reranker.d_model,
+                "threshold": float(self.reranker.threshold),
             },
         )
 
@@ -589,6 +635,7 @@ class HybridPipeline:
             vocab_size=int(rr_meta["vocab_size"]),
             emb_dim=int(rr_meta["emb_dim"]),
             d_model=int(rr_meta["d_model"]),
+            threshold=float(rr_meta.get("threshold", 0.25)),
             seed=pipe.seed,
         )
         rr_model.params = rr_params
