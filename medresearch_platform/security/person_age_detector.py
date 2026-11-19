@@ -61,13 +61,15 @@ _RELATIVE_PERSON_RE = re.compile(
     re.IGNORECASE | re.UNICODE,
 )
 
-_EPONYM_DISEASE_RE = re.compile(
-    r"\b(?:(?:maladie|syndrome|chorée|paralysie|lymphome|sarcome|tumeur|néphropathie|artérite|thyroïdite)\s+(?:de\s+|d'|du\s+)?)?"
+_EPONYM_CORE = (
     r"(?:Down|Graves|Crohn|Parkinson|Hashimoto|Alzheimer|Addison|Cushing|Hodgkin|Kawasaki|Marfan|"
     r"Sjögren|Sjogren|Ménière|Meniere|Guillain-Barré|Raynaud|Bell|Huntington|Tourette|Whipple|"
     r"Paget|Wilson|Takayasu|Behçet|Behcet|Turner|Klinefelter|Peyronie|Dupuytren|Bouveret|"
-    r"Basedow|Charcot|Horton|Berger|Kaposi|Ewing)(?:'s|’s)?"
-    r"(?:\s+(?:disease|syndrome|lymphoma|sarcoma|thyroiditis|nephropathy|chorea|palsy))?\b",
+    r"Basedow|Charcot|Horton|Berger|Kaposi|Ewing)"
+)
+_EPONYM_DISEASE_RE = re.compile(
+    rf"\b(?:(?:maladie|syndrome|chorée|paralysie|lymphome|sarcome|tumeur|néphropathie|artérite|thyroïdite)\s+(?:de\s+|d'|du\s+){_EPONYM_CORE}"
+    rf"|{_EPONYM_CORE}(?:'s|’s)?\s+(?:disease|syndrome|lymphoma|sarcoma|thyroiditis|nephropathy|chorea|palsy))\b",
     re.UNICODE,
 )
 
