@@ -1,0 +1,27 @@
+{
+  "evaluated_at_utc": "2026-11-19T01:51:31Z",
+  "dataset": "ekacare/medical_records_parsing_validation_set (MIT, real de-identified lab reports & prescriptions, zero-shot held-out, n=125)",
+  "model_dir": "models/vision_router_v1",
+  "zero_shot_held_out": true,
+  "owner_phone_photos": false,
+  "total_images": 125,
+  "served_document_scan": 123,
+  "served_document_scan_rate": 0.984,
+  "served_other": 2,
+  "served_routed_to_skin": 0,
+  "served_skin_leak_rate": 0.0,
+  "raw_router_routed_to_skin": 1,
+  "raw_router_skin_leak_rate": 0.008,
+  "text_guard_rescues": 1,
+  "served_predictions": {
+    "document_scan": 123,
+    "other": 2
+  },
+  "raw_predictions": {
+    "document_scan": 122,
+    "skin_clinical": 1,
+    "other": 2
+  },
+  "skin_leaks_sample": [],
+  "routed_to_other_count": 2
+}

@@ -73,11 +73,11 @@ def run_step3_real_router(
         val_items.extend((p, cls_idx) for p in val_p)
         eval_items.extend((p, cls_idx) for p in eval_p)
 
-    # 2. document_scan: phone-photo-augmented rendered SYNTH-MED notes + real CC0/owner photos
+    # 2. document_scan: phone-photo-augmented rendered SYNTH-MED notes (incl. warm indoor lighting & faint ink) + real CC0/owner photos
     doc_cls_idx = ROUTER_CLASSES.index("document_scan")
-    doc_tr = render_synth_med_document_pages("data/processed/v3_1/train.jsonl", r_base / "document_scan_rendered_v2" / "train", max_docs=240, seed=seed, phone_photo_aug=True)
-    doc_va = render_synth_med_document_pages("data/processed/v3_1/val.jsonl", r_base / "document_scan_rendered_v2" / "val", max_docs=80, seed=seed + 1, phone_photo_aug=True)
-    doc_te = render_synth_med_document_pages("data/processed/v3_1/test_iid.jsonl", r_base / "document_scan_rendered_v2" / "eval", max_docs=80, seed=seed + 2, phone_photo_aug=True)
+    doc_tr = render_synth_med_document_pages("data/processed/v3_1/train.jsonl", r_base / "document_scan_rendered_v3" / "train", max_docs=280, seed=seed, phone_photo_aug=True)
+    doc_va = render_synth_med_document_pages("data/processed/v3_1/val.jsonl", r_base / "document_scan_rendered_v3" / "val", max_docs=80, seed=seed + 1, phone_photo_aug=True)
+    doc_te = render_synth_med_document_pages("data/processed/v3_1/test_iid.jsonl", r_base / "document_scan_rendered_v3" / "eval", max_docs=80, seed=seed + 2, phone_photo_aug=True)
     train_items.extend((p, doc_cls_idx) for p in doc_tr)
     val_items.extend((p, doc_cls_idx) for p in doc_va)
     eval_items.extend((p, doc_cls_idx) for p in doc_te)

@@ -1,0 +1,345 @@
+{
+  "evaluated_at_utc": "2026-11-18T22:58:49Z",
+  "dataset": "naver-clova-ix/cord-v2 (CC-BY-4.0, real smartphone photos of printed paper, zero-shot held-out)",
+  "model_dir": "models/vision_router_v1",
+  "zero_shot_held_out": true,
+  "owner_phone_photos": false,
+  "total_images": 100,
+  "served_document_scan": 55,
+  "served_document_scan_rate": 0.55,
+  "served_other": 32,
+  "served_routed_to_skin": 13,
+  "served_skin_leak_rate": 0.13,
+  "raw_router_routed_to_skin": 13,
+  "raw_router_skin_leak_rate": 0.13,
+  "text_guard_rescues": 0,
+  "served_predictions": {
+    "other": 32,
+    "document_scan": 55,
+    "skin_clinical": 8,
+    "skin_tbp_tile": 1,
+    "skin_dermoscopic": 4
+  },
+  "raw_predictions": {
+    "other": 32,
+    "document_scan": 55,
+    "skin_clinical": 8,
+    "skin_tbp_tile": 1,
+    "skin_dermoscopic": 4
+  },
+  "skin_leaks_sample": [
+    {
+      "filename": "cord_v2_phone_test_013_2f43f90f44.jpg",
+      "raw_class": "skin_clinical",
+      "served_class": "skin_clinical",
+      "confidence": 0.6733,
+      "probabilities": {
+        "skin_clinical": 0.6733,
+        "skin_dermoscopic": 0.1548,
+        "skin_tbp_tile": 0.0005,
+        "document_scan": 0.0876,
+        "other": 0.0837
+      },
+      "route_action": "skin_vision_pipeline",
+      "abstained": false,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 1,
+        "text_rows": 4,
+        "bright_neutral_fraction": 0.7424,
+        "redness_dominant_fraction": 0.0508,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_014_ea8f1c9323.jpg",
+      "raw_class": "skin_tbp_tile",
+      "served_class": "skin_tbp_tile",
+      "confidence": 0.5171,
+      "probabilities": {
+        "skin_clinical": 0.271,
+        "skin_dermoscopic": 0.1397,
+        "skin_tbp_tile": 0.5171,
+        "document_scan": 0.033,
+        "other": 0.0393
+      },
+      "route_action": "skin_vision_pipeline",
+      "abstained": false,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 1,
+        "text_rows": 2,
+        "bright_neutral_fraction": 0.054,
+        "redness_dominant_fraction": 0.9958,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_019_26d34a136b.jpg",
+      "raw_class": "skin_clinical",
+      "served_class": "skin_clinical",
+      "confidence": 0.6968,
+      "probabilities": {
+        "skin_clinical": 0.6968,
+        "skin_dermoscopic": 0.1532,
+        "skin_tbp_tile": 0.0001,
+        "document_scan": 0.046,
+        "other": 0.1039
+      },
+      "route_action": "skin_vision_pipeline",
+      "abstained": false,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 0,
+        "text_rows": 0,
+        "bright_neutral_fraction": 0.5391,
+        "redness_dominant_fraction": 0.0006,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_023_087ae85b79.jpg",
+      "raw_class": "skin_dermoscopic",
+      "served_class": "skin_dermoscopic",
+      "confidence": 0.9606,
+      "probabilities": {
+        "skin_clinical": 0.0,
+        "skin_dermoscopic": 0.9606,
+        "skin_tbp_tile": 0.0,
+        "document_scan": 0.0001,
+        "other": 0.0393
+      },
+      "route_action": "reject_unsupported",
+      "abstained": true,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 1,
+        "text_rows": 5,
+        "bright_neutral_fraction": 0.0,
+        "redness_dominant_fraction": 0.0,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_030_e6ce75b649.jpg",
+      "raw_class": "skin_dermoscopic",
+      "served_class": "skin_dermoscopic",
+      "confidence": 0.4734,
+      "probabilities": {
+        "skin_clinical": 0.1453,
+        "skin_dermoscopic": 0.4734,
+        "skin_tbp_tile": 0.0047,
+        "document_scan": 0.0943,
+        "other": 0.2823
+      },
+      "route_action": "skin_vision_pipeline",
+      "abstained": false,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 0,
+        "text_rows": 0,
+        "bright_neutral_fraction": 0.0062,
+        "redness_dominant_fraction": 0.165,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_048_2b19509c2b.jpg",
+      "raw_class": "skin_clinical",
+      "served_class": "skin_clinical",
+      "confidence": 0.3795,
+      "probabilities": {
+        "skin_clinical": 0.3795,
+        "skin_dermoscopic": 0.216,
+        "skin_tbp_tile": 0.0007,
+        "document_scan": 0.1272,
+        "other": 0.2766
+      },
+      "route_action": "reject_unsupported",
+      "abstained": true,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 1,
+        "text_rows": 3,
+        "bright_neutral_fraction": 0.4103,
+        "redness_dominant_fraction": 0.037,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_058_3bf1e69ff9.jpg",
+      "raw_class": "skin_clinical",
+      "served_class": "skin_clinical",
+      "confidence": 0.9198,
+      "probabilities": {
+        "skin_clinical": 0.9198,
+        "skin_dermoscopic": 0.0269,
+        "skin_tbp_tile": 0.0235,
+        "document_scan": 0.0098,
+        "other": 0.02
+      },
+      "route_action": "skin_vision_pipeline",
+      "abstained": false,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 0,
+        "text_rows": 0,
+        "bright_neutral_fraction": 0.3043,
+        "redness_dominant_fraction": 0.3546,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_064_379f7dd634.jpg",
+      "raw_class": "skin_dermoscopic",
+      "served_class": "skin_dermoscopic",
+      "confidence": 0.4014,
+      "probabilities": {
+        "skin_clinical": 0.038,
+        "skin_dermoscopic": 0.4014,
+        "skin_tbp_tile": 0.0029,
+        "document_scan": 0.2214,
+        "other": 0.3363
+      },
+      "route_action": "reject_unsupported",
+      "abstained": true,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 1,
+        "text_rows": 4,
+        "bright_neutral_fraction": 0.4767,
+        "redness_dominant_fraction": 0.5019,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_066_e46f64e825.jpg",
+      "raw_class": "skin_clinical",
+      "served_class": "skin_clinical",
+      "confidence": 0.2934,
+      "probabilities": {
+        "skin_clinical": 0.2934,
+        "skin_dermoscopic": 0.2832,
+        "skin_tbp_tile": 0.0013,
+        "document_scan": 0.2744,
+        "other": 0.1477
+      },
+      "route_action": "reject_unsupported",
+      "abstained": true,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 0,
+        "text_rows": 0,
+        "bright_neutral_fraction": 0.3368,
+        "redness_dominant_fraction": 0.1353,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_072_491816db33.jpg",
+      "raw_class": "skin_clinical",
+      "served_class": "skin_clinical",
+      "confidence": 0.8928,
+      "probabilities": {
+        "skin_clinical": 0.8928,
+        "skin_dermoscopic": 0.0387,
+        "skin_tbp_tile": 0.0011,
+        "document_scan": 0.0473,
+        "other": 0.02
+      },
+      "route_action": "skin_vision_pipeline",
+      "abstained": false,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 0,
+        "text_rows": 0,
+        "bright_neutral_fraction": 0.0128,
+        "redness_dominant_fraction": 0.114,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_075_b27e34bf36.jpg",
+      "raw_class": "skin_clinical",
+      "served_class": "skin_clinical",
+      "confidence": 0.9087,
+      "probabilities": {
+        "skin_clinical": 0.9087,
+        "skin_dermoscopic": 0.058,
+        "skin_tbp_tile": 0.0001,
+        "document_scan": 0.0173,
+        "other": 0.0158
+      },
+      "route_action": "skin_vision_pipeline",
+      "abstained": false,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 0,
+        "text_rows": 0,
+        "bright_neutral_fraction": 0.4973,
+        "redness_dominant_fraction": 0.0007,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_078_eebec0bcd8.jpg",
+      "raw_class": "skin_clinical",
+      "served_class": "skin_clinical",
+      "confidence": 0.5694,
+      "probabilities": {
+        "skin_clinical": 0.5694,
+        "skin_dermoscopic": 0.1098,
+        "skin_tbp_tile": 0.0348,
+        "document_scan": 0.1573,
+        "other": 0.1286
+      },
+      "route_action": "skin_vision_pipeline",
+      "abstained": false,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 1,
+        "text_rows": 9,
+        "bright_neutral_fraction": 0.4965,
+        "redness_dominant_fraction": 0.6555,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    },
+    {
+      "filename": "cord_v2_phone_test_089_fb591caf6c.jpg",
+      "raw_class": "skin_dermoscopic",
+      "served_class": "skin_dermoscopic",
+      "confidence": 0.5645,
+      "probabilities": {
+        "skin_clinical": 0.18,
+        "skin_dermoscopic": 0.5645,
+        "skin_tbp_tile": 0.0001,
+        "document_scan": 0.1366,
+        "other": 0.1189
+      },
+      "route_action": "skin_vision_pipeline",
+      "abstained": false,
+      "text_guard": {
+        "has_dense_text": false,
+        "text_line_bands": 0,
+        "text_rows": 0,
+        "bright_neutral_fraction": 0.615,
+        "redness_dominant_fraction": 0.0,
+        "ocr_lines": 0,
+        "ocr_words": 0
+      }
+    }
+  ],
+  "routed_to_other_count": 32
+}

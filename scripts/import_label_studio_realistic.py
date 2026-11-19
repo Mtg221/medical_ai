@@ -15,7 +15,11 @@ from medresearch_platform.data.schema import (
 )
 
 
-def convert_label_studio_records(records: list[dict[str, Any]]) -> list[AnnotatedDocument]:
+def convert_label_studio_records(
+    records: list[dict[str, Any]],
+    *,
+    source: str = "owner_realistic_annotated",
+) -> list[AnnotatedDocument]:
     """Validate label schema and convert Label Studio export tasks to AnnotatedDocuments."""
     valid_types = set(ENTITY_TYPES)
     valid_assertions = set(ASSERTION_CLASSES)
@@ -82,7 +86,7 @@ def convert_label_studio_records(records: list[dict[str, Any]]) -> list[Annotate
                 language=language,
                 doc_type=doc_type,
                 document_date=document_date,
-                source="owner_realistic_annotated",
+                source=source,
                 text=text,
                 entities=entities,
             )
@@ -99,9 +103,15 @@ def main() -> None:
         default=Path("data/processed/realistic/eval.jsonl"),
         help="Destination validated JSONL path",
     )
+    parser.add_argument(
+        "--source",
+        type=str,
+        default="owner_realistic_annotated",
+        help="Provenance tag stored in AnnotatedDocument.source",
+    )
     args = parser.parse_args()
     records = json.loads(args.input.read_text(encoding="utf-8"))
-    docs = convert_label_studio_records(records)
+    docs = convert_label_studio_records(records, source=args.source)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as fh:
         for d in docs:

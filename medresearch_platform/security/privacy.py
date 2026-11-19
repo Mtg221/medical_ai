@@ -30,18 +30,30 @@ class DeidentificationResult:
     residual_risk_note: str
 
 
+_MONTH_NAMES = (
+    r"january|february|march|april|may|june|july|august|september|october|november|december|"
+    r"jan\.?|feb\.?|mar\.?|apr\.?|jun\.?|jul\.?|aug\.?|sep\.?|sept\.?|oct\.?|nov\.?|dec\.?|"
+    r"janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[ûu]t|septembre|octobre|novembre|d[ée]cembre"
+)
+
 _PII_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "DOB",
         re.compile(
-            r"(?:n[ée]e?\s+le|date\s+de\s+naissance|date\s+of\s+birth|DOB)\s*[:#]?\s*(\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}|\d{4}-\d{2}-\d{2})",
-            re.IGNORECASE,
+            rf"(?:n[ée]e?\s+le|date\s+de\s+naissance|date\s+of\s+birth|DOB|born(?:\s+on)?)\s*[:#]?\s*"
+            rf"(\d{{1,2}}[/\-.]\d{{1,2}}[/\-.]\d{{2,4}}|\d{{4}}-\d{{2}}-\d{{2}}"
+            rf"|\d{{1,2}}[\s\-](?:{_MONTH_NAMES})[\s\-,]+\d{{4}}"
+            rf"|(?:{_MONTH_NAMES})\s+\d{{1,2}}(?:st|nd|rd|th)?,?\s+\d{{4}})",
+            re.IGNORECASE | re.UNICODE,
         ),
     ),
     (
         "MEDICAL_RECORD_NUMBER",
         re.compile(
-            r"\b(?:MRN|IPP|N°\s*Dossier|Dossier\s*n°?|ID\s*patient|Patient\s*ID|Record\s*#?)\s*[:#]?\s*([A-Z0-9\-/]{4,20})\b",
+            r"\b(?:MRN|IPP|IEP|CNI|N°\s*Dossier|Dossier\s*n°?|ID\s*patient|Patient\s*ID|Health\s*ID|"
+            r"Record\s*#?|Case\s*#?|Insurance\s+(?:policy|ID)\s*#?|Policy\s*#?|"
+            r"Mutuelle\s*(?:n°|#|no\.?)?|Lab\s+specimen\s+barcode|Specimen\s+(?:ID|barcode)|Barcode)"
+            r"\s*[:#]?\s*([A-Z]{0,6}\-?\d[\dA-Z\-/]{3,19})\b",
             re.IGNORECASE,
         ),
     ),
@@ -60,7 +72,9 @@ _PII_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "PHONE",
         re.compile(
-            r"(?:(?:t[ée]l(?:[ée]phone)?|phone|tel)\s*[:#]?\s*(\+?[\d\s.\-()]{7,18}\d)"
+            r"(?:(?:t[ée]l(?:[ée]phone)?|phone|tel|mobile|fax|portable)\s*[:#.]?\s*(\+?[\d\s.\-()]{7,20}\d)"
+            r"|\(\d{3}\)\s*\d{3}[\s.\-]\d{4}"
+            r"|\b[2-9]\d{2}[\-.]\d{3}[\-.]\d{4}\b"
             r"|\+221[\s.\-]?(?:7[05678]|3[03])(?:[\s.\-]?\d{2,3}){3}"
             r"|\b(?:7[05678]|33)(?:[\s.\-]?\d{3}[\s.\-]?\d{2}[\s.\-]?\d{2}|[\s.\-]?\d{2}[\s.\-]?\d{3}[\s.\-]?\d{2})\b"
             r"|\+33[\s.\-]?(?:\(0\)[\s.\-]?)?[1-9](?:[\s.\-]?\d{2}){4}"
@@ -72,8 +86,16 @@ _PII_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "ADDRESS",
         re.compile(
-            r"\b(\d{1,5}(?:\s*(?:bis|ter))?\s+(?:rue|avenue|av\.?|boulevard|bd\.?|blvd\.?|impasse|all[ée]e|place|chemin|route|street|st\.?|road|rd\.?|ave\.?|lane|ln\.?|drive|dr\.?|way)\s+[A-Za-zÀ-ÖØ-öø-ÿ0-9'\-\s]{2,45}(?:,\s*\d{4,5}\s+[A-Za-zÀ-ÖØ-öø-ÿ\-]+)?|"
-            r"\d{1,5}\s+(?:[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ'\-]+\s+){1,4}(?:Street|St\.?|Avenue|Ave\.?|Boulevard|Blvd\.?|Road|Rd\.?|Lane|Ln\.?|Drive|Dr\.?|Way)(?:\b|[.,]))",
+            r"\b("
+            r"Lot\s+\d{1,5}\s+Cit[ée]\s+[A-Za-zÀ-ÖØ-öø-ÿ0-9'\-\s]{2,40}(?:,\s*[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'\-\s]{1,25})?"
+            r"|\d{1,5}(?:\s*(?:bis|ter))?\s+(?:rue|avenue|av\.?|boulevard|bd\.?|blvd\.?|impasse|all[ée]e|place|chemin|route)\s+[A-Za-zÀ-ÖØ-öø-ÿ0-9'\-\s]{2,45}"
+            r"(?:,\s*(?:B[âa]t\.?|Apt\.?|Esc\.?|App\.?)\s*[A-Za-z0-9\-]+)?"
+            r"(?:,\s*\d{4,5}\s+[A-Za-zÀ-ÖØ-öø-ÿ\-]+|(?:,\s*[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'\-]{2,25}){1,2})?"
+            r"|\d{1,5}\s+(?-i:[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ'\-]+\s+){1,4}"
+            r"(?:Street|St\.|Avenue|Ave\.|Boulevard|Blvd\.?|Road|Rd\.|Lane|Ln\.|Drive|Dr\.|Way|Terrace|Ter\.|Crescent|Court|Ct\.|Place|Pl\.)\b"
+            r"(?:,\s*(?:Apt\.?|Suite|Ste\.?|Unit)\s*[A-Za-z0-9\-]+)?"
+            r"(?:,\s*(?-i:[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'\-\s]{1,25}),\s*(?-i:[A-Z]{2})\s+(?:\d{5}(?:-\d{4})?|(?-i:[A-Z]\d[A-Z])\s?\d(?-i:[A-Z])\d))?"
+            r")",
             re.IGNORECASE | re.UNICODE,
         ),
     ),

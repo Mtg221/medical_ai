@@ -34,13 +34,14 @@ def is_torch_available() -> bool:
 
 
 def _apply_phone_photo_augmentations(im: Image.Image, rng: np.random.Generator, *, add_hand: bool) -> Image.Image:
-    """Apply realistic smartphone-capture artifacts: table background, perspective tilt, shadow, crumple, and optional hand edge."""
+    """Apply realistic smartphone-capture artifacts: warm/dim indoor lighting, table background, perspective tilt, shadow, crumple, and optional hand edge."""
     w, h = im.size
-    # Place page onto a warm desk/table canvas so edges & perspective show
-    bg_tone = (int(rng.integers(95, 165)), int(rng.integers(80, 145)), int(rng.integers(70, 130)))
+    # Place page onto a warm desk/table/marble canvas (including narrow slip/receipt widths)
+    bg_tone = (int(rng.integers(85, 195)), int(rng.integers(70, 175)), int(rng.integers(58, 155)))
     canvas = Image.new("RGB", (w, h), color=bg_tone)
-    scale = float(rng.uniform(0.76, 0.90))
-    pw, ph = max(64, int(w * scale)), max(64, int(h * scale))
+    scale_y = float(rng.uniform(0.74, 0.92))
+    scale_x = float(rng.uniform(0.52, 0.88)) if rng.random() < 0.4 else scale_y
+    pw, ph = max(64, int(w * scale_x)), max(64, int(h * scale_y))
     page_resized = im.resize((pw, ph), Image.Resampling.BILINEAR)
     ox = (w - pw) // 2 + int(rng.integers(-18, 19))
     oy = (h - ph) // 2 + int(rng.integers(-22, 23))
@@ -74,9 +75,25 @@ def _apply_phone_photo_augmentations(im: Image.Image, rng: np.random.Generator, 
     # Shadow band + crumple fold waves
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
     shadow_center = float(rng.uniform(0.25, 0.75)) * w + 0.35 * yy
-    shadow = 1.0 - float(rng.uniform(0.18, 0.38)) * np.exp(-((xx - shadow_center) ** 2) / (2.0 * (0.22 * w) ** 2))
+    shadow = 1.0 - float(rng.uniform(0.18, 0.42)) * np.exp(-((xx - shadow_center) ** 2) / (2.0 * (0.24 * w) ** 2))
     crumple = 1.0 + float(rng.uniform(0.02, 0.06)) * np.sin(0.08 * xx + 0.11 * yy + float(rng.uniform(0, 6.28)))
-    arr = np.clip(arr * (shadow * crumple)[:, :, None], 0, 255).astype(np.uint8)
+    arr = arr * (shadow * crumple)[:, :, None]
+
+    # Realistic warm indoor incandescent / dim phone camera white-balance shift
+    if rng.random() < 0.55:
+        wb = np.array(
+            [
+                float(rng.uniform(0.95, 1.14)),
+                float(rng.uniform(0.82, 0.99)),
+                float(rng.uniform(0.66, 0.88)),
+            ],
+            dtype=np.float32,
+        )
+        exposure = float(rng.uniform(0.62, 0.98))
+        arr = arr * wb[None, None, :] * exposure
+
+    noise = rng.normal(0.0, float(rng.uniform(2.0, 7.0)), size=arr.shape).astype(np.float32)
+    arr = np.clip(arr + noise, 0, 255).astype(np.uint8)
     return Image.fromarray(arr)
 
 
@@ -107,12 +124,14 @@ def render_synth_med_document_pages(
             continue
         rec = json.loads(raw)
         text = str(rec.get("text") or "")
-        bg_val = int(rng.integers(232, 250))
-        im = Image.new("RGB", (480, 640), color=(bg_val, bg_val - 2, bg_val - 5))
+        bg_val = int(rng.integers(212, 250))
+        ink_val = int(rng.integers(18, 115)) if (phone_photo_aug and rng.random() < 0.45) else int(rng.integers(18, 42))
+        ink_rgb = (ink_val, ink_val + 2, min(255, ink_val + 6))
+        im = Image.new("RGB", (480, 640), color=(bg_val, bg_val - int(rng.integers(1, 8)), bg_val - int(rng.integers(3, 14))))
         draw = ImageDraw.Draw(im)
         # Header & rule
-        draw.text((28, 22), f"CLINICAL RECORD #{idx+1:04d}  ({rec.get('language', 'en').upper()})", fill=(25, 30, 45), font=font)
-        draw.line([(28, 42), (452, 42)], fill=(90, 95, 110), width=1)
+        draw.text((28, 22), f"CLINICAL RECORD #{idx+1:04d}  ({rec.get('language', 'en').upper()})", fill=ink_rgb, font=font)
+        draw.line([(28, 42), (452, 42)], fill=(min(255, ink_val + 65), min(255, ink_val + 70), min(255, ink_val + 80)), width=1)
 
         y = 58
         for para in text.splitlines():
@@ -121,7 +140,7 @@ def render_synth_med_document_pages(
             for w in words:
                 cand = f"{line} {w}".strip()
                 if len(cand) > 64:
-                    draw.text((28, y), line, fill=(20, 22, 28), font=font)
+                    draw.text((28, y), line, fill=ink_rgb, font=font)
                     y += 16
                     line = w
                     if y > 600:
@@ -129,7 +148,7 @@ def render_synth_med_document_pages(
                 else:
                     line = cand
             if line and y <= 600:
-                draw.text((28, y), line, fill=(20, 22, 28), font=font)
+                draw.text((28, y), line, fill=ink_rgb, font=font)
                 y += 18
             if y > 600:
                 break
