@@ -1,0 +1,185 @@
+{
+  "evaluated_at_utc": "2026-11-19T18:43:08Z",
+  "note": "post-hoc (test seen) \u2014 Hospital 3-seed Partial-Label Marginal Char-CNN-BiLSTM-CRF trained from scratch on 3408 EN+FR docs",
+  "pretrained_weights_used": false,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "train_source_counts": {
+    "synthetic_v3_1": 600,
+    "maccrobat2020": 138,
+    "pxcorpus": 1386,
+    "e3c_layer1": 121,
+    "bc5cdr": 570,
+    "ncbi_disease": 593
+  },
+  "hyperparams": {
+    "word_emb_dim": 64,
+    "char_emb_dim": 24,
+    "char_filters": 24,
+    "hidden_dim": 128,
+    "num_layers": 2,
+    "epochs": 20,
+    "batch_size": 32,
+    "lr": 0.003
+  },
+  "models": [
+    {
+      "seed": 1,
+      "training_device": "cuda",
+      "train_seconds": 434.52,
+      "initial_weights_sha256": "fe34c89a167a63f7e7f85644be3b6d93bbc563389d6a7a2dd7d250f6c9ff6376",
+      "trained_weights_sha256": "734b3a50814d762814c66ef45c6dae1cc90db2fedf9f12c83b94da209b4aa2d5",
+      "saved_dir": "models/hospital_char_cnn_bilstm_crf_seed1"
+    },
+    {
+      "seed": 2,
+      "training_device": "cuda",
+      "train_seconds": 449.45,
+      "initial_weights_sha256": "e60d167fbf7afaf7ff481a2b4cefea7dbab69e5b0e9271f17302cb5470982a28",
+      "trained_weights_sha256": "51a25e796ae27dbb516c44f7307b68ffa7e17b24d874cff22c5bc148b2c9fb78",
+      "saved_dir": "models/hospital_char_cnn_bilstm_crf_seed2"
+    },
+    {
+      "seed": 3,
+      "training_device": "cuda",
+      "train_seconds": 294.98,
+      "initial_weights_sha256": "c6b380ca7644212b9fa8fc18ce19e4c746265fb2a105d94defea2151585eac3e",
+      "trained_weights_sha256": "a21b4950029dab21d61c9fd39369da0aa848bc26b6981a4ce80ea05a6f39c399",
+      "saved_dir": "models/hospital_char_cnn_bilstm_crf_seed3"
+    }
+  ],
+  "initial_weights_sha256": "fe34c89a167a63f7e7f85644be3b6d93bbc563389d6a7a2dd7d250f6c9ff6376",
+  "trained_weights_sha256": "734b3a50814d762814c66ef45c6dae1cc90db2fedf9f12c83b94da209b4aa2d5",
+  "torch_train_seconds": 1179.18,
+  "crf_train_seconds": 102.82,
+  "splits": {
+    "synth_val": {
+      "torch_partial_crf": {
+        "num_docs": 160,
+        "strict_f1": 0.996603,
+        "lenient_f1": 0.998641,
+        "precision": 0.99762,
+        "recall": 0.995589,
+        "assertion_macro_f1": 0.778232,
+        "doc_acc": 1.0,
+        "en_f1": 0.997701,
+        "fr_f1": 0.995427
+      },
+      "hospital_ensemble_torch_plus_crf": {
+        "num_docs": 160,
+        "strict_f1": 0.998473,
+        "lenient_f1": 0.999491,
+        "precision": 0.998642,
+        "recall": 0.998303,
+        "assertion_macro_f1": 0.778246,
+        "doc_acc": 1.0,
+        "en_f1": 0.998687,
+        "fr_f1": 0.998244
+      }
+    },
+    "synth_unseen_terms": {
+      "torch_partial_crf": {
+        "num_docs": 160,
+        "strict_f1": 0.914036,
+        "lenient_f1": 0.948623,
+        "precision": 0.924907,
+        "recall": 0.903419,
+        "assertion_macro_f1": 0.773047,
+        "doc_acc": 1.0,
+        "en_f1": 0.906332,
+        "fr_f1": 0.922025
+      },
+      "hospital_ensemble_torch_plus_crf": {
+        "num_docs": 160,
+        "strict_f1": 0.928726,
+        "lenient_f1": 0.958438,
+        "precision": 0.934184,
+        "recall": 0.923332,
+        "assertion_macro_f1": 0.771923,
+        "doc_acc": 1.0,
+        "en_f1": 0.92707,
+        "fr_f1": 0.930438
+      }
+    },
+    "open_clinical_test": {
+      "torch_partial_crf": {
+        "num_docs": 443,
+        "strict_f1": 0.628108,
+        "lenient_f1": 0.719028,
+        "precision": 0.607399,
+        "recall": 0.65028,
+        "assertion_macro_f1": 0.221504,
+        "doc_acc": 1.0,
+        "en_f1": 0.516977,
+        "fr_f1": 0.777426,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.352941,
+            "lenient_f1": 0.481869
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.529181,
+            "lenient_f1": 0.647144
+          },
+          "pxcorpus": {
+            "strict_f1": 0.921702,
+            "lenient_f1": 0.948874
+          }
+        }
+      },
+      "hospital_ensemble_torch_plus_crf": {
+        "num_docs": 443,
+        "strict_f1": 0.637762,
+        "lenient_f1": 0.729157,
+        "precision": 0.611325,
+        "recall": 0.666589,
+        "assertion_macro_f1": 0.221343,
+        "doc_acc": 1.0,
+        "en_f1": 0.52809,
+        "fr_f1": 0.786352,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.37619,
+            "lenient_f1": 0.506349
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.542456,
+            "lenient_f1": 0.660965
+          },
+          "pxcorpus": {
+            "strict_f1": 0.922528,
+            "lenient_f1": 0.948947
+          }
+        }
+      }
+    },
+    "realistic_llm_80": {
+      "torch_partial_crf": {
+        "num_docs": 80,
+        "strict_f1": 0.677076,
+        "lenient_f1": 0.784244,
+        "precision": 0.68732,
+        "recall": 0.667133,
+        "assertion_macro_f1": 0.646415,
+        "doc_acc": 0.7625,
+        "en_f1": 0.670241,
+        "fr_f1": 0.684766
+      },
+      "hospital_ensemble_torch_plus_crf": {
+        "num_docs": 80,
+        "strict_f1": 0.714286,
+        "lenient_f1": 0.808599,
+        "precision": 0.708391,
+        "recall": 0.72028,
+        "assertion_macro_f1": 0.635181,
+        "doc_acc": 0.7625,
+        "en_f1": 0.705882,
+        "fr_f1": 0.723781
+      }
+    }
+  },
+  "total_elapsed_s": 1318.06
+}

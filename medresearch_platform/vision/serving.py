@@ -93,7 +93,7 @@ class VisionServingEngine:
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             backend = str(manifest.get("backend") or "numpy")
-            if backend == "pytorch_cpu":
+            if backend.startswith("pytorch"):
                 from medresearch_platform.vision.router_torch import is_torch_available
 
                 if not is_torch_available():
@@ -133,7 +133,7 @@ class VisionServingEngine:
             r_dir = self._router_dir()
             try:
                 manifest = json.loads((r_dir / "manifest.json").read_text(encoding="utf-8"))
-                if manifest.get("backend") == "pytorch_cpu":
+                if str(manifest.get("backend") or "").startswith("pytorch"):
                     from medresearch_platform.vision.router_torch import (
                         PyTorchPictureTriageRouter,
                         is_torch_available,
@@ -158,7 +158,7 @@ class VisionServingEngine:
             m_dir = self._skin_dir()
             try:
                 manifest = json.loads((m_dir / "manifest.json").read_text(encoding="utf-8"))
-                if manifest.get("backend") == "pytorch_cpu":
+                if str(manifest.get("backend") or "").startswith("pytorch"):
                     from medresearch_platform.vision.cnn_torch import PyTorchDermResNet
                     from medresearch_platform.vision.ensemble import CalibratedVisionEnsemble
                     from medresearch_platform.vision.router_torch import is_torch_available

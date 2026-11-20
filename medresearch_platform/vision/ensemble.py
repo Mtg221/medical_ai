@@ -35,11 +35,13 @@ class CalibratedVisionEnsemble:
         models: list[PyTorchDermResNet],
         *,
         modality_temperatures: dict[str, float] | None = None,
+        use_tta: bool = False,
     ) -> None:
         if not models:
             raise ValueError("CalibratedVisionEnsemble requires at least one model.")
         self.models = models
         self.modality_temperatures = dict(modality_temperatures or DEFAULT_MODALITY_TEMPERATURES)
+        self.use_tta = bool(use_tta)
         self.architecture_name = f"PyTorchDermResNet4Stage-Ensemble{len(models)}-v1.0.0"
         self.model_version = self.architecture_name
         self.backend = "pytorch_cpu"
@@ -49,6 +51,7 @@ class CalibratedVisionEnsemble:
             "model_version": self.model_version,
             "ensemble_size": len(models),
             "modality_temperatures": self.modality_temperatures,
+            "use_tta": self.use_tta,
             "pretrained_weights_used": False,
         }
 
@@ -61,16 +64,19 @@ class CalibratedVisionEnsemble:
     ) -> CalibratedVisionEnsemble:
         loaded = [PyTorchDermResNet.load(d, device="cpu") for d in model_dirs]
         temps = modality_temperatures
-        if temps is None and model_dirs:
+        use_tta = False
+        if model_dirs:
             cal_path = model_dirs[0].parent / "derm_ensemble_calibration.json"
             if cal_path.exists():
                 try:
                     raw = json.loads(cal_path.read_text(encoding="utf-8"))
-                    if isinstance(raw, dict) and isinstance(raw.get("modality_temperatures"), dict):
-                        temps = {str(k): float(v) for k, v in raw["modality_temperatures"].items()}
+                    if isinstance(raw, dict):
+                        if temps is None and isinstance(raw.get("modality_temperatures"), dict):
+                            temps = {str(k): float(v) for k, v in raw["modality_temperatures"].items()}
+                        use_tta = bool(raw.get("use_tta", False))
                 except Exception:
-                    temps = None
-        return cls(loaded, modality_temperatures=temps)
+                    temps = temps
+        return cls(loaded, modality_temperatures=temps, use_tta=use_tta)
 
     def compute_gradcam_heatmap(self, image: Image.Image) -> tuple[np.ndarray, float]:
         return self.models[0].compute_gradcam_heatmap(image)
@@ -86,7 +92,7 @@ class CalibratedVisionEnsemble:
         body_site: str | None = None,
     ) -> Any:
         results = [
-            m.predict_image(image, modality_hint=modality_hint, body_site=body_site)
+            m.predict_image(image, modality_hint=modality_hint, body_site=body_site, tta=self.use_tta)
             for m in self.models
         ]
         lead = results[0]

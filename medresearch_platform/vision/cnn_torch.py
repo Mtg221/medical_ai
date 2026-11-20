@@ -51,18 +51,42 @@ def _compute_binary_auroc(y_true: np.ndarray, y_score: np.ndarray) -> float:
     return float(trapz_fn(tpr, fpr))
 
 
-def _build_resnet_module(include_metadata: bool, n_dx: int, n_mod: int) -> Any:
+def _build_resnet_module(
+    include_metadata: bool,
+    n_dx: int,
+    n_mod: int,
+    *,
+    architecture_variant: str = "resnet_v1",
+) -> Any:
     import torch
     import torch.nn as nn
 
+    class SEBlock(nn.Module):
+        def __init__(self, channels: int, reduction: int = 8) -> None:
+            super().__init__()
+            mid = max(8, channels // reduction)
+            self.fc = nn.Sequential(
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(1),
+                nn.Linear(channels, mid),
+                nn.ReLU(inplace=True),
+                nn.Linear(mid, channels),
+                nn.Sigmoid(),
+            )
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            w = self.fc(x).unsqueeze(-1).unsqueeze(-1)
+            return x * w
+
     class ResBlock(nn.Module):
-        def __init__(self, in_ch: int, out_ch: int, stride: int = 1) -> None:
+        def __init__(self, in_ch: int, out_ch: int, stride: int = 1, use_se: bool = False) -> None:
             super().__init__()
             self.conv1 = nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=stride, padding=1, bias=False)
             self.bn1 = nn.BatchNorm2d(out_ch)
             self.relu = nn.ReLU(inplace=True)
             self.conv2 = nn.Conv2d(out_ch, out_ch, kernel_size=3, stride=1, padding=1, bias=False)
             self.bn2 = nn.BatchNorm2d(out_ch)
+            self.se: nn.Module = SEBlock(out_ch) if use_se else nn.Identity()
             self.shortcut: nn.Module
             if stride != 1 or in_ch != out_ch:
                 self.shortcut = nn.Sequential(
@@ -74,24 +98,37 @@ def _build_resnet_module(include_metadata: bool, n_dx: int, n_mod: int) -> Any:
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
             out = self.relu(self.bn1(self.conv1(x)))
-            out = self.bn2(self.conv2(out))
+            out = self.se(self.bn2(self.conv2(out)))
             out = self.relu(out + self.shortcut(x))
             return out
 
     class DermResNet4Stage(nn.Module):
         def __init__(self) -> None:
             super().__init__()
-            self.stem = nn.Sequential(
-                nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False),
-                nn.BatchNorm2d(32),
-                nn.ReLU(inplace=True),
-            )
-            self.stage1 = ResBlock(32, 32, stride=1)
-            self.stage2 = ResBlock(32, 64, stride=2)
-            self.stage3 = ResBlock(64, 128, stride=2)
-            self.stage4 = ResBlock(128, 256, stride=2)
+            if architecture_variant == "resnet_v2_se":
+                self.stem = nn.Sequential(
+                    nn.Conv2d(3, 32, kernel_size=5, stride=2, padding=2, bias=False),
+                    nn.BatchNorm2d(32),
+                    nn.ReLU(inplace=True),
+                )
+                self.stage1: nn.Module = nn.Sequential(ResBlock(32, 32, stride=1, use_se=True), ResBlock(32, 32, stride=1, use_se=True))
+                self.stage2: nn.Module = nn.Sequential(ResBlock(32, 64, stride=2, use_se=True), ResBlock(64, 64, stride=1, use_se=True))
+                self.stage3: nn.Module = nn.Sequential(ResBlock(64, 128, stride=2, use_se=True), ResBlock(128, 128, stride=1, use_se=True))
+                self.stage4: nn.Module = nn.Sequential(ResBlock(128, 256, stride=2, use_se=True), ResBlock(256, 256, stride=1, use_se=True))
+                drop_p = 0.30
+            else:
+                self.stem = nn.Sequential(
+                    nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False),
+                    nn.BatchNorm2d(32),
+                    nn.ReLU(inplace=True),
+                )
+                self.stage1 = ResBlock(32, 32, stride=1)
+                self.stage2 = ResBlock(32, 64, stride=2)
+                self.stage3 = ResBlock(64, 128, stride=2)
+                self.stage4 = ResBlock(128, 256, stride=2)
+                drop_p = 0.20
             self.pool = nn.AdaptiveAvgPool2d(1)
-            self.dropout = nn.Dropout(0.2)
+            self.dropout = nn.Dropout(drop_p)
             feat_dim = 256 + (8 if include_metadata else 0)
             self.fc_mal = nn.Linear(feat_dim, 1)
             self.fc_dx = nn.Linear(feat_dim, n_dx)
@@ -148,6 +185,7 @@ class PyTorchDermResNet:
         seed: int = 1,
         n_dx: int | None = None,
         device: str | None = "auto",
+        architecture_variant: str = "resnet_v1",
     ) -> None:
         import torch
 
@@ -164,7 +202,10 @@ class PyTorchDermResNet:
         self.body_site_dropout = float(body_site_dropout)
         self.seed = seed
         self.n_dx = int(n_dx) if n_dx is not None else len(CORE_DX_CLASSES)
-        self.architecture_name = "PyTorchDermResNet4Stage-v1.0.0"
+        self.architecture_variant = str(architecture_variant)
+        self.architecture_name = (
+            "PyTorchDermSEResNetV2-v2.0.0" if self.architecture_variant == "resnet_v2_se" else "PyTorchDermResNet4Stage-v1.0.0"
+        )
         self.temperature_mal = 1.0
         self.temperature_dx = 1.0
         self.abstain_min_confidence = 0.55
@@ -178,7 +219,12 @@ class PyTorchDermResNet:
         np.random.seed(seed)
         random.seed(seed)
 
-        self.net = _build_resnet_module(self.include_metadata, self.n_dx, len(SKIN_MODALITIES)).to(self._device)
+        self.net = _build_resnet_module(
+            self.include_metadata,
+            self.n_dx,
+            len(SKIN_MODALITIES),
+            architecture_variant=self.architecture_variant,
+        ).to(self._device)
         self.parameter_count = sum(p.numel() for p in self.net.parameters())
         self.initial_weights_sha256 = self._weights_sha256()
 
@@ -192,7 +238,11 @@ class PyTorchDermResNet:
     def _arr_to_tensor(self, arr: np.ndarray) -> Any:
         import torch
 
-        t = torch.from_numpy(np.asarray(arr, dtype=np.float32).transpose(2, 0, 1))
+        a = np.asarray(arr)
+        if a.dtype == np.uint8:
+            t = torch.from_numpy(a.transpose(2, 0, 1)).float().div_(255.0)
+        else:
+            t = torch.from_numpy(np.asarray(a, dtype=np.float32).transpose(2, 0, 1))
         if t.shape[1] != self.image_size or t.shape[2] != self.image_size:
             t = torch.nn.functional.interpolate(
                 t.unsqueeze(0),
@@ -201,6 +251,16 @@ class PyTorchDermResNet:
                 align_corners=False,
             ).squeeze(0)
         return t
+
+    def _arr_to_uint8_tensor(self, arr: np.ndarray) -> Any:
+        """Compact [3, H, W] uint8 tensor (4x lower RAM at 224x224)."""
+        import torch
+
+        a = np.asarray(arr)
+        if a.dtype == np.uint8 and a.shape[0] == self.image_size and a.shape[1] == self.image_size:
+            return torch.from_numpy(np.ascontiguousarray(a.transpose(2, 0, 1)))
+        t = self._arr_to_tensor(a)
+        return torch.clamp(t * 255.0, 0.0, 255.0).to(torch.uint8)
 
     def fit(
         self,
@@ -239,7 +299,7 @@ class PyTorchDermResNet:
             return torch.cuda.amp.autocast(enabled=amp_enabled)
 
         def _pack(samples: list[tuple[np.ndarray, int, DermCatalogRecord]]) -> tuple[torch.Tensor, ...]:
-            xs = torch.stack([self._arr_to_tensor(a) for a, _, _ in samples], dim=0)
+            xs = torch.stack([self._arr_to_uint8_tensor(a) for a, _, _ in samples], dim=0)
             y_mal = torch.tensor([lbl for _, lbl, _ in samples], dtype=torch.long)
             y_dx = torch.tensor([map_record_to_core_dx_index(r) for _, _, r in samples], dtype=torch.long)
             y_mod = torch.tensor([SKIN_MODALITIES.index(r.modality) if r.modality in SKIN_MODALITIES else 0 for _, _, r in samples], dtype=torch.long)
@@ -276,7 +336,7 @@ class PyTorchDermResNet:
 
         bce = nn.BCEWithLogitsLoss(reduction="none")
         ce = nn.CrossEntropyLoss()
-        opt = torch.optim.AdamW(self.net.parameters(), lr=lr, weight_decay=1e-4)
+        opt = torch.optim.AdamW(self.net.parameters(), lr=lr, weight_decay=2e-4)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1, epochs))
 
         def _eval_val_logits() -> tuple[torch.Tensor, torch.Tensor]:
@@ -286,7 +346,7 @@ class PyTorchDermResNet:
             self.net.eval()
             with torch.no_grad():
                 for i in range(0, len(x_va), val_bs):
-                    xv = x_va[i : i + val_bs].to(dev, non_blocking=is_cuda)
+                    xv = x_va[i : i + val_bs].to(dev, non_blocking=is_cuda).float().div_(255.0)
                     mv = m_va[i : i + val_bs].to(dev, non_blocking=is_cuda) if self.include_metadata else None
                     with _autocast_ctx():
                         lm, ld, _ = self.net(xv, mv)
@@ -305,23 +365,30 @@ class PyTorchDermResNet:
             ep_loss = 0.0
             n_batches = 0
             for xb, ymb, ydb, ymodb, mb in loader:
-                xb = xb.to(dev, non_blocking=is_cuda)
+                xb = xb.to(dev, non_blocking=is_cuda).float().div_(255.0)
                 ymb = ymb.to(dev, non_blocking=is_cuda)
                 ydb = ydb.to(dev, non_blocking=is_cuda)
                 ymodb = ymodb.to(dev, non_blocking=is_cuda)
                 mb = mb.to(dev, non_blocking=is_cuda)
 
-                # Augmentations: flip H/V, 90-deg rot, subtle brightness/contrast jitter
+                # Augmentations: flip H/V, 90-deg rot, brightness/contrast/channel jitter + cutout
                 if rng.random() < 0.5:
                     xb = torch.flip(xb, dims=[3])
-                if rng.random() < 0.3:
+                if rng.random() < 0.35:
                     xb = torch.flip(xb, dims=[2])
                 if rng.random() < 0.5:
                     k_rot = rng.choice([1, 2, 3])
                     xb = torch.rot90(xb, k=k_rot, dims=[2, 3])
-                gain = rng.uniform(0.9, 1.1)
-                bias = rng.uniform(-0.05, 0.05)
+                gain = rng.uniform(0.88, 1.12)
+                bias = rng.uniform(-0.06, 0.06)
                 xb = torch.clamp(xb * gain + bias, 0.0, 1.0)
+                if rng.random() < 0.25 and xb.shape[2] >= 64:
+                    h_im, w_im = xb.shape[2], xb.shape[3]
+                    ch = rng.randint(max(8, h_im // 10), max(12, h_im // 5))
+                    cw = rng.randint(max(8, w_im // 10), max(12, w_im // 5))
+                    y0 = rng.randint(0, h_im - ch)
+                    x0 = rng.randint(0, w_im - cw)
+                    xb[:, :, y0 : y0 + ch, x0 : x0 + cw] = 0.0
 
                 if self.metadata_mode == "full" and self.body_site_dropout > 0.0:
                     mb = mb.clone()
@@ -434,6 +501,7 @@ class PyTorchDermResNet:
         samples: list[tuple[np.ndarray, int, DermCatalogRecord]],
         *,
         batch_size: int = 64,
+        tta: bool = False,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         import torch
 
@@ -448,7 +516,25 @@ class PyTorchDermResNet:
                     [torch.from_numpy(encode_metadata_vector(r, metadata_mode=self.metadata_mode)) for _, _, r in chunk],
                     dim=0,
                 ).to(dev)
-                l_mal, l_dx, l_mod = self.net(xb, mb if self.include_metadata else None)
+                meta_in = mb if self.include_metadata else None
+                if tta:
+                    views = [
+                        xb,
+                        torch.flip(xb, dims=[3]),
+                        torch.flip(xb, dims=[2]),
+                        torch.rot90(xb, k=1, dims=[2, 3]),
+                    ]
+                    l_mal_sum, l_dx_sum, l_mod_sum = self.net(views[0], meta_in)
+                    for xv in views[1:]:
+                        lm, ld, lmo = self.net(xv, meta_in)
+                        l_mal_sum = l_mal_sum + lm
+                        l_dx_sum = l_dx_sum + ld
+                        l_mod_sum = l_mod_sum + lmo
+                    l_mal = l_mal_sum / float(len(views))
+                    l_dx = l_dx_sum / float(len(views))
+                    l_mod = l_mod_sum / float(len(views))
+                else:
+                    l_mal, l_dx, l_mod = self.net(xb, meta_in)
                 p_mal_list.append(torch.sigmoid(l_mal / max(0.1, self.temperature_mal)).cpu().numpy())
                 p_dx_list.append(torch.softmax(l_dx / max(0.1, self.temperature_dx), dim=1).cpu().numpy())
                 p_mod_list.append(torch.softmax(l_mod, dim=1).cpu().numpy())
@@ -464,6 +550,7 @@ class PyTorchDermResNet:
         *,
         modality_hint: str | None = None,
         body_site: str | None = None,
+        tta: bool = False,
     ) -> Any:
         from medresearch_platform.vision.cnn_multitask import (
             SAFETY_NOTICE_EN,
@@ -491,7 +578,7 @@ class PyTorchDermResNet:
             group_key="live_upload",
             split_assignment="live",
         )
-        p_mal_arr, p_dx_arr, p_mod_arr = self.predict_batch([(arr, -1, rec)], batch_size=1)
+        p_mal_arr, p_dx_arr, p_mod_arr = self.predict_batch([(arr, -1, rec)], batch_size=1, tta=tta)
         p_mal = float(p_mal_arr[0])
         dx_probs = p_dx_arr[0]
         mod_probs = p_mod_arr[0]
@@ -615,6 +702,7 @@ class PyTorchDermResNet:
         trained_sha = hashlib.sha256(weights_path.read_bytes()).hexdigest()
         manifest = {
             "architecture_name": self.architecture_name,
+            "architecture_variant": self.architecture_variant,
             "backend": f"pytorch_{self._device.type}",
             "git_commit": git_commit,
             "image_size": self.image_size,
@@ -662,6 +750,7 @@ class PyTorchDermResNet:
             seed=int(manifest.get("seed", 1)),
             n_dx=n_dx,
             device=device,
+            architecture_variant=str(manifest.get("architecture_variant", "resnet_v1")),
         )
         obj.net.load_state_dict({k: v.to(obj._device) for k, v in state_dict.items()})
         obj.net.eval()

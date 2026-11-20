@@ -117,7 +117,7 @@ def _load_samples_for_split(
         try:
             with Image.open(img_path) as im:
                 rgb = im.convert("RGB").resize((image_size, image_size), Image.Resampling.BILINEAR)
-                arr = np.asarray(rgb, dtype=np.float32) / 255.0
+                arr = np.asarray(rgb, dtype=np.uint8)
         except Exception:
             continue
         if rec.malignancy_group == "malignant":
@@ -136,6 +136,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--thumbs-dir", type=Path, default=Path("var/cache/derm/thumbs"))
     p.add_argument("--raw-dir", type=Path, default=Path("var/cache/derm/raw"))
     p.add_argument("--image-size", type=int, default=224, help="Input image resolution (e.g., 96, 128, or 224 on GPU).")
+    p.add_argument("--architecture", type=str, default="resnet_v2_se", choices=["resnet_v1", "resnet_v2_se"])
+    p.add_argument("--tta", action="store_true", help="Enable 4x Test-Time Augmentation during validation calibration & test eval.")
     p.add_argument("--seeds", type=str, default="1,2,3")
     p.add_argument("--epochs", type=int, default=20)
     p.add_argument("--batch-size", type=int, default=64)
@@ -213,6 +215,7 @@ def main() -> None:
             body_site_dropout=args.body_site_dropout,
             seed=sd,
             device=args.device,
+            architecture_variant=args.architecture,
         )
         model.fit(
             train_samples,
@@ -236,7 +239,7 @@ def main() -> None:
         labeled = [(a, lbl, r) for a, lbl, r in samples if lbl in (0, 1)]
         if not labeled:
             return np.array([]), np.array([]), [], []
-        probs_per_model = [m.predict_batch(labeled, batch_size=args.batch_size)[0] for m in trained_models]
+        probs_per_model = [m.predict_batch(labeled, batch_size=args.batch_size, tta=args.tta)[0] for m in trained_models]
         mean_p = np.mean(np.stack(probs_per_model, axis=0), axis=0)
         ys = np.array([lbl for _, lbl, _ in labeled], dtype=np.int64)
         mods = [r.modality for _, _, r in labeled]
@@ -253,7 +256,9 @@ def main() -> None:
 
     cal_payload = {
         "fitted_on": "val_v3",
+        "architecture_variant": args.architecture,
         "image_size": args.image_size,
+        "use_tta": bool(args.tta),
         "seeds": seeds,
         "modality_temperatures": mod_temps,
         "saved_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),

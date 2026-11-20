@@ -712,11 +712,12 @@ def ensemble_torch_ner_predictions(
         for ent in m.predict_entities(text):
             votes.setdefault((ent.type, ent.start, ent.end), []).append(ent)
 
-    min_votes = max(1, (n_models + 1) // 2)
+    min_votes = max(1, (2 * n_models + 2) // 3)
+    hi_conf_threshold = 0.94 if n_models >= 5 else 0.88
     candidates: list[tuple[int, float, PredictedEntity]] = []
     for (_etype, _s, _e), ents in votes.items():
         mean_conf = float(np.mean([e.confidence for e in ents]))
-        if len(ents) >= min_votes or mean_conf >= 0.88:
+        if len(ents) >= min_votes or mean_conf >= hi_conf_threshold:
             boost = 0.04 * (len(ents) - 1)
             merged_ent = PredictedEntity(
                 type=ents[0].type,
