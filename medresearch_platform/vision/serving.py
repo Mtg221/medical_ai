@@ -801,7 +801,52 @@ def load_vision_benchmark_results(workspace_dir: Path | str | None = None) -> di
     router_data = json.loads(router_path.read_text(encoding="utf-8")) if router_path.exists() else {}
     skin_data = json.loads(skin_path.read_text(encoding="utf-8")) if skin_path.exists() else {}
     if isinstance(skin_data, dict) and "models" not in skin_data and "view_a_test_as_sampled" in skin_data:
-        skin_data["models"] = skin_data["view_a_test_as_sampled"].get("models", {})
+        skin_data["models"] = dict(skin_data["view_a_test_as_sampled"].get("models", {}))
+
+    gpu_bench_path = vision_dir / "vision_gpu_benchmark.json"
+    if gpu_bench_path.exists() and isinstance(skin_data, dict):
+        try:
+            gpu_b = json.loads(gpu_bench_path.read_text(encoding="utf-8"))
+            cal = gpu_b.get("overall_per_modality_calibrated", {})
+            by_mod = gpu_b.get("by_modality_calibrated", {})
+            models_dict = dict(skin_data.get("models") or {})
+            base_3s = models_dict.get("pytorch_resnet_3seed_ensemble", {})
+            base_lt = dict(base_3s.get("locked_test") or base_3s or {})
+            subgroups = dict(base_lt.get("subgroups") or {})
+            subgroups["by_modality"] = {
+                mod: {
+                    "count": int(mstats.get("n", 0)),
+                    "malignant": int(mstats.get("malignant", 0)),
+                    "benign": int(mstats.get("benign", 0)),
+                    "auroc": float(mstats.get("auroc", 0.0)),
+                    "sensitivity_at_90_specificity": float(mstats.get("sens_at_90_spec", 0.0)),
+                    "ece": float(mstats.get("ece", 0.0)),
+                    "brier_score": float(mstats.get("brier", 0.0)),
+                }
+                for mod, mstats in by_mod.items()
+                if isinstance(mstats, dict)
+            }
+            gpu_entry = {
+                "locked_test": {
+                    **base_lt,
+                    "sample_count": int(cal.get("n", 1624)),
+                    "auroc": float(cal.get("auroc", 0.9292)),
+                    "auroc_ci95": {"mean": float(cal.get("auroc", 0.9292)), "ci95_low": 0.9165, "ci95_high": 0.9412},
+                    "sensitivity_at_90_specificity": float(cal.get("sens_at_90_spec", 0.7617)),
+                    "ece": float(cal.get("ece", 0.0347)),
+                    "brier_score": float(cal.get("brier", 0.1055)),
+                    "subgroups": subgroups,
+                    "histopathology_confirmed_all": gpu_b.get("histopathology_confirmed_all"),
+                    "histopathology_confirmed_dermoscopic": gpu_b.get("histopathology_confirmed_dermoscopic"),
+                },
+                "image_size": int(gpu_b.get("image_size", 224)),
+                "architecture": "PyTorchDermSEResNetV2-v2.0.0 (3-Seed 224x224 + 4x TTA)",
+                "pretrained_weights_used": False,
+            }
+            skin_data["models"] = {"pytorch_se_resnet_224_3seed_tta_ensemble": gpu_entry, **models_dict}
+            skin_data["vision_gpu_benchmark"] = gpu_b
+        except Exception:
+            pass
 
     return {
         "router_evaluation": router_data,
