@@ -20,22 +20,55 @@ import { useAuthStore } from "@/store/authStore";
 
 type SubgroupAxis = "by_skin_tone" | "by_modality" | "by_dataset" | "by_body_site";
 
+type Ci95Shape = [number, number] | { mean?: number; ci95_low?: number; ci95_high?: number } | undefined;
+
+function formatCi95(ci: Ci95Shape): string {
+  if (Array.isArray(ci) && ci.length >= 2) {
+    return `[${Number(ci[0]).toFixed(3)}, ${Number(ci[1]).toFixed(3)}]`;
+  }
+  if (ci && typeof ci === "object" && "ci95_low" in ci && "ci95_high" in ci) {
+    return `[${Number(ci.ci95_low ?? 0).toFixed(3)}, ${Number(ci.ci95_high ?? 0).toFixed(3)}]`;
+  }
+  return "[-]";
+}
+
+interface UncertaintyTier {
+  n: number;
+  fraction: number;
+  error_rate: number;
+  auroc: number | null;
+}
+
+interface EnsembleUncertaintyBlock {
+  threshold_std: number;
+  overall_mean_std: number;
+  overall_median_std: number;
+  overall_p90_std: number;
+  std_error_pearson_r: number;
+  low_uncertainty: UncertaintyTier;
+  high_uncertainty: UncertaintyTier;
+  histogram_bins: Array<{ range: string; count: number; error_rate: number }>;
+}
+
 interface SubgroupEntry {
-  sample_count: number;
-  malignant_count: number;
-  benign_count: number;
+  sample_count?: number;
+  count?: number;
+  malignant_count?: number;
+  malignant?: number;
+  benign_count?: number;
+  benign?: number;
   auroc: number;
-  auroc_ci95: [number, number];
+  auroc_ci95?: Ci95Shape;
   sensitivity_at_90_specificity: number;
-  balanced_accuracy: number;
+  balanced_accuracy?: number;
   ece: number;
-  small_sample_flag: string;
+  small_sample_flag?: string;
 }
 
 interface ModelMetricsBlock {
   sample_count: number;
   auroc: number;
-  auroc_ci95: [number, number];
+  auroc_ci95: Ci95Shape;
   sensitivity_at_90_specificity: number;
   sensitivity_at_95_specificity: number;
   balanced_accuracy: number;
@@ -48,6 +81,7 @@ interface ModelMetricsBlock {
   roc_curve?: Array<{ fpr: number; tpr: number; threshold: number }>;
   reliability_bins?: Array<{ bin: string; mean_predicted_prob: number; empirical_positive_rate: number; count: number }>;
   subgroups?: Record<SubgroupAxis, Record<string, SubgroupEntry>>;
+  ensemble_uncertainty?: EnsembleUncertaintyBlock;
 }
 
 interface ModelEvalBlock extends Partial<ModelMetricsBlock> {
@@ -187,7 +221,7 @@ export function VisionBenchmarkPage() {
                   <tr key={mName} className="border-b border-slate-100 dark:border-slate-800/70">
                     <td className="py-2 pr-3 font-mono font-semibold">{mName}</td>
                     <td className="py-2 px-2">
-                      {lt.auroc.toFixed(4)} [{lt.auroc_ci95[0].toFixed(3)}, {lt.auroc_ci95[1].toFixed(3)}]
+                      {lt.auroc.toFixed(4)} {formatCi95(lt.auroc_ci95)}
                     </td>
                     <td className="py-2 px-2">{lt.sensitivity_at_90_specificity.toFixed(4)}</td>
                     <td className="py-2 px-2">{lt.sensitivity_at_95_specificity.toFixed(4)}</td>
@@ -246,6 +280,56 @@ export function VisionBenchmarkPage() {
         </Card>
       </div>
 
+      {/* Ensemble Uncertainty Guardrail Panel (std > 0.12) */}
+      {cnnTest?.ensemble_uncertainty ? (
+        <Card>
+          <CardHeader className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">
+                Ensemble Uncertainty Guardrail (std &gt; {cnnTest.ensemble_uncertainty.threshold_std.toFixed(2)})
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Cross-seed disagreement Pearson r = {cnnTest.ensemble_uncertainty.std_error_pearson_r.toFixed(3)} — high-disagreement lesions automatically escalate to dermatologist review
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge tone="emerald">
+                Low Std (n={cnnTest.ensemble_uncertainty.low_uncertainty.n}): AUROC{" "}
+                {cnnTest.ensemble_uncertainty.low_uncertainty.auroc?.toFixed(4) ?? "-"} /{" "}
+                {(cnnTest.ensemble_uncertainty.low_uncertainty.error_rate * 100).toFixed(1)}% err
+              </Badge>
+              <Badge tone="amber">
+                High Std &gt; 0.12 (n={cnnTest.ensemble_uncertainty.high_uncertainty.n}): AUROC{" "}
+                {cnnTest.ensemble_uncertainty.high_uncertainty.auroc?.toFixed(4) ?? "-"} /{" "}
+                {(cnnTest.ensemble_uncertainty.high_uncertainty.error_rate * 100).toFixed(1)}% err
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="h-60">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={cnnTest.ensemble_uncertainty.histogram_bins
+                  .filter((b) => b.count > 0)
+                  .map((b) => ({
+                    range: b.range,
+                    count: b.count,
+                    error_pct: Number((b.error_rate * 100).toFixed(1)),
+                  }))}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="range" />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" domain={[0, 60]} unit="%" />
+                <Tooltip />
+                <Legend />
+                <Bar yAxisId="left" dataKey="count" name="Lesion Count (n)" fill="#0284c7" />
+                <Bar yAxisId="right" dataKey="error_pct" name="Empirical Error Rate (%)" fill="#f59e0b" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {/* Subgroup Fairness Charts & Table */}
       <Card>
         <CardHeader className="flex flex-wrap items-center justify-between gap-2">
@@ -299,16 +383,16 @@ export function VisionBenchmarkPage() {
                   <tr key={row.name} className="border-b border-slate-100 dark:border-slate-800/70">
                     <td className="py-1.5 pr-3 font-mono font-medium">{row.name}</td>
                     <td className="py-1.5 px-2">
-                      {row.sample_count} ({row.malignant_count} / {row.benign_count})
+                      {row.sample_count ?? row.count ?? 0} ({row.malignant_count ?? row.malignant ?? 0} / {row.benign_count ?? row.benign ?? 0})
                     </td>
                     <td className="py-1.5 px-2">
-                      {row.auroc.toFixed(4)} [{row.auroc_ci95[0].toFixed(3)}, {row.auroc_ci95[1].toFixed(3)}]
+                      {row.auroc.toFixed(4)} {formatCi95(row.auroc_ci95)}
                     </td>
                     <td className="py-1.5 px-2">{row.sensitivity_at_90_specificity.toFixed(4)}</td>
                     <td className="py-1.5 px-2">{row.ece.toFixed(4)}</td>
                     <td className="py-1.5 pl-2">
-                      <Badge tone={row.sample_count < 30 ? "amber" : "emerald"}>
-                        {row.sample_count < 30 ? t("visionBench.tooFew") : row.small_sample_flag}
+                      <Badge tone={(row.sample_count ?? row.count ?? 0) < 30 ? "amber" : "emerald"}>
+                        {(row.sample_count ?? row.count ?? 0) < 30 ? t("visionBench.tooFew") : (row.small_sample_flag ?? "ok")}
                       </Badge>
                     </td>
                   </tr>
