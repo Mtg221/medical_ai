@@ -242,7 +242,7 @@ def _build_torch_ner_module(
             nn.init.uniform_(self.start_transitions, -0.1, 0.1)
             nn.init.uniform_(self.end_transitions, -0.1, 0.1)
 
-        def forward_emissions(
+        def encode(
             self,
             word_ids: torch.Tensor,
             char_ids: torch.Tensor,
@@ -257,6 +257,16 @@ def _build_torch_ner_module(
             cl_e = self.cluster_emb(cluster_ids)
             x = self.in_drop(torch.cat([w_e, c_e, ortho_feats, cl_e], dim=-1))
             h, _ = self.lstm(x)
+            return h
+
+        def forward_emissions(
+            self,
+            word_ids: torch.Tensor,
+            char_ids: torch.Tensor,
+            ortho_feats: torch.Tensor,
+            cluster_ids: torch.Tensor,
+        ) -> torch.Tensor:
+            h = self.encode(word_ids, char_ids, ortho_feats, cluster_ids)
             return self.fc(self.out_drop(h))
 
         def _forward_log_partition(
@@ -461,7 +471,15 @@ class PyTorchCharCNNBiLSTMCRF:
             out = {k: v.to(target_dev, non_blocking=(target_dev.type == "cuda")) for k, v in out.items()}
         return out
 
-    def fit(self, train_docs: list[AnnotatedDocument], *, verbose: bool = False) -> PyTorchCharCNNBiLSTMCRF:
+    def fit(
+        self,
+        train_docs: list[AnnotatedDocument],
+        *,
+        verbose: bool = False,
+        pretrain_texts: list[str] | None = None,
+        mlm_epochs: int = 0,
+        mlm_lr: float = 0.002,
+    ) -> PyTorchCharCNNBiLSTMCRF:
         if not is_torch_available():
             raise RuntimeError("PyTorch is required for PyTorchCharCNNBiLSTMCRF (install .[vision]).")
         import torch
@@ -516,6 +534,65 @@ class PyTorchCharCNNBiLSTMCRF:
             dropout=self.dropout,
         ).to(dev)
         self.initial_weights_sha256 = self._weights_sha256()
+
+        # Optional from-scratch Self-Supervised Masked Language Modeling (MLM) pretraining
+        if pretrain_texts and mlm_epochs > 0:
+            import torch.nn as nn
+
+            mlm_chunks: list[dict[str, Any]] = []
+            for txt in pretrain_texts:
+                toks_p = tokenize_with_offsets(txt)
+                if len(toks_p) < 6:
+                    continue
+                for s, e in _chunk_tokens_for_training(toks_p):
+                    mlm_chunks.append(self._encode_chunk(toks_p[s:e]))
+            if mlm_chunks:
+                mlm_head = nn.Linear(2 * self.hidden_dim, len(self.vocab)).to(dev)
+                mlm_opt = torch.optim.AdamW(
+                    list(self.net.parameters()) + list(mlm_head.parameters()),
+                    lr=mlm_lr,
+                    weight_decay=1e-4,
+                )
+                mlm_ce = nn.CrossEntropyLoss(ignore_index=-100)
+                mlm_bs = max(self.batch_size, 32)
+                for m_ep in range(mlm_epochs):
+                    t_m = time.perf_counter()
+                    self.net.train()
+                    mlm_head.train()
+                    m_order = rng.permutation(len(mlm_chunks))
+                    m_losses: list[float] = []
+                    for start in range(0, len(m_order), mlm_bs):
+                        b_items = [mlm_chunks[int(i)] for i in m_order[start : start + mlm_bs]]
+                        batch = self._collate_batch(b_items, word_drop_p=0.0, device=dev)
+                        w_orig = batch["w"]
+                        # Mask 15% of known content tokens (word_id > 1)
+                        valid_tok = batch["mask"] & (w_orig > 1)
+                        rand_mask = (torch.rand_like(w_orig.float()) < 0.15) & valid_tok
+                        if not bool(rand_mask.any().item()):
+                            continue
+                        targets = torch.where(rand_mask, w_orig, torch.full_like(w_orig, -100))
+                        w_in = torch.where(rand_mask, torch.ones_like(w_orig), w_orig)
+                        c_in = batch["c"].masked_fill(rand_mask.unsqueeze(-1), 0)
+                        o_in = batch["o"].masked_fill(rand_mask.unsqueeze(-1), 0.0)
+                        cl_in = batch["cl"].masked_fill(rand_mask, 0)
+
+                        mlm_opt.zero_grad()
+                        h_seq = self.net.encode(w_in, c_in, o_in, cl_in)
+                        logits = mlm_head(h_seq)
+                        loss_mlm = mlm_ce(logits.reshape(-1, logits.shape[-1]), targets.reshape(-1))
+                        loss_mlm.backward()
+                        torch.nn.utils.clip_grad_norm_(
+                            list(self.net.parameters()) + list(mlm_head.parameters()), 5.0
+                        )
+                        mlm_opt.step()
+                        m_losses.append(float(loss_mlm.item()))
+                    if verbose:
+                        print(
+                            f"  [MLM seed={self.seed} ep={m_ep + 1}/{mlm_epochs} chunks={len(mlm_chunks)}] "
+                            f"loss={float(np.mean(m_losses)) if m_losses else 0.0:.4f} ({time.perf_counter() - t_m:.1f}s)",
+                            flush=True,
+                        )
+                del mlm_head, mlm_opt
 
         optimizer = torch.optim.AdamW(self.net.parameters(), lr=self.lr, weight_decay=1e-4)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, self.epochs))

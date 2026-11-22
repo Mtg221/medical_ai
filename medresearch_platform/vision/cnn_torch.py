@@ -273,9 +273,12 @@ class PyTorchDermResNet:
         patience: int = 4,
         max_samples_per_epoch: int = 12000,
         use_amp: bool = True,
+        clinical_focus: bool = False,
+        clinical_oversample: float = 4.0,
     ) -> dict[str, Any]:
         import torch
         import torch.nn as nn
+        import torch.nn.functional as F
         from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 
         t0 = time.perf_counter()
@@ -322,6 +325,13 @@ class PyTorchDermResNet:
             torch.tensor(w_pos, dtype=torch.float32),
             torch.where(y_mal_tr == 0, torch.tensor(w_neg, dtype=torch.float32), torch.tensor(1.0, dtype=torch.float32)),
         )
+        clinical_mod_idx = SKIN_MODALITIES.index("clinical")
+        if clinical_focus and clinical_oversample > 1.0:
+            sample_weights = torch.where(
+                y_mod_tr == clinical_mod_idx,
+                sample_weights * float(clinical_oversample),
+                sample_weights,
+            )
         sampler = WeightedRandomSampler(
             sample_weights.tolist(),
             num_samples=min(len(y_mal_tr), max_samples_per_epoch),
@@ -382,6 +392,31 @@ class PyTorchDermResNet:
                 gain = rng.uniform(0.88, 1.12)
                 bias = rng.uniform(-0.06, 0.06)
                 xb = torch.clamp(xb * gain + bias, 0.0, 1.0)
+                if clinical_focus:
+                    # Smartphone-realistic augmentations: lesion scale-crop, RGB white-balance cast, uneven lighting
+                    if rng.random() < 0.55 and xb.shape[2] >= 64:
+                        h_im, w_im = xb.shape[2], xb.shape[3]
+                        scale = rng.uniform(0.72, 0.96)
+                        ch = max(32, int(round(h_im * scale)))
+                        cw = max(32, int(round(w_im * scale)))
+                        y0 = rng.randint(0, h_im - ch)
+                        x0 = rng.randint(0, w_im - cw)
+                        xb = F.interpolate(
+                            xb[:, :, y0 : y0 + ch, x0 : x0 + cw],
+                            size=(h_im, w_im),
+                            mode="bilinear",
+                            align_corners=False,
+                        )
+                    if rng.random() < 0.60:
+                        rgb_gain = torch.tensor(
+                            [rng.uniform(0.88, 1.12), rng.uniform(0.88, 1.12), rng.uniform(0.88, 1.12)],
+                            device=dev,
+                            dtype=xb.dtype,
+                        ).view(1, 3, 1, 1)
+                        xb = torch.clamp(xb * rgb_gain, 0.0, 1.0)
+                    if rng.random() < 0.30:
+                        grad_1d = torch.linspace(rng.uniform(-0.08, 0.0), rng.uniform(0.0, 0.08), xb.shape[3], device=dev, dtype=xb.dtype)
+                        xb = torch.clamp(xb + grad_1d.view(1, 1, 1, -1), 0.0, 1.0)
                 if rng.random() < 0.25 and xb.shape[2] >= 64:
                     h_im, w_im = xb.shape[2], xb.shape[3]
                     ch = rng.randint(max(8, h_im // 10), max(12, h_im // 5))
@@ -402,7 +437,16 @@ class PyTorchDermResNet:
                     l_mal, l_dx, l_mod = self.net(xb, mb if self.include_metadata else None)
                     mask = (ymb == 0) | (ymb == 1)
                     if mask.any():
-                        loss_mal = bce(l_mal[mask], ymb[mask].float()).mean()
+                        raw_bce = bce(l_mal[mask], ymb[mask].float())
+                        if clinical_focus:
+                            w_m = torch.where(
+                                ymodb[mask] == clinical_mod_idx,
+                                torch.tensor(1.5, device=dev, dtype=raw_bce.dtype),
+                                torch.tensor(1.0, device=dev, dtype=raw_bce.dtype),
+                            )
+                            loss_mal = (raw_bce * w_m).sum() / w_m.sum().clamp(min=1.0)
+                        else:
+                            loss_mal = raw_bce.mean()
                     else:
                         loss_mal = torch.tensor(0.0, device=dev)
                     dx_mask = ydb != MASKED_DX_INDEX
@@ -424,18 +468,31 @@ class PyTorchDermResNet:
             vl_mal, _ = _eval_val_logits()
             vp_mal = torch.sigmoid(vl_mal).numpy()
             val_auroc = _compute_binary_auroc(y_mal_va.numpy(), vp_mal)
+            val_clin_mask = (y_mod_va.numpy() == clinical_mod_idx) & ((y_mal_va.numpy() == 0) | (y_mal_va.numpy() == 1))
+            val_clin_auroc = (
+                _compute_binary_auroc(y_mal_va.numpy()[val_clin_mask], vp_mal[val_clin_mask])
+                if int(np.sum(val_clin_mask)) >= 10
+                else val_auroc
+            )
+            selection_metric = (0.65 * val_clin_auroc + 0.35 * val_auroc) if clinical_focus else val_auroc
 
             ep_sec = round(time.perf_counter() - ep_t0, 2)
             mean_loss = round(ep_loss / max(1, n_batches), 4)
             print(
-                f"[seed={self.seed} dev={dev} img={self.image_size} meta={self.include_metadata}] "
-                f"epoch {ep}/{epochs}: loss={mean_loss:.4f} val_auroc={val_auroc:.4f} ({ep_sec}s)",
+                f"[seed={self.seed} dev={dev} img={self.image_size} meta={self.include_metadata} clin_focus={clinical_focus}] "
+                f"epoch {ep}/{epochs}: loss={mean_loss:.4f} val_auroc={val_auroc:.4f} val_clin_auroc={val_clin_auroc:.4f} ({ep_sec}s)",
                 flush=True,
             )
-            history.append({"epoch": float(ep), "loss": mean_loss, "val_auroc": round(val_auroc, 4), "sec": ep_sec})
+            history.append({
+                "epoch": float(ep),
+                "loss": mean_loss,
+                "val_auroc": round(val_auroc, 4),
+                "val_clin_auroc": round(val_clin_auroc, 4),
+                "sec": ep_sec,
+            })
 
-            if val_auroc > best_val_auroc + 1e-4:
-                best_val_auroc = val_auroc
+            if selection_metric > best_val_auroc + 1e-4:
+                best_val_auroc = selection_metric
                 best_state = {k: v.detach().cpu().clone() for k, v in self.net.state_dict().items()}
                 stale = 0
             else:

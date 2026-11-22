@@ -146,6 +146,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--body-site-dropout", type=float, default=0.40)
     p.add_argument("--max-train-samples", type=int, default=40000)
     p.add_argument("--max-samples-per-epoch", type=int, default=24000)
+    p.add_argument("--clinical-focus", action="store_true", help="Oversample clinical smartphone photos with smartphone-realistic augmentations & clinical val selection.")
+    p.add_argument("--clinical-oversample", type=float, default=4.0)
     p.add_argument("--device", type=str, default="auto")
     p.add_argument("--out-models-dir", type=Path, default=Path("models"))
     p.add_argument("--out-report", type=Path, default=Path("docs/results/vision/vision_gpu_benchmark.json"))
@@ -226,6 +228,8 @@ def main() -> None:
             patience=args.patience,
             max_samples_per_epoch=args.max_samples_per_epoch,
             use_amp=True,
+            clinical_focus=bool(args.clinical_focus),
+            clinical_oversample=float(args.clinical_oversample),
         )
         dir_name = f"derm_cnn_bsdrop40_seed{sd}" if idx == 0 else f"derm_cnn_seed{sd}"
         out_dir = args.out_models_dir / dir_name
