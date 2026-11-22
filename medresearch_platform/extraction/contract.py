@@ -95,6 +95,8 @@ class ExtractedRecord:
     model_version: str
     provenance: dict[str, Any]
     review_status: ReviewStatus = "unreviewed"
+    confidence_variance: float = 0.0
+    high_uncertainty: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)

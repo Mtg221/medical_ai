@@ -371,6 +371,10 @@ class PyTorchCharCNNBiLSTMCRF:
         self.sem_model: SelfSupervisedMedicalEmbeddings | None = (
             load_optional_self_supervised(self_supervised_path) if use_self_supervised else None
         )
+        self.word_to_cluster_id: dict[str, int] = {}
+        if self.sem_model is not None:
+            for w, idx in self.sem_model.word_to_id.items():
+                self.word_to_cluster_id[w] = min(self.cluster_vocab_size - 1, int(self.sem_model.clusters_fine[idx]) + 1)
         self.net: Any = None
         self.initial_weights_sha256: str = ""
         self.trained_weights_sha256: str = ""
@@ -378,9 +382,12 @@ class PyTorchCharCNNBiLSTMCRF:
         self._fitted = False
 
     def _cluster_id(self, word: str) -> int:
+        wl = word.lower()
+        if self.word_to_cluster_id:
+            return self.word_to_cluster_id.get(wl, 0)
         if self.sem_model is None:
             return 0
-        cl = self.sem_model.get_clusters(word.lower())
+        cl = self.sem_model.get_clusters(wl)
         if cl is None:
             return 0
         return min(self.cluster_vocab_size - 1, cl[0] + 1)
@@ -636,6 +643,7 @@ class PyTorchCharCNNBiLSTMCRF:
                 "word_to_id": self.vocab.word_to_id,
             },
             "char_to_id": self.char_to_id,
+            "word_to_cluster_id": self.word_to_cluster_id,
         }
         (out_dir / "manifest.json").write_text(json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8")
         return out_dir
@@ -675,6 +683,8 @@ class PyTorchCharCNNBiLSTMCRF:
         obj.vocab.min_freq = int(meta["vocab"]["min_freq"])
         obj.vocab.word_to_id = {str(k): int(v) for k, v in meta["vocab"]["word_to_id"].items()}
         obj.char_to_id = {str(k): int(v) for k, v in meta["char_to_id"].items()}
+        if isinstance(meta.get("word_to_cluster_id"), dict):
+            obj.word_to_cluster_id = {str(k): int(v) for k, v in meta["word_to_cluster_id"].items()}
         obj.net = _build_torch_ner_module(
             vocab_size=len(obj.vocab),
             char_vocab_size=len(obj.char_to_id),
@@ -716,8 +726,12 @@ def ensemble_torch_ner_predictions(
     hi_conf_threshold = 0.94 if n_models >= 5 else 0.88
     candidates: list[tuple[int, float, PredictedEntity]] = []
     for (_etype, _s, _e), ents in votes.items():
-        mean_conf = float(np.mean([e.confidence for e in ents]))
+        voter_confs = [float(e.confidence) for e in ents]
+        mean_conf = float(np.mean(voter_confs))
         if len(ents) >= min_votes or mean_conf >= hi_conf_threshold:
+            full_scores = voter_confs + [0.0] * (n_models - len(ents))
+            seed_std = round(float(np.std(full_scores)), 4)
+            is_high_unc = bool(seed_std > 0.12)
             boost = 0.04 * (len(ents) - 1)
             merged_ent = PredictedEntity(
                 type=ents[0].type,
@@ -726,6 +740,9 @@ def ensemble_torch_ner_predictions(
                 text=ents[0].text,
                 assertion=ents[0].assertion,
                 confidence=round(min(0.99, mean_conf + boost), 4),
+                needs_review=is_high_unc,
+                confidence_variance=seed_std,
+                high_uncertainty=is_high_unc,
             )
             candidates.append((len(ents), merged_ent.confidence, merged_ent))
 

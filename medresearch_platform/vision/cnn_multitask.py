@@ -134,6 +134,8 @@ class SkinPredictionResult:
     safety_notice_fr: str
     model_name: str
     pretrained_weights_used: bool
+    confidence_variance: float = 0.0
+    high_uncertainty: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)

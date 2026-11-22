@@ -21,6 +21,8 @@ class PredictedEntity:
     assertion: str = "present"
     confidence: float = 1.0
     needs_review: bool = False
+    confidence_variance: float = 0.0
+    high_uncertainty: bool = False
 
 
 @dataclass(frozen=True)

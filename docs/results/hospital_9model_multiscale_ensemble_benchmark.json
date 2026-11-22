@@ -1,0 +1,50 @@
+{
+  "evaluated_at_utc": "2026-11-20T11:45:58Z",
+  "note": "post-hoc (test seen) — 9-Model Multi-Capacity Exact-Cluster-Aligned Hospital Ensemble (3x Local 96d + 3x Kaggle GPU 128d + 3x Kaggle GPU 160d Partial-Label Marginal CRF with 6/9 supermajority consensus + Upgraded CRF v2)",
+  "pretrained_weights_used": false,
+  "ensemble_architecture": {
+    "models_96d": 3,
+    "models_128d_kaggle_cuda": 3,
+    "models_160d_kaggle_cuda": 3,
+    "cluster_alignment": "embedded 16,000-word word_to_cluster_id in manifest.json",
+    "voting_rule": "6/9 supermajority (or mean_conf >= 0.94) + CRF v2 merge"
+  },
+  "splits": {
+    "open_clinical_test": {
+      "num_docs": 443,
+      "strict_f1": 0.6654,
+      "lenient_f1": 0.7459,
+      "precision": 0.681,
+      "recall": 0.6505,
+      "by_corpus": {
+        "e3c_layer1": {
+          "strict_f1": 0.408799,
+          "lenient_f1": 0.544455
+        },
+        "maccrobat2020": {
+          "strict_f1": 0.559824,
+          "lenient_f1": 0.66213
+        },
+        "pxcorpus": {
+          "strict_f1": 0.942462,
+          "lenient_f1": 0.96504
+        }
+      }
+    },
+    "realistic_llm_80": {
+      "num_docs": 80,
+      "strict_f1": 0.7179,
+      "lenient_f1": 0.82,
+      "lenient_f1_5of9_majority": 0.8272,
+      "precision": 0.7446,
+      "recall": 0.693
+    },
+    "synth_unseen_terms": {
+      "num_docs": 160,
+      "strict_f1": 0.9306,
+      "lenient_f1": 0.9582,
+      "precision": 0.9449,
+      "recall": 0.9167
+    }
+  }
+}

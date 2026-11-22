@@ -168,19 +168,23 @@ class VisionServingEngine:
 
                     use_ens = os.environ.get("MEDRESEARCH_VISION_ENSEMBLE", "1") != "0"
                     custom_dir_set = bool(os.environ.get("MEDRESEARCH_VISION_SKIN_DIR"))
-                    ens_dirs = [
-                        self.workspace_dir / "models" / "derm_cnn_bsdrop40_seed1",
-                        self.workspace_dir / "models" / "derm_cnn_seed2",
-                        self.workspace_dir / "models" / "derm_cnn_seed3",
-                    ]
-                    if (
-                        use_ens
-                        and not custom_dir_set
-                        and all(
-                            self._check_model_dir(d, "weights.npz", "weights_torch.pt")
-                            for d in ens_dirs
+                    models_root = self.workspace_dir / "models"
+                    candidate_dirs = [
+                        models_root / name
+                        for name in (
+                            "derm_cnn_bsdrop40_seed1",
+                            "derm_cnn_seed2",
+                            "derm_cnn_seed3",
+                            "derm_cnn_seed4",
+                            "derm_cnn_seed5",
                         )
-                    ):
+                    ]
+                    ens_dirs = [
+                        d
+                        for d in candidate_dirs
+                        if d.is_dir() and self._check_model_dir(d, "weights.npz", "weights_torch.pt")
+                    ]
+                    if use_ens and not custom_dir_set and len(ens_dirs) >= 2:
                         self._skin_model = CalibratedVisionEnsemble.load_dirs(ens_dirs)
                     else:
                         self._skin_model = PyTorchDermResNet.load(m_dir)
@@ -437,11 +441,20 @@ def ingest_and_analyze_image(
         captured_date_iso=resolved_date,
         heatmap_uri=f"/api/v1/images/{image_id}/heatmap",
     )
+    conf_var = round(float(getattr(skin_pred, "confidence_variance", 0.0)), 4) if skin_pred is not None else 0.0
+    high_unc = bool(getattr(skin_pred, "high_uncertainty", False)) if skin_pred is not None else False
+    if high_unc:
+        warnings.append(
+            f"High ensemble disagreement (std={conf_var:.3f} > 0.12): dermatologist review recommended / "
+            f"Fort désaccord de l'ensemble (écart-type={conf_var:.3f} > 0,12) : examen par un dermatologue recommandé"
+        )
     finding.provenance["captured_date_source"] = captured_date_source
     finding.provenance["warnings"] = warnings
     finding.provenance["metadata_mode"] = metadata_mode_used
     finding.provenance["modality_hint_used"] = modality_hint_used
     finding.provenance["body_site_used"] = body_site
+    finding.provenance["confidence_variance"] = conf_var
+    finding.provenance["high_uncertainty"] = high_unc
     if text_check is not None:
         finding.provenance["text_presence_check"] = text_check
 
@@ -610,6 +623,8 @@ def ingest_and_analyze_image(
     out["is_duplicate"] = False
     out["captured_date_source"] = captured_date_source
     out["warnings"] = warnings
+    out["confidence_variance"] = conf_var
+    out["high_uncertainty"] = high_unc
     out["same_lesion_links"] = created_links
     out["thumbnail_uri"] = f"/api/v1/images/{image_id}/thumbnail"
     return out
@@ -661,6 +676,8 @@ def _row_to_image_finding_dict(
         "model_version": str(row["model_version"]),
         "git_commit": str(row["git_commit"]),
         "review_status": str(row["review_status"]),
+        "confidence_variance": float(prov.get("confidence_variance", 0.0)),
+        "high_uncertainty": bool(prov.get("high_uncertainty", False)),
         "provenance": prov,
         "safety_notice_en": "Research tool — not a diagnosis. A dermatologist must examine the lesion.",
         "safety_notice_fr": "Outil de recherche — ne constitue pas un diagnostic. Un dermatologue doit examiner la lésion.",
@@ -845,6 +862,59 @@ def load_vision_benchmark_results(workspace_dir: Path | str | None = None) -> di
             }
             skin_data["models"] = {"pytorch_se_resnet_224_3seed_tta_ensemble": gpu_entry, **models_dict}
             skin_data["vision_gpu_benchmark"] = gpu_b
+        except Exception:
+            pass
+
+    ms5_bench_path = vision_dir / "vision_5seed_multiscale_benchmark.json"
+    if ms5_bench_path.exists() and isinstance(skin_data, dict):
+        try:
+            ms5 = json.loads(ms5_bench_path.read_text(encoding="utf-8"))
+            cal = ms5.get("overall_per_modality_calibrated", {})
+            by_mod = ms5.get("by_modality_calibrated", {})
+            models_dict = dict(skin_data.get("models") or {})
+            base_ref = models_dict.get("pytorch_se_resnet_224_3seed_tta_ensemble") or models_dict.get(
+                "pytorch_resnet_3seed_ensemble", {}
+            )
+            base_lt = dict(base_ref.get("locked_test") or base_ref or {})
+            subgroups = dict(base_lt.get("subgroups") or {})
+            subgroups["by_modality"] = {
+                mod: {
+                    "count": int(mstats.get("n", 0)),
+                    "malignant": int(mstats.get("malignant", 0)),
+                    "benign": int(mstats.get("benign", 0)),
+                    "auroc": float(mstats.get("auroc", 0.0)),
+                    "sensitivity_at_90_specificity": float(mstats.get("sens_at_90_spec", 0.0)),
+                    "ece": float(mstats.get("ece", 0.0)),
+                    "brier_score": float(mstats.get("brier", 0.0)),
+                    "mean_seed_std": float(mstats.get("mean_seed_std", 0.0)),
+                }
+                for mod, mstats in by_mod.items()
+                if isinstance(mstats, dict)
+            }
+            ms5_entry = {
+                "locked_test": {
+                    **base_lt,
+                    "sample_count": int(cal.get("n", 1624)),
+                    "auroc": float(cal.get("auroc", 0.0)),
+                    "auroc_ci95": cal.get("auroc_ci95") or base_lt.get("auroc_ci95"),
+                    "sensitivity_at_90_specificity": float(cal.get("sens_at_90_spec", 0.0)),
+                    "sensitivity_at_95_specificity": float(cal.get("sens_at_95_spec", 0.0)),
+                    "ece": float(cal.get("ece", 0.0)),
+                    "brier_score": float(cal.get("brier", 0.0)),
+                    "subgroups": subgroups,
+                    "histopathology_confirmed_all": ms5.get("histopathology_confirmed_all"),
+                    "histopathology_confirmed_dermoscopic": ms5.get("histopathology_confirmed_dermoscopic"),
+                    "ensemble_uncertainty": ms5.get("ensemble_uncertainty"),
+                },
+                "image_sizes": ms5.get("image_sizes", [224, 256]),
+                "architecture": str(
+                    ms5.get("architecture")
+                    or "PyTorchDermSEResNetV2-v2.0.0 (5-Seed Multi-Scale: 3x224 + 2x256 + 4x TTA)"
+                ),
+                "pretrained_weights_used": False,
+            }
+            skin_data["models"] = {"pytorch_se_resnet_multiscale_5seed_tta_ensemble": ms5_entry, **models_dict}
+            skin_data["vision_5seed_multiscale_benchmark"] = ms5
         except Exception:
             pass
 

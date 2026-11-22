@@ -19,6 +19,8 @@ DEFAULT_MODALITY_TEMPERATURES: dict[str, float] = {
     "tbp_tile": 0.80,
 }
 
+UNCERTAINTY_HIGH_STD_THRESHOLD: float = 0.12
+
 
 def _apply_temperature(prob: float, temp: float) -> float:
     p = float(np.clip(prob, 1e-6, 1.0 - 1e-6))
@@ -36,13 +38,20 @@ class CalibratedVisionEnsemble:
         *,
         modality_temperatures: dict[str, float] | None = None,
         use_tta: bool = False,
+        uncertainty_high_std_threshold: float = UNCERTAINTY_HIGH_STD_THRESHOLD,
     ) -> None:
         if not models:
             raise ValueError("CalibratedVisionEnsemble requires at least one model.")
         self.models = models
         self.modality_temperatures = dict(modality_temperatures or DEFAULT_MODALITY_TEMPERATURES)
         self.use_tta = bool(use_tta)
-        self.architecture_name = f"PyTorchDermResNet4Stage-Ensemble{len(models)}-v1.0.0"
+        self.uncertainty_high_std_threshold = float(uncertainty_high_std_threshold)
+        unique_sizes = sorted({int(m.image_size) for m in models})
+        if len(unique_sizes) > 1:
+            size_tag = "+".join(str(s) for s in unique_sizes)
+            self.architecture_name = f"PyTorchDermSEResNetV2-MultiScale({size_tag})-Ensemble{len(models)}-v2.0.0"
+        else:
+            self.architecture_name = f"PyTorchDermResNet4Stage-Ensemble{len(models)}-v1.0.0"
         self.model_version = self.architecture_name
         self.backend = "pytorch_cpu"
         self.image_size = int(models[0].image_size)
@@ -50,8 +59,10 @@ class CalibratedVisionEnsemble:
             **dict(getattr(models[0], "manifest", {})),
             "model_version": self.model_version,
             "ensemble_size": len(models),
+            "image_sizes": unique_sizes,
             "modality_temperatures": self.modality_temperatures,
             "use_tta": self.use_tta,
+            "uncertainty_high_std_threshold": self.uncertainty_high_std_threshold,
             "pretrained_weights_used": False,
         }
 
@@ -65,6 +76,7 @@ class CalibratedVisionEnsemble:
         loaded = [PyTorchDermResNet.load(d, device="cpu") for d in model_dirs]
         temps = modality_temperatures
         use_tta = False
+        unc_thr = UNCERTAINTY_HIGH_STD_THRESHOLD
         if model_dirs:
             cal_path = model_dirs[0].parent / "derm_ensemble_calibration.json"
             if cal_path.exists():
@@ -74,9 +86,16 @@ class CalibratedVisionEnsemble:
                         if temps is None and isinstance(raw.get("modality_temperatures"), dict):
                             temps = {str(k): float(v) for k, v in raw["modality_temperatures"].items()}
                         use_tta = bool(raw.get("use_tta", False))
+                        if "uncertainty_high_std_threshold" in raw:
+                            unc_thr = float(raw["uncertainty_high_std_threshold"])
                 except Exception:
                     temps = temps
-        return cls(loaded, modality_temperatures=temps, use_tta=use_tta)
+        return cls(
+            loaded,
+            modality_temperatures=temps,
+            use_tta=use_tta,
+            uncertainty_high_std_threshold=unc_thr,
+        )
 
     def compute_gradcam_heatmap(self, image: Image.Image) -> tuple[np.ndarray, float]:
         return self.models[0].compute_gradcam_heatmap(image)
@@ -98,6 +117,8 @@ class CalibratedVisionEnsemble:
         lead = results[0]
         raw_probs = [float(r.malignancy_probability) for r in results]
         mean_prob = float(np.mean(raw_probs))
+        seed_std = round(float(np.std(raw_probs)), 4)
+        is_high_uncertainty = bool(seed_std > self.uncertainty_high_std_threshold)
         mod_key = str(modality_hint or getattr(lead, "predicted_modality", "dermoscopic")).lower()
         temp = float(self.modality_temperatures.get(mod_key, 1.0))
         cal_prob = _apply_temperature(mean_prob, temp)
@@ -131,6 +152,9 @@ class CalibratedVisionEnsemble:
             confidence=conf,
             risk_band=risk_band,
             abstained=abstained,
+            needs_review=bool(lead.needs_review or abstained or is_high_uncertainty),
             top3_diagnoses=(top3 or lead.top3_diagnoses) if not abstained else [],
             model_name=self.architecture_name,
+            confidence_variance=seed_std,
+            high_uncertainty=is_high_uncertainty,
         )

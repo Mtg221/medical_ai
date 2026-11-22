@@ -282,6 +282,9 @@ class ExtractionService:
                         text=prev.text,
                         assertion=he.assertion,
                         confidence=round(min(0.99, max(prev.confidence, he.confidence) + 0.05), 4),
+                        needs_review=prev.needs_review,
+                        confidence_variance=prev.confidence_variance,
+                        high_uncertainty=prev.high_uncertainty,
                     )
                     source_stage_by_key[key] = "hospital_ensemble(torch+hybrid_v2)"
                 else:
@@ -387,9 +390,19 @@ class ExtractionService:
             assertion_contract = _ASSERTION_TO_CONTRACT.get(ent.assertion, "present")
             negation_contract = _ASSERTION_TO_NEGATION.get(ent.assertion, "affirmed")
             ent_conf = float(ent.confidence)
+            ent_var = round(float(getattr(ent, "confidence_variance", 0.0)), 4)
+            is_high_unc = bool(getattr(ent, "high_uncertainty", False))
             is_low_conf = ent_conf < review_threshold
-            record_review_status: ReviewStatus = "needs_review" if is_low_conf else "unreviewed"
-            review_reason = "low_confidence" if is_low_conf else ""
+            needs_rev = is_low_conf or is_high_unc
+            record_review_status: ReviewStatus = "needs_review" if needs_rev else "unreviewed"
+            if is_low_conf and is_high_unc:
+                review_reason = "low_confidence,high_ensemble_uncertainty"
+            elif is_low_conf:
+                review_reason = "low_confidence"
+            elif is_high_unc:
+                review_reason = "high_ensemble_uncertainty"
+            else:
+                review_reason = ""
             records.append(
                 ExtractedRecord(
                     source_record_id=f"{source_record_id}_{idx}",
@@ -412,12 +425,16 @@ class ExtractionService:
                     model_name=model_name,
                     model_version=model_version,
                     review_status=record_review_status,
+                    confidence_variance=ent_var,
+                    high_uncertainty=is_high_unc,
                     provenance={
                         "source_stage": stage_name,
                         "raw_assertion": ent.assertion,
                         "predicted_doc_type": pred.predicted_doc_type,
                         "review_reason": review_reason,
                         "review_threshold": review_threshold,
+                        "confidence_variance": ent_var,
+                        "high_uncertainty": is_high_unc,
                         "corpus_id": manifest.get("corpus_id", "unknown"),
                         "corpus_hash": manifest.get("corpus_hash", ""),
                         "git_commit": manifest.get("git_commit", "unknown"),

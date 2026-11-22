@@ -295,6 +295,9 @@ def apply_context_and_relations(
             text=e.text,
             assertion=classify_assertion_context(doc.text, e.start, e.end, language=doc.language),
             confidence=e.confidence,
+            needs_review=e.needs_review,
+            confidence_variance=e.confidence_variance,
+            high_uncertainty=e.high_uncertainty,
         )
         for e in entities
     ]
