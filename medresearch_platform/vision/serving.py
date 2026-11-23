@@ -445,6 +445,11 @@ def ingest_and_analyze_image(
     )
     conf_var = round(float(getattr(skin_pred, "confidence_variance", 0.0)), 4) if skin_pred is not None else 0.0
     high_unc = bool(getattr(skin_pred, "high_uncertainty", False)) if skin_pred is not None else False
+    retake_guidance: dict[str, Any] = {"retake_recommended": False, "tips_en": [], "tips_fr": []}
+    if skin_pred is not None and getattr(skin_pred, "quality", None) is not None:
+        from medresearch_platform.vision.quality import build_retake_guidance
+
+        retake_guidance = build_retake_guidance(skin_pred.quality)
     if high_unc:
         warnings.append(
             f"High ensemble disagreement (std={conf_var:.3f} > 0.12): dermatologist review recommended / "
@@ -457,6 +462,7 @@ def ingest_and_analyze_image(
     finding.provenance["body_site_used"] = body_site
     finding.provenance["confidence_variance"] = conf_var
     finding.provenance["high_uncertainty"] = high_unc
+    finding.provenance["retake_guidance"] = retake_guidance
     if text_check is not None:
         finding.provenance["text_presence_check"] = text_check
 
@@ -627,6 +633,7 @@ def ingest_and_analyze_image(
     out["warnings"] = warnings
     out["confidence_variance"] = conf_var
     out["high_uncertainty"] = high_unc
+    out["retake_guidance"] = retake_guidance
     out["same_lesion_links"] = created_links
     out["thumbnail_uri"] = f"/api/v1/images/{image_id}/thumbnail"
     return out
@@ -680,6 +687,7 @@ def _row_to_image_finding_dict(
         "review_status": str(row["review_status"]),
         "confidence_variance": float(prov.get("confidence_variance", 0.0)),
         "high_uncertainty": bool(prov.get("high_uncertainty", False)),
+        "retake_guidance": prov.get("retake_guidance") or {"retake_recommended": False, "tips_en": [], "tips_fr": []},
         "provenance": prov,
         "safety_notice_en": "Research tool — not a diagnosis. A dermatologist must examine the lesion.",
         "safety_notice_fr": "Outil de recherche — ne constitue pas un diagnostic. Un dermatologue doit examiner la lésion.",

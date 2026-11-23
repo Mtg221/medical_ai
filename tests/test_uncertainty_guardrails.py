@@ -107,3 +107,24 @@ def test_vision_5seed_multiscale_benchmark_surfaced() -> None:
     lt = models["pytorch_se_resnet_multiscale_5seed_tta_ensemble"]["locked_test"]
     assert lt["auroc"] > 0.92
     assert "ensemble_uncertainty" in lt
+
+
+def test_clinical_lesion_roi_cropper_and_retake_guidance() -> None:
+    from medresearch_platform.vision.quality import build_retake_guidance, crop_clinical_lesion_roi
+
+    # Create synthetic skin image with centered dark lesion
+    im = Image.new("RGB", (200, 200), color=(210, 170, 150))
+    for y in range(85, 115):
+        for x in range(85, 115):
+            im.putpixel((x, y), (70, 40, 35))
+    cropped, box = crop_clinical_lesion_roi(im)
+    assert cropped.size[0] >= 64 and cropped.size[1] >= 64
+    assert 0.45 <= box["crop_frac"] <= 1.0
+
+    # Uniform blurry dark image -> retake guidance recommended with bilingual tips
+    bad_im = Image.new("RGB", (64, 64), color=(15, 15, 15))
+    q_bad = assess_image_quality(bad_im)
+    guide = build_retake_guidance(q_bad)
+    assert guide["retake_recommended"] is True
+    assert len(guide["tips_en"]) >= 1
+    assert len(guide["tips_fr"]) >= 1

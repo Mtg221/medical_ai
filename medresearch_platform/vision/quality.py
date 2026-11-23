@@ -405,3 +405,109 @@ def detect_dense_text_lines(image: Image.Image | np.ndarray) -> dict[str, Any]:
         "ocr_lines": int(ocr_lines),
         "ocr_words": int(ocr_words),
     }
+
+
+def crop_clinical_lesion_roi(
+    img: Image.Image,
+    *,
+    margin_ratio: float = 0.25,
+    min_crop_frac: float = 0.50,
+) -> tuple[Image.Image, dict[str, float]]:
+    """
+    Fitzpatrick I-VI inclusive lesion-centered ROI auto-cropper for clinical smartphone photos.
+    Computes local color-contrast saliency relative to the image border median skin tone,
+    weighted by a gentle center Gaussian prior, and returns a square lesion-focused crop
+    preserving surrounding margin context for ABCDE border inspection.
+    """
+    rgb = img.convert("RGB")
+    w, h = rgb.size
+    if w < 32 or h < 32:
+        return rgb, {"x0": 0.0, "y0": 0.0, "x1": 1.0, "y1": 1.0, "crop_frac": 1.0}
+
+    small_sz = 96
+    arr = np.asarray(rgb.resize((small_sz, small_sz), Image.Resampling.BILINEAR), dtype=np.float32)
+
+    # Estimate surrounding skin reference from outer 10% border ring (invariant across Fitzpatrick I-VI)
+    ring_mask = np.zeros((small_sz, small_sz), dtype=bool)
+    b = max(4, small_sz // 10)
+    ring_mask[:b, :] = True
+    ring_mask[-b:, :] = True
+    ring_mask[:, :b] = True
+    ring_mask[:, -b:] = True
+    border_med = np.median(arr[ring_mask], axis=0)  # [3]
+
+    # Squared color distance from surrounding skin + center Gaussian prior
+    diff = arr - border_med.reshape(1, 1, 3)
+    color_dist = np.sqrt(np.sum(diff * diff, axis=2))
+    yy, xx = np.mgrid[0:small_sz, 0:small_sz].astype(np.float32)
+    cy, cx = (small_sz - 1) / 2.0, (small_sz - 1) / 2.0
+    sigma = small_sz * 0.32
+    center_prior = np.exp(-((yy - cy) ** 2 + (xx - cx) ** 2) / (2.0 * sigma * sigma))
+    saliency = color_dist * center_prior
+
+    thr = float(np.percentile(saliency, 85.0))
+    sal_mask = saliency >= thr
+    ys, xs = np.where(sal_mask)
+    if len(xs) < 4:
+        return rgb, {"x0": 0.0, "y0": 0.0, "x1": 1.0, "y1": 1.0, "crop_frac": 1.0}
+
+    x0_n = float(xs.min()) / small_sz
+    x1_n = float(xs.max() + 1) / small_sz
+    y0_n = float(ys.min()) / small_sz
+    y1_n = float(ys.max() + 1) / small_sz
+
+    box_w = x1_n - x0_n
+    box_h = y1_n - y0_n
+    side = max(box_w, box_h) * (1.0 + 2.0 * margin_ratio)
+    side = float(np.clip(side, min_crop_frac, 1.0))
+
+    cx_n = 0.5 * (x0_n + x1_n)
+    cy_n = 0.5 * (y0_n + y1_n)
+    nx0 = float(np.clip(cx_n - side / 2.0, 0.0, max(0.0, 1.0 - side)))
+    ny0 = float(np.clip(cy_n - side / 2.0, 0.0, max(0.0, 1.0 - side)))
+    nx1 = min(1.0, nx0 + side)
+    ny1 = min(1.0, ny0 + side)
+
+    px0 = int(round(nx0 * w))
+    py0 = int(round(ny0 * h))
+    px1 = max(px0 + 16, int(round(nx1 * w)))
+    py1 = max(py0 + 16, int(round(ny1 * h)))
+    cropped = rgb.crop((px0, py0, min(w, px1), min(h, py1)))
+    return cropped, {
+        "x0": round(nx0, 4),
+        "y0": round(ny0, 4),
+        "x1": round(nx1, 4),
+        "y1": round(ny1, 4),
+        "crop_frac": round(side, 4),
+    }
+
+
+def build_retake_guidance(quality: ImageQualityReport) -> dict[str, Any]:
+    """Return actionable bilingual EN/FR smartphone retake coaching when image quality fails."""
+    if quality.quality_ok:
+        return {"retake_recommended": False, "tips_en": [], "tips_fr": []}
+
+    tips_en: list[str] = []
+    tips_fr: list[str] = []
+    codes = set(quality.reasons_code)
+    if "blurry_focus" in codes:
+        tips_en.append("Hold the phone steady 10-15 cm from the lesion and tap the screen to lock focus.")
+        tips_fr.append("Tenez le téléphone stable à 10-15 cm de la lésion et touchez l'écran pour faire la mise au point.")
+    if "underexposed" in codes or "too_dark" in codes:
+        tips_en.append("Move to bright, indirect natural daylight; avoid harsh shadows over the lesion.")
+        tips_fr.append("Placez-vous à la lumière naturelle indirecte et évitez les ombres sur la lésion.")
+    if "overexposed" in codes or "too_bright" in codes:
+        tips_en.append("Turn off direct camera flash to prevent white specular glare on the skin.")
+        tips_fr.append("Désactivez le flash direct pour éviter les reflets blancs sur la peau.")
+    if "low_skin_area" in codes or "low_resolution" in codes:
+        tips_en.append("Center the skin lesion so it fills the middle of the frame with clean surrounding skin.")
+        tips_fr.append("Centrez la lésion cutanée au milieu du cadre avec de la peau saine autour.")
+    if not tips_en:
+        tips_en.append("Retake a sharp, well-lit close-up photo centered on the lesion.")
+        tips_fr.append("Reprenez une photo rapprochée, nette et bien éclairée centrée sur la lésion.")
+    return {
+        "retake_recommended": True,
+        "reasons_code": list(quality.reasons_code),
+        "tips_en": tips_en,
+        "tips_fr": tips_fr,
+    }

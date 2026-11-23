@@ -154,12 +154,26 @@ class CalibratedVisionEnsemble:
         if not active_pairs:
             active_pairs = [(i, 1.0 / n_total) for i in range(n_total)]
 
+        use_clinical_roi = bool(self.use_tta and mod_key == "clinical")
+        roi_image = None
+        if use_clinical_roi:
+            from medresearch_platform.vision.quality import crop_clinical_lesion_roi
+
+            roi_image, _ = crop_clinical_lesion_roi(image)
+
         results: list[Any] = []
         active_weights: list[float] = []
         for idx, w in active_pairs:
-            results.append(
-                self.models[idx].predict_image(image, modality_hint=modality_hint, body_site=body_site, tta=self.use_tta)
+            res_full = self.models[idx].predict_image(
+                image, modality_hint=modality_hint, body_site=body_site, tta=self.use_tta
             )
+            if roi_image is not None:
+                res_roi = self.models[idx].predict_image(
+                    roi_image, modality_hint=modality_hint, body_site=body_site, tta=self.use_tta
+                )
+                blended_p = round(0.5 * (float(res_full.malignancy_probability) + float(res_roi.malignancy_probability)), 4)
+                res_full = replace(res_full, malignancy_probability=blended_p)
+            results.append(res_full)
             active_weights.append(w)
 
         w_arr = np.asarray(active_weights, dtype=np.float64)
