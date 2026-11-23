@@ -39,6 +39,8 @@ class CalibratedVisionEnsemble:
         modality_temperatures: dict[str, float] | None = None,
         use_tta: bool = False,
         uncertainty_high_std_threshold: float = UNCERTAINTY_HIGH_STD_THRESHOLD,
+        specialist_indices: list[int] | None = None,
+        modality_specialist_weights: dict[str, float] | None = None,
     ) -> None:
         if not models:
             raise ValueError("CalibratedVisionEnsemble requires at least one model.")
@@ -46,8 +48,15 @@ class CalibratedVisionEnsemble:
         self.modality_temperatures = dict(modality_temperatures or DEFAULT_MODALITY_TEMPERATURES)
         self.use_tta = bool(use_tta)
         self.uncertainty_high_std_threshold = float(uncertainty_high_std_threshold)
+        self.specialist_indices = sorted({i for i in (specialist_indices or []) if 0 <= i < len(models)})
+        self.modality_specialist_weights = {
+            str(k).lower(): float(v) for k, v in (modality_specialist_weights or {}).items()
+        }
         unique_sizes = sorted({int(m.image_size) for m in models})
-        if len(unique_sizes) > 1:
+        if self.specialist_indices and len(unique_sizes) > 1:
+            size_tag = "+".join(str(s) for s in unique_sizes)
+            self.architecture_name = f"PyTorchDermSEResNetV2-ModalityAware({size_tag})-Ensemble{len(models)}-v2.1.0"
+        elif len(unique_sizes) > 1:
             size_tag = "+".join(str(s) for s in unique_sizes)
             self.architecture_name = f"PyTorchDermSEResNetV2-MultiScale({size_tag})-Ensemble{len(models)}-v2.0.0"
         else:
@@ -61,6 +70,8 @@ class CalibratedVisionEnsemble:
             "ensemble_size": len(models),
             "image_sizes": unique_sizes,
             "modality_temperatures": self.modality_temperatures,
+            "modality_specialist_weights": self.modality_specialist_weights,
+            "specialist_count": len(self.specialist_indices),
             "use_tta": self.use_tta,
             "uncertainty_high_std_threshold": self.uncertainty_high_std_threshold,
             "pretrained_weights_used": False,
@@ -77,6 +88,8 @@ class CalibratedVisionEnsemble:
         temps = modality_temperatures
         use_tta = False
         unc_thr = UNCERTAINTY_HIGH_STD_THRESHOLD
+        spec_weights: dict[str, float] = {}
+        spec_dir_names: set[str] = set()
         if model_dirs:
             cal_path = model_dirs[0].parent / "derm_ensemble_calibration.json"
             if cal_path.exists():
@@ -88,13 +101,26 @@ class CalibratedVisionEnsemble:
                         use_tta = bool(raw.get("use_tta", False))
                         if "uncertainty_high_std_threshold" in raw:
                             unc_thr = float(raw["uncertainty_high_std_threshold"])
+                        if isinstance(raw.get("modality_specialist_weights"), dict):
+                            spec_weights = {
+                                str(k).lower(): float(v) for k, v in raw["modality_specialist_weights"].items()
+                            }
+                        if isinstance(raw.get("clinical_specialist_dirs"), list):
+                            spec_dir_names = {str(x) for x in raw["clinical_specialist_dirs"]}
                 except Exception:
                     temps = temps
+        spec_indices = [
+            idx
+            for idx, d in enumerate(model_dirs)
+            if (d.name in spec_dir_names) or ("clinical" in d.name.lower())
+        ]
         return cls(
             loaded,
             modality_temperatures=temps,
             use_tta=use_tta,
             uncertainty_high_std_threshold=unc_thr,
+            specialist_indices=spec_indices,
+            modality_specialist_weights=spec_weights,
         )
 
     def compute_gradcam_heatmap(self, image: Image.Image) -> tuple[np.ndarray, float]:
@@ -110,29 +136,53 @@ class CalibratedVisionEnsemble:
         modality_hint: str | None = None,
         body_site: str | None = None,
     ) -> Any:
-        results = [
-            m.predict_image(image, modality_hint=modality_hint, body_site=body_site, tta=self.use_tta)
-            for m in self.models
-        ]
+        mod_key = str(modality_hint or "dermoscopic").lower()
+        n_total = len(self.models)
+        spec_set = set(self.specialist_indices)
+        gen_indices = [i for i in range(n_total) if i not in spec_set]
+
+        if spec_set and gen_indices and self.modality_specialist_weights:
+            alpha = float(np.clip(self.modality_specialist_weights.get(mod_key, 0.0), 0.0, 1.0))
+            weights_all = [
+                (alpha / len(spec_set)) if i in spec_set else ((1.0 - alpha) / len(gen_indices))
+                for i in range(n_total)
+            ]
+        else:
+            weights_all = [1.0 / n_total] * n_total
+
+        active_pairs = [(idx, w) for idx, w in enumerate(weights_all) if w > 1e-6]
+        if not active_pairs:
+            active_pairs = [(i, 1.0 / n_total) for i in range(n_total)]
+
+        results: list[Any] = []
+        active_weights: list[float] = []
+        for idx, w in active_pairs:
+            results.append(
+                self.models[idx].predict_image(image, modality_hint=modality_hint, body_site=body_site, tta=self.use_tta)
+            )
+            active_weights.append(w)
+
+        w_arr = np.asarray(active_weights, dtype=np.float64)
+        w_arr = w_arr / float(np.sum(w_arr))
         lead = results[0]
-        raw_probs = [float(r.malignancy_probability) for r in results]
-        mean_prob = float(np.mean(raw_probs))
-        seed_std = round(float(np.std(raw_probs)), 4)
+        raw_probs = np.asarray([float(r.malignancy_probability) for r in results], dtype=np.float64)
+        mean_prob = float(np.sum(w_arr * raw_probs))
+        seed_std = round(float(np.sqrt(max(0.0, float(np.sum(w_arr * (raw_probs - mean_prob) ** 2))))), 4)
         is_high_uncertainty = bool(seed_std > self.uncertainty_high_std_threshold)
-        mod_key = str(modality_hint or getattr(lead, "predicted_modality", "dermoscopic")).lower()
-        temp = float(self.modality_temperatures.get(mod_key, 1.0))
+        eff_mod_key = str(modality_hint or getattr(lead, "predicted_modality", "dermoscopic")).lower()
+        temp = float(self.modality_temperatures.get(eff_mod_key, 1.0))
         cal_prob = _apply_temperature(mean_prob, temp)
         conf = round(max(cal_prob, 1.0 - cal_prob), 4)
 
-        # Aggregate diagnosis distributions across ensemble members
+        # Aggregate diagnosis distributions across active ensemble members
         dx_sums: dict[str, float] = {}
-        for r in results:
+        for w_i, r in zip(w_arr.tolist(), results, strict=True):
             for item in getattr(r, "top3_diagnoses", []):
                 name = str(item["diagnosis"])
-                dx_sums[name] = dx_sums.get(name, 0.0) + float(item["probability"])
+                dx_sums[name] = dx_sums.get(name, 0.0) + w_i * float(item["probability"])
         top3_pairs = sorted(dx_sums.items(), key=lambda kv: kv[1], reverse=True)[:3]
         top3: list[dict[str, Any]] = [
-            {"rank": r_idx + 1, "diagnosis": k, "probability": round(v / len(results), 4)}
+            {"rank": r_idx + 1, "diagnosis": k, "probability": round(v, 4)}
             for r_idx, (k, v) in enumerate(top3_pairs)
         ]
 

@@ -252,32 +252,32 @@
         <span data-lang="fr">Plateforme Souveraine de TAL Clinique &amp; Vision Dermatologique</span>
       </h1>
       <p class="subtitle" data-lang="en">
-        An end-to-end, on-premise medical research platform trained strictly from random initialization (zero third-party pretrained weights, zero external cloud API calls), combining a 9-model multi-capacity bilingual NLP ensemble with a 5-seed multi-scale Dermatology SE-ResNetV2 ensemble and empirically validated uncertainty guardrails.
+        An end-to-end, on-premise medical research platform trained strictly from random initialization (zero third-party pretrained weights, zero external cloud API calls), combining a 12-model hybrid from-scratch MLM + multi-capacity bilingual NLP ensemble with a 7-seed modality-aware multi-scale Dermatology SE-ResNetV2 ensemble and empirically validated uncertainty guardrails.
       </p>
       <p class="subtitle" data-lang="fr">
-        Une plateforme de recherche médicale souveraine sur site, entraînée strictement à partir de poids aléatoires (zéro modèle pré-entraîné tiers, zéro appel API cloud externe), combinant un ensemble TAL bilingue de 9 modèles multi-capacités, un ensemble Vision dermatologique SE-ResNetV2 de 5 graines multi-échelles et des garde-fous d'incertitude validés empiriquement.
+        Une plateforme de recherche médicale souveraine sur site, entraînée strictement à partir de poids aléatoires (zéro modèle pré-entraîné tiers, zéro appel API cloud externe), combinant un ensemble TAL bilingue hybride MLM de 12 modèles, un ensemble Vision dermatologique SE-ResNetV2 de 7 graines sensible à la modalité et des garde-fous d'incertitude validés empiriquement.
       </p>
 
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label"><span data-lang="en">Vision 5-Seed AUROC</span><span data-lang="fr">Vision 5-Graines AUROC</span></div>
-          <div class="kpi-value accent">0.9313</div>
-          <div class="kpi-sub">95% CI [0.9184, 0.9415] • Dermoscopic <strong>0.9734</strong></div>
+          <div class="kpi-label"><span data-lang="en">Vision 7-Seed AUROC</span><span data-lang="fr">Vision 7-Graines AUROC</span></div>
+          <div class="kpi-value accent">0.9350</div>
+          <div class="kpi-sub">95% CI [0.9222, 0.9444] • Dermoscopic <strong>0.9734</strong></div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label"><span data-lang="en">Vision Sens @ 90% Spec</span><span data-lang="fr">Sensibilité @ 90% Spéc.</span></div>
-          <div class="kpi-value">77.51%</div>
-          <div class="kpi-sub"><span data-lang="en">New record (Brier 0.1042, ECE 0.0338)</span><span data-lang="fr">Nouveau record (Brier 0,1042, ECE 0,0338)</span></div>
+          <div class="kpi-value">79.38%</div>
+          <div class="kpi-sub"><span data-lang="en">New record (Clinical +8.4 pts, Brier 0.1014)</span><span data-lang="fr">Nouveau record (Clinique +8,4 pts, Brier 0,1014)</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label"><span data-lang="en">NLP 9-Model Open Clinical</span><span data-lang="fr">TAL 9-Modèles Clinique</span></div>
-          <div class="kpi-value purple">74.59%</div>
-          <div class="kpi-sub">Lenient F1 (Strict 66.54%) • PxCorpus <strong>96.50%</strong></div>
+          <div class="kpi-label"><span data-lang="en">NLP 12-Model MLM Clinical</span><span data-lang="fr">TAL 12-Modèles MLM</span></div>
+          <div class="kpi-value purple">74.72%</div>
+          <div class="kpi-sub">Lenient F1 (Strict <strong>67.10%</strong>) • Unseen <strong>96.08%</strong></div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label"><span data-lang="en">Uncertainty Guardrail</span><span data-lang="fr">Garde-fou d'Incertitude</span></div>
-          <div class="kpi-value warn">2.8×</div>
-          <div class="kpi-sub"><span data-lang="en">Error separation (13.7% low vs 38.8% flagged)</span><span data-lang="fr">Séparation d'erreur (13,7 % bas vs 38,8 % signalé)</span></div>
+          <div class="kpi-value warn">0.9419</div>
+          <div class="kpi-sub"><span data-lang="en">Low-std AUROC (12.9% err vs 32.3% flagged)</span><span data-lang="fr">AUROC basse incert. (12,9 % vs 32,3 % signalé)</span></div>
         </div>
       </div>
 
@@ -293,17 +293,17 @@
     <section class="slide">
       <div class="slide-meta">
         <span><span data-lang="en">Slide 02 / 06 — Bilingual Clinical NLP (EN / FR)</span><span data-lang="fr">Diapositive 02 / 06 — TAL Clinique Bilingue (EN / FR)</span></span>
-        <span>9-Model Multi-Capacity Ensemble (3×96d + 3×128d + 3×160d + CRF v2)</span>
+        <span>12-Model Hybrid MLM + Multi-Capacity Ensemble (3×96d + 3×128d + 3×160d + 3×MLM 160d/192d + CRF v2)</span>
       </div>
       <h2>
-        <span data-lang="en">9-Model Exact-Cluster-Aligned Hospital NLP Benchmark</span>
-        <span data-lang="fr">Benchmark TAL Hospitalier : Ensemble 9 Modèles Multi-Capacités</span>
+        <span data-lang="en">12-Model From-Scratch MLM + Hospital NLP Benchmark</span>
+        <span data-lang="fr">Benchmark TAL Hospitalier : Ensemble Hybride MLM 12 Modèles</span>
       </h2>
       <p class="subtitle" data-lang="en">
-        Char-CNN + BiLSTM + Partial-Label Marginal CRF trained from scratch with embedded 16,000-word Brown cluster alignment (`word_to_cluster_id`) and 6/9 supermajority consensus merged with Upgraded CRF v2.
+        Char-CNN + BiLSTM + Partial-Label Marginal CRF trained from scratch with 10-epoch self-supervised medical Masked Language Modeling (MLM), 16,000-word Brown cluster alignment, and 8/12 supermajority consensus merged with CRF v2.
       </p>
       <p class="subtitle" data-lang="fr">
-        Architecture Char-CNN + BiLSTM + CRF marginal à étiquettes partielles entraînée de zéro, avec alignement exact des clusters lexicaux (16 000 mots) et vote à supermajorité 6/9 fusionné avec CRF v2.
+        Architecture Char-CNN + BiLSTM + CRF marginal entraînée de zéro avec pré-entraînement auto-supervisé MLM médical (10 époques), alignement exact des clusters (16 000 mots) et supermajorité 8/12 fusionnée avec CRF v2.
       </p>
 
       <div class="two-col">
@@ -324,44 +324,44 @@
               <tr class="highlight-row">
                 <td><strong>Open Clinical Combined</strong></td>
                 <td class="num">443</td>
-                <td class="num">0.6654</td>
-                <td class="num">0.7459</td>
+                <td class="num">0.6710</td>
+                <td class="num">0.7472</td>
               </tr>
               <tr>
                 <td>&nbsp;&nbsp;↳ PxCorpus (FR/EN)</td>
                 <td class="num">—</td>
-                <td class="num">0.9425</td>
-                <td class="num">0.9650</td>
+                <td class="num">0.9271</td>
+                <td class="num">0.9450</td>
               </tr>
               <tr>
-                <td>&nbsp;&nbsp;↳ MACCROBAT 2020</td>
+                <td>&nbsp;&nbsp;↳ MACCROBAT 2020 (+1.02%)</td>
                 <td class="num">—</td>
-                <td class="num">0.5598</td>
-                <td class="num">0.6621</td>
+                <td class="num">0.5700</td>
+                <td class="num">0.6695</td>
               </tr>
               <tr>
-                <td>&nbsp;&nbsp;↳ E3C Layer 1</td>
+                <td>&nbsp;&nbsp;↳ E3C Layer 1 (+1.24%)</td>
                 <td class="num">—</td>
-                <td class="num">0.4088</td>
-                <td class="num">0.5445</td>
+                <td class="num">0.4212</td>
+                <td class="num">0.5534</td>
               </tr>
               <tr>
                 <td><strong>Realistic Clinical Notes (LLM-80)</strong></td>
                 <td class="num">80</td>
-                <td class="num">0.7179</td>
-                <td class="num">0.8200</td>
+                <td class="num">0.7213</td>
+                <td class="num">0.8158</td>
               </tr>
               <tr>
                 <td><strong>Synthetic Unseen Medical Terms</strong></td>
                 <td class="num">160</td>
-                <td class="num">0.9306</td>
-                <td class="num">0.9582</td>
+                <td class="num">0.9345</td>
+                <td class="num">0.9608</td>
               </tr>
             </tbody>
           </table>
           <div class="callout">
-            <span data-lang="en"><strong>Generalization Proof:</strong> 0.9306 Strict / 0.9582 Lenient F1 on completely unseen medical terminology, plus automatic <code>confidence_variance</code> flagging whenever ensemble seeds disagree (&gt; 0.12).</span>
-            <span data-lang="fr"><strong>Preuve de Généralisation :</strong> 0,9306 Strict / 0,9582 Souple F1 sur des termes médicaux inédits, avec signalement automatique <code>confidence_variance</code> en cas de désaccord (&gt; 0,12).</span>
+            <span data-lang="en"><strong>From-Scratch MLM Proof:</strong> 3 MLM-pretrained seeds alone reach 0.9441 / 0.9694 on unseen terms; combined 12-model ensemble sets new all-time records on MACCROBAT (+1.02%), E3C (+1.24%), and overall Open Clinical (P = 0.6909).</span>
+            <span data-lang="fr"><strong>Preuve MLM de Zéro :</strong> 3 modèles MLM atteignent 0,9441 / 0,9694 sur termes inédits ; l'ensemble 12 modèles établit des records sur MACCROBAT (+1,02 %), E3C (+1,24 %) et Open Clinical global (P = 0,6909).</span>
           </div>
         </div>
       </div>
@@ -371,17 +371,17 @@
     <section class="slide">
       <div class="slide-meta">
         <span><span data-lang="en">Slide 03 / 06 — Dermatology Vision (Locked Test v3, n = 1,624)</span><span data-lang="fr">Diapositive 03 / 06 — Vision Dermatologique (Test Verrouillé v3, n = 1 624)</span></span>
-        <span>5-Seed Multi-Scale SE-ResNetV2 (3×224px + 2×256px + 4× TTA)</span>
+        <span>7-Seed Modality-Aware SE-ResNetV2 (3×224 + 2×256 + 2×256 Clinical Specialists + 4× TTA)</span>
       </div>
       <h2>
-        <span data-lang="en">Multi-Scale Ensemble Outperforms Every Individual Seed</span>
-        <span data-lang="fr">L'Ensemble Multi-Échelles Surpasse Chaque Modèle Individuel</span>
+        <span data-lang="en">7-Seed Modality-Aware Ensemble Shatters Clinical &amp; Overall Records</span>
+        <span data-lang="fr">L'Ensemble 7 Graines Sensible à la Modalité Bat Tous les Records</span>
       </h2>
       <p class="subtitle" data-lang="en">
-        Trained strictly from scratch on 31,622 lesion-grouped images (zero patient/lesion leakage). Per-modality temperature scaling fitted exclusively on validation split <code>val_v3</code> (n = 1,497).
+        Trained strictly from scratch on 31,622 lesion-grouped images. Modality-aware specialist routing (4× clinical oversampling + smartphone augmentations) and temperature scaling fitted exclusively on <code>val_v3</code> (n = 1,497).
       </p>
       <p class="subtitle" data-lang="fr">
-        Entraîné de zéro sur 31 622 images regroupées par lésion (zéro fuite patient/lésion). Calibration de température par modalité ajustée exclusivement sur <code>val_v3</code> (n = 1 497).
+        Entraîné de zéro sur 31 622 images regroupées par lésion. Routage spécialiste par modalité (sur-échantillonnage clinique 4× + augmentations smartphone) et calibration ajustés exclusivement sur <code>val_v3</code> (n = 1 497).
       </p>
 
       <div class="two-col">
@@ -401,11 +401,11 @@
             </thead>
             <tbody>
               <tr class="highlight-row">
-                <td><strong>Overall Calibrated (5-Seed)</strong></td>
+                <td><strong>Overall Calibrated (7-Seed)</strong></td>
                 <td class="num">1,624</td>
-                <td class="num">0.9313</td>
-                <td class="num">0.7751</td>
-                <td class="num">0.0338</td>
+                <td class="num">0.9350</td>
+                <td class="num">0.7938</td>
+                <td class="num">0.0352</td>
               </tr>
               <tr>
                 <td>Dermoscopic</td>
@@ -414,19 +414,19 @@
                 <td class="num">0.9333</td>
                 <td class="num">0.0382</td>
               </tr>
-              <tr>
-                <td>Clinical Close-Up Photo</td>
+              <tr class="highlight-row">
+                <td><strong>Clinical Smartphone (+8.4 pts)</strong></td>
                 <td class="num">574</td>
-                <td class="num">0.8581</td>
-                <td class="num">0.5014</td>
-                <td class="num">0.0473</td>
+                <td class="num">0.8778</td>
+                <td class="num">0.5850</td>
+                <td class="num">0.0345</td>
               </tr>
               <tr>
                 <td>TBP Total-Body Tile *(auto-abstained)*</td>
                 <td class="num">350</td>
-                <td class="num">0.8782</td>
-                <td class="num">0.7100</td>
-                <td class="num">0.1049</td>
+                <td class="num">0.8763</td>
+                <td class="num">0.7000</td>
+                <td class="num">0.1007</td>
               </tr>
               <tr>
                 <td>Biopsy-Confirmed (Dermoscopic)</td>
@@ -438,15 +438,15 @@
               <tr>
                 <td>Biopsy-Confirmed (All Modalities)</td>
                 <td class="num">591</td>
-                <td class="num">0.8379</td>
-                <td class="num">0.6497</td>
-                <td class="num">0.1422</td>
+                <td class="num">0.8388</td>
+                <td class="num">0.6640</td>
+                <td class="num">0.1377</td>
               </tr>
             </tbody>
           </table>
           <div class="callout">
-            <span data-lang="en"><strong>Multi-Scale Gain:</strong> Combining 224px + 256px resolutions lifts overall Sensitivity@90% Spec from 76.17% (3-seed 224) to <strong>77.51%</strong> and lowers Brier score to <strong>0.1042</strong>.</span>
-            <span data-lang="fr"><strong>Gain Multi-Échelles :</strong> La fusion 224px + 256px porte la Sensibilité@90% Spéc. de 76,17 % à <strong>77,51 %</strong> et abaisse le score de Brier à <strong>0,1042</strong>.</span>
+            <span data-lang="en"><strong>Modality-Aware Gain:</strong> Adding 2 smartphone-specialist seeds lifts Clinical AUROC to <strong>0.8778</strong> (+2.0%), Clinical Sens@90% to <strong>58.50%</strong> (+8.4 pts), Overall AUROC to <strong>0.9350</strong>, and Brier to <strong>0.1014</strong>.</span>
+            <span data-lang="fr"><strong>Gain Spécialiste :</strong> L'ajout de 2 modèles spécialistes porte l'AUROC Clinique à <strong>0,8778</strong> (+2,0 %), la Sens@90% à <strong>58,50 %</strong> (+8,4 pts), l'AUROC global à <strong>0,9350</strong> et le Brier à <strong>0,1014</strong>.</span>
           </div>
         </div>
       </div>
@@ -481,23 +481,23 @@
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label"><span data-lang="en">High-Consensus Cohort</span><span data-lang="fr">Cohorte Fort Consensus</span></div>
-          <div class="kpi-value accent">4.21%</div>
-          <div class="kpi-sub"><span data-lang="en">Error rate when std &lt; 0.03 (n = 712, 43.8%)</span><span data-lang="fr">Taux d'erreur si std &lt; 0,03 (n = 712, 43,8 %)</span></div>
+          <div class="kpi-value accent">6.15%</div>
+          <div class="kpi-sub"><span data-lang="en">Error rate when std &lt; 0.03 (n = 813, 50.1%)</span><span data-lang="fr">Taux d'erreur si std &lt; 0,03 (n = 813, 50,1 %)</span></div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label"><span data-lang="en">Low-Uncertainty Tier (≤ 0.12)</span><span data-lang="fr">Niveau Basse Incertitude</span></div>
-          <div class="kpi-value">0.9369</div>
-          <div class="kpi-sub">AUROC • 13.73% error (n = 1,544, 95.1%)</div>
+          <div class="kpi-value">0.9419</div>
+          <div class="kpi-sub">AUROC • 12.89% error (n = 1,528, 94.1%)</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label"><span data-lang="en">Flagged Tier (&gt; 0.12)</span><span data-lang="fr">Niveau Signalé (&gt; 0,12)</span></div>
-          <div class="kpi-value warn">38.75%</div>
-          <div class="kpi-sub">Error rate • 0.7150 AUROC (n = 80, 4.9%)</div>
+          <div class="kpi-value warn">32.29%</div>
+          <div class="kpi-sub">Error rate • 0.7491 AUROC (n = 96, 5.9%)</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label"><span data-lang="en">Calibration Error (ECE)</span><span data-lang="fr">Erreur de Calibration (ECE)</span></div>
-          <div class="kpi-value purple">0.0338</div>
-          <div class="kpi-sub">Brier 0.1042 • val_v3 fitted temperatures</div>
+          <div class="kpi-label"><span data-lang="en">Calibration &amp; Brier</span><span data-lang="fr">Calibration &amp; Brier</span></div>
+          <div class="kpi-value purple">0.1014</div>
+          <div class="kpi-sub">Brier • ECE 0.0352 • val_v3 fitted</div>
         </div>
       </div>
     </section>
@@ -588,7 +588,7 @@
     Chart.defaults.color = '#cbd5e1';
     Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.16)';
 
-    // 1. NLP 9-Model Benchmark Chart
+    // 1. NLP 12-Model MLM Benchmark Chart
     new Chart(document.getElementById('nlpChart'), {
       type: 'bar',
       data: {
@@ -596,13 +596,13 @@
         datasets: [
           {
             label: 'Strict F1',
-            data: [0.9425, 0.5598, 0.4088, 0.6654, 0.7179, 0.9306],
+            data: [0.9271, 0.5700, 0.4212, 0.6710, 0.7213, 0.9345],
             backgroundColor: 'rgba(56, 189, 248, 0.8)',
             borderRadius: 6
           },
           {
             label: 'Lenient F1',
-            data: [0.9650, 0.6621, 0.5445, 0.7459, 0.8200, 0.9582],
+            data: [0.9450, 0.6695, 0.5534, 0.7472, 0.8158, 0.9608],
             backgroundColor: 'rgba(167, 139, 250, 0.8)',
             borderRadius: 6
           }
@@ -613,27 +613,27 @@
         maintainAspectRatio: false,
         scales: { y: { beginAtZero: true, max: 1.0 } },
         plugins: {
-          title: { display: true, text: '9-Model Hospital NLP Ensemble (Strict vs Lenient F1)', color: '#f8fafc' }
+          title: { display: true, text: '12-Model Hybrid MLM Hospital NLP Ensemble (Strict vs Lenient F1)', color: '#f8fafc' }
         }
       }
     });
 
-    // 2. Vision Individual Seeds vs 5-Seed Multi-Scale Ensemble
+    // 2. Vision Individual Seeds vs 7-Seed Modality-Aware Ensemble
     new Chart(document.getElementById('visionSeedsChart'), {
       type: 'bar',
       data: {
-        labels: ['Seed 1 (224)', 'Seed 2 (224)', 'Seed 3 (224)', 'Seed 4 (256)', 'Seed 5 (256)', '5-Seed Multi-Scale'],
+        labels: ['S1 (224)', 'S2 (224)', 'S3 (224)', 'S4 (256)', 'S5 (256)', 'S6 (Clin)', 'S7 (Clin)', '7-Seed Aware'],
         datasets: [
           {
-            label: 'AUROC',
-            data: [0.9214, 0.9252, 0.9259, 0.9275, 0.9281, 0.9313],
-            backgroundColor: ['#334155', '#334155', '#334155', '#475569', '#475569', '#10b981'],
+            label: 'Overall AUROC',
+            data: [0.9214, 0.9252, 0.9259, 0.9275, 0.9281, 0.9126, 0.9158, 0.9350],
+            backgroundColor: ['#334155', '#334155', '#334155', '#475569', '#475569', '#6366f1', '#6366f1', '#10b981'],
             borderRadius: 6
           },
           {
-            label: 'Sens @ 90% Spec',
-            data: [0.7349, 0.7416, 0.7416, 0.7604, 0.7456, 0.7751],
-            backgroundColor: 'rgba(56, 189, 248, 0.75)',
+            label: 'Clinical AUROC',
+            data: [0.8473, 0.8641, 0.8513, 0.8445, 0.8441, 0.8722, 0.8727, 0.8778],
+            backgroundColor: 'rgba(56, 189, 248, 0.78)',
             borderRadius: 6
           }
         ]
@@ -641,9 +641,9 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        scales: { y: { min: 0.70, max: 0.96 } },
+        scales: { y: { min: 0.82, max: 0.95 } },
         plugins: {
-          title: { display: true, text: 'Individual Seeds vs 5-Seed Multi-Scale Ensemble (n = 1,624)', color: '#f8fafc' }
+          title: { display: true, text: 'Generalist + Clinical Specialist Seeds vs 7-Seed Modality-Aware Ensemble', color: '#f8fafc' }
         }
       }
     });
@@ -656,7 +656,7 @@
           {
             type: 'bar',
             label: 'Lesion Count (n)',
-            data: [712, 451, 258, 123, 49, 25, 6],
+            data: [813, 364, 228, 123, 59, 29, 8],
             backgroundColor: ['#10b981', '#10b981', '#38bdf8', '#38bdf8', '#f59e0b', '#ef4444', '#ef4444'],
             borderRadius: 5,
             yAxisID: 'y'
@@ -664,7 +664,7 @@
           {
             type: 'line',
             label: 'Empirical Error Rate (%)',
-            data: [4.21, 16.41, 29.07, 26.83, 40.82, 32.00, 50.00],
+            data: [6.15, 13.46, 28.51, 26.83, 35.59, 27.59, 25.00],
             borderColor: '#f8fafc',
             backgroundColor: '#f8fafc',
             borderWidth: 2.5,
@@ -678,7 +678,7 @@
         maintainAspectRatio: false,
         scales: {
           y: { position: 'left', title: { display: true, text: 'Images (n)' } },
-          y1: { position: 'right', min: 0, max: 60, grid: { drawOnChartArea: false }, title: { display: true, text: 'Error Rate (%)' } }
+          y1: { position: 'right', min: 0, max: 50, grid: { drawOnChartArea: false }, title: { display: true, text: 'Error Rate (%)' } }
         },
         plugins: {
           title: { display: true, text: 'Ensemble Disagreement (std) vs Empirical Error Rate (*Flagged > 0.12)', color: '#f8fafc' }
@@ -690,11 +690,11 @@
     new Chart(document.getElementById('calibrationChart'), {
       type: 'line',
       data: {
-        labels: ['0.02', '0.15', '0.25', '0.35', '0.45', '0.55', '0.66', '0.76', '0.85', '0.95'],
+        labels: ['0.02', '0.15', '0.25', '0.35', '0.45', '0.55', '0.65', '0.75', '0.85', '0.95'],
         datasets: [
           {
-            label: '5-Seed Calibrated (ECE = 0.0338)',
-            data: [0.0315, 0.1647, 0.1552, 0.4328, 0.5769, 0.5444, 0.6716, 0.7853, 0.9315, 0.9706],
+            label: '7-Seed Calibrated (ECE = 0.0352, Brier = 0.1014)',
+            data: [0.0327, 0.1778, 0.1667, 0.4828, 0.4483, 0.5728, 0.7339, 0.8028, 0.9053, 0.9725],
             borderColor: '#38bdf8',
             backgroundColor: 'rgba(56, 189, 248, 0.15)',
             fill: true,

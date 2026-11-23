@@ -1,0 +1,423 @@
+{
+  "evaluated_at_utc": "2026-11-23T15:00:40Z",
+  "pretrained_weights_used": false,
+  "architecture": "PyTorchDermSEResNetV2-v2.1.0 (7-Seed Modality-Aware: 3x224 + 2x256 + 2x256 Clinical Specialists + 4x TTA)",
+  "image_sizes": [
+    224,
+    256
+  ],
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "generalist_dirs": [
+    "derm_cnn_bsdrop40_seed1",
+    "derm_cnn_seed2",
+    "derm_cnn_seed3",
+    "derm_cnn_seed4",
+    "derm_cnn_seed5"
+  ],
+  "clinical_specialist_dirs": [
+    "derm_cnn_clinical_seed6",
+    "derm_cnn_clinical_seed7"
+  ],
+  "use_tta": true,
+  "n_val": 1497,
+  "n_locked_test": 1624,
+  "val_fitted_modality_specialist_weights": {
+    "dermoscopic": 0.0,
+    "clinical": 1.0,
+    "tbp_tile": 0.05
+  },
+  "val_fitted_modality_temperatures": {
+    "dermoscopic": 0.85,
+    "clinical": 1.05,
+    "tbp_tile": 0.85
+  },
+  "per_seed_locked_test_raw": {
+    "derm_cnn_bsdrop40_seed1": {
+      "role": "generalist",
+      "seed": 1,
+      "image_size": 224,
+      "raw_locked_test_overall": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.9214,
+        "sens_at_90_spec": 0.7349,
+        "ece": 0.0342,
+        "brier": 0.1107
+      },
+      "raw_locked_test_clinical": {
+        "n": 574,
+        "malignant": 347,
+        "benign": 227,
+        "auroc": 0.8473,
+        "sens_at_90_spec": 0.5562,
+        "ece": 0.0491,
+        "brier": 0.1429
+      },
+      "inference_seconds": 28.3
+    },
+    "derm_cnn_seed2": {
+      "role": "generalist",
+      "seed": 2,
+      "image_size": 224,
+      "raw_locked_test_overall": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.9252,
+        "sens_at_90_spec": 0.7416,
+        "ece": 0.0361,
+        "brier": 0.1101
+      },
+      "raw_locked_test_clinical": {
+        "n": 574,
+        "malignant": 347,
+        "benign": 227,
+        "auroc": 0.8641,
+        "sens_at_90_spec": 0.5447,
+        "ece": 0.0285,
+        "brier": 0.1383
+      },
+      "inference_seconds": 28.79
+    },
+    "derm_cnn_seed3": {
+      "role": "generalist",
+      "seed": 3,
+      "image_size": 224,
+      "raw_locked_test_overall": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.9259,
+        "sens_at_90_spec": 0.7416,
+        "ece": 0.0246,
+        "brier": 0.1078
+      },
+      "raw_locked_test_clinical": {
+        "n": 574,
+        "malignant": 347,
+        "benign": 227,
+        "auroc": 0.8513,
+        "sens_at_90_spec": 0.4928,
+        "ece": 0.0195,
+        "brier": 0.1415
+      },
+      "inference_seconds": 38.78
+    },
+    "derm_cnn_seed4": {
+      "role": "generalist",
+      "seed": 4,
+      "image_size": 256,
+      "raw_locked_test_overall": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.9275,
+        "sens_at_90_spec": 0.7604,
+        "ece": 0.0222,
+        "brier": 0.1063
+      },
+      "raw_locked_test_clinical": {
+        "n": 574,
+        "malignant": 347,
+        "benign": 227,
+        "auroc": 0.8445,
+        "sens_at_90_spec": 0.4294,
+        "ece": 0.0189,
+        "brier": 0.143
+      },
+      "inference_seconds": 52.16
+    },
+    "derm_cnn_seed5": {
+      "role": "generalist",
+      "seed": 5,
+      "image_size": 256,
+      "raw_locked_test_overall": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.9281,
+        "sens_at_90_spec": 0.7456,
+        "ece": 0.0368,
+        "brier": 0.1073
+      },
+      "raw_locked_test_clinical": {
+        "n": 574,
+        "malignant": 347,
+        "benign": 227,
+        "auroc": 0.8441,
+        "sens_at_90_spec": 0.4697,
+        "ece": 0.0422,
+        "brier": 0.1456
+      },
+      "inference_seconds": 47.88
+    },
+    "derm_cnn_clinical_seed6": {
+      "role": "clinical_specialist",
+      "seed": 6,
+      "image_size": 256,
+      "raw_locked_test_overall": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.9126,
+        "sens_at_90_spec": 0.7323,
+        "ece": 0.0224,
+        "brier": 0.1184
+      },
+      "raw_locked_test_clinical": {
+        "n": 574,
+        "malignant": 347,
+        "benign": 227,
+        "auroc": 0.8722,
+        "sens_at_90_spec": 0.5677,
+        "ece": 0.0306,
+        "brier": 0.1351
+      },
+      "inference_seconds": 51.05
+    },
+    "derm_cnn_clinical_seed7": {
+      "role": "clinical_specialist",
+      "seed": 7,
+      "image_size": 256,
+      "raw_locked_test_overall": {
+        "n": 1624,
+        "malignant": 747,
+        "benign": 877,
+        "auroc": 0.9158,
+        "sens_at_90_spec": 0.7229,
+        "ece": 0.0372,
+        "brier": 0.1173
+      },
+      "raw_locked_test_clinical": {
+        "n": 574,
+        "malignant": 347,
+        "benign": 227,
+        "auroc": 0.8727,
+        "sens_at_90_spec": 0.5447,
+        "ece": 0.0318,
+        "brier": 0.1325
+      },
+      "inference_seconds": 59.29
+    }
+  },
+  "overall_raw": {
+    "n": 1624,
+    "malignant": 747,
+    "benign": 877,
+    "auroc": 0.9345,
+    "sens_at_90_spec": 0.7845,
+    "ece": 0.0374,
+    "brier": 0.1019
+  },
+  "overall_per_modality_calibrated": {
+    "n": 1624,
+    "malignant": 747,
+    "benign": 877,
+    "auroc": 0.935,
+    "sens_at_90_spec": 0.7938,
+    "ece": 0.0352,
+    "brier": 0.1014,
+    "auroc_ci95": {
+      "mean": 0.935,
+      "ci95_low": 0.9222,
+      "ci95_high": 0.9444
+    },
+    "sens_at_95_spec": 0.6319,
+    "reliability_bins": [
+      {
+        "bin": "[0.0, 0.1]",
+        "count": 581,
+        "mean_predicted_prob": 0.0188,
+        "empirical_positive_rate": 0.0327,
+        "calibration_gap": 0.0139
+      },
+      {
+        "bin": "[0.1, 0.2]",
+        "count": 90,
+        "mean_predicted_prob": 0.1471,
+        "empirical_positive_rate": 0.1778,
+        "calibration_gap": 0.0306
+      },
+      {
+        "bin": "[0.2, 0.3]",
+        "count": 60,
+        "mean_predicted_prob": 0.247,
+        "empirical_positive_rate": 0.1667,
+        "calibration_gap": 0.0803
+      },
+      {
+        "bin": "[0.3, 0.4]",
+        "count": 58,
+        "mean_predicted_prob": 0.3504,
+        "empirical_positive_rate": 0.4828,
+        "calibration_gap": 0.1323
+      },
+      {
+        "bin": "[0.4, 0.5]",
+        "count": 58,
+        "mean_predicted_prob": 0.4493,
+        "empirical_positive_rate": 0.4483,
+        "calibration_gap": 0.001
+      },
+      {
+        "bin": "[0.5, 0.6]",
+        "count": 103,
+        "mean_predicted_prob": 0.5504,
+        "empirical_positive_rate": 0.5728,
+        "calibration_gap": 0.0224
+      },
+      {
+        "bin": "[0.6, 0.7]",
+        "count": 124,
+        "mean_predicted_prob": 0.6531,
+        "empirical_positive_rate": 0.7339,
+        "calibration_gap": 0.0807
+      },
+      {
+        "bin": "[0.7, 0.8]",
+        "count": 142,
+        "mean_predicted_prob": 0.7532,
+        "empirical_positive_rate": 0.8028,
+        "calibration_gap": 0.0496
+      },
+      {
+        "bin": "[0.8, 0.9]",
+        "count": 190,
+        "mean_predicted_prob": 0.8507,
+        "empirical_positive_rate": 0.9053,
+        "calibration_gap": 0.0545
+      },
+      {
+        "bin": "[0.9, 1.0]",
+        "count": 218,
+        "mean_predicted_prob": 0.9538,
+        "empirical_positive_rate": 0.9725,
+        "calibration_gap": 0.0187
+      }
+    ]
+  },
+  "by_modality_calibrated": {
+    "dermoscopic": {
+      "n": 700,
+      "malignant": 300,
+      "benign": 400,
+      "auroc": 0.9734,
+      "sens_at_90_spec": 0.9333,
+      "ece": 0.0382,
+      "brier": 0.0652,
+      "mean_seed_std": 0.0409,
+      "specialist_alpha": 0.0
+    },
+    "clinical": {
+      "n": 574,
+      "malignant": 347,
+      "benign": 227,
+      "auroc": 0.8778,
+      "sens_at_90_spec": 0.585,
+      "ece": 0.0345,
+      "brier": 0.1302,
+      "mean_seed_std": 0.0428,
+      "specialist_alpha": 1.0
+    },
+    "tbp_tile": {
+      "n": 350,
+      "malignant": 100,
+      "benign": 250,
+      "auroc": 0.8763,
+      "sens_at_90_spec": 0.7,
+      "ece": 0.1007,
+      "brier": 0.1264,
+      "mean_seed_std": 0.0462,
+      "specialist_alpha": 0.05
+    }
+  },
+  "histopathology_confirmed_all": {
+    "n": 591,
+    "malignant": 491,
+    "benign": 100,
+    "auroc": 0.8388,
+    "sens_at_90_spec": 0.664,
+    "ece": 0.1377,
+    "brier": 0.1421
+  },
+  "histopathology_confirmed_dermoscopic": {
+    "n": 359,
+    "malignant": 300,
+    "benign": 59,
+    "auroc": 0.8693,
+    "sens_at_90_spec": 0.66,
+    "ece": 0.0822,
+    "brier": 0.1052
+  },
+  "ensemble_uncertainty": {
+    "threshold_std": 0.12,
+    "overall_mean_std": 0.0427,
+    "overall_median_std": 0.0299,
+    "overall_p90_std": 0.1032,
+    "std_error_pearson_r": 0.2544,
+    "low_uncertainty": {
+      "n": 1528,
+      "fraction": 0.9409,
+      "error_rate": 0.1289,
+      "auroc": 0.9419
+    },
+    "high_uncertainty": {
+      "n": 96,
+      "fraction": 0.0591,
+      "error_rate": 0.3229,
+      "auroc": 0.7491
+    },
+    "histogram_bins": [
+      {
+        "range": "[0.00, 0.03)",
+        "count": 813,
+        "error_rate": 0.0615
+      },
+      {
+        "range": "[0.03, 0.06)",
+        "count": 364,
+        "error_rate": 0.1346
+      },
+      {
+        "range": "[0.06, 0.09)",
+        "count": 228,
+        "error_rate": 0.2851
+      },
+      {
+        "range": "[0.09, 0.12)",
+        "count": 123,
+        "error_rate": 0.2683
+      },
+      {
+        "range": "[0.12, 0.16)",
+        "count": 59,
+        "error_rate": 0.3559
+      },
+      {
+        "range": "[0.16, 0.20)",
+        "count": 29,
+        "error_rate": 0.2759
+      },
+      {
+        "range": "[0.20, 0.30)",
+        "count": 8,
+        "error_rate": 0.25
+      },
+      {
+        "range": "[0.30, 1.00)",
+        "count": 0,
+        "error_rate": 0.0
+      }
+    ]
+  },
+  "elapsed_seconds": 347.22
+}

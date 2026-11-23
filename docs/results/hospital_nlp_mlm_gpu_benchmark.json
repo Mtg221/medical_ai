@@ -1,0 +1,154 @@
+{
+  "evaluated_at_utc": "2026-11-23T01:16:03Z",
+  "pretrained_weights_used": false,
+  "self_supervised_mlm_from_scratch": true,
+  "models_trained": [
+    {
+      "seed": 10,
+      "hidden_dim": 160,
+      "mlm_epochs": 10,
+      "sec": 960.05,
+      "sha256": "2876d1bc8c89a077f28623720ac48ce509e6dcac5fa648fbf6adba08df31cf17"
+    },
+    {
+      "seed": 11,
+      "hidden_dim": 192,
+      "mlm_epochs": 10,
+      "sec": 1206.39,
+      "sha256": "61e0679393a0792b23c8a4fa5369de26ad1bbfe3990bdc6439150cc32c95a67d"
+    },
+    {
+      "seed": 12,
+      "hidden_dim": 192,
+      "mlm_epochs": 10,
+      "sec": 924.13,
+      "sha256": "1d95bdb4bf9fd428e3c1cdd2873cd22bc07f5064dcd064e03da7ae10e3e6ec18"
+    }
+  ],
+  "splits": {
+    "synth_val": {
+      "torch_mlm_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.993548,
+        "lenient_f1": 0.995925,
+        "precision": 0.994224,
+        "recall": 0.992874,
+        "assertion_macro_f1": 0.778392,
+        "doc_acc": 1.0,
+        "en_f1": 0.994747,
+        "fr_f1": 0.992264
+      },
+      "hospital_ensemble_mlm_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.997624,
+        "lenient_f1": 0.998642,
+        "precision": 0.997963,
+        "recall": 0.997285,
+        "assertion_macro_f1": 0.778241,
+        "doc_acc": 1.0,
+        "en_f1": 0.997703,
+        "fr_f1": 0.99754
+      }
+    },
+    "synth_unseen_terms": {
+      "torch_mlm_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.931139,
+        "lenient_f1": 0.959019,
+        "precision": 0.942537,
+        "recall": 0.920013,
+        "assertion_macro_f1": 0.785818,
+        "doc_acc": 1.0,
+        "en_f1": 0.932893,
+        "fr_f1": 0.929327
+      },
+      "hospital_ensemble_mlm_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.944064,
+        "lenient_f1": 0.969444,
+        "precision": 0.949933,
+        "recall": 0.938268,
+        "assertion_macro_f1": 0.781474,
+        "doc_acc": 1.0,
+        "en_f1": 0.947749,
+        "fr_f1": 0.940258
+      }
+    },
+    "open_clinical_test": {
+      "torch_mlm_3gpu": {
+        "num_docs": 443,
+        "strict_f1": 0.632771,
+        "lenient_f1": 0.711595,
+        "precision": 0.59391,
+        "recall": 0.677074,
+        "assertion_macro_f1": 0.21914,
+        "doc_acc": 1.0,
+        "en_f1": 0.519442,
+        "fr_f1": 0.792651,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.385878,
+            "lenient_f1": 0.512315
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.532813,
+            "lenient_f1": 0.636328
+          },
+          "pxcorpus": {
+            "strict_f1": 0.918159,
+            "lenient_f1": 0.932209
+          }
+        }
+      },
+      "hospital_ensemble_mlm_3gpu": {
+        "num_docs": 443,
+        "strict_f1": 0.636747,
+        "lenient_f1": 0.717422,
+        "precision": 0.594147,
+        "recall": 0.685927,
+        "assertion_macro_f1": 0.219342,
+        "doc_acc": 1.0,
+        "en_f1": 0.526937,
+        "fr_f1": 0.792265,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.394822,
+            "lenient_f1": 0.529126
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.540027,
+            "lenient_f1": 0.643536
+          },
+          "pxcorpus": {
+            "strict_f1": 0.91655,
+            "lenient_f1": 0.932679
+          }
+        }
+      }
+    },
+    "realistic_llm_80": {
+      "torch_mlm_3gpu": {
+        "num_docs": 80,
+        "strict_f1": 0.688028,
+        "lenient_f1": 0.792254,
+        "precision": 0.692908,
+        "recall": 0.683217,
+        "assertion_macro_f1": 0.632186,
+        "doc_acc": 0.7625,
+        "en_f1": 0.668901,
+        "fr_f1": 0.709199
+      },
+      "hospital_ensemble_mlm_3gpu": {
+        "num_docs": 80,
+        "strict_f1": 0.704663,
+        "lenient_f1": 0.814508,
+        "precision": 0.696246,
+        "recall": 0.713287,
+        "assertion_macro_f1": 0.636175,
+        "doc_acc": 0.7625,
+        "en_f1": 0.68459,
+        "fr_f1": 0.727007
+      }
+    }
+  }
+}

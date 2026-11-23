@@ -177,6 +177,8 @@ class VisionServingEngine:
                             "derm_cnn_seed3",
                             "derm_cnn_seed4",
                             "derm_cnn_seed5",
+                            "derm_cnn_clinical_seed6",
+                            "derm_cnn_clinical_seed7",
                         )
                     ]
                     ens_dirs = [
@@ -915,6 +917,63 @@ def load_vision_benchmark_results(workspace_dir: Path | str | None = None) -> di
             }
             skin_data["models"] = {"pytorch_se_resnet_multiscale_5seed_tta_ensemble": ms5_entry, **models_dict}
             skin_data["vision_5seed_multiscale_benchmark"] = ms5
+        except Exception:
+            pass
+
+    ma7_bench_path = vision_dir / "vision_7seed_modality_aware_benchmark.json"
+    if ma7_bench_path.exists() and isinstance(skin_data, dict):
+        try:
+            ma7 = json.loads(ma7_bench_path.read_text(encoding="utf-8"))
+            cal = ma7.get("overall_per_modality_calibrated", {})
+            by_mod = ma7.get("by_modality_calibrated", {})
+            models_dict = dict(skin_data.get("models") or {})
+            base_ref = (
+                models_dict.get("pytorch_se_resnet_multiscale_5seed_tta_ensemble")
+                or models_dict.get("pytorch_se_resnet_224_3seed_tta_ensemble")
+                or models_dict.get("pytorch_resnet_3seed_ensemble", {})
+            )
+            base_lt = dict(base_ref.get("locked_test") or base_ref or {})
+            subgroups = dict(base_lt.get("subgroups") or {})
+            subgroups["by_modality"] = {
+                mod: {
+                    "count": int(mstats.get("n", 0)),
+                    "malignant": int(mstats.get("malignant", 0)),
+                    "benign": int(mstats.get("benign", 0)),
+                    "auroc": float(mstats.get("auroc", 0.0)),
+                    "sensitivity_at_90_specificity": float(mstats.get("sens_at_90_spec", 0.0)),
+                    "ece": float(mstats.get("ece", 0.0)),
+                    "brier_score": float(mstats.get("brier", 0.0)),
+                    "mean_seed_std": float(mstats.get("mean_seed_std", 0.0)),
+                    "specialist_alpha": float(mstats.get("specialist_alpha", 0.0)),
+                }
+                for mod, mstats in by_mod.items()
+                if isinstance(mstats, dict)
+            }
+            ma7_entry = {
+                "locked_test": {
+                    **base_lt,
+                    "sample_count": int(cal.get("n", 1624)),
+                    "auroc": float(cal.get("auroc", 0.0)),
+                    "auroc_ci95": cal.get("auroc_ci95") or base_lt.get("auroc_ci95"),
+                    "sensitivity_at_90_specificity": float(cal.get("sens_at_90_spec", 0.0)),
+                    "sensitivity_at_95_specificity": float(cal.get("sens_at_95_spec", 0.0)),
+                    "ece": float(cal.get("ece", 0.0)),
+                    "brier_score": float(cal.get("brier", 0.0)),
+                    "reliability_bins": cal.get("reliability_bins") or base_lt.get("reliability_bins"),
+                    "subgroups": subgroups,
+                    "histopathology_confirmed_all": ma7.get("histopathology_confirmed_all"),
+                    "histopathology_confirmed_dermoscopic": ma7.get("histopathology_confirmed_dermoscopic"),
+                    "ensemble_uncertainty": ma7.get("ensemble_uncertainty"),
+                },
+                "image_sizes": ma7.get("image_sizes", [224, 256]),
+                "architecture": str(
+                    ma7.get("architecture")
+                    or "PyTorchDermSEResNetV2-v2.1.0 (7-Seed Modality-Aware: 3x224 + 2x256 + 2x256 Clinical Specialists + 4x TTA)"
+                ),
+                "pretrained_weights_used": False,
+            }
+            skin_data["models"] = {"pytorch_se_resnet_modality_aware_7seed_tta_ensemble": ma7_entry, **models_dict}
+            skin_data["vision_7seed_modality_aware_benchmark"] = ma7
         except Exception:
             pass
 

@@ -147,6 +147,7 @@ export function VisionBenchmarkPage() {
 
   const skinModels = benchQuery.data?.skin_benchmark?.models ?? {};
   const primaryModelBlock =
+    skinModels.pytorch_se_resnet_modality_aware_7seed_tta_ensemble ??
     skinModels.pytorch_se_resnet_multiscale_5seed_tta_ensemble ??
     skinModels.pytorch_se_resnet_224_3seed_tta_ensemble ??
     skinModels.pytorch_resnet_3seed_ensemble ??
