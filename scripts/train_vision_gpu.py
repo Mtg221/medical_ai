@@ -148,6 +148,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max-samples-per-epoch", type=int, default=24000)
     p.add_argument("--clinical-focus", action="store_true", help="Oversample clinical smartphone photos with smartphone-realistic augmentations & clinical val selection.")
     p.add_argument("--clinical-oversample", type=float, default=4.0)
+    p.add_argument("--focal-gamma", type=float, default=0.0, help="Focal loss gamma on malignancy head (e.g., 1.5 for hard clinical cases).")
+    p.add_argument("--mixup-alpha", type=float, default=0.0, help="Same-modality Mixup alpha (e.g., 0.2).")
     p.add_argument("--device", type=str, default="auto")
     p.add_argument("--out-models-dir", type=Path, default=Path("models"))
     p.add_argument("--out-report", type=Path, default=Path("docs/results/vision/vision_gpu_benchmark.json"))
@@ -230,6 +232,8 @@ def main() -> None:
             use_amp=True,
             clinical_focus=bool(args.clinical_focus),
             clinical_oversample=float(args.clinical_oversample),
+            focal_gamma=float(args.focal_gamma),
+            mixup_alpha=float(args.mixup_alpha),
         )
         dir_name = f"derm_cnn_bsdrop40_seed{sd}" if idx == 0 else f"derm_cnn_seed{sd}"
         out_dir = args.out_models_dir / dir_name

@@ -275,6 +275,8 @@ class PyTorchDermResNet:
         use_amp: bool = True,
         clinical_focus: bool = False,
         clinical_oversample: float = 4.0,
+        focal_gamma: float = 0.0,
+        mixup_alpha: float = 0.0,
     ) -> dict[str, Any]:
         import torch
         import torch.nn as nn
@@ -432,12 +434,27 @@ class PyTorchDermResNet:
                             mb[row_i, 3:7] = 0.0
                             mb[row_i, 7] = 1.0
 
+                # Optional Mixup on malignancy-labeled batches (only mixes within same modality to preserve clinical metadata)
+                use_mixup = bool(mixup_alpha > 0.0 and rng.random() < 0.40 and xb.shape[0] >= 4)
+                ymb_soft = ymb.float()
+                if use_mixup:
+                    lam = float(np.random.default_rng(self.seed + ep * 10000 + n_batches).beta(mixup_alpha, mixup_alpha))
+                    lam = max(lam, 1.0 - lam)
+                    perm_idx = torch.randperm(xb.shape[0], device=dev)
+                    same_mod = (ymodb == ymodb[perm_idx]) & ((ymb == 0) | (ymb == 1)) & ((ymb[perm_idx] == 0) | (ymb[perm_idx] == 1))
+                    if same_mod.any():
+                        xb = torch.where(same_mod.view(-1, 1, 1, 1), lam * xb + (1.0 - lam) * xb[perm_idx], xb)
+                        ymb_soft = torch.where(same_mod, lam * ymb.float() + (1.0 - lam) * ymb[perm_idx].float(), ymb_soft)
+
                 opt.zero_grad()
                 with _autocast_ctx():
                     l_mal, l_dx, l_mod = self.net(xb, mb if self.include_metadata else None)
                     mask = (ymb == 0) | (ymb == 1)
                     if mask.any():
-                        raw_bce = bce(l_mal[mask], ymb[mask].float())
+                        raw_bce = bce(l_mal[mask], ymb_soft[mask])
+                        if focal_gamma > 0.0:
+                            pt = torch.exp(-raw_bce).clamp(1e-6, 1.0)
+                            raw_bce = ((1.0 - pt) ** float(focal_gamma)) * raw_bce
                         if clinical_focus:
                             w_m = torch.where(
                                 ymodb[mask] == clinical_mod_idx,
