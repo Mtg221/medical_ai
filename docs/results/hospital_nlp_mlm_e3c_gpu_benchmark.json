@@ -1,0 +1,160 @@
+{
+  "evaluated_at_utc": "2026-11-23T18:08:42Z",
+  "pretrained_weights_used": false,
+  "self_supervised_mlm_e3c_unlabeled_docs": 0,
+  "models_trained": [
+    {
+      "seed": 13,
+      "hidden_dim": 192,
+      "word_emb_dim": 96,
+      "mlm_epochs": 8,
+      "mlm_texts": 4499,
+      "sec": 863.06,
+      "sha256": "13bf850e1de89b3fe9c1138fd9fbae35e793a4fc42f14dd38e5414e4242a4f78"
+    },
+    {
+      "seed": 14,
+      "hidden_dim": 224,
+      "word_emb_dim": 96,
+      "mlm_epochs": 8,
+      "mlm_texts": 4499,
+      "sec": 678.42,
+      "sha256": "4a8e47d0ce7a5cbb32925077a75468cb5ac538d42e9cbadff14f8ebca10ed05f"
+    },
+    {
+      "seed": 15,
+      "hidden_dim": 224,
+      "word_emb_dim": 96,
+      "mlm_epochs": 8,
+      "mlm_texts": 4499,
+      "sec": 882.09,
+      "sha256": "3e638e3e05ac1b867b1d0bf008a19c0c7b72dbcff5a1375c59de53a6cb77c57d"
+    }
+  ],
+  "splits": {
+    "synth_val": {
+      "torch_e3c_mlm_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.992361,
+        "lenient_f1": 0.997114,
+        "precision": 0.992867,
+        "recall": 0.991856,
+        "assertion_macro_f1": 0.781561,
+        "doc_acc": 1.0,
+        "en_f1": 0.994094,
+        "fr_f1": 0.990503
+      },
+      "hospital_ensemble_e3c_mlm_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.994063,
+        "lenient_f1": 0.997795,
+        "precision": 0.993894,
+        "recall": 0.994231,
+        "assertion_macro_f1": 0.781573,
+        "doc_acc": 1.0,
+        "en_f1": 0.994751,
+        "fr_f1": 0.993326
+      }
+    },
+    "synth_unseen_terms": {
+      "torch_e3c_mlm_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.918773,
+        "lenient_f1": 0.94304,
+        "precision": 0.933242,
+        "recall": 0.904746,
+        "assertion_macro_f1": 0.770135,
+        "doc_acc": 1.0,
+        "en_f1": 0.926797,
+        "fr_f1": 0.910463
+      },
+      "hospital_ensemble_e3c_mlm_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.934382,
+        "lenient_f1": 0.956813,
+        "precision": 0.942587,
+        "recall": 0.926319,
+        "assertion_macro_f1": 0.776236,
+        "doc_acc": 1.0,
+        "en_f1": 0.94439,
+        "fr_f1": 0.92402
+      }
+    },
+    "open_clinical_test": {
+      "torch_e3c_mlm_3gpu": {
+        "num_docs": 443,
+        "strict_f1": 0.612739,
+        "lenient_f1": 0.696391,
+        "precision": 0.562793,
+        "recall": 0.672414,
+        "assertion_macro_f1": 0.215621,
+        "doc_acc": 1.0,
+        "en_f1": 0.507006,
+        "fr_f1": 0.760764,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.33985,
+            "lenient_f1": 0.464662
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.519183,
+            "lenient_f1": 0.626837
+          },
+          "pxcorpus": {
+            "strict_f1": 0.911961,
+            "lenient_f1": 0.932304
+          }
+        }
+      },
+      "hospital_ensemble_e3c_mlm_3gpu": {
+        "num_docs": 443,
+        "strict_f1": 0.620784,
+        "lenient_f1": 0.703836,
+        "precision": 0.566782,
+        "recall": 0.68616,
+        "assertion_macro_f1": 0.215435,
+        "doc_acc": 1.0,
+        "en_f1": 0.51904,
+        "fr_f1": 0.763618,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.350669,
+            "lenient_f1": 0.484398
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.532551,
+            "lenient_f1": 0.63626
+          },
+          "pxcorpus": {
+            "strict_f1": 0.911127,
+            "lenient_f1": 0.93212
+          }
+        }
+      }
+    },
+    "realistic_llm_80": {
+      "torch_e3c_mlm_3gpu": {
+        "num_docs": 80,
+        "strict_f1": 0.668977,
+        "lenient_f1": 0.773657,
+        "precision": 0.66323,
+        "recall": 0.674825,
+        "assertion_macro_f1": 0.635406,
+        "doc_acc": 0.7625,
+        "en_f1": 0.647832,
+        "fr_f1": 0.69259
+      },
+      "hospital_ensemble_e3c_mlm_3gpu": {
+        "num_docs": 80,
+        "strict_f1": 0.690435,
+        "lenient_f1": 0.801508,
+        "precision": 0.677202,
+        "recall": 0.704196,
+        "assertion_macro_f1": 0.626019,
+        "doc_acc": 0.7625,
+        "en_f1": 0.667969,
+        "fr_f1": 0.715424
+      }
+    }
+  }
+}

@@ -184,6 +184,7 @@ def _build_torch_ner_module(
     hidden_dim: int,
     num_layers: int,
     dropout: float,
+    encoder_type: str = "bilstm",
 ) -> Any:
     import torch
     import torch.nn as nn
@@ -191,6 +192,7 @@ def _build_torch_ner_module(
     class CharCNNBiLSTMCRFNet(nn.Module):
         def __init__(self) -> None:
             super().__init__()
+            self.encoder_type = encoder_type
             self.word_emb = nn.Embedding(vocab_size, word_emb_dim, padding_idx=0)
             self.char_emb = nn.Embedding(char_vocab_size, char_emb_dim, padding_idx=0)
             self.char_convs = nn.ModuleList(
@@ -202,16 +204,34 @@ def _build_torch_ner_module(
             self.cluster_emb = nn.Embedding(cluster_vocab_size, cluster_emb_dim, padding_idx=0)
             in_dim = word_emb_dim + 3 * char_filters + CHAR_FEAT_DIM + cluster_emb_dim
             self.in_drop = nn.Dropout(dropout)
-            self.lstm = nn.LSTM(
-                input_size=in_dim,
-                hidden_size=hidden_dim,
-                num_layers=num_layers,
-                batch_first=True,
-                bidirectional=True,
-                dropout=dropout if num_layers > 1 else 0.0,
-            )
+            d_model = 2 * hidden_dim
+            if encoder_type == "transformer":
+                n_heads = 8 if d_model % 8 == 0 else (4 if d_model % 4 == 0 else 2)
+                self.in_proj = nn.Linear(in_dim, d_model)
+                self.pos_emb = nn.Embedding(512, d_model)
+                enc_layer = nn.TransformerEncoderLayer(
+                    d_model=d_model,
+                    nhead=n_heads,
+                    dim_feedforward=d_model * 4,
+                    dropout=dropout,
+                    activation="gelu",
+                    batch_first=True,
+                    norm_first=True,
+                )
+                self.transformer = nn.TransformerEncoder(enc_layer, num_layers=max(2, num_layers))
+                self.final_norm = nn.LayerNorm(d_model)
+                self.lstm: nn.Module | None = None
+            else:
+                self.lstm = nn.LSTM(
+                    input_size=in_dim,
+                    hidden_size=hidden_dim,
+                    num_layers=num_layers,
+                    batch_first=True,
+                    bidirectional=True,
+                    dropout=dropout if num_layers > 1 else 0.0,
+                )
             self.out_drop = nn.Dropout(dropout)
-            self.fc = nn.Linear(2 * hidden_dim, NUM_TAGS)
+            self.fc = nn.Linear(d_model, NUM_TAGS)
 
             # Linear-chain CRF parameters (transitions[i, j] = score i -> j)
             self.transitions = nn.Parameter(torch.empty(NUM_TAGS, NUM_TAGS))
@@ -231,11 +251,12 @@ def _build_torch_ner_module(
                 nn.init.kaiming_normal_(conv.weight, nonlinearity="relu")
                 if conv.bias is not None:
                     nn.init.zeros_(conv.bias)
-            for name, param in self.lstm.named_parameters():
-                if "weight" in name:
-                    nn.init.xavier_uniform_(param)
-                elif "bias" in name:
-                    nn.init.zeros_(param)
+            if self.lstm is not None:
+                for name, param in self.lstm.named_parameters():
+                    if "weight" in name:
+                        nn.init.xavier_uniform_(param)
+                    elif "bias" in name:
+                        nn.init.zeros_(param)
             nn.init.xavier_uniform_(self.fc.weight)
             nn.init.zeros_(self.fc.bias)
             nn.init.uniform_(self.transitions, -0.1, 0.1)
@@ -256,6 +277,16 @@ def _build_torch_ner_module(
             c_e = torch.cat(c_outs, dim=-1).view(bsz, seq_len, -1)
             cl_e = self.cluster_emb(cluster_ids)
             x = self.in_drop(torch.cat([w_e, c_e, ortho_feats, cl_e], dim=-1))
+            if self.encoder_type == "transformer":
+                pos = torch.arange(seq_len, device=word_ids.device).clamp(max=511).unsqueeze(0)
+                h_in = self.in_proj(x) + self.pos_emb(pos)
+                pad_mask = word_ids == 0
+                # Ensure no row is 100% masked to avoid NaN in attention
+                all_pad = pad_mask.all(dim=1, keepdim=True)
+                pad_mask = pad_mask & (~all_pad)
+                h = self.final_norm(self.transformer(h_in, src_key_padding_mask=pad_mask))
+                return h
+            assert self.lstm is not None
             h, _ = self.lstm(x)
             return h
 
@@ -355,6 +386,7 @@ class PyTorchCharCNNBiLSTMCRF:
         use_self_supervised: bool = True,
         self_supervised_path: str | None = None,
         ocr_augment_ratio: float = 0.0,
+        encoder_type: str = "bilstm",
         seed: int = 42,
         device: str | None = "auto",
     ) -> None:
@@ -371,6 +403,7 @@ class PyTorchCharCNNBiLSTMCRF:
         self.use_self_supervised = use_self_supervised
         self.self_supervised_path = self_supervised_path
         self.ocr_augment_ratio = ocr_augment_ratio
+        self.encoder_type = encoder_type
         self.seed = seed
         self.device_spec = device
         self._device: Any = None
@@ -532,6 +565,7 @@ class PyTorchCharCNNBiLSTMCRF:
             hidden_dim=self.hidden_dim,
             num_layers=self.num_layers,
             dropout=self.dropout,
+            encoder_type=self.encoder_type,
         ).to(dev)
         self.initial_weights_sha256 = self._weights_sha256()
 
@@ -710,6 +744,7 @@ class PyTorchCharCNNBiLSTMCRF:
                 "hidden_dim": self.hidden_dim,
                 "num_layers": self.num_layers,
                 "dropout": self.dropout,
+                "encoder_type": self.encoder_type,
                 "use_self_supervised": self.use_self_supervised,
                 "self_supervised_path": self.self_supervised_path,
                 "seed": self.seed,
@@ -748,6 +783,7 @@ class PyTorchCharCNNBiLSTMCRF:
             hidden_dim=int(cfg["hidden_dim"]),
             num_layers=int(cfg["num_layers"]),
             dropout=float(cfg["dropout"]),
+            encoder_type=str(cfg.get("encoder_type", "bilstm")),
             use_self_supervised=bool(cfg.get("use_self_supervised", True)),
             self_supervised_path=cfg.get("self_supervised_path"),
             seed=int(cfg["seed"]),
@@ -773,6 +809,7 @@ class PyTorchCharCNNBiLSTMCRF:
             hidden_dim=obj.hidden_dim,
             num_layers=obj.num_layers,
             dropout=obj.dropout,
+            encoder_type=obj.encoder_type,
         ).to(dev)
         state = torch.load(weights_path, map_location="cpu")
         obj.net.load_state_dict({k: v.to(dev) for k, v in state.items()})

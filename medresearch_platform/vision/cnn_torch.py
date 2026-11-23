@@ -102,10 +102,55 @@ def _build_resnet_module(
             out = self.relu(out + self.shortcut(x))
             return out
 
+    class ConvNeXtBlock(nn.Module):
+        """From-scratch ConvNeXt block: 7x7 depthwise conv + GroupNorm(1) + 4x inverted GELU MLP + LayerScale."""
+
+        def __init__(self, dim: int, layer_scale_init: float = 1e-2) -> None:
+            super().__init__()
+            self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim)
+            self.norm = nn.GroupNorm(1, dim)
+            self.pwconv1 = nn.Conv2d(dim, dim * 4, kernel_size=1)
+            self.act = nn.GELU()
+            self.pwconv2 = nn.Conv2d(dim * 4, dim, kernel_size=1)
+            self.gamma = nn.Parameter(layer_scale_init * torch.ones((1, dim, 1, 1)))
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            h = self.dwconv(x)
+            h = self.norm(h)
+            h = self.pwconv2(self.act(self.pwconv1(h)))
+            return x + self.gamma * h
+
     class DermResNet4Stage(nn.Module):
         def __init__(self) -> None:
             super().__init__()
-            if architecture_variant == "resnet_v2_se":
+            if architecture_variant == "convnext_derm":
+                self.stem = nn.Sequential(
+                    nn.Conv2d(3, 48, kernel_size=4, stride=4),
+                    nn.GroupNorm(1, 48),
+                )
+                self.stage1: nn.Module = nn.Sequential(ConvNeXtBlock(48), ConvNeXtBlock(48))
+                self.stage2: nn.Module = nn.Sequential(
+                    nn.GroupNorm(1, 48),
+                    nn.Conv2d(48, 96, kernel_size=2, stride=2),
+                    ConvNeXtBlock(96),
+                    ConvNeXtBlock(96),
+                )
+                self.stage3: nn.Module = nn.Sequential(
+                    nn.GroupNorm(1, 96),
+                    nn.Conv2d(96, 192, kernel_size=2, stride=2),
+                    ConvNeXtBlock(192),
+                    ConvNeXtBlock(192),
+                    ConvNeXtBlock(192),
+                )
+                self.stage4: nn.Module = nn.Sequential(
+                    nn.GroupNorm(1, 192),
+                    nn.Conv2d(192, 256, kernel_size=2, stride=2),
+                    ConvNeXtBlock(256),
+                    ConvNeXtBlock(256),
+                    nn.GroupNorm(1, 256),
+                )
+                drop_p = 0.30
+            elif architecture_variant == "resnet_v2_se":
                 self.stem = nn.Sequential(
                     nn.Conv2d(3, 32, kernel_size=5, stride=2, padding=2, bias=False),
                     nn.BatchNorm2d(32),

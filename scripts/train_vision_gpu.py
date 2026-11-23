@@ -136,7 +136,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--thumbs-dir", type=Path, default=Path("var/cache/derm/thumbs"))
     p.add_argument("--raw-dir", type=Path, default=Path("var/cache/derm/raw"))
     p.add_argument("--image-size", type=int, default=224, help="Input image resolution (e.g., 96, 128, or 224 on GPU).")
-    p.add_argument("--architecture", type=str, default="resnet_v2_se", choices=["resnet_v1", "resnet_v2_se"])
+    p.add_argument("--architecture", type=str, default="resnet_v2_se", choices=["resnet_v1", "resnet_v2_se", "convnext_derm"])
     p.add_argument("--tta", action="store_true", help="Enable 4x Test-Time Augmentation during validation calibration & test eval.")
     p.add_argument("--seeds", type=str, default="1,2,3")
     p.add_argument("--epochs", type=int, default=20)
