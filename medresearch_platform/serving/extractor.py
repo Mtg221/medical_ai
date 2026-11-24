@@ -98,9 +98,14 @@ class ExtractionService:
             if classical_crf_dir is not None
             else Path(os.environ.get("MEDRESEARCH_CLASSICAL_CRF_DIR", "models/classical_crf_seed1"))
         )
-        self.torch_ner_dir = Path(
-            os.environ.get("MEDRESEARCH_TORCH_NER_DIR", "models/hospital_char_cnn_bilstm_crf_seed1")
-        )
+        raw_torch_env = os.environ.get("MEDRESEARCH_TORCH_NER_DIR", "").strip()
+        if raw_torch_env:
+            self.torch_ner_dir = Path(raw_torch_env.split(",")[0].strip())
+        elif model_dir is not None:
+            # Keep torch NER discovery scoped to the caller-supplied model directory root
+            self.torch_ner_dir = self.model_dir.parent / "hospital_char_cnn_bilstm_crf_seed1"
+        else:
+            self.torch_ner_dir = Path("models/hospital_char_cnn_bilstm_crf_seed1")
         self._hybrid: HybridPipeline | None = None
         self._classical_crf: ClassicalCRFModel | None = None
         self._torch_ner_models: list[Any] | None = None

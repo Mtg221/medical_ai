@@ -117,3 +117,28 @@
 - Sortie brute : `docs/results/raw/phase3_phi_eval.txt`
 - Résultat : **`19 passed in 21.75s`** (`PYTEST_EXIT=0`)
 - Statut : **Passed** (jeu humain 60 phrases PHI : en attente du propriétaire)
+
+---
+
+## Phase 4 — Audit NLP (entités, relations, assertions, temporalité — sans nouvelle architecture) (`2026-11-24T19:33Z–19:42Z`)
+
+### Constats (erreurs reproductibles avant correctif)
+1. **`medresearch_platform/serving/extractor.py:101-120` :** lors d'un appel isolé `ExtractionService(model_dir=..., classical_crf_dir=...)`, `_discover_torch_ner_dirs` scannait encore `models/` à la racine du dépôt (`len(loaded) == 3 != 2`, cause de l'échec baseline `test_conftest_helper_builds_valid_loadable_models`).
+2. **`medresearch_platform/approaches/context_negex.py:76-102` :** sur les 7 phrases d'assertion EN + 7 FR, `"Le scanner actuel ne montre pas la lésion."` échouait (`confirmed` au lieu de `absent`) faute de cues FR `"ne montre pas "` / `"ne retrouve pas "` / `"n'objective pas "` (`docs/results/raw/phase4_nlp_audit_before.txt`).
+3. **`medresearch_platform/hybrid/stage3_context_relations.py:404-437` :** `PiecewiseCNNRelationClassifier.predict_relations` ne vérifiait ni les frontières de phrases (`. ` / `; `) ni la présence d'une tête intermédiaire de même type, produisant des liaisons croisées multi-médicaments (`metformin -> 10 mg`, `lisinopril -> BID`) sur EN et FR (`docs/results/raw/phase4_nlp_audit_before.txt`).
+4. **Limitation connue documentée (sans nouveau modèle) :** sur phrases libres courtes hors domaine (`"Previous scan showed a lesion."`, `"Current scan does not show the lesion."`), les assertions 3 axes sont exactes (14/14 EN+FR), mais le typage NER de surface sur `hybrid_v2` seul peut encore mal typer des mots génériques (`lesion`, `scan does`) ; à suivre sur le futur jeu humain gelé de 80 notes.
+
+### Décision & modifications (aucune nouvelle architecture)
+1. **`medresearch_platform/serving/extractor.py` :** ancrage de `self.torch_ner_dir` sur `self.model_dir.parent` quand `model_dir` est fourni sans `MEDRESEARCH_TORCH_NER_DIR`.
+2. **`medresearch_platform/approaches/context_negex.py` :** ajout des cues de négation clinique FR (`ne montre pas `, `ne retrouve pas `, `n'objective pas `, `ne met pas en évidence `, `ne révèle pas `, `n'a pas montré `, `ne présente pas `, `ne montre aucun`, `ne retrouve aucun`).
+3. **`medresearch_platform/hybrid/stage3_context_relations.py` :** garde frontière de phrase (`[.!?;]\s+`), garde tête intermédiaire de même type (`_has_intervening_same_type_head`), et déduplication au plus proche prédécesseur pour les 5 relations fonctionnelles (`HAS_DOSAGE`, `HAS_FREQUENCY`, `HAS_ROUTE`, `HAS_VALUE`, `HAS_UNIT`).
+4. **`tests/test_phase4_nlp_assertions_relations_temporal.py` :** 16 tests de régression (14 phrases d'assertion EN+FR, non-croisement multi-entités/frontières de phrases, ambiguïté locale temporelle, dates impossibles, drapeau `ocr_repaired`).
+
+### Résultats avant / après sur `val.jsonl` (dev uniquement, `n=160`)
+- **Relations (dev `val.jsonl`) :**
+  - Avant (`docs/results/raw/phase4_dev_before.txt`) : P `0.9400`, R `0.9474`, **F1 `0.9437`** (`TP=972, FP=62, FN=54`)
+  - Après (`docs/results/raw/phase4_dev_after.txt`) : P `0.9765` (**+3.65 pt**), R `0.9308`, **F1 `0.9531`** (**+0.94 pt**), FP réduits de **63 %** (`62 → 23`)
+- **Assertions (dev `val.jsonl`) :** Accuracy `0.9488`, Macro F1 `0.7988` (préservé) + **14/14** phrases cibles EN+FR exactes.
+- **Temporalité (dev `val.jsonl`) :** Extraction F1 `0.9937`, Normalisation Accuracy `1.0000` (mesurées séparément) ; `03/04/2025` EN=`2025-03-04` vs FR=`2025-04-03` (`ambiguous=True, needs_review=True`), `2025-02-30` → `None`, `2O25-03-1O` → `ocr_repaired=True, needs_review=True`.
+- **Tests Phase 4 (`docs/results/raw/phase4_pytest.txt`) :** **`53 passed in 18.80s`** (`PYTEST_EXIT=0`), incluant `test_conftest_helper_builds_valid_loadable_models`.
+- Statut : **Passed**

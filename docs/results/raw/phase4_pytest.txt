@@ -1,0 +1,74 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /Users/guest777/Desktop/medical/.venv-vision/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/guest777/Desktop/medical
+configfile: pyproject.toml
+plugins: platformdirs-4.14.5, cov-7.1.0, anyio-4.16.0
+collecting ... collected 53 items
+
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[en-No fever.-fever-absent-current-patient] PASSED [  1%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[fr-Pas de fi\xe8vre.-fi\xe8vre-absent-current-patient] PASSED [  3%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[en-Possible pneumonia.-pneumonia-possible-current-patient] PASSED [  5%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[fr-Pneumonie possible.-Pneumonie-possible-current-patient] PASSED [  7%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[en-History of asthma.-asthma-confirmed-historical-patient] PASSED [  9%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[fr-Ant\xe9c\xe9dent d'asthme.-asthme-confirmed-historical-patient] PASSED [ 11%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[en-Mother has diabetes.-diabetes-confirmed-current-family] PASSED [ 13%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[fr-Sa m\xe8re a un diab\xe8te.-diab\xe8te-confirmed-current-family] PASSED [ 15%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[en-Previous scan showed a lesion.-lesion-confirmed-historical-patient] PASSED [ 16%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[fr-Le scanner pr\xe9c\xe9dent montrait une l\xe9sion.-l\xe9sion-confirmed-historical-patient] PASSED [ 18%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[en-Current scan does not show the lesion.-lesion-absent-current-patient] PASSED [ 20%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[fr-Le scanner actuel ne montre pas la l\xe9sion.-l\xe9sion-absent-current-patient] PASSED [ 22%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[en-No evidence of recurrent disease.-recurrent disease-absent-current-patient] PASSED [ 24%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_seven_clinical_assertions_en_and_fr[fr-Aucun signe de r\xe9cidive.-r\xe9cidive-absent-current-patient] PASSED [ 26%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_intervening_same_type_head_and_sentence_boundary_prevent_cross_linking PASSED [ 28%]
+tests/test_phase4_nlp_assertions_relations_temporal.py::test_temporal_locale_ambiguity_invalid_calendar_and_ocr_repair_flag PASSED [ 30%]
+tests/test_conftest_fresh_clone.py::test_conftest_helper_builds_valid_loadable_models PASSED [ 32%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[2025-03-14-DATE-2025-04-01-2025-03-14] PASSED [ 33%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[14/03/2025-DATE-2025-04-01-2025-03-14] PASSED [ 35%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[March 14, 2025-DATE-2025-04-01-2025-03-14] PASSED [ 37%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[14 mars 2025-DATE-2025-04-01-2025-03-14] PASSED [ 39%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[March 14th-DATE-2025-04-01-2025-03-14] PASSED [ 41%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[14 mars-DATE-2025-04-01-2025-03-14] PASSED [ 43%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[March 2025-DATE-2025-04-01-2025-03] PASSED [ 45%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[mars 2025-DATE-2025-04-01-2025-03] PASSED [ 47%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[yesterday-RELATIVE-2025-04-01-2025-03-31] PASSED [ 49%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[la veille-RELATIVE-2025-04-01-2025-03-31] PASSED [ 50%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[today-RELATIVE-2025-04-01-2025-04-01] PASSED [ 52%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[aujourd'hui-RELATIVE-2025-04-01-2025-04-01] PASSED [ 54%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[3 days ago-RELATIVE-2025-04-01-2025-03-29] PASSED [ 56%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[il y a 3 jours-RELATIVE-2025-04-01-2025-03-29] PASSED [ 58%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[2 weeks ago-RELATIVE-2025-04-01-2025-03-18] PASSED [ 60%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[depuis 2 semaines-RELATIVE-2025-04-01-2025-03-18] PASSED [ 62%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[in 2 weeks-RELATIVE-2025-04-01-2025-04-15] PASSED [ 64%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[dans 2 semaines-RELATIVE-2025-04-01-2025-04-15] PASSED [ 66%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[1 month ago-RELATIVE-2025-07-05-2025-06-05] PASSED [ 67%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[il y a 1 mois-RELATIVE-2025-11-14-2025-10-15] PASSED [ 69%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[POD 3-RELATIVE-2025-04-10-2025-04-10] PASSED [ 71%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[J3 post-op-RELATIVE-2025-04-10-2025-04-10] PASSED [ 73%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[for 7 days-DURATION-2025-04-01-P7D] PASSED [ 75%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[pendant 7 jours-DURATION-2025-04-01-P7D] PASSED [ 77%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[for 2 weeks-DURATION-2025-04-01-P2W] PASSED [ 79%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[pendant 3 mois-DURATION-2025-04-01-P3M] PASSED [ 81%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[once daily-FREQUENCY-2025-04-01-QD] PASSED [ 83%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[twice daily-FREQUENCY-2025-04-01-BID] PASSED [ 84%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[b.i.d.-FREQUENCY-2025-04-01-BID] PASSED [ 86%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_normalize_timex_en_fr_formats[as needed-FREQUENCY-2025-04-01-PRN] PASSED [ 88%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_context_cues_cover_v3_1_minority_classes[Douleur thoracique \xe0 confirmer lors du suivi.-Douleur thoracique-fr-possible] PASSED [ 90%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_context_cues_cover_v3_1_minority_classes[M\xe8re diab\xe9tique de type 2.-diab\xe9tique-fr-family] PASSED [ 92%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_context_cues_cover_v3_1_minority_classes[No evidence of pneumonia on chest X-ray.-pneumonia-en-absent] PASSED [ 94%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_context_cues_cover_v3_1_minority_classes[Rule out pulmonary embolism.-pulmonary embolism-en-possible] PASSED [ 96%]
+tests/test_hybrid_stage4_and_assertion_fixes.py::test_context_cues_cover_v3_1_minority_classes[Patient denies fever or chills.-fever-en-absent] PASSED [ 98%]
+tests/test_phase2_three_axis_assertion_e2e.py::test_phase2_three_axis_assertion_db_api_review_and_exports PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv-vision/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_phase2_three_axis_assertion_e2e.py::test_phase2_three_axis_assertion_db_api_review_and_exports
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/torch/nn/modules/transformer.py:286: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+    warnings.warn(f"enable_nested_tensor is True, but self.use_nested_tensor is False because {why_not_sparsity_fast_path}")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 53 passed, 2 warnings in 18.80s ========================
+PYTEST_EXIT=0

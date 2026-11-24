@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import numpy as np
@@ -40,6 +41,26 @@ _PAIR_TO_REL_TYPES: dict[tuple[str, str], tuple[str, ...]] = {
     ("DIAGNOSIS", "SYMPTOM"): ("CAUSES",),
 }
 _REL_ALLOWED_PAIRS: set[tuple[str, str]] = set(_PAIR_TO_REL_TYPES.keys())
+_FUNCTIONAL_TAIL_REL_TYPES: frozenset[str] = frozenset(
+    {"HAS_DOSAGE", "HAS_FREQUENCY", "HAS_ROUTE", "HAS_VALUE", "HAS_UNIT"}
+)
+_SENTENCE_BREAK_RE = re.compile(r"[.!?;]\s+")
+
+
+def _has_intervening_same_type_head(
+    entities: list[PredictedEntity],
+    head: PredictedEntity,
+    tail: PredictedEntity,
+) -> bool:
+    """Return True if another entity of `head.type` sits strictly between `head` and `tail`."""
+    lo = min(head.end, tail.end)
+    hi = max(head.start, tail.start)
+    for other in entities:
+        if other.start == head.start and other.end == head.end:
+            continue
+        if other.type == head.type and other.start >= lo and other.end <= hi:
+            return True
+    return False
 
 
 class BiLSTMAssertionClassifier:
@@ -404,7 +425,7 @@ class PiecewiseCNNRelationClassifier:
     def predict_relations(
         self, text: str, entities: list[PredictedEntity], vocab: TrainOnlyVocabulary
     ) -> list[PredictedRelation]:
-        rels: list[PredictedRelation] = []
+        candidates: list[tuple[PredictedRelation, int, int]] = []
         for i, head in enumerate(entities):
             for j, tail in enumerate(entities):
                 if i == j or abs(head.start - tail.start) > 140:
@@ -412,11 +433,15 @@ class PiecewiseCNNRelationClassifier:
                 if (head.type, tail.type) not in _REL_ALLOWED_PAIRS:
                     continue
                 between = text[min(head.end, tail.end) : max(head.start, tail.start)]
-                if "\n" in between:
+                if "\n" in between or _SENTENCE_BREAK_RE.search(between):
                     continue
+                allowed_rels = _PAIR_TO_REL_TYPES[(head.type, tail.type)]
+                if all(r in _FUNCTIONAL_TAIL_REL_TYPES for r in allowed_rels):
+                    if _has_intervening_same_type_head(entities, head, tail):
+                        continue
                 w_ids, p1, p2 = self._pair_inputs(text, head.start, head.end, tail.start, tail.end, vocab)
                 logits, _ = self.forward(w_ids, p1, p2)
-                allowed_names = ("NO_REL",) + _PAIR_TO_REL_TYPES[(head.type, tail.type)]
+                allowed_names = ("NO_REL",) + allowed_rels
                 allowed_ids = [REL_TO_ID[n] for n in allowed_names]
                 masked_logits = np.full_like(logits, -1e9)
                 for aid in allowed_ids:
@@ -424,14 +449,35 @@ class PiecewiseCNNRelationClassifier:
                 probs = _softmax(masked_logits)
                 pred_id = int(np.argmax(probs))
                 if pred_id != 0 and float(probs[pred_id]) >= 0.50:
-                    rels.append(
-                        PredictedRelation(
-                            type=REL_LABELS[pred_id],
-                            head_start=head.start,
-                            head_end=head.end,
-                            tail_start=tail.start,
-                            tail_end=tail.end,
-                            confidence=round(float(probs[pred_id]), 4),
+                    rel_name = REL_LABELS[pred_id]
+                    is_preceding = 0 if head.end <= tail.start else 1
+                    char_gap = abs(tail.start - head.end) if head.end <= tail.start else abs(head.start - tail.end)
+                    candidates.append(
+                        (
+                            PredictedRelation(
+                                type=rel_name,
+                                head_start=head.start,
+                                head_end=head.end,
+                                tail_start=tail.start,
+                                tail_end=tail.end,
+                                confidence=round(float(probs[pred_id]), 4),
+                            ),
+                            is_preceding,
+                            char_gap,
                         )
                     )
+
+        # Deduplicate functional modifier tails (each dosage/frequency/route/value/unit attaches to its nearest valid head)
+        rels: list[PredictedRelation] = []
+        best_by_tail: dict[tuple[str, int, int], tuple[int, int, float, PredictedRelation]] = {}
+        for rel, is_prec, gap in candidates:
+            if rel.type in _FUNCTIONAL_TAIL_REL_TYPES:
+                key = (rel.type, rel.tail_start, rel.tail_end)
+                rank = (is_prec, gap, -rel.confidence)
+                prev = best_by_tail.get(key)
+                if prev is None or rank < (prev[0], prev[1], prev[2]):
+                    best_by_tail[key] = (rank[0], rank[1], rank[2], rel)
+            else:
+                rels.append(rel)
+        rels.extend(entry[3] for entry in best_by_tail.values())
         return rels
