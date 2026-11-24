@@ -1,0 +1,20 @@
+=== 1. VERIFY 30 SERVED CHECKPOINTS ===
+{
+  "nlp_checkpoints_found": 20,
+  "vision_checkpoints_found": 10,
+  "total_verified_ok": 30,
+  "total_invalid": 0,
+  "total_pretrained_used": 0,
+  "total_size_mb": 344.6
+}
+VERIFY_EXIT=0
+=== 2. VERIFY LOCAL RELEASE ARCHIVES SHA-256 ===
+models_nlp_18seed.tar.gz: OK
+models_vision_9seed.tar.gz: OK
+SHASUM_EXIT=0
+total 630152
+-rw-r--r--@ 1 guest777  staff   184B Nov 24 15:16 checksums.sha256
+-rw-r--r--@ 1 guest777  staff   219M Nov 24 15:16 models_nlp_18seed.tar.gz
+-rw-r--r--@ 1 guest777  staff    89M Nov 24 15:16 models_vision_9seed.tar.gz
+=== 3. INSPECT GITHUB RELEASE v0.2.0-research-artifacts ===
+release not found

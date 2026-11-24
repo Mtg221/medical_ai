@@ -227,3 +227,33 @@
   - Inférence 1 note `hybrid_v2` : **`29.2 ms`**, RSS `149.8 Mo`
 - Dépendances (`pyproject.toml`) : aucune nouvelle dépendance ajoutée ; contraintes `numpy<2` + `torch==2.2.2` pour macOS Intel `x86_64` intactes.
 - Statut : **Passed**
+
+---
+
+## Phase 10 — Artefacts & Release GitHub (`2026-11-24T19:54Z–19:56Z`)
+
+### Commandes & sortie brute
+- Commande : `scripts/package_release_artifacts.py verify`, `shasum -a 256 -c checksums.sha256`, `gh release view v0.2.0-research-artifacts`, `gh release list`.
+- Sortie brute : `docs/results/raw/phase10_artifacts_release.txt`
+
+### Constats vérifiés
+1. **Checkpoints locaux (`models/`) :** `30/30` vérifiés (`20` NLP + `10` Vision, `0` invalide, `0` pré-entraîné, `344.6 Mo`).
+2. **Archives locales (`dist/release/`) :** `models_nlp_18seed.tar.gz` (`219 Mo`) et `models_vision_9seed.tar.gz` (`89 Mo`) vérifiées `OK` par `shasum -a 256 -c checksums.sha256`.
+3. **GitHub Release `v0.2.0-research-artifacts` :** `release not found` sur le dépôt distant (`gh release list` vide). Conformément à §2.4 (aucun push de tag/publication distante sans autorisation explicite), aucune release distante n'a été créée ; la commande exacte `gh release create` est fournie dans le rapport final.
+- Statut : **Blocked (publication distante en attente d'autorisation explicite ; vérification locale 100 % Passed)**
+
+---
+
+## Phase 11 — Documentation & rapport final (`2026-11-24T19:55Z–20:00Z`)
+
+### Modifications
+1. **`PROJECT_STATUS.md:24` :** réconciliation des CER OCR par langue (`en 0.0824, fr 0.0899`) avec `docs/results/v3_1_ocr_full_benchmark.json`.
+2. **`docs/FINAL_ENGINEERING_AND_RESEARCH_COMPLETION_REPORT.md` :** rédaction du rapport final complet (maturité honnête, commits, causes racines, commandes/sorties brutes, métriques CPU, avant/après `val.jsonl`, intégrité des données, artefacts, éléments bloqués/en attente, commandes reproductibles).
+
+### Vérification finale (`docs/results/raw/phase11_final_verify.txt`)
+- `ruff check medresearch_platform scripts tests` → **`All checks passed!`** (`RUFF_EXIT=0`)
+- `mypy medresearch_platform` → **`Success: no issues found in 99 source files`** (`MYPY_EXIT=0`)
+- `npm --prefix frontend run build` → **`FE_BUILD_EXIT=0`**
+- `npm --prefix frontend test -- --run` → **`2 files, 13 passed`** (`FE_TEST_EXIT=0`)
+- Régression Python (tous modules modifiés + gardes docs) → **`92 passed in 67.75s`** (`PYTEST_EXIT=0`)
+- Statut : **Passed** (branche `chore/completion-audit` prête localement, **aucun `git push`**).
