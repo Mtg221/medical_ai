@@ -73,3 +73,23 @@ def test_out_of_format_timex_count_and_honest_bound() -> None:
     # Assert valid probability bound (exact accuracy is reported honestly in RESEARCH_REPORT.md)
     assert 0.0 <= acc <= 1.0
     print(f"OUT_OF_FORMAT_TIMEX: {hits}/{total} ({acc:.4f})")
+
+
+def test_pod_offset_and_invalid_calendar_dates() -> None:
+    from medresearch_platform.hybrid.stage4_temporal import _parse_header_date_token
+
+    # POD N and French J{N} post-op must apply day offset N rather than collapsing to anchor
+    assert normalize_timex("POD 0", "RELATIVE", ANCHOR_DATE) == "2025-03-15"
+    assert normalize_timex("POD 3", "RELATIVE", ANCHOR_DATE) == "2025-03-18"
+    assert normalize_timex("POD #5", "DATE", ANCHOR_DATE) == "2025-03-20"
+    assert normalize_timex("J4 post-op", "RELATIVE", ANCHOR_DATE) == "2025-03-19"
+    assert normalize_timex("J+7 postop", "DATE", ANCHOR_DATE) == "2025-03-22"
+
+    # Impossible calendar dates must be rejected rather than passed through
+    assert normalize_timex("2025-02-30", "DATE", ANCHOR_DATE) is None
+    assert normalize_timex("2025-04-31", "DATE", ANCHOR_DATE) is None
+    assert _parse_header_date_token("2025-02-30") is None
+    assert _parse_header_date_token("31/04/2025") is None
+    assert _parse_header_date_token("30 fevrier 2025") is None
+    assert _parse_header_date_token("February 29, 2025") is None
+    assert _parse_header_date_token("February 29, 2024") == "2024-02-29"

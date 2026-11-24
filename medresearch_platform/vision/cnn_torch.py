@@ -280,10 +280,15 @@ class PyTorchDermResNet:
             h.update(self.net.state_dict()[k].detach().cpu().numpy().tobytes())
         return h.hexdigest()
 
-    def _arr_to_tensor(self, arr: np.ndarray) -> Any:
+    def _arr_to_tensor(self, arr: np.ndarray | Path | str) -> Any:
         import torch
 
-        a = np.asarray(arr)
+        if isinstance(arr, (str, Path)):
+            with Image.open(arr) as im:
+                rgb = im.convert("RGB").resize((self.image_size, self.image_size), Image.Resampling.BILINEAR)
+                a = np.asarray(rgb, dtype=np.uint8)
+        else:
+            a = np.asarray(arr)
         if a.dtype == np.uint8:
             t = torch.from_numpy(a.transpose(2, 0, 1)).float().div_(255.0)
         else:
@@ -297,10 +302,15 @@ class PyTorchDermResNet:
             ).squeeze(0)
         return t
 
-    def _arr_to_uint8_tensor(self, arr: np.ndarray) -> Any:
+    def _arr_to_uint8_tensor(self, arr: np.ndarray | Path | str) -> Any:
         """Compact [3, H, W] uint8 tensor (4x lower RAM at 224x224)."""
         import torch
 
+        if isinstance(arr, (str, Path)):
+            with Image.open(arr) as im:
+                rgb = im.convert("RGB").resize((self.image_size, self.image_size), Image.Resampling.BILINEAR)
+                a = np.asarray(rgb, dtype=np.uint8)
+            return torch.from_numpy(np.ascontiguousarray(a.transpose(2, 0, 1)))
         a = np.asarray(arr)
         if a.dtype == np.uint8 and a.shape[0] == self.image_size and a.shape[1] == self.image_size:
             return torch.from_numpy(np.ascontiguousarray(a.transpose(2, 0, 1)))
@@ -309,8 +319,8 @@ class PyTorchDermResNet:
 
     def fit(
         self,
-        train_samples: list[tuple[np.ndarray, int, DermCatalogRecord]],
-        val_samples: list[tuple[np.ndarray, int, DermCatalogRecord]],
+        train_samples: list[tuple[Any, int, DermCatalogRecord]],
+        val_samples: list[tuple[Any, int, DermCatalogRecord]],
         *,
         epochs: int = 12,
         batch_size: int = 48,
@@ -322,11 +332,12 @@ class PyTorchDermResNet:
         clinical_oversample: float = 4.0,
         focal_gamma: float = 0.0,
         mixup_alpha: float = 0.0,
+        num_workers: int = 0,
     ) -> dict[str, Any]:
         import torch
         import torch.nn as nn
         import torch.nn.functional as F
-        from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
+        from torch.utils.data import DataLoader, Dataset, TensorDataset, WeightedRandomSampler
 
         t0 = time.perf_counter()
         rng = random.Random(self.seed)
@@ -348,19 +359,56 @@ class PyTorchDermResNet:
                 return torch.amp.autocast("cuda", enabled=amp_enabled)
             return torch.cuda.amp.autocast(enabled=amp_enabled)
 
-        def _pack(samples: list[tuple[np.ndarray, int, DermCatalogRecord]]) -> tuple[torch.Tensor, ...]:
-            xs = torch.stack([self._arr_to_uint8_tensor(a) for a, _, _ in samples], dim=0)
+        image_size = self.image_size
+
+        class _LazyImageDataset(Dataset[tuple[torch.Tensor, ...]]):
+            """On-disk lazy Dataset avoiding full-corpus RAM allocation at >=224x224 resolutions."""
+
+            def __init__(
+                self,
+                paths: list[Path],
+                y_mal: torch.Tensor,
+                y_dx: torch.Tensor,
+                y_mod: torch.Tensor,
+                meta: torch.Tensor,
+            ) -> None:
+                self.paths = paths
+                self.y_mal = y_mal
+                self.y_dx = y_dx
+                self.y_mod = y_mod
+                self.meta = meta
+
+            def __len__(self) -> int:
+                return len(self.paths)
+
+            def __getitem__(self, idx: int) -> tuple[torch.Tensor, ...]:
+                with Image.open(self.paths[idx]) as im:
+                    rgb = im.convert("RGB").resize((image_size, image_size), Image.Resampling.BILINEAR)
+                    arr = np.asarray(rgb, dtype=np.uint8)
+                xt = torch.from_numpy(np.ascontiguousarray(arr.transpose(2, 0, 1)))
+                return xt, self.y_mal[idx], self.y_dx[idx], self.y_mod[idx], self.meta[idx]
+
+        def _build_dataset(
+            samples: list[tuple[Any, int, DermCatalogRecord]],
+        ) -> tuple[Dataset[tuple[torch.Tensor, ...]], torch.Tensor, torch.Tensor, torch.Tensor]:
             y_mal = torch.tensor([lbl for _, lbl, _ in samples], dtype=torch.long)
             y_dx = torch.tensor([map_record_to_core_dx_index(r) for _, _, r in samples], dtype=torch.long)
-            y_mod = torch.tensor([SKIN_MODALITIES.index(r.modality) if r.modality in SKIN_MODALITIES else 0 for _, _, r in samples], dtype=torch.long)
+            y_mod = torch.tensor(
+                [SKIN_MODALITIES.index(r.modality) if r.modality in SKIN_MODALITIES else 0 for _, _, r in samples],
+                dtype=torch.long,
+            )
             meta = torch.stack(
                 [torch.from_numpy(encode_metadata_vector(r, metadata_mode=self.metadata_mode)) for _, _, r in samples],
                 dim=0,
             )
-            return xs, y_mal, y_dx, y_mod, meta
+            if samples and isinstance(samples[0][0], (str, Path)):
+                paths = [Path(a) for a, _, _ in samples]
+                return _LazyImageDataset(paths, y_mal, y_dx, y_mod, meta), y_mal, y_dx, y_mod
+            xs = torch.stack([self._arr_to_uint8_tensor(a) for a, _, _ in samples], dim=0)
+            return TensorDataset(xs, y_mal, y_dx, y_mod, meta), y_mal, y_dx, y_mod
 
-        x_tr, y_mal_tr, y_dx_tr, y_mod_tr, m_tr = _pack(train_samples)
-        x_va, y_mal_va, y_dx_va, y_mod_va, m_va = _pack(val_samples)
+        train_ds, y_mal_tr, y_dx_tr, y_mod_tr = _build_dataset(train_samples)
+        val_ds, y_mal_va, y_dx_va, y_mod_va = _build_dataset(val_samples)
 
         # Class-balanced sampler weights on malignancy (masked=-1 gets neutral weight)
         n_pos = int((y_mal_tr == 1).sum().item())
@@ -384,10 +432,19 @@ class PyTorchDermResNet:
             num_samples=min(len(y_mal_tr), max_samples_per_epoch),
             replacement=True,
         )
+        eff_workers = max(0, int(num_workers)) if isinstance(train_ds, _LazyImageDataset) else 0
         loader = DataLoader(
-            TensorDataset(x_tr, y_mal_tr, y_dx_tr, y_mod_tr, m_tr),
+            train_ds,
             batch_size=batch_size,
             sampler=sampler,
+            num_workers=eff_workers,
+            pin_memory=is_cuda,
+        )
+        val_loader = DataLoader(
+            val_ds,
+            batch_size=max(64, batch_size),
+            shuffle=False,
+            num_workers=eff_workers,
             pin_memory=is_cuda,
         )
 
@@ -399,12 +456,11 @@ class PyTorchDermResNet:
         def _eval_val_logits() -> tuple[torch.Tensor, torch.Tensor]:
             mal_parts: list[torch.Tensor] = []
             dx_parts: list[torch.Tensor] = []
-            val_bs = max(64, batch_size)
             self.net.eval()
             with torch.no_grad():
-                for i in range(0, len(x_va), val_bs):
-                    xv = x_va[i : i + val_bs].to(dev, non_blocking=is_cuda).float().div_(255.0)
-                    mv = m_va[i : i + val_bs].to(dev, non_blocking=is_cuda) if self.include_metadata else None
+                for xv_raw, _, _, _, mv_raw in val_loader:
+                    xv = xv_raw.to(dev, non_blocking=is_cuda).float().div_(255.0)
+                    mv = mv_raw.to(dev, non_blocking=is_cuda) if self.include_metadata else None
                     with _autocast_ctx():
                         lm, ld, _ = self.net(xv, mv)
                     mal_parts.append(lm.float().cpu())
@@ -617,7 +673,7 @@ class PyTorchDermResNet:
 
     def predict_batch(
         self,
-        samples: list[tuple[np.ndarray, int, DermCatalogRecord]],
+        samples: list[tuple[Any, int, DermCatalogRecord]],
         *,
         batch_size: int = 64,
         tta: bool = False,
@@ -859,7 +915,7 @@ class PyTorchDermResNet:
         actual_sha = hashlib.sha256(weights_path.read_bytes()).hexdigest()
         if not expected_sha or expected_sha != actual_sha:
             raise ValueError(f"PyTorch skin model SHA-256 mismatch in {p}")
-        state_dict = torch.load(weights_path, map_location="cpu")
+        state_dict = torch.load(weights_path, map_location="cpu", weights_only=True)
         n_dx = int(state_dict["fc_dx.weight"].shape[0]) if "fc_dx.weight" in state_dict else len(CORE_DX_CLASSES)
         obj = cls(
             image_size=int(manifest.get("image_size", 96)),

@@ -45,13 +45,21 @@ _MONTHS: dict[str, int] = {
 }
 
 
+def _valid_iso_date(year: int, month: int, day: int) -> str | None:
+    try:
+        return date(year, month, day).isoformat()
+    except ValueError:
+        return None
+
+
 def _parse_header_date_token(raw_val: str, *, is_english_header: bool = False) -> str | None:
     cleaned = raw_val.strip()
     m_iso = re.search(r"\b(\d{4})-(\d{2})-(\d{2})\b", cleaned)
     if m_iso:
         y, m, d = int(m_iso.group(1)), int(m_iso.group(2)), int(m_iso.group(3))
-        if 1 <= m <= 12 and 1 <= d <= 31:
-            return f"{y:04d}-{m:02d}-{d:02d}"
+        valid = _valid_iso_date(y, m, d)
+        if valid is not None:
+            return valid
 
     m_slash = re.search(r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b", cleaned)
     if m_slash:
@@ -64,24 +72,27 @@ def _parse_header_date_token(raw_val: str, *, is_english_header: bool = False) -
             m, d = a, b
         else:
             d, m = a, b
-        if 1 <= m <= 12 and 1 <= d <= 31:
-            return f"{y:04d}-{m:02d}-{d:02d}"
+        valid = _valid_iso_date(y, m, d)
+        if valid is not None:
+            return valid
 
     m_fr = re.search(r"\b(\d{1,2})\s+([a-zA-Zàâäéèêëîïôöùûü]+)\s+(\d{4})\b", cleaned)
     if m_fr and m_fr.group(2).lower() in _MONTHS:
         d = int(m_fr.group(1))
         m = _MONTHS[m_fr.group(2).lower()]
         y = int(m_fr.group(3))
-        if 1 <= d <= 31:
-            return f"{y:04d}-{m:02d}-{d:02d}"
+        valid = _valid_iso_date(y, m, d)
+        if valid is not None:
+            return valid
 
     m_en = re.search(r"\b([a-zA-Z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{4})\b", cleaned)
     if m_en and m_en.group(1).lower() in _MONTHS:
         m = _MONTHS[m_en.group(1).lower()]
         d = int(m_en.group(2))
         y = int(m_en.group(3))
-        if 1 <= d <= 31:
-            return f"{y:04d}-{m:02d}-{d:02d}"
+        valid = _valid_iso_date(y, m, d)
+        if valid is not None:
+            return valid
 
     return None
 
@@ -171,10 +182,12 @@ def _normalize_relative_expr(low: str, anchor: date) -> str | None:
         return (anchor - timedelta(days=2)).isoformat()
     if re.fullmatch(r"(?:tomorrow|demain)(?:\s+(?:morning|afternoon|evening|night|matin|soir))?", low):
         return (anchor + timedelta(days=1)).isoformat()
-    if re.fullmatch(r"(?:today|aujourd['’]hui)(?:\s+(?:morning|afternoon|evening|night|matin|soir))?", low) or re.fullmatch(
-        r"(?:pod\s*\d+|j\d+\s*post-?op)", low
-    ):
+    if re.fullmatch(r"(?:today|aujourd['’]hui)(?:\s+(?:morning|afternoon|evening|night|matin|soir))?", low):
         return anchor.isoformat()
+    m_pod = re.fullmatch(r"(?:pod\s*#?\s*(\d+)|j\s*\+?\s*(\d+)\s*post-?op)", low)
+    if m_pod:
+        offset_days = int(m_pod.group(1) or m_pod.group(2))
+        return (anchor + timedelta(days=offset_days)).isoformat()
 
     if re.fullmatch(r"(?:last week|la semaine derni[eè]re)", low):
         return (anchor - timedelta(days=7)).isoformat()
@@ -254,7 +267,10 @@ def normalize_timex(text: str, ttype: str, document_date: str) -> str | None:
 
     if ttype == "DATE":
         if re.fullmatch(r"\d{4}-\d{2}-\d{2}", low):
-            return low
+            try:
+                return date.fromisoformat(low).isoformat()
+            except ValueError:
+                return None
 
         # Numeric DD/MM/YYYY, MM/DD/YYYY, DD/MM/YY, MM/DD/YY (with / or -)
         m_num = re.fullmatch(r"(\d{1,2})[/\-](\d{1,2})[/\-](\d{2}|\d{4})", low)

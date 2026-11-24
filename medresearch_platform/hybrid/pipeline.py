@@ -7,7 +7,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-import joblib
 import numpy as np
 
 from medresearch_platform.approaches.context_negex import (
@@ -28,8 +27,10 @@ from medresearch_platform.hybrid.persistence import (
     git_commit_hash,
     load_crf_model,
     load_npz_params,
+    load_sklearn_text_bundle,
     save_crf_model,
     save_npz_params,
+    save_sklearn_text_bundle,
     verify_manifest,
     write_manifest,
 )
@@ -499,7 +500,17 @@ class HybridPipeline:
         out_dir = Path(model_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        joblib.dump(self.stage1, out_dir / "stage1.joblib")
+        save_sklearn_text_bundle(
+            out_dir / "stage1.json",
+            out_dir / "stage1.npz",
+            vectorizers={"lang_vec": self.stage1.lang_vec, "doc_vec": self.stage1.doc_vec},
+            classifiers={"lang_clf": self.stage1.lang_clf, "doc_clf": self.stage1.doc_clf},
+            extra={
+                "seed": self.stage1.seed,
+                "single_lang": getattr(self.stage1, "_single_lang", None),
+                "single_dtype": getattr(self.stage1, "_single_dtype", None),
+            },
+        )
         vocab_payload = {
             "max_size": self.stage2.vocab.max_size,
             "min_freq": self.stage2.vocab.min_freq,
@@ -579,11 +590,22 @@ class HybridPipeline:
         pipe.corpus_hash = str(manifest.get("corpus_hash", ""))
         pipe.manifest = manifest
 
-        pipe.stage1 = joblib.load(in_dir / "stage1.joblib")
-        for clf_attr in ("lang_clf", "doc_type_clf"):
-            clf_obj = getattr(pipe.stage1, clf_attr, None)
-            if clf_obj is not None and not hasattr(clf_obj, "multi_class"):
-                setattr(clf_obj, "multi_class", "auto")
+        if (in_dir / "stage1.json").exists() and (in_dir / "stage1.npz").exists():
+            vecs, clfs, extra = load_sklearn_text_bundle(in_dir / "stage1.json", in_dir / "stage1.npz")
+            s1 = Stage1DocumentUnderstanding(seed=int(extra.get("seed", pipe.seed)))
+            s1.lang_vec = vecs["lang_vec"]
+            s1.doc_vec = vecs["doc_vec"]
+            s1.lang_clf = clfs["lang_clf"]
+            s1.doc_clf = clfs["doc_clf"]
+            s1._single_lang = extra.get("single_lang")
+            s1._single_dtype = extra.get("single_dtype")
+            s1._fitted = True
+            pipe.stage1 = s1
+        else:
+            raise ValueError(
+                f"Legacy pickle checkpoint in {in_dir} is disabled for security; "
+                "re-train or migrate stage1 to safe JSON/NPZ format."
+            )
 
         vocab_data = json.loads((in_dir / "vocab.json").read_text(encoding="utf-8"))
         pipe.stage2.vocab.max_size = int(vocab_data["max_size"])

@@ -437,7 +437,7 @@ class PyTorchPictureTriageRouter:
             seed=int(manifest.get("seed", 42)),
             abstain_threshold=float(manifest.get("abstain_threshold", 0.45)),
         )
-        obj.net.load_state_dict(torch.load(weights_path, map_location="cpu"))
+        obj.net.load_state_dict(torch.load(weights_path, map_location="cpu", weights_only=True))
         obj.net.eval()
         obj.temperature = float(manifest.get("temperature", 1.0))
         return obj

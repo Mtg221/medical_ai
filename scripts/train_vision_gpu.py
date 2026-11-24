@@ -98,8 +98,9 @@ def _load_samples_for_split(
     image_size: int,
     *,
     max_items: int | None = None,
-) -> list[tuple[np.ndarray, int, DermCatalogRecord]]:
-    samples: list[tuple[np.ndarray, int, DermCatalogRecord]] = []
+    lazy_load: bool = True,
+) -> list[tuple[Any, int, DermCatalogRecord]]:
+    samples: list[tuple[Any, int, DermCatalogRecord]] = []
     for rec in records:
         if max_items is not None and len(samples) >= max_items:
             break
@@ -114,18 +115,21 @@ def _load_samples_for_split(
                 img_path = cand
         if img_path is None:
             continue
-        try:
-            with Image.open(img_path) as im:
-                rgb = im.convert("RGB").resize((image_size, image_size), Image.Resampling.BILINEAR)
-                arr = np.asarray(rgb, dtype=np.uint8)
-        except Exception:
-            continue
         if rec.malignancy_group == "malignant":
             lbl = 1
         elif rec.malignancy_group == "benign":
             lbl = 0
         else:
             lbl = -1
+        if lazy_load:
+            samples.append((img_path, lbl, rec))
+            continue
+        try:
+            with Image.open(img_path) as im:
+                rgb = im.convert("RGB").resize((image_size, image_size), Image.Resampling.BILINEAR)
+                arr = np.asarray(rgb, dtype=np.uint8)
+        except Exception:
+            continue
         samples.append((arr, lbl, rec))
     return samples
 
@@ -150,6 +154,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--clinical-oversample", type=float, default=4.0)
     p.add_argument("--focal-gamma", type=float, default=0.0, help="Focal loss gamma on malignancy head (e.g., 1.5 for hard clinical cases).")
     p.add_argument("--mixup-alpha", type=float, default=0.0, help="Same-modality Mixup alpha (e.g., 0.2).")
+    p.add_argument("--eager-ram", action="store_true", help="Preload all images into host RAM (default is lazy on-disk Dataset).")
+    p.add_argument("--num-workers", type=int, default=0, help="PyTorch DataLoader worker count for lazy on-disk loading.")
     p.add_argument("--device", type=str, default="auto")
     p.add_argument("--out-models-dir", type=Path, default=Path("models"))
     p.add_argument("--out-report", type=Path, default=Path("docs/results/vision/vision_gpu_benchmark.json"))
@@ -201,10 +207,11 @@ def main() -> None:
                 train_recs.append(_row_to_record(row, mod_hint, "train"))
 
     raw_root = args.raw_dir if args.raw_dir.exists() else None
-    print(f"Loading cached images at {args.image_size}x{args.image_size} (raw_root={raw_root})...", flush=True)
-    train_samples = _load_samples_for_split(train_recs, args.thumbs_dir, raw_root, args.image_size, max_items=args.max_train_samples)
-    val_samples = _load_samples_for_split(val_recs, args.thumbs_dir, raw_root, args.image_size)
-    test_samples = _load_samples_for_split(test_recs, args.thumbs_dir, raw_root, args.image_size)
+    lazy_load = not bool(args.eager_ram)
+    print(f"Loading cached images at {args.image_size}x{args.image_size} (raw_root={raw_root}, lazy={lazy_load})...", flush=True)
+    train_samples = _load_samples_for_split(train_recs, args.thumbs_dir, raw_root, args.image_size, max_items=args.max_train_samples, lazy_load=lazy_load)
+    val_samples = _load_samples_for_split(val_recs, args.thumbs_dir, raw_root, args.image_size, lazy_load=lazy_load)
+    test_samples = _load_samples_for_split(test_recs, args.thumbs_dir, raw_root, args.image_size, lazy_load=lazy_load)
     print(f"Loaded train={len(train_samples)} val={len(val_samples)} locked_test={len(test_samples)}", flush=True)
     if not train_samples or not val_samples:
         raise RuntimeError("No cached dermatology images found — sync metadata & thumbnails first.")
@@ -234,6 +241,7 @@ def main() -> None:
             clinical_oversample=float(args.clinical_oversample),
             focal_gamma=float(args.focal_gamma),
             mixup_alpha=float(args.mixup_alpha),
+            num_workers=int(args.num_workers),
         )
         dir_name = f"derm_cnn_bsdrop40_seed{sd}" if idx == 0 else f"derm_cnn_seed{sd}"
         out_dir = args.out_models_dir / dir_name

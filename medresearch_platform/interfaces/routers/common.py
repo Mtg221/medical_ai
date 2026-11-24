@@ -43,7 +43,16 @@ def extract_principal(
     if auth_header.startswith("Bearer "):
         token = auth_header[len("Bearer ") :].strip()
         if token:
-            return verify_access_token(token, service.config.token_secret_key)
+            principal = verify_access_token(token, service.config.token_secret_key)
+            if principal.jti:
+                with service.db.connect() as conn:
+                    row = conn.execute(
+                        "SELECT 1 FROM revoked_tokens WHERE jti = ?",
+                        (principal.jti,),
+                    ).fetchone()
+                    if row is not None:
+                        raise AuthenticationError("Access token has been revoked.")
+            return principal
     raise AuthenticationError("Missing or invalid Authorization: Bearer <token> header.")
 
 

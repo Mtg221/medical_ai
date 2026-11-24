@@ -8,8 +8,8 @@
 > **Clinical & Scientific Safety Notice**  
 > This platform is a **research tool — not for diagnosis or treatment; human review is required before any clinical use**. Do not use AI-extracted or inferred outputs as verified clinical truth.
 >
-> **Image Scope (EN):** In practice, the image tool only gives a risk band for dermoscopic photos (served AUROC 0.8849); clinical phone photos get no risk band (AUROC 0.7195), TBP tiles abstain (AUROC 0.4819), and at corpus prevalence served abstention is 80.45% (ECE 0.4335).  
-> **Périmètre image (FR) :** En pratique, l'outil d'imagerie ne fournit une catégorie de risque que pour les photos dermoscopiques (AUROC servie 0.8849) ; les photos cliniques ne reçoivent pas de catégorie de risque (AUROC 0.7195), les tuiles TBP s'abstiennent (AUROC 0.4819) et, à la prévalence du corpus, l'abstention servie est de 80.45% (ECE 0.4335).
+> **Image Scope (EN):** The served 9-seed cross-architecture vision ensemble (`7x SE-ResNetV2 + 2x ConvNeXt-Derm`, `4x TTA`, Lesion ROI Multi-Crop) achieves `0.9353` overall AUROC (`79.52%` Sens@90% Spec, ECE `0.0315`) on `locked_test_v3` (`n = 1,624`): dermoscopic photos reach `0.9734` AUROC (`93.33%` Sens@90% Spec), clinical smartphone photos reach `0.8784` AUROC (`58.79%` Sens@90% Spec — clinician review mandatory), TBP tiles auto-abstain, and high-uncertainty predictions (`ensemble std > 0.12`) trigger mandatory abstention.  
+> **Périmètre image (FR) :** L'ensemble vision multi-architectures à 9 graines (`7x SE-ResNetV2 + 2x ConvNeXt-Derm`, `4x TTA`, recadrage multi-ROI) atteint `0.9353` d'AUROC globale (`79.52%` Sens@90% Spéc, ECE `0.0315`) sur `locked_test_v3` (`n = 1 624`) : les photos dermoscopiques atteignent `0.9734` d'AUROC (`93.33%` Sens@90% Spéc), les photos cliniques smartphone atteignent `0.8784` d'AUROC (`58.79%` Sens@90% Spéc — revue clinique obligatoire), les tuiles TBP s'abstiennent automatiquement et les prédictions à forte incertitude (`écart-type > 0.12`) déclenchent une abstention obligatoire.
 
 ---
 
@@ -28,20 +28,20 @@ All primary models are trained from scratch on `train` (600 docs: 300 EN + 300 F
 | 7. `hybrid` (V3.1 5-stage) | `0.9941` [0.9920, 0.9959] | `0.8277` | `0.8949` | **`0.8922`** | **`0.9986`** |
 | **8. `hybrid_v2` (`val`-selected, served)** | `0.9972` [0.9954, 0.9987] | **`0.9204`** | `0.9310` | `0.8912` | **`0.9986`** |
 
-### 1.2 Hospital Unified NLP & 224x224 Dermatology Vision Ensembles (100% From Scratch, Zero Pretrained Weights)
+### 1.2 Hospital Unified NLP & Cross-Architecture Dermatology Vision Ensembles (100% From Scratch, Zero Pretrained Weights)
 
-Trained from random initialization (`pretrained_weights_used: false`) across `SYNTH-MED-V3.1` + `4,882` open-license clinical & public-domain biomedical documents (`MACCROBAT2020`, `PxCorpus`, `E3C`, `BC5CDR`, `NCBI Disease` — `66,640` gold entities) and `31,622` native high-resolution (`224x224`) dermatology images (`docs/results/hospital_6model_diverse_ensemble_benchmark.json`, `docs/results/vision/vision_gpu_benchmark.json`, logged as `post-hoc (test seen)` in `docs/results/TEST_SET_LOG.md`):
+Trained from random initialization (`pretrained_weights_used: false`) across `SYNTH-MED-V3.1` + `4,882` open-license clinical & public-domain biomedical documents (`MACCROBAT2020`, `PxCorpus`, `E3C`, `BC5CDR`, `NCBI Disease` — `66,640` gold entities; plus `6,518` unlabeled `E3C Layer 3` notes for from-scratch MLM pretraining) and `31,622` dermatology images (`docs/results/hospital_18model_cross_arch_ensemble_benchmark.json`, `docs/results/vision/vision_9seed_cross_arch_benchmark.json`, logged as `post-hoc (test seen)` in `docs/results/TEST_SET_LOG.md`):
 
-- **Hospital 6-Model Diverse NLP Ensemble (`3x Kaggle GPU 128d + 3x Local 96d PyTorchCharCNNBiLSTMCRF` with Exact Partial-Label Marginal CRF, `4/6` supermajority vote + `CRF v2`):**
-  - `realistic_llm_80` (80 EN/FR free-text notes): **`0.7224` Strict F1 / `0.8225` Lenient F1** (Precision `0.7561`, up from `0.583` / `0.664` baseline)
-  - `open_clinical_test` (443 real clinical docs): **`0.6561` Strict F1 / `0.7387` Lenient F1** (Precision `0.6812`: `PxCorpus` **`0.9397` / `0.9638`**, `MACCROBAT2020` **`0.5404` / `0.6450`**, `E3C Layer 1` **`0.4162` / `0.5562`**)
-  - `SYNTH-MED-V3.1` `test_unseen_terms` (3-seed): **`0.9330` Strict F1 / `0.9611` Lenient F1** | `val`: **`0.9985` Strict F1 / `0.9995` Lenient F1**
-- **Hospital 3-Seed `224x224` Dermatology Vision Ensemble (`PyTorchDermSEResNetV2-v2.0.0`, `2.84M` params/seed, Squeeze-and-Excitation + Cutout + 4x TTA + `val_v3` per-modality temperature scaling on `locked_test_v3`, `n = 1,624`):**
-  - **Overall (`n = 1,624`):** AUROC **`0.9292`** (up from `0.8672`), Sensitivity @ 90% Specificity **`0.7617`** (up from `0.5596`), ECE **`0.0347`**, Brier **`0.1055`**
-  - **Dermoscopic (`n = 700`):** AUROC **`0.9698`**, Sensitivity @ 90% Specificity **`0.9000`** (`90%` Sens @ `90%` Spec, ECE `0.0464`, Brier `0.0692`)
-  - **Clinical Smartphone Photos (`n = 574`):** AUROC **`0.8613`** (up from `0.7568`), Sensitivity @ 90% Specificity **`0.5476`** (`>2.2x` prior `0.2392`, ECE `0.0436`)
-  - **TBP 3D Tiles (`n = 350`):** AUROC **`0.8765`** (up from `0.7559`), Sensitivity @ 90% Specificity **`0.7000`**
-  - **Biopsy-Confirmed (`histopathology`) Lesions:** Dermoscopic (`n = 359`) AUROC **`0.8569`** (`Sens@90%Spec` **`0.6567`**, up from `0.7354` / `0.3733`); All Modalities (`n = 591`) AUROC **`0.8307`** (`Sens@90%Spec` **`0.6130`**)
+- **Hospital 18-Model Cross-Architecture NLP Ensemble (`15x PyTorchCharCNNBiLSTMCRF + 3x From-Scratch 4-Layer Medical Transformer E3C-MLM`, `12/18` supermajority vote + `CRF v2` + uncertainty guardrails):**
+  - `open_clinical_test` (443 real clinical docs): **`0.6779` Strict F1 / `0.7484` Lenient F1** (Precision `0.7226`: `PxCorpus` **`0.9462` / `0.9672`**, `MACCROBAT2020` **`0.5562` / `0.6540`**, `E3C Layer 1` **`0.4212` / `0.5563`**)
+  - `realistic_llm_80` (80 EN/FR free-text notes): **`0.7197` Strict F1 / `0.8180` Lenient F1** (Precision `0.7683`, up from `0.583` / `0.664` baseline)
+  - `SYNTH-MED-V3.1` `test_unseen_terms`: **`0.9342` Strict F1 / `0.9628` Lenient F1** (Precision `0.9572`)
+- **Hospital 9-Seed Cross-Architecture Modality-Aware Dermatology Vision Ensemble (`7x SE-ResNetV2 + 2x From-Scratch ConvNeXt-Derm`, `4x TTA`, Fitzpatrick-inclusive Lesion ROI Multi-Crop + `val_v3` per-modality temperature scaling on `locked_test_v3`, `n = 1,624`):**
+  - **Overall (`n = 1,624`):** AUROC **`0.9353`**, Sensitivity @ 90% Specificity **`0.7952`**, Brier **`0.1009`**, ECE **`0.0315`**
+  - **Dermoscopic (`n = 700`):** AUROC **`0.9734`**, Sensitivity @ 90% Specificity **`0.9333`** (`93.3%` Sens @ `90%` Spec, Brier `0.0626`, ECE `0.0446`)
+  - **Clinical Smartphone Photos (`n = 574`):** AUROC **`0.8784`**, Sensitivity @ 90% Specificity **`0.5879`** (clinician review mandatory)
+  - **TBP 3D Tiles (`n = 350`):** AUROC **`0.8763`** (auto-abstained in serving)
+  - **Uncertainty Guardrail (`ensemble std > 0.12`):** Low-uncertainty subset (`n = 1,528`) achieves **`0.9419` AUROC** and `12.9%` error rate.
 
 ---
 

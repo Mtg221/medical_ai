@@ -334,6 +334,13 @@ CREATE TABLE IF NOT EXISTS jobs (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+    jti TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    revoked_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at_utc TIMESTAMPTZ NOT NULL
+);
+
 -- Indexes for performance and retrieval
 CREATE INDEX IF NOT EXISTS idx_documents_institution ON documents(institution_id);
 CREATE INDEX IF NOT EXISTS idx_documents_subject ON documents(subject_id);

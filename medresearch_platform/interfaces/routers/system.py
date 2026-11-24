@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
@@ -20,12 +21,13 @@ from medresearch_platform.interfaces.routers.common import (
 )
 from medresearch_platform.interfaces.schemas import TokenRequest, TokenResponse
 from medresearch_platform.security.audit import verify_audit_chain
-from medresearch_platform.security.auth import issue_access_token, verify_password
+from medresearch_platform.security.auth import LoginRateLimiter, issue_access_token, verify_password
 from medresearch_platform.workflows.pipeline import MedicalResearchPlatformService
 
 
 def build_system_router(service: MedicalResearchPlatformService) -> APIRouter:
     router = APIRouter(tags=["system"])
+    login_limiter = LoginRateLimiter(max_attempts=10, window_seconds=300)
 
     @router.get("/api/v1/health")
     async def health_endpoint() -> JSONResponse:
@@ -55,15 +57,27 @@ def build_system_router(service: MedicalResearchPlatformService) -> APIRouter:
         return JSONResponse(schema)
 
     @router.post("/api/v1/auth/token", response_model=TokenResponse)
-    async def issue_token_endpoint(body: TokenRequest) -> JSONResponse:
+    async def issue_token_endpoint(request: Request, body: TokenRequest) -> JSONResponse:
+        client_ip = request.client.host if request.client else "unknown"
+        rate_key = f"{client_ip}:{body.username.strip().lower()}"
+        allowed, retry_after = login_limiter.check(rate_key)
+        if not allowed:
+            return JSONResponse(
+                {"error": "Too many failed login attempts. Try again later."},
+                status_code=429,
+                headers={"Retry-After": str(retry_after)},
+            )
+
         with service.db.connect() as conn:
             row = conn.execute(
                 "SELECT * FROM users WHERE username = ? AND is_active = 1",
                 (body.username,),
             ).fetchone()
             if row is None or not verify_password(str(row["password_hash"]), body.password):
+                login_limiter.record_failure(rate_key)
                 return JSONResponse({"error": "Invalid credentials"}, status_code=401)
 
+            login_limiter.reset(rate_key)
             perms = json.loads(str(row["permissions_json"]))
             token = issue_access_token(
                 user_id=str(row["user_id"]),
@@ -83,6 +97,25 @@ def build_system_router(service: MedicalResearchPlatformService) -> APIRouter:
                     "permissions": perms,
                 }
             )
+
+    @router.post("/api/v1/auth/logout")
+    async def logout_endpoint(request: Request) -> JSONResponse:
+        try:
+            principal = extract_principal(request, service)
+        except PermissionError as exc:
+            return auth_error_response(exc)
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        if principal.jti:
+            with service.db.transaction() as conn:
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO revoked_tokens (jti, user_id, revoked_at_utc, expires_at_utc)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (principal.jti, principal.user_id, now_iso, principal.expires_at_iso),
+                )
+        return JSONResponse({"status": "revoked", "jti": principal.jti})
 
     @router.get("/api/v1/models")
     async def list_models_endpoint(request: Request) -> JSONResponse:

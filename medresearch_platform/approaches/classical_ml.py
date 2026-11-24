@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-import joblib
 import numpy as np
 import sklearn_crfsuite
 from sklearn.feature_extraction import DictVectorizer
@@ -32,7 +31,9 @@ from medresearch_platform.hybrid.persistence import (
     compute_corpus_hash,
     git_commit_hash,
     load_crf_model,
+    load_sklearn_text_bundle,
     save_crf_model,
+    save_sklearn_text_bundle,
     verify_manifest,
     write_manifest,
 )
@@ -321,13 +322,12 @@ class ClassicalCRFModel:
         out_dir = Path(model_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         save_crf_model(self.crf, out_dir / "crf.crfsuite")
-        joblib.dump(
-            {
-                "doc_vec": self.doc_vec,
-                "doc_clf": self.doc_clf,
-                "single_dtype": self._single_dtype,
-            },
-            out_dir / "doc_clf.joblib",
+        save_sklearn_text_bundle(
+            out_dir / "doc_clf.json",
+            out_dir / "doc_clf.npz",
+            vectorizers={"doc_vec": self.doc_vec},
+            classifiers={"doc_clf": self.doc_clf},
+            extra={"single_dtype": self._single_dtype},
         )
         manifest_path = write_manifest(
             out_dir,
@@ -354,10 +354,16 @@ class ClassicalCRFModel:
         model.corpus_hash = str(manifest.get("corpus_hash", ""))
         model.manifest = manifest
         model.crf = load_crf_model(in_dir / "crf.crfsuite")
-        doc_bundle = joblib.load(in_dir / "doc_clf.joblib")
-        model.doc_vec = doc_bundle["doc_vec"]
-        model.doc_clf = doc_bundle["doc_clf"]
-        model._single_dtype = doc_bundle["single_dtype"]
+        if (in_dir / "doc_clf.json").exists() and (in_dir / "doc_clf.npz").exists():
+            vecs, clfs, extra = load_sklearn_text_bundle(in_dir / "doc_clf.json", in_dir / "doc_clf.npz")
+            model.doc_vec = vecs["doc_vec"]
+            model.doc_clf = clfs["doc_clf"]
+            model._single_dtype = extra.get("single_dtype")
+        else:
+            raise ValueError(
+                f"Legacy pickle checkpoint in {in_dir} is disabled for security; "
+                "re-train or migrate doc_clf to safe JSON/NPZ format."
+            )
         model._fitted = True
         return model
 

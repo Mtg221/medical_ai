@@ -811,7 +811,7 @@ class PyTorchCharCNNBiLSTMCRF:
             dropout=obj.dropout,
             encoder_type=obj.encoder_type,
         ).to(dev)
-        state = torch.load(weights_path, map_location="cpu")
+        state = torch.load(weights_path, map_location="cpu", weights_only=True)
         obj.net.load_state_dict({k: v.to(dev) for k, v in state.items()})
         obj.net.eval()
         obj.initial_weights_sha256 = str(meta.get("initial_weights_sha256", ""))

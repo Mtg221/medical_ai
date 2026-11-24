@@ -167,3 +167,66 @@ def test_tamper_evident_audit_log_and_phi_scrubbing(tmp_path: Path) -> None:
         check_tampered = verify_audit_chain(conn)
         assert check_tampered["valid"] is False
         assert "Tampered entry hash" in check_tampered["error"]
+
+
+def test_login_rate_limiting_and_token_revocation(tmp_path: Path) -> None:
+    from fastapi.testclient import TestClient
+
+    from medresearch_platform.interfaces.api import create_app
+
+    cfg = PlatformConfig(
+        profile="test",
+        workspace_dir=tmp_path,
+        storage_dir=tmp_path / "storage",
+        sqlite_path=tmp_path / "db" / "auth_test.sqlite3",
+        postgres_url=None,
+        max_cpu_threads=2,
+        max_memory_mb=1024,
+        max_upload_bytes=1024 * 1024,
+        max_document_pages=20,
+        default_random_seed=42,
+        token_secret_key="sec_auth_1",
+        pseudonym_vault_key="sec_auth_2",
+    )
+    app = create_app(cfg)
+    app.state.service.init_or_reset_default_users("TestPass_2026!")
+    client = TestClient(app)
+
+    # 1. Brute-force throttling on /api/v1/auth/token (10 failures -> 11th returns 429)
+    for _ in range(10):
+        resp = client.post("/api/v1/auth/token", json={"username": "admin_dakar", "password": "wrong_password"})
+        assert resp.status_code == 401
+    throttled = client.post("/api/v1/auth/token", json={"username": "admin_dakar", "password": "wrong_password"})
+    assert throttled.status_code == 429
+    assert "Retry-After" in throttled.headers
+
+    # 2. Token issuance + logout revocation -> subsequent protected request returns 401
+    ok_resp = client.post(
+        "/api/v1/auth/token",
+        json={"username": "researcher_paris", "password": "TestPass_2026!"},
+    )
+    assert ok_resp.status_code == 200
+    token = ok_resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    schema_ok = client.get("/api/v1/schema/extraction", headers=headers)
+    assert schema_ok.status_code == 200
+
+    logout_resp = client.post("/api/v1/auth/logout", headers=headers)
+    assert logout_resp.status_code == 200
+    assert logout_resp.json()["status"] == "revoked"
+
+    schema_revoked = client.get("/api/v1/schema/extraction", headers=headers)
+    assert schema_revoked.status_code == 401
+    assert "revoked" in schema_revoked.json()["error"].lower()
+
+
+def test_no_unsafe_deserialization_calls_in_platform() -> None:
+    repo_root = Path(__file__).resolve().parent.parent / "medresearch_platform"
+    for py_file in repo_root.rglob("*.py"):
+        src = py_file.read_text(encoding="utf-8")
+        assert "joblib.load(" not in src, f"Unsafe joblib.load found in {py_file}"
+        assert "pickle.load(" not in src, f"Unsafe pickle.load found in {py_file}"
+        for line in src.splitlines():
+            if "torch.load(" in line:
+                assert "weights_only=True" in line, f"torch.load missing weights_only=True in {py_file}: {line}"

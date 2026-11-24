@@ -6,6 +6,10 @@ import base64
 import hashlib
 import hmac
 import json
+import threading
+import time
+import uuid
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Iterable
@@ -77,6 +81,7 @@ class AuthenticatedPrincipal:
     role: str
     permissions: frozenset[str]
     expires_at_iso: str
+    jti: str = ""
 
     def has_permission(self, permission: str) -> bool:
         return permission in self.permissions
@@ -120,6 +125,7 @@ def issue_access_token(
 ) -> str:
     exp = (datetime.now(timezone.utc) + timedelta(minutes=ttl_minutes)).isoformat()
     payload = {
+        "jti": uuid.uuid4().hex,
         "sub": user_id,
         "usr": username,
         "inst": institution_id,
@@ -160,4 +166,43 @@ def verify_access_token(token: str, secret_key: str) -> AuthenticatedPrincipal:
         role=str(payload["role"]),
         permissions=frozenset(payload["perms"]),
         expires_at_iso=str(payload["exp"]),
+        jti=str(payload.get("jti", "")),
     )
+
+
+class LoginRateLimiter:
+    """Thread-safe sliding-window rate limiter to mitigate login brute-force attacks."""
+
+    def __init__(self, *, max_attempts: int = 10, window_seconds: int = 300) -> None:
+        self.max_attempts = max(1, int(max_attempts))
+        self.window_seconds = max(1, int(window_seconds))
+        self._failures: dict[str, deque[float]] = {}
+        self._lock = threading.Lock()
+
+    def _prune(self, dq: deque[float], now: float) -> None:
+        cutoff = now - self.window_seconds
+        while dq and dq[0] <= cutoff:
+            dq.popleft()
+
+    def check(self, key: str, *, now: float | None = None) -> tuple[bool, int]:
+        ts = time.monotonic() if now is None else now
+        with self._lock:
+            dq = self._failures.get(key)
+            if not dq:
+                return True, 0
+            self._prune(dq, ts)
+            if len(dq) >= self.max_attempts:
+                retry_after = max(1, int(self.window_seconds - (ts - dq[0])) + 1)
+                return False, retry_after
+            return True, 0
+
+    def record_failure(self, key: str, *, now: float | None = None) -> None:
+        ts = time.monotonic() if now is None else now
+        with self._lock:
+            dq = self._failures.setdefault(key, deque())
+            self._prune(dq, ts)
+            dq.append(ts)
+
+    def reset(self, key: str) -> None:
+        with self._lock:
+            self._failures.pop(key, None)
