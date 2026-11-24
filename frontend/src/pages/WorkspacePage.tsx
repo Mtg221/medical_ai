@@ -262,6 +262,9 @@ export function WorkspacePage() {
                 </div>
                 <div className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">
                   {ent.entity_type} · {ent.normalized_text} · span [{ent.char_start}, {ent.char_end}]
+                  {ent.certainty || ent.temporality || ent.experiencer
+                    ? ` · ${ent.certainty ?? "confirmed"}/${ent.temporality ?? "current"}/${ent.experiencer ?? "patient"}`
+                    : ""}
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <div className="flex items-center gap-1">

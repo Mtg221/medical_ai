@@ -27,6 +27,9 @@ class ReviewSubmissionRequest(BaseModel):
     action: str  # approve | correct | reject | flag
     corrected_entity_type: str | None = None
     corrected_assertion_status: str | None = None
+    corrected_certainty: str | None = None
+    corrected_temporality: str | None = None
+    corrected_experiencer: str | None = None
     corrected_temporal_status: str | None = None
     corrected_normalized_text: str | None = None
     corrected_char_start: int | None = None

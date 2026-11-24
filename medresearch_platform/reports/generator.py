@@ -174,6 +174,14 @@ def render_markdown_report(
             norm = _scrub_phi(ent.get("normalized_text") or ent.get("normalized_concept") or surf, extra_pii)
             etype = str(ent.get("entity_type", "UNKNOWN"))
             assertion = str(ent.get("assertion_status", "present"))
+            certainty = str(ent.get("certainty") or "")
+            temporality = str(ent.get("temporality") or "")
+            experiencer = str(ent.get("experiencer") or "")
+            axes_part = (
+                f" (`{certainty}/{temporality}/{experiencer}`)"
+                if (certainty and temporality and experiencer)
+                else ""
+            )
             conf = float(ent.get("confidence", ent.get("confidence_score", 0.0)) or 0.0)
             page = ent.get("page_number", 1)
             c0 = ent.get("char_start", "?")
@@ -182,7 +190,7 @@ def render_markdown_report(
             temp_part = f" | {lbl['temporal']}: `{temp}`" if temp else ""
             lines.append(
                 f"- **{surf}** (`{etype}` -> `{norm}`) | "
-                f"{lbl['assertion']}: **{_assertion_label(assertion, lang)}** | "
+                f"{lbl['assertion']}: **{_assertion_label(assertion, lang)}**{axes_part} | "
                 f"{lbl['confidence']}: `{conf:.2f}`{temp_part} | "
                 f"{lbl['source_ref']}: `[doc={doc_id}, p.{page}, chars {c0}-{c1}]`"
             )
@@ -311,14 +319,22 @@ def render_html_report(
                 norm = html.escape(_scrub_phi(ent.get("normalized_text") or ent.get("normalized_concept") or surf, extra_pii))
                 etype = html.escape(str(ent.get("entity_type", "UNKNOWN")))
                 assertion = str(ent.get("assertion_status", "present"))
+                certainty = str(ent.get("certainty") or "")
+                temporality = str(ent.get("temporality") or "")
+                experiencer = str(ent.get("experiencer") or "")
+                axes_html = (
+                    f" <span class='src'>[{html.escape(certainty)}/{html.escape(temporality)}/{html.escape(experiencer)}]</span>"
+                    if (certainty and temporality and experiencer)
+                    else ""
+                )
                 conf = float(ent.get("confidence", ent.get("confidence_score", 0.0)) or 0.0)
                 page = html.escape(str(ent.get("page_number", 1)))
                 c0 = html.escape(str(ent.get("char_start", "?")))
                 c1 = html.escape(str(ent.get("char_end", "?")))
-                badge_cls = "neg" if assertion.lower() in ("absent", "negated") else "pos"
+                badge_cls = "neg" if (certainty == "absent" or assertion.lower() in ("absent", "negated")) else "pos"
                 rows_html.append(
                     f"<li><strong>{surf}</strong> (<code>{etype}</code> &rarr; <code>{norm}</code>) "
-                    f"<span class='badge {badge_cls}'>{html.escape(_assertion_label(assertion, lang))}</span> "
+                    f"<span class='badge {badge_cls}'>{html.escape(_assertion_label(assertion, lang))}</span>{axes_html} "
                     f"<span class='src'>[{html.escape(lbl['source_ref'])}: doc={doc_id}, p.{page}, chars {c0}-{c1}, conf={conf:.2f}]</span></li>"
                 )
             rows_html.append("</ul>")

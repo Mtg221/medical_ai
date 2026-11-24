@@ -183,6 +183,9 @@ CREATE TABLE IF NOT EXISTS extracted_entities (
     assertion_status TEXT NOT NULL CHECK (assertion_status IN (
         'AFFIRMED', 'NEGATED', 'UNCERTAIN', 'HYPOTHETICAL', 'CONDITIONAL', 'FAMILY_HISTORY'
     )),
+    certainty TEXT NOT NULL DEFAULT 'confirmed' CHECK (certainty IN ('confirmed', 'possible', 'absent')),
+    temporality TEXT NOT NULL DEFAULT 'current' CHECK (temporality IN ('current', 'historical')),
+    experiencer TEXT NOT NULL DEFAULT 'patient' CHECK (experiencer IN ('patient', 'family')),
     temporal_status TEXT NOT NULL CHECK (temporal_status IN ('CURRENT', 'HISTORICAL', 'PLANNED', 'RESOLVED', 'UNKNOWN')),
     medication_status TEXT NOT NULL CHECK (medication_status IN (
         'NOT_APPLICABLE', 'PRESCRIBED', 'DISPENSED', 'TAKEN', 'ADMINISTERED', 'DISCONTINUED', 'UNKNOWN'

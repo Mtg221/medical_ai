@@ -21,6 +21,9 @@ def submit_entity_human_review(
     review_decision: str,
     corrected_entity_type: str | None = None,
     corrected_assertion_status: str | None = None,
+    corrected_certainty: str | None = None,
+    corrected_temporality: str | None = None,
+    corrected_experiencer: str | None = None,
     corrected_temporal_status: str | None = None,
     corrected_normalized_text: str | None = None,
     corrected_char_start: int | None = None,
@@ -55,6 +58,11 @@ def submit_entity_human_review(
 
     principal.assert_institution_access(str(row["institution_id"]))
 
+    row_keys = set(row.keys())
+    prev_certainty = str(row["certainty"]) if "certainty" in row_keys else "confirmed"
+    prev_temporality = str(row["temporality"]) if "temporality" in row_keys else "current"
+    prev_experiencer = str(row["experiencer"]) if "experiencer" in row_keys else "patient"
+
     previous_val = {
         "entity_type": str(row["entity_type"]),
         "normalized_text": str(row["normalized_text"]),
@@ -62,6 +70,9 @@ def submit_entity_human_review(
         "char_start": int(row["char_start"]),
         "char_end": int(row["char_end"]),
         "assertion_status": str(row["assertion_status"]),
+        "certainty": prev_certainty,
+        "temporality": prev_temporality,
+        "experiencer": prev_experiencer,
         "temporal_status": str(row["temporal_status"]),
         "review_status": str(row["review_status"]),
     }
@@ -74,7 +85,20 @@ def submit_entity_human_review(
     if new_end <= new_start:
         raise ValueError(f"Invalid span offsets: char_start={new_start}, char_end={new_end}")
     new_ass = corrected_assertion_status or str(row["assertion_status"])
-    new_tmp = corrected_temporal_status or str(row["temporal_status"])
+    new_certainty = corrected_certainty or prev_certainty
+    new_temporality = corrected_temporality or prev_temporality
+    new_experiencer = corrected_experiencer or prev_experiencer
+    if new_certainty not in ("confirmed", "possible", "absent"):
+        raise ValueError(f"Invalid certainty: {new_certainty}")
+    if new_temporality not in ("current", "historical"):
+        raise ValueError(f"Invalid temporality: {new_temporality}")
+    if new_experiencer not in ("patient", "family"):
+        raise ValueError(f"Invalid experiencer: {new_experiencer}")
+    new_tmp = corrected_temporal_status or (
+        "HISTORICAL" if (corrected_temporality == "historical") else (
+            "CURRENT" if (corrected_temporality == "current") else str(row["temporal_status"])
+        )
+    )
 
     if review_decision == "APPROVE_AS_GROUND_TRUTH":
         new_status = "APPROVED_GROUND_TRUTH"
@@ -92,6 +116,9 @@ def submit_entity_human_review(
         "char_start": new_start,
         "char_end": new_end,
         "assertion_status": new_ass,
+        "certainty": new_certainty,
+        "temporality": new_temporality,
+        "experiencer": new_experiencer,
         "temporal_status": new_tmp,
         "review_status": new_status,
     }
@@ -123,10 +150,24 @@ def submit_entity_human_review(
         """
         UPDATE extracted_entities
         SET entity_type = ?, normalized_text = ?, source_text = ?, char_start = ?, char_end = ?,
-            assertion_status = ?, temporal_status = ?, review_status = ?
+            assertion_status = ?, certainty = ?, temporality = ?, experiencer = ?,
+            temporal_status = ?, review_status = ?
         WHERE entity_id = ?
         """,
-        (new_ent_type, new_norm, new_surface, new_start, new_end, new_ass, new_tmp, new_status, entity_id),
+        (
+            new_ent_type,
+            new_norm,
+            new_surface,
+            new_start,
+            new_end,
+            new_ass,
+            new_certainty,
+            new_temporality,
+            new_experiencer,
+            new_tmp,
+            new_status,
+            entity_id,
+        ),
     )
 
     record_audit_event(
@@ -269,7 +310,8 @@ def export_reviewed_gold(
         for d in docs:
             ents = conn.execute(
                 """
-                SELECT entity_type, char_start, char_end, source_text, assertion_status
+                SELECT entity_type, char_start, char_end, source_text, assertion_status,
+                       certainty, temporality, experiencer
                 FROM extracted_entities
                 WHERE document_id = ? AND review_status IN ('APPROVED_GROUND_TRUTH', 'HUMAN_CORRECTED')
                 ORDER BY char_start ASC
@@ -287,13 +329,23 @@ def export_reviewed_gold(
                 if str(e["assertion_status"]) not in ("AFFIRMED", "present"):
                     brat_lines.append(f"A{a_idx}\tAssertion {tid} {e['assertion_status']}")
                     a_idx += 1
+                if str(e["certainty"]) != "confirmed":
+                    brat_lines.append(f"A{a_idx}\tCertainty {tid} {e['certainty']}")
+                    a_idx += 1
+                if str(e["temporality"]) != "current":
+                    brat_lines.append(f"A{a_idx}\tTemporality {tid} {e['temporality']}")
+                    a_idx += 1
+                if str(e["experiencer"]) != "patient":
+                    brat_lines.append(f"A{a_idx}\tExperiencer {tid} {e['experiencer']}")
+                    a_idx += 1
         return "\n".join(brat_lines) + ("\n" if brat_lines else "")
 
     jsonl_lines: list[str] = []
     for d in docs:
         ents = conn.execute(
             """
-            SELECT entity_id, entity_type, char_start, char_end, source_text, assertion_status, review_status
+            SELECT entity_id, entity_type, char_start, char_end, source_text, assertion_status,
+                   certainty, temporality, experiencer, review_status
             FROM extracted_entities
             WHERE document_id = ? AND review_status IN ('APPROVED_GROUND_TRUTH', 'HUMAN_CORRECTED')
             ORDER BY char_start ASC
@@ -317,6 +369,9 @@ def export_reviewed_gold(
                             "end": int(e["char_end"]),
                             "text": deidentify_clinical_text(str(e["source_text"])).scrubbed_text,
                             "assertion": str(e["assertion_status"]),
+                            "certainty": str(e["certainty"]),
+                            "temporality": str(e["temporality"]),
+                            "experiencer": str(e["experiencer"]),
                             "review_status": str(e["review_status"]),
                         }
                         for e in ents

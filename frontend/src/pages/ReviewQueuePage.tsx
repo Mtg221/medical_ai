@@ -39,6 +39,10 @@ const ASSERTION_OPTIONS = [
   "FAMILY_HISTORY",
 ] as const;
 
+const CERTAINTY_OPTIONS = ["confirmed", "possible", "absent"] as const;
+const TEMPORALITY_OPTIONS = ["current", "historical"] as const;
+const EXPERIENCER_OPTIONS = ["patient", "family"] as const;
+
 export function ReviewQueuePage() {
   const token = useAuthStore((s) => s.token);
   const queryClient = useQueryClient();
@@ -48,6 +52,9 @@ export function ReviewQueuePage() {
   const [editingEntity, setEditingEntity] = useState<ExtractedEntity | null>(null);
   const [corrType, setCorrType] = useState<string>("DIAGNOSIS");
   const [corrAssertion, setCorrAssertion] = useState<string>("AFFIRMED");
+  const [corrCertainty, setCorrCertainty] = useState<"confirmed" | "possible" | "absent">("confirmed");
+  const [corrTemporality, setCorrTemporality] = useState<"current" | "historical">("current");
+  const [corrExperiencer, setCorrExperiencer] = useState<"patient" | "family">("patient");
   const [corrStart, setCorrStart] = useState<number>(0);
   const [corrEnd, setCorrEnd] = useState<number>(0);
   const [corrSurface, setCorrSurface] = useState<string>("");
@@ -126,6 +133,9 @@ export function ReviewQueuePage() {
     setEditingEntity(ent);
     setCorrType(ent.entity_type);
     setCorrAssertion(ent.assertion_status);
+    setCorrCertainty(ent.certainty ?? "confirmed");
+    setCorrTemporality(ent.temporality ?? "current");
+    setCorrExperiencer(ent.experiencer ?? "patient");
     setCorrStart(ent.char_start);
     setCorrEnd(ent.char_end);
     setCorrSurface(getEntityText(ent));
@@ -287,6 +297,9 @@ export function ReviewQueuePage() {
                   action: "correct",
                   corrected_entity_type: corrType,
                   corrected_assertion_status: corrAssertion,
+                  corrected_certainty: corrCertainty,
+                  corrected_temporality: corrTemporality,
+                  corrected_experiencer: corrExperiencer,
                   corrected_char_start: corrStart,
                   corrected_char_end: corrEnd,
                   corrected_surface_text: corrSurface,
@@ -324,6 +337,51 @@ export function ReviewQueuePage() {
                     {ASSERTION_OPTIONS.map((a) => (
                       <option key={a} value={a}>
                         {a}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span>Certainty</span>
+                  <select
+                    aria-label="Corrected certainty"
+                    value={corrCertainty}
+                    onChange={(e) => setCorrCertainty(e.target.value as "confirmed" | "possible" | "absent")}
+                    className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    {CERTAINTY_OPTIONS.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span>Temporality</span>
+                  <select
+                    aria-label="Corrected temporality"
+                    value={corrTemporality}
+                    onChange={(e) => setCorrTemporality(e.target.value as "current" | "historical")}
+                    className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    {TEMPORALITY_OPTIONS.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span>Experiencer</span>
+                  <select
+                    aria-label="Corrected experiencer"
+                    value={corrExperiencer}
+                    onChange={(e) => setCorrExperiencer(e.target.value as "patient" | "family")}
+                    className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    {EXPERIENCER_OPTIONS.map((x) => (
+                      <option key={x} value={x}>
+                        {x}
                       </option>
                     ))}
                   </select>
@@ -403,6 +461,11 @@ export function ReviewQueuePage() {
                         <Badge tone={ent.assertion_status === "AFFIRMED" ? "emerald" : "amber"}>
                           {ent.assertion_status}
                         </Badge>
+                        {ent.certainty || ent.temporality || ent.experiencer ? (
+                          <span className="text-[10px] font-mono text-slate-600 dark:text-slate-300">
+                            {ent.certainty ?? "confirmed"}/{ent.temporality ?? "current"}/{ent.experiencer ?? "patient"}
+                          </span>
+                        ) : null}
                         <span className="text-slate-500 dark:text-slate-400">
                           conf {(ent.confidence * 100).toFixed(1)}%
                         </span>

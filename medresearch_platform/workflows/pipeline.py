@@ -661,6 +661,10 @@ class MedicalResearchPlatformService:
                 span_to_entity_id[(c_start, c_end)] = ent_id
                 raw_assert = str(rec.provenance.get("raw_assertion", "present"))
                 db_assert = raw_assert_to_db.get(raw_assert, "AFFIRMED")
+                db_certainty = rec.certainty if rec.certainty in ("confirmed", "possible", "absent") else "confirmed"
+                db_temporality = rec.temporality if rec.temporality in ("current", "historical") else "current"
+                db_experiencer = rec.experiencer if rec.experiencer in ("patient", "family") else "patient"
+                db_temporal_status = "HISTORICAL" if db_temporality == "historical" else "CURRENT"
                 bbox_dict = rec.region_coordinates.to_dict() if rec.region_coordinates is not None else {"x0": 0.0, "y0": 0.0, "x1": 0.0, "y1": 0.0}
                 source_stage = str(rec.provenance.get("source_stage", extraction.model_name))
                 review_status = "needs_review" if rec.review_status == "needs_review" else "AI_PREDICTED"
@@ -670,10 +674,10 @@ class MedicalResearchPlatformService:
                     INSERT INTO extracted_entities (
                         entity_id, document_id, page_number, section_type, entity_type,
                         source_text, normalized_text, terminology_concept_id, mapping_match_type,
-                        assertion_status, temporal_status, medication_status,
+                        assertion_status, certainty, temporality, experiencer, temporal_status, medication_status,
                         char_start, char_end, bbox_json, model_id, model_version, source_stage,
                         confidence, uncertainty, abstained, review_status, review_reason, created_at
-                    ) VALUES (?, ?, ?, 'PAGE_FULL', ?, ?, ?, NULL, 'UNMAPPED', ?, 'CURRENT', 'NOT_APPLICABLE', ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+                    ) VALUES (?, ?, ?, 'PAGE_FULL', ?, ?, ?, NULL, 'UNMAPPED', ?, ?, ?, ?, ?, 'NOT_APPLICABLE', ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
                     """,
                     (
                         ent_id,
@@ -683,6 +687,10 @@ class MedicalResearchPlatformService:
                         rec.original_text,
                         rec.normalized_concept or rec.extracted_value,
                         db_assert,
+                        db_certainty,
+                        db_temporality,
+                        db_experiencer,
+                        db_temporal_status,
                         c_start,
                         c_end,
                         json.dumps(bbox_dict),

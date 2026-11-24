@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from medresearch_platform.approaches.classical_ml import ClassicalCRFModel
 from medresearch_platform.data.schema import AnnotatedDocument
@@ -403,6 +403,17 @@ class ExtractionService:
                 review_reason = "high_ensemble_uncertainty"
             else:
                 review_reason = ""
+            ent_certainty: Literal["confirmed", "possible", "absent"] = (
+                "absent"
+                if ent.certainty == "absent"
+                else ("possible" if ent.certainty == "possible" else "confirmed")
+            )
+            ent_temporality: Literal["current", "historical"] = (
+                "historical" if ent.temporality == "historical" else "current"
+            )
+            ent_experiencer: Literal["patient", "family"] = (
+                "family" if ent.experiencer == "family" else "patient"
+            )
             records.append(
                 ExtractedRecord(
                     source_record_id=f"{source_record_id}_{idx}",
@@ -427,6 +438,9 @@ class ExtractionService:
                     review_status=record_review_status,
                     confidence_variance=ent_var,
                     high_uncertainty=is_high_unc,
+                    certainty=ent_certainty,
+                    temporality=ent_temporality,
+                    experiencer=ent_experiencer,
                     provenance={
                         "source_stage": stage_name,
                         "raw_assertion": ent.assertion,

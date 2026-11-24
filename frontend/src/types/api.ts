@@ -2,7 +2,11 @@ import type { components, paths } from "./openapi";
 
 export type OpenApiSchemas = components["schemas"];
 export type OpenApiPaths = paths;
-export type ReviewSubmissionRequest = OpenApiSchemas["ReviewSubmissionRequest"];
+export type ReviewSubmissionRequest = OpenApiSchemas["ReviewSubmissionRequest"] & {
+  corrected_certainty?: "confirmed" | "possible" | "absent" | null;
+  corrected_temporality?: "current" | "historical" | null;
+  corrected_experiencer?: "patient" | "family" | null;
+};
 
 export interface HumanReviewRecord {
   review_id: string;
@@ -70,6 +74,9 @@ export interface ExtractedEntity {
   char_start: number;
   char_end: number;
   assertion_status: string;
+  certainty?: "confirmed" | "possible" | "absent";
+  temporality?: "current" | "historical";
+  experiencer?: "patient" | "family";
   temporal_status: string;
   confidence: number;
   uncertainty: number;

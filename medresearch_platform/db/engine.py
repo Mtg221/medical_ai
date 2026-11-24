@@ -54,7 +54,7 @@ class DatabaseEngine:
         """Non-destructively upgrade legacy SQLite tables whose CHECK constraints or columns predated current DDL."""
         checks = {
             "documents": ("'TESSERACT_OCR'",),
-            "extracted_entities": ("'needs_review'", "review_reason", "source_stage"),
+            "extracted_entities": ("'needs_review'", "review_reason", "source_stage", "certainty", "temporality", "experiencer"),
             "extracted_relations": ("'TREATS'",),
             "human_reviews": ("'IMAGE_FINDING'", "'MARK_IMAGE_UNUSABLE'"),
             "jobs": ("original_filename",),
