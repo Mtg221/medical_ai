@@ -81,6 +81,17 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
     app.include_router(build_experiments_router(service))
     app.include_router(build_vision_router(service, jobs))
 
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon_endpoint() -> Response:
+        """Return a minimal inline SVG favicon to avoid 404 noise in browser consoles."""
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+            '<rect width="32" height="32" rx="6" fill="#0f766e"/>'
+            '<path d="M14 7h4v7h7v4h-7v7h-4v-7H7v-4h7z" fill="#ffffff"/>'
+            "</svg>"
+        )
+        return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+
     @app.get("/")
     async def web_workspace_endpoint() -> FileResponse:
         """Serve the accessible (WCAG 2.2 AA target) bilingual EN/FR single-page workspace."""
@@ -89,7 +100,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             headers={
                 "Content-Security-Policy": (
                     "default-src 'self'; script-src 'self'; style-src 'self'; "
-                    "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+                    "img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
                 ),
                 "X-Content-Type-Options": "nosniff",
                 "Referrer-Policy": "no-referrer",
@@ -113,7 +124,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
             headers={
                 "Content-Security-Policy": (
                     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-                    "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+                    "img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
                 ),
                 "X-Content-Type-Options": "nosniff",
                 "Referrer-Policy": "no-referrer",
