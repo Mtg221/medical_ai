@@ -1,0 +1,31 @@
+{
+  "generated_at_utc": "2026-11-24T14:40:46Z",
+  "elapsed_seconds": 24.96,
+  "source_split": "configs/vision/locked_test_v3.txt",
+  "output_split": "configs/vision/locked_test_v4.txt",
+  "train_v3_images_hashed": 31622,
+  "locked_test_v3_count": 1624,
+  "locked_test_v4_count": 1611,
+  "removed_exact_sha256_count": 13,
+  "post_dedup_exact_sha256_overlap_train_test": 0,
+  "removed_by_modality": {
+    "dermoscopic": 10,
+    "clinical": 3,
+    "tbp_tile": 0
+  },
+  "removed_ids": [
+    "isic:ISIC_0001160",
+    "isic:ISIC_0001309",
+    "isic:ISIC_0001364",
+    "isic:ISIC_0001540",
+    "isic:ISIC_0001705",
+    "isic:ISIC_0007078",
+    "isic:ISIC_0012112",
+    "isic:ISIC_0013273",
+    "isic:ISIC_0014175",
+    "isic:ISIC_0256903",
+    "isic:ISIC_5608083",
+    "isic:ISIC_6325650",
+    "isic:ISIC_7076637"
+  ]
+}
