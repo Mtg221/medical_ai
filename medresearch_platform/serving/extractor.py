@@ -403,16 +403,19 @@ class ExtractionService:
                 review_reason = "high_ensemble_uncertainty"
             else:
                 review_reason = ""
+            raw_cert = getattr(ent, "certainty", "confirmed")
+            raw_temp = getattr(ent, "temporality", "current")
+            raw_exp = getattr(ent, "experiencer", "patient")
             ent_certainty: Literal["confirmed", "possible", "absent"] = (
                 "absent"
-                if ent.certainty == "absent"
-                else ("possible" if ent.certainty == "possible" else "confirmed")
+                if raw_cert == "absent"
+                else ("possible" if raw_cert == "possible" else "confirmed")
             )
             ent_temporality: Literal["current", "historical"] = (
-                "historical" if ent.temporality == "historical" else "current"
+                "historical" if raw_temp == "historical" else "current"
             )
             ent_experiencer: Literal["patient", "family"] = (
-                "family" if ent.experiencer == "family" else "patient"
+                "family" if raw_exp == "family" else "patient"
             )
             records.append(
                 ExtractedRecord(
