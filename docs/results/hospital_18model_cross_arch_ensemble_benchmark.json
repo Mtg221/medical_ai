@@ -1,0 +1,111 @@
+{
+  "evaluated_at_utc": "2026-11-24T06:20:32Z",
+  "note": "post-hoc (test seen) \u2014 18-Model Cross-Architecture Hospital NLP Ensemble (15 BiLSTM + 3 From-Scratch Medical Transformer E3C-MLM, 12/18 supermajority + CRF v2)",
+  "pretrained_weights_used": false,
+  "total_models": 18,
+  "bilstm_models": 15,
+  "transformer_models": 3,
+  "splits": {
+    "open_clinical_test": {
+      "torch_18model_only": {
+        "num_docs": 443,
+        "strict_f1": 0.666924,
+        "lenient_f1": 0.72113,
+        "precision": 0.743201,
+        "recall": 0.604846,
+        "assertion_macro_f1": 0.222328,
+        "doc_acc": 1.0,
+        "en_f1": 0.535178,
+        "fr_f1": 0.82647,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.403017,
+            "lenient_f1": 0.489224
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.547059,
+            "lenient_f1": 0.621569
+          },
+          "pxcorpus": {
+            "strict_f1": 0.931221,
+            "lenient_f1": 0.944905
+          }
+        }
+      },
+      "hospital_ensemble_18model": {
+        "num_docs": 443,
+        "strict_f1": 0.677882,
+        "lenient_f1": 0.748392,
+        "precision": 0.722574,
+        "recall": 0.638397,
+        "assertion_macro_f1": 0.219504,
+        "doc_acc": 1.0,
+        "en_f1": 0.55959,
+        "fr_f1": 0.825591,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.428997,
+            "lenient_f1": 0.560079
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.572428,
+            "lenient_f1": 0.663868
+          },
+          "pxcorpus": {
+            "strict_f1": 0.929749,
+            "lenient_f1": 0.946237
+          }
+        }
+      }
+    },
+    "realistic_llm_80": {
+      "torch_18model_only": {
+        "num_docs": 80,
+        "strict_f1": 0.684942,
+        "lenient_f1": 0.752483,
+        "precision": 0.793008,
+        "recall": 0.602797,
+        "assertion_macro_f1": 0.624732,
+        "doc_acc": 0.75,
+        "en_f1": 0.682964,
+        "fr_f1": 0.687086
+      },
+      "hospital_ensemble_18model": {
+        "num_docs": 80,
+        "strict_f1": 0.719703,
+        "lenient_f1": 0.805204,
+        "precision": 0.768254,
+        "recall": 0.676923,
+        "assertion_macro_f1": 0.63415,
+        "doc_acc": 0.75,
+        "en_f1": 0.720057,
+        "fr_f1": 0.719312
+      }
+    },
+    "synth_unseen_terms": {
+      "torch_18model_only": {
+        "num_docs": 160,
+        "strict_f1": 0.911785,
+        "lenient_f1": 0.931311,
+        "precision": 0.960338,
+        "recall": 0.867906,
+        "assertion_macro_f1": 0.76807,
+        "doc_acc": 1.0,
+        "en_f1": 0.909774,
+        "fr_f1": 0.913879
+      },
+      "hospital_ensemble_18model": {
+        "num_docs": 160,
+        "strict_f1": 0.93424,
+        "lenient_f1": 0.956669,
+        "precision": 0.957173,
+        "recall": 0.91238,
+        "assertion_macro_f1": 0.772692,
+        "doc_acc": 1.0,
+        "en_f1": 0.935548,
+        "fr_f1": 0.93287
+      }
+    }
+  },
+  "elapsed_seconds": 558.97
+}

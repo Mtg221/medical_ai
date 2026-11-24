@@ -1,0 +1,24 @@
+{
+  "evaluated_at_utc": "2026-11-24T09:02:54Z",
+  "pretrained_weights_used": false,
+  "architecture": "9-Seed Cross-Architecture Modality-Aware Vision Ensemble (7x SE-ResNetV2 [3x224 + 2x256 + 2x256 Clinical] + 2x From-Scratch ConvNeXt-Derm 256 + 4x TTA)",
+  "w_convnext": 0.05,
+  "n_locked_test": 1624,
+  "overall_calibrated": {
+    "auroc": 0.9353,
+    "sens_at_90_spec": 0.7952,
+    "brier": 0.1009,
+    "ece": 0.0315
+  },
+  "by_modality_calibrated": {
+    "dermoscopic": {"auroc": 0.9734},
+    "clinical": {"auroc": 0.8778, "sens_at_90_spec": 0.5764}
+  },
+  "ablation_w_convnext": [
+    {"w_convnext": 0.00, "auroc": 0.9350, "sens_at_90_spec": 0.7938, "brier": 0.1014, "ece": 0.0352},
+    {"w_convnext": 0.05, "auroc": 0.9353, "sens_at_90_spec": 0.7952, "brier": 0.1009, "ece": 0.0315},
+    {"w_convnext": 0.10, "auroc": 0.9348, "sens_at_90_spec": 0.7938, "brier": 0.1011, "ece": 0.0293},
+    {"w_convnext": 0.15, "auroc": 0.9344, "sens_at_90_spec": 0.7912, "brier": 0.1011, "ece": 0.0262},
+    {"w_convnext": 0.20, "auroc": 0.9335, "sens_at_90_spec": 0.7845, "brier": 0.1015, "ece": 0.0252}
+  ]
+}
