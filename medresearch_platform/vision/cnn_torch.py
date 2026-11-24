@@ -112,9 +112,9 @@ class PyTorchDermResNet:
         if isinstance(arr, (str, Path)):
             with Image.open(arr) as im:
                 rgb = im.convert("RGB").resize((self.image_size, self.image_size), Image.Resampling.BILINEAR)
-                a = np.asarray(rgb, dtype=np.uint8)
+                a = np.array(rgb, dtype=np.uint8, copy=True)
         else:
-            a = np.asarray(arr)
+            a = np.array(arr, copy=True)
         if a.dtype == np.uint8:
             t = torch.from_numpy(a.transpose(2, 0, 1)).float().div_(255.0)
         else:

@@ -181,7 +181,7 @@ def preprocess_scan_image(image: Image.Image) -> tuple[np.ndarray, float, float]
         16,
         16,
         cv2.BORDER_CONSTANT,
-        value=255,
+        value=(255,),
     )
     return padded, scale, skew_angle
 
@@ -336,8 +336,8 @@ def run_tesseract_ocr(
     split_x = detect_column_split(preprocessed) if layout_aware else None
     all_lines: list[list[tuple[str, int, int, int, int, float]]] = []
     if split_x is not None:
-        left_crop = cv2.copyMakeBorder(preprocessed[:, :split_x], 0, 0, 0, pad, cv2.BORDER_CONSTANT, value=255)
-        right_crop = cv2.copyMakeBorder(preprocessed[:, split_x:], 0, 0, pad, 0, cv2.BORDER_CONSTANT, value=255)
+        left_crop = cv2.copyMakeBorder(preprocessed[:, :split_x], 0, 0, 0, pad, cv2.BORDER_CONSTANT, value=(255,))
+        right_crop = cv2.copyMakeBorder(preprocessed[:, split_x:], 0, 0, pad, 0, cv2.BORDER_CONSTANT, value=(255,))
         all_lines.extend(
             _extract_region_words(
                 left_crop, tess_lang=tess_lang, config=config, scale=scale, x_offset_px=0, pad=pad

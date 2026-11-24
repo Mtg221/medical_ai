@@ -1,0 +1,28 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /Users/guest777/Desktop/medical/.venv-vision/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/guest777/Desktop/medical
+configfile: pyproject.toml
+plugins: platformdirs-4.14.5, cov-7.1.0, anyio-4.16.0
+collecting ... collected 17 items
+
+tests/test_ocr_layout_segmentation.py::test_detect_column_split_single_vs_two_column PASSED [  5%]
+tests/test_ocr_layout_segmentation.py::test_two_column_ocr_reading_order_reduces_cer PASSED [ 11%]
+tests/test_ocr_span_mapping.py::test_identical_text_mapping_is_100_percent_exact[val] PASSED [ 17%]
+tests/test_ocr_span_mapping.py::test_identical_text_mapping_is_100_percent_exact[test_iid] PASSED [ 23%]
+tests/test_ocr_span_mapping.py::test_identical_text_mapping_is_100_percent_exact[test_unseen_terms] PASSED [ 29%]
+tests/test_ocr_span_mapping.py::test_identical_text_mapping_is_100_percent_exact[test_unseen_templates] PASSED [ 35%]
+tests/test_ocr_span_mapping.py::test_small_ocr_noise_mapping_preserves_exact_reference_bounds PASSED [ 41%]
+tests/test_ocr_stress_benchmark.py::test_tesseract_available_reports_missing_binary PASSED [ 47%]
+tests/test_ocr_stress_benchmark.py::test_render_noisy_scan_supports_all_degradations PASSED [ 52%]
+tests/test_ocr_stress_benchmark.py::test_map_ocr_spans_to_reference PASSED [ 58%]
+tests/test_ocr_stress_benchmark.py::test_ocr_stress_tiers_show_realistic_degradation PASSED [ 64%]
+tests/test_phase5_documents_ocr.py::test_cer_and_wer_metrics PASSED      [ 70%]
+tests/test_phase5_documents_ocr.py::test_digital_pdf_word_boxes_and_tables PASSED [ 76%]
+tests/test_phase5_documents_ocr.py::test_opencv_preprocessing_deskews_and_binarizes PASSED [ 82%]
+tests/test_phase5_documents_ocr.py::test_mixed_digital_and_scanned_pdf_hybrid_mode PASSED [ 88%]
+tests/test_phase5_documents_ocr.py::test_tesseract_ocr_en_and_fr_scanned_pdf_and_image PASSED [ 94%]
+tests/test_phase5_ocr_robustness.py::test_phase5_ocr_en_fr_faint_copy_skew_and_offset_preservation PASSED [100%]
+
+============================= 17 passed in 30.08s ==============================
+PYTEST_EXIT=0

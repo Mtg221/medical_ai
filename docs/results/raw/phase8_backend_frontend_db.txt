@@ -1,0 +1,36 @@
+=== 1. CLEAN EMPTY SQLITE MIGRATION & IDEMPOTENCY ===
+migration_1: {'version': '001_initial_schema', 'sqlite_checksum_sha256': '660a9b87e36b2d2e9548cf630415a4ecf4fc1ff6c5e969fc8ef2c96e2adef44b', 'postgres_schema_sha256': '87e6b8267450700d82e16b150c4d8d7f62b043c630318fbf289bd43621f0886d', 'sqlite_path': '/private/var/folders/pt/dqqy1sxn41ldb0xqyyt56pq80000gn/T/tmpoyac6k0k/var/db/medresearch.sqlite3', 'postgres_status': 'SKIPPED_NO_DATABASE_URL'}
+migration_2_idempotent: {'version': '001_initial_schema', 'sqlite_checksum_sha256': '660a9b87e36b2d2e9548cf630415a4ecf4fc1ff6c5e969fc8ef2c96e2adef44b', 'postgres_schema_sha256': '87e6b8267450700d82e16b150c4d8d7f62b043c630318fbf289bd43621f0886d', 'sqlite_path': '/private/var/folders/pt/dqqy1sxn41ldb0xqyyt56pq80000gn/T/tmpoyac6k0k/var/db/medresearch.sqlite3', 'postgres_status': 'SKIPPED_NO_DATABASE_URL'}
+tables: ['audit_logs', 'datasets', 'document_families', 'document_pages', 'document_sections', 'documents', 'encounters', 'experiments', 'extracted_entities', 'extracted_relations', 'federated_rounds', 'human_reviews', 'image_findings', 'image_text_links', 'institutions', 'jobs', 'login_attempts', 'longitudinal_events', 'models', 'ocr_blocks', 'projects', 'revoked_tokens', 'schema_migrations', 'subjects', 'terminology_concepts', 'users']
+extracted_entities_has_3axis: True
+=== 2. BACKEND JOBS, REVIEWS & REPORTS PYTEST ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /Users/guest777/Desktop/medical/.venv-vision/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/guest777/Desktop/medical
+configfile: pyproject.toml
+plugins: platformdirs-4.14.5, cov-7.1.0, anyio-4.16.0
+collecting ... collected 5 items
+
+tests/test_phase6_fastapi_jobs.py::test_pydantic_schema_export_and_validation PASSED [ 20%]
+tests/test_phase6_fastapi_jobs.py::test_fastapi_openapi_upload_jobs_and_sse PASSED [ 40%]
+tests/test_review_api_persistence.py::test_review_post_list_reload_and_export_gold PASSED [ 60%]
+tests/test_phase8_reports.py::test_bilingual_markdown_html_and_pdf_reports PASSED [ 80%]
+tests/test_phase8_reports.py::test_api_document_report_endpoint PASSED   [100%]
+
+=============================== warnings summary ===============================
+.venv-vision/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_phase6_fastapi_jobs.py::test_fastapi_openapi_upload_jobs_and_sse
+tests/test_review_api_persistence.py::test_review_post_list_reload_and_export_gold
+tests/test_phase8_reports.py::test_api_document_report_endpoint
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/torch/nn/modules/transformer.py:286: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+    warnings.warn(f"enable_nested_tensor is True, but self.use_nested_tensor is False because {why_not_sparsity_fast_path}")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 5 passed, 4 warnings in 11.57s ========================
+PYTEST_EXIT=0
+=== 3. FRONTEND MOCK-DATA SCAN ===
+ZERO_MOCK_CONSTANTS_IN_PROD_UI

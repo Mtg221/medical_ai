@@ -132,8 +132,7 @@ class HybridPipeline:
 
         # Fit Transformer reranker & temperature scaler on out-of-fold Stage 2 predictions
         rng = np.random.default_rng(self.seed)
-        shuffled_docs = list(train_docs)
-        rng.shuffle(shuffled_docs)
+        shuffled_docs = [train_docs[int(i)] for i in rng.permutation(len(train_docs))]
         self.reranker = TransformerCandidateReranker(vocab_size=len(vocab), seed=self.seed)
         oof_pairs: list[tuple[AnnotatedDocument, list[CandidateEntity]]] = []
         if bool(self.cfg.get("use_transformer_fusion", True)):

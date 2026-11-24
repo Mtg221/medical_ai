@@ -142,3 +142,88 @@
 - **Temporalité (dev `val.jsonl`) :** Extraction F1 `0.9937`, Normalisation Accuracy `1.0000` (mesurées séparément) ; `03/04/2025` EN=`2025-03-04` vs FR=`2025-04-03` (`ambiguous=True, needs_review=True`), `2025-02-30` → `None`, `2O25-03-1O` → `ocr_repaired=True, needs_review=True`.
 - **Tests Phase 4 (`docs/results/raw/phase4_pytest.txt`) :** **`53 passed in 18.80s`** (`PYTEST_EXIT=0`), incluant `test_conftest_helper_builds_valid_loadable_models`.
 - Statut : **Passed**
+
+---
+
+## Phase 5 — Audit OCR & propagation NLP (`2026-11-24T19:42Z–19:44Z`)
+
+### Commandes & sorties brutes
+- Tests OCR : `.venv-vision/bin/pytest -v tests/*ocr*.py` → `docs/results/raw/phase5_ocr_pytest.txt` (**`17 passed in 30.08s`**, `PYTEST_EXIT=0`)
+- Synthèse benchmark 120 pages (`SYNTH-MED-V3.1`, `test_iid`) : `docs/results/raw/phase5_ocr_eval.txt` (lu depuis `docs/results/v3_1_ocr_full_benchmark.json`).
+
+### Constats vérifiés
+1. **Prétraitement & robustesse (`ocr_engine.py`, `test_phase5_ocr_robustness.py`, `test_ocr_layout_segmentation.py`) :** invariant binaire `{0, 255}` préservé, sauvetage CLAHE faible contraste (`p99 - p0.1 < 110.0`), séparation 2 colonnes (`detect_column_split`), alignement span OCR→référence 100 % exact sur texte identique et robuste au bruit.
+2. **Métriques 120 pages (`v3_1_ocr_full_benchmark.json`) :**
+   - Global : CER `0.0862`, WER `0.2112`, `classical_crf` Strict F1 `0.9978 → 0.9128` (`-0.0850`), `hybrid` `0.9937 → 0.8799` (`-0.1139`).
+   - Par langue : **EN** CER `0.0824` / WER `0.1969` (`hybrid` `-0.0942`), **FR** CER `0.0899` / WER `0.2255` (`hybrid` `-0.1341`).
+   - **Contradiction doc détectée (à corriger en Phase 11) :** `PROJECT_STATUS.md:24` citait `en 0.0725, fr 0.0999` au lieu de `en 0.0824, fr 0.0899` dans `v3_1_ocr_full_benchmark.json`.
+   - Dégradation réaliste par palier : Tier 1 (`0.0046` CER, `-0.0064` F1) jusqu'à Tier 5 tableaux/multi-polices (`0.3673` CER, `-0.2442` F1) et Tier 6 flou 150 DPI (`0.1027` CER, `-0.3015` F1).
+- Statut : **Passed**
+
+---
+
+## Phase 6 — Audit Vision dermatologie (piste séparée) (`2026-11-24T19:44Z–19:49Z`)
+
+### Commandes & sortie brute
+- Commande : `.venv-vision/bin/pytest -v tests/*vision*.py tests/test_phase3_reproducibility_and_lazy_vision.py` + inspection `vision_9seed_locked_test_v4_benchmark.json` et gouvernance des jeux externes.
+- Sortie brute : `docs/results/raw/phase6_vision_audit.txt`
+- Résultat : **`23 passed in 271.07s`** (`PYTEST_EXIT=0`)
+- Statut : **Passed**
+
+### Constats vérifiés
+1. **Métriques par modalité sur `locked_test_v4` (`n=1,611`, `0` doublon SHA-256 exact vs train, `pretrained_weights_used: false`) :**
+   - Global calibré : AUROC `0.9348`, Sens@90%Spec `0.7962`, ECE `0.0333`, Brier `0.1015`.
+   - Dermoscopie (`n=690`) : AUROC `0.9727`, Sens@90%Spec `0.9291`, ECE `0.0403`, Brier `0.0662`.
+   - Clinique smartphone (`n=571`) : AUROC `0.8805`, Sens@90%Spec `0.5826`, ECE `0.0339`, Brier `0.1295`.
+   - TBP tile (`n=350`, auto-abstenu en inférence clinique) : AUROC `0.8768`, Sens@90%Spec `0.7000`, ECE `0.1017`, Brier `0.1256`.
+   - Sous-ensemble basse incertitude (`std <= 0.12`, `n=1,263`) : AUROC `0.9483`, Sens@90%Spec `0.8347`, ECE `0.0322`, Brier `0.0874`.
+2. **Sécurité & intégrité vision (`test_vision_step0_safety.py`, `test_vision_step2_data.py`, `test_vision_step3.py`) :** rejet 503 sur modèle manquant/corrompu, aucun fallback cross-patient, date de capture manquante marquée `null` + avertissement, stripping EXIF, Grad-CAM testé (avec limites Adebayo documentées dans la model card `docs/MODEL_CARD_DERM_CNN_V1.md`).
+3. **Jeux externes (PAD-UFES-20, Fitzpatrick17k, DDI) :** outillage d'ingestion sans fuite (`scripts/ingest_external_clinical_derm.py`) et protocole shadow-mode (`docs/SHADOW_MODE_CLINICAL_PROTOCOL.md`, `scripts/eval_shadow_mode.py`) prêts ; **aucun téléchargement non autorisé effectué** (licences/accès institutionnels requis).
+
+---
+
+## Phase 7 — Sécurité & vie privée (`2026-11-24T19:49Z–19:51Z`)
+
+### Commandes & sortie brute
+- Commande : `.venv-vision/bin/pytest -v tests/test_security_privacy_audit.py tests/test_phase1_p1_to_p9.py tests/test_api_and_cli.py` + vérification `SQLiteLoginRateLimiter` et en-têtes CSP/`nosniff` dans `interfaces/`.
+- Sortie brute : `docs/results/raw/phase7_security_audit.txt`
+- Résultat : **`19 passed in 96.30s`** (`PYTEST_EXIT=0`)
+- Statut : **Passed**
+
+### Constats vérifiés
+1. **Auth, RBAC, Isolation, Révocation & Rate-limit :** Argon2id + HMAC-SHA256 `jti`, `401` sur toutes les routes `/api/v1/*` protégées (`test_p8_all_api_v1_routes_require_bearer_token_401`), isolation inter-institutions `403` (`test_full_api_lifecycle_rbac_and_institution_isolation`), révocation `POST /api/v1/auth/logout`, throttling brute-force `429` persistant via `SQLiteLoginRateLimiter` (`routers/system.py:30`, zéro service externe requis).
+2. **Uploads & Sécurité web :** allowlist MIME/extension (`415` sur `.exe`), limites de taille (`413`), garde path-traversal/zip-bomb (`inspect_untrusted_bytes`), en-têtes `Content-Security-Policy` (`frame-ancestors 'none'; base-uri 'none'`), `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store` (`interfaces/api.py:90-122`).
+3. **Chaîne d'audit & désérialisation :** chaîne SHA-256 infalsifiable (`verify_audit_chain`), zéro `pickle.load`/`joblib.load`, `weights_only=True` sur tous les `torch.load` (`test_no_unsafe_deserialization_calls_in_platform`).
+
+---
+
+## Phase 8 — Backend, Frontend & DB (`2026-11-24T19:51Z–19:52Z`)
+
+### Commandes & sortie brute
+- Commande : migration SQLite depuis base vide + idempotence, `pytest` jobs/reviews/reports, et scan mock-data frontend.
+- Sortie brute : `docs/results/raw/phase8_backend_frontend_db.txt`
+- Résultat : migration `001_initial_schema` idempotente (26 tables créées, colonnes 3 axes `certainty`/`temporality`/`experiencer` présentes), **`5 passed in 11.57s`** (`PYTEST_EXIT=0`), `ZERO_MOCK_CONSTANTS_IN_PROD_UI`.
+- Statut : **Passed**
+
+---
+
+## Phase 9 — Qualité code, dépendances & performance CPU (`2026-11-24T19:52Z–19:54Z`)
+
+### Modifications
+1. **Correction des 10 erreurs `mypy` dans 6 fichiers :**
+   - `medresearch_platform/documents/ocr_engine.py:177, 339, 340` : `value=(255,)` pour correspondre à l'overload `Sequence[float]` de `cv2.copyMakeBorder`.
+   - `neural_seq.py`, `classical_ml.py`, `stage3_context_relations.py`, `stage2_ner.py`, `pipeline.py` : remplacement de `rng.shuffle(list[...])` par permutation indexée typée `rng.permutation(len(...))`.
+2. **Correction de 2 warnings :**
+   - `medresearch_platform/vision/cnn_torch.py:115-118` : `np.array(..., copy=True)` avant `torch.from_numpy` (supprime le warning `non-writable array`).
+   - `scripts/package_release_artifacts.py:150` : `tf.extractall(path=dest_resolved, filter="data")` (supprime le `DeprecationWarning` Python 3.14).
+
+### Commandes & résultats bruts (`docs/results/raw/phase9_static_and_cpu.txt`)
+- `ruff check medresearch_platform scripts tests` → **`All checks passed!`** (`RUFF_EXIT=0`)
+- `mypy medresearch_platform` → **`Success: no issues found in 99 source files`** (`MYPY_EXIT=0`, `10 → 0` erreurs)
+- Scan zéro pré-entraîné / API externe : **`ZERO_PRETRAINED_OR_EXTERNAL_API_CALLS`**
+- Profilage CPU (Intel Core i7-9750H, 32 Go RAM, CPU-only) :
+  - RSS baseline : `144.5 Mo`
+  - Chargement `hybrid_v2` : **`33.0 ms`**, RSS `148.5 Mo` (`+4.0 Mo`)
+  - Inférence 1 note `hybrid_v2` : **`29.2 ms`**, RSS `149.8 Mo`
+- Dépendances (`pyproject.toml`) : aucune nouvelle dépendance ajoutée ; contraintes `numpy<2` + `torch==2.2.2` pour macOS Intel `x86_64` intactes.
+- Statut : **Passed**

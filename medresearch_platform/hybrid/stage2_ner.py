@@ -199,8 +199,7 @@ class Stage2EntityExtractor:
     def fit(self, train_docs: list[AnnotatedDocument]) -> Stage2EntityExtractor:
         self.vocab.fit(train_docs)
         rng = np.random.default_rng(self.seed)
-        shuffled = list(train_docs)
-        rng.shuffle(shuffled)
+        shuffled = [train_docs[int(i)] for i in rng.permutation(len(train_docs))]
         subset = shuffled if self.max_train_docs is None else shuffled[: self.max_train_docs]
         n_es = max(1, int(0.12 * len(subset)))
         es_docs = subset[:n_es]

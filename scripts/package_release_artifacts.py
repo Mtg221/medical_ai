@@ -147,7 +147,7 @@ def safe_unpack_archive(archive: Path, *, expected_sha256: str, dest: Path) -> l
                 raise ValueError(f"Blocked unsafe tar path traversal member: {member.name}")
             if member.issym() or member.islnk():
                 raise ValueError(f"Blocked symlink/hardlink in release archive: {member.name}")
-        tf.extractall(path=dest_resolved)
+        tf.extractall(path=dest_resolved, filter="data")
         extracted = [m.name for m in tf.getmembers()]
     return extracted
 

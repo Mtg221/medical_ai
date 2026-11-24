@@ -173,8 +173,7 @@ def _select_train_docs(
     if raw_max is None:
         return train_docs
     rng = np.random.default_rng(seed)
-    shuffled = list(train_docs)
-    rng.shuffle(shuffled)
+    shuffled = [train_docs[int(i)] for i in rng.permutation(len(train_docs))]
     return shuffled[: int(raw_max)]
 
 

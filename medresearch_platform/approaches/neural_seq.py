@@ -794,8 +794,7 @@ def _train_and_predict_neural(
     rng = np.random.default_rng(seed)
 
     # Balanced EN/FR subset from train_docs only (never touches test); None = use all train_docs
-    shuffled_train = list(train_docs)
-    rng.shuffle(shuffled_train)
+    shuffled_train = [train_docs[int(i)] for i in rng.permutation(len(train_docs))]
     raw_max = cfg.get("max_train_docs", None)
     train_subset = shuffled_train if raw_max is None else shuffled_train[: int(raw_max)]
     n_es = max(1, int(0.12 * len(train_subset)))

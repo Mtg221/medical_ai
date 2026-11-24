@@ -1,0 +1,11 @@
+=== 1. RUFF & MYPY AFTER FIXES ===
+All checks passed!
+RUFF_EXIT=0
+Success: no issues found in 99 source files
+MYPY_EXIT=0
+=== 2. ZERO PRETRAINED / EXTERNAL API AUDIT ===
+ZERO_PRETRAINED_OR_EXTERNAL_API_CALLS
+=== 3. CPU LOAD, INFERENCE & MEMORY PROFILE ===
+baseline_rss_mb=144.5
+hybrid_v2_load_ms=33.0, rss_after_load_mb=148.5
+hybrid_v2_infer_ms=29.2, entities=9, rss_after_infer_mb=149.8

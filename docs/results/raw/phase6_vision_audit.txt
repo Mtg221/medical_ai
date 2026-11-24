@@ -1,0 +1,115 @@
+=== VISION PYTEST SUITE ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /Users/guest777/Desktop/medical/.venv-vision/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/guest777/Desktop/medical
+configfile: pyproject.toml
+plugins: platformdirs-4.14.5, cov-7.1.0, anyio-4.16.0
+collecting ... collected 23 items
+
+tests/test_phase3_reproducibility_and_lazy_vision.py::test_lazy_on_disk_vision_dataset_fit_and_predict PASSED [  4%]
+tests/test_phase3_reproducibility_and_lazy_vision.py::test_safe_unpack_archive_verifies_sha256_and_blocks_traversal PASSED [  8%]
+tests/test_vision_step0_safety.py::test_v8_missing_and_tampered_models_return_503_and_store_nothing PASSED [ 13%]
+tests/test_vision_step0_safety.py::test_v9_unknown_or_missing_subject_never_falls_back_to_other_patient PASSED [ 17%]
+tests/test_vision_step0_safety.py::test_v10_missing_capture_date_is_null_unknown_and_warned PASSED [ 21%]
+tests/test_vision_step1.py::test_fixed_dermatology_imports_and_extras_archive PASSED [ 26%]
+tests/test_vision_step1.py::test_harmonised_diagnosis_taxonomy_and_mg_consistency PASSED [ 30%]
+tests/test_vision_step1.py::test_licence_policy_evaluation PASSED        [ 34%]
+tests/test_vision_step1.py::test_catalog_streaming_splits_and_dhash_deduplication PASSED [ 39%]
+tests/test_vision_step1.py::test_derm_convnet_gradients_and_training PASSED [ 43%]
+tests/test_vision_step1.py::test_cli_derm_card_and_audit PASSED          [ 47%]
+tests/test_vision_step2.py::test_bilingual_image_quality_checks_and_inclusive_skin_tones PASSED [ 52%]
+tests/test_vision_step2.py::test_picture_triage_router_training_and_document_routing PASSED [ 56%]
+tests/test_vision_step2_data.py::test_lesion_overlap_fails_loudly_and_passes_when_disjoint PASSED [ 60%]
+tests/test_vision_step2_data.py::test_cross_split_dhash_dedup_drops_from_test_not_train PASSED [ 65%]
+tests/test_vision_step2_data.py::test_no_label_fabrication_and_no_silent_synthetic_fallback PASSED [ 69%]
+tests/test_vision_step3.py::test_classical_lesion_features_and_classifiers PASSED [ 73%]
+tests/test_vision_step3.py::test_multitask_resnet_cnn_gradcam_calibration_and_abstention PASSED [ 78%]
+tests/test_vision_step3.py::test_comprehensive_metrics_subgroups_and_holm_bootstrap PASSED [ 82%]
+tests/test_vision_step4.py::test_image_finding_contract_and_json_schema_export PASSED [ 86%]
+tests/test_vision_step4.py::test_bilingual_cutaneous_descriptors_and_same_lesion_linking PASSED [ 91%]
+tests/test_vision_step4.py::test_image_finding_review_persistence_and_gold_export PASSED [ 95%]
+tests/test_vision_step5_api.py::test_step5_image_upload_exif_stripping_linking_and_endpoints PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv-vision/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_phase3_reproducibility_and_lazy_vision.py::test_lazy_on_disk_vision_dataset_fit_and_predict
+  /Users/guest777/Desktop/medical/medresearch_platform/vision/cnn_torch.py:119: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:212.)
+    t = torch.from_numpy(a.transpose(2, 0, 1)).float().div_(255.0)
+
+tests/test_phase3_reproducibility_and_lazy_vision.py::test_safe_unpack_archive_verifies_sha256_and_blocks_traversal
+  /Users/guest777/Desktop/medical/scripts/package_release_artifacts.py:150: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    tf.extractall(path=dest_resolved)
+
+tests/test_vision_step5_api.py::test_step5_image_upload_exif_stripping_linking_and_endpoints
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/torch/nn/modules/transformer.py:286: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+    warnings.warn(f"enable_nested_tensor is True, but self.use_nested_tensor is False because {why_not_sparsity_fast_path}")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 23 passed, 4 warnings in 271.07s (0:04:31) ==================
+PYTEST_EXIT=0
+=== VISION v4 METRICS & GOVERNANCE CHECK ===
+locked_test_v4: {
+  "evaluated_at_utc": "2026-11-24T15:55:26Z",
+  "elapsed_seconds": 2165.18,
+  "split": "configs/vision/locked_test_v4.txt",
+  "pretrained_weights_used": false,
+  "exact_sha256_duplicates_vs_train": 0,
+  "w_convnext": 0.05,
+  "n_locked_test_v4": 1611,
+  "overall_calibrated": {
+    "n": 1611,
+    "malignant": 741,
+    "benign": 870,
+    "auroc": 0.9348,
+    "sens_at_90_spec": 0.7962,
+    "ece": 0.0333,
+    "brier": 0.1015
+  },
+  "by_modality_calibrated": {
+    "dermoscopic": {
+      "n": 690,
+      "malignant": 296,
+      "benign": 394,
+      "auroc": 0.9727,
+      "sens_at_90_spec": 0.9291,
+      "ece": 0.0403,
+      "brier": 0.0662
+    },
+    "clinical": {
+      "n": 571,
+      "malignant": 345,
+      "benign": 226,
+      "auroc": 0.8805,
+      "sens_at_90_spec": 0.5826,
+      "ece": 0.0339,
+      "brier": 0.1295
+    },
+    "tbp_tile": {
+      "n": 350,
+      "malignant": 100,
+      "benign": 250,
+      "auroc": 0.8768,
+      "sens_at_90_spec": 0.7,
+      "ece": 0.1017,
+      "brier": 0.1256
+    }
+  },
+  "low_uncertainty_subset": {
+    "threshold_std": 0.12,
+    "n": 1263,
+    "malignant": 599,
+    "benign": 664,
+    "auroc": 0.9483,
+    "sens_at_90_spec": 0.8347,
+    "ece": 0.0322,
+    "brier": 0.0874
+  }
+}
+  exists(docs/SHADOW_MODE_CLINICAL_PROTOCOL.md): True
+  exists(scripts/eval_shadow_mode.py): True
+  exists(scripts/ingest_external_clinical_derm.py): True
+  exists(MODEL_CARD_DERM_CNN_V1.md): False

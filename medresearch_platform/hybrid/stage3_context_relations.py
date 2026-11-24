@@ -177,8 +177,7 @@ class BiLSTMAssertionClassifier:
         rng = np.random.default_rng(seed)
         non_present: list[tuple[np.ndarray, np.ndarray, int, int]] = []
         present: list[tuple[np.ndarray, np.ndarray, int, int]] = []
-        docs_shuffled = list(train_docs)
-        rng.shuffle(docs_shuffled)
+        docs_shuffled = [train_docs[int(i)] for i in rng.permutation(len(train_docs))]
         for d in docs_shuffled:
             toks = tokenize_with_offsets(d.text)
             for e in d.entities:
@@ -190,10 +189,10 @@ class BiLSTMAssertionClassifier:
                     present.append((w_ids, flags, pidx, y))
                 else:
                     non_present.append((w_ids, flags, pidx, y))
-        rng.shuffle(present)
+        present = [present[int(i)] for i in rng.permutation(len(present))]
         keep_present = present[: max(200, min(len(present), max_examples - len(non_present)))]
         examples = non_present + keep_present
-        rng.shuffle(examples)
+        examples = [examples[int(i)] for i in rng.permutation(len(examples))]
 
         # Hold out 15% of examples to calibrate per-class precision thresholds so Stage 3b never hurts ConText
         n_cal = max(1, int(0.15 * len(examples))) if len(examples) >= 20 else 0
