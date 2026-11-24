@@ -36,6 +36,7 @@ def _make_record(idx: int, malignant: bool) -> DermCatalogRecord:
 
 def test_lazy_on_disk_vision_dataset_fit_and_predict(tmp_path: Path) -> None:
     """Verify PyTorchDermResNet.fit() and predict_batch() train & infer from disk Paths without RAM preloading."""
+    pytest.importorskip("torch")
     samples: list[tuple[Path, int, DermCatalogRecord]] = []
     for i in range(8):
         malignant = i % 2 == 1

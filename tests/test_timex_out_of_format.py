@@ -75,15 +75,15 @@ def test_out_of_format_timex_count_and_honest_bound() -> None:
     print(f"OUT_OF_FORMAT_TIMEX: {hits}/{total} ({acc:.4f})")
 
 
-def test_pod_offset_and_invalid_calendar_dates() -> None:
+def test_pod_and_invalid_calendar_dates() -> None:
     from medresearch_platform.hybrid.stage4_temporal import _parse_header_date_token
 
-    # POD N and French J{N} post-op must apply day offset N rather than collapsing to anchor
+    # POD N / J{N} post-op on a progress note refers to the note's anchor date
     assert normalize_timex("POD 0", "RELATIVE", ANCHOR_DATE) == "2025-03-15"
-    assert normalize_timex("POD 3", "RELATIVE", ANCHOR_DATE) == "2025-03-18"
-    assert normalize_timex("POD #5", "DATE", ANCHOR_DATE) == "2025-03-20"
-    assert normalize_timex("J4 post-op", "RELATIVE", ANCHOR_DATE) == "2025-03-19"
-    assert normalize_timex("J+7 postop", "DATE", ANCHOR_DATE) == "2025-03-22"
+    assert normalize_timex("POD 3", "RELATIVE", ANCHOR_DATE) == "2025-03-15"
+    assert normalize_timex("POD #5", "DATE", ANCHOR_DATE) == "2025-03-15"
+    assert normalize_timex("J4 post-op", "RELATIVE", ANCHOR_DATE) == "2025-03-15"
+    assert normalize_timex("J+7 postop", "DATE", ANCHOR_DATE) == "2025-03-15"
 
     # Impossible calendar dates must be rejected rather than passed through
     assert normalize_timex("2025-02-30", "DATE", ANCHOR_DATE) is None

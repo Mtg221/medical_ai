@@ -182,12 +182,11 @@ def _normalize_relative_expr(low: str, anchor: date) -> str | None:
         return (anchor - timedelta(days=2)).isoformat()
     if re.fullmatch(r"(?:tomorrow|demain)(?:\s+(?:morning|afternoon|evening|night|matin|soir))?", low):
         return (anchor + timedelta(days=1)).isoformat()
-    if re.fullmatch(r"(?:today|aujourd['’]hui)(?:\s+(?:morning|afternoon|evening|night|matin|soir))?", low):
+    # In daily surgical progress notes dated on POD N / J{N} post-op, the expression refers to the note's anchor date.
+    if re.fullmatch(r"(?:today|aujourd['’]hui)(?:\s+(?:morning|afternoon|evening|night|matin|soir))?", low) or re.fullmatch(
+        r"(?:pod\s*#?\s*\d+|j\s*\+?\s*\d+\s*post-?op)", low
+    ):
         return anchor.isoformat()
-    m_pod = re.fullmatch(r"(?:pod\s*#?\s*(\d+)|j\s*\+?\s*(\d+)\s*post-?op)", low)
-    if m_pod:
-        offset_days = int(m_pod.group(1) or m_pod.group(2))
-        return (anchor + timedelta(days=offset_days)).isoformat()
 
     if re.fullmatch(r"(?:last week|la semaine derni[eè]re)", low):
         return (anchor - timedelta(days=7)).isoformat()
