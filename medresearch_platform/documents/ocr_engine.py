@@ -157,14 +157,22 @@ def preprocess_scan_image(image: Image.Image) -> tuple[np.ndarray, float, float]
             borderMode=cv2.BORDER_REPLICATE,
         )
 
+    # Measure true ink-to-paper dynamic range (p99 - p0.1) so sparse black-on-white pages are never mistaken for faint scans
+    contrast_range = float(np.percentile(gray, 99) - np.percentile(gray, 0.1))
+    is_low_contrast = contrast_range < 110.0
+    if is_low_contrast:
+        clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8))
+        gray = clahe.apply(gray)
+
     denoised = cv2.medianBlur(gray, 3) if min(gray.shape[:2]) > 60 else gray
+    c_val = 10 if is_low_contrast else 15
     binary = cv2.adaptiveThreshold(
         denoised,
         255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY,
         31,
-        15,
+        c_val,
     )
     padded = cv2.copyMakeBorder(
         binary,
