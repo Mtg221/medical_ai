@@ -344,21 +344,47 @@ def detect_person_spans(text: str) -> list[PersonSpan]:
     return out
 
 
-_DURATION_PREFIX_RE = re.compile(r"(?:^|\W)(?:for|since|depuis|pendant|dans|in|over|during)\s+$", re.IGNORECASE)
+_DURATION_PREFIX_RE = re.compile(
+    r"(?:^|\W)(?:for|since|after|every|within|over|during|depuis|pendant|dans|après|apres|sous|tous\s+les|toutes\s+les)\s+$",
+    re.IGNORECASE,
+)
 _EXPLICIT_AGE_MARKER_RE = re.compile(r"(?:old|y/?o|âgée?|aged|d'[aâ]ge)", re.IGNORECASE)
+_AGE_NUM_RE = re.compile(r"\b(\d{1,3})\b")
+_SUBYEAR_UNIT_RE = re.compile(r"\b(?:days?|weeks?|months?|jours?|semaines?|mois)\b", re.IGNORECASE)
+
+
+def detect_age_spans_with_values(text: str) -> list[tuple[int, int, int, str]]:
+    """Detect EN/FR age spans as `(start, end, age_years, raw_text)`, guarding against durations and impossible ages."""
+    raw: list[tuple[int, int, int, str]] = []
+    for pat in _AGE_PATTERNS:
+        for m in pat.finditer(text):
+            prefix = text[: m.start()]
+            span_txt = m.group(0)
+            if _DURATION_PREFIX_RE.search(prefix) and not _EXPLICIT_AGE_MARKER_RE.search(span_txt):
+                continue
+            num_m = _AGE_NUM_RE.search(span_txt)
+            if not num_m:
+                continue
+            num_val = int(num_m.group(1))
+            is_subyear = bool(_SUBYEAR_UNIT_RE.search(span_txt))
+            age_years = 0 if is_subyear else num_val
+            if not is_subyear and age_years > 125:
+                continue
+            raw.append((m.start(), m.end(), age_years, span_txt))
+    # Deduplicate overlapping matches keeping longest span
+    raw.sort(key=lambda item: (item[0], -(item[1] - item[0])))
+    out: list[tuple[int, int, int, str]] = []
+    last_end = -1
+    for item in raw:
+        if item[0] >= last_end:
+            out.append(item)
+            last_end = item[1]
+    return out
 
 
 def detect_age_spans(text: str) -> list[tuple[int, int]]:
     """Detect EN/FR age expression character spans `(start, end)`."""
-    raw: list[tuple[int, int]] = []
-    for pat in _AGE_PATTERNS:
-        for m in pat.finditer(text):
-            prefix = text[: m.start()]
-            if _DURATION_PREFIX_RE.search(prefix) and not _EXPLICIT_AGE_MARKER_RE.search(m.group(0)):
-                continue
-            raw.append((m.start(), m.end()))
-    raw.sort()
-    return raw
+    return [(s, e) for s, e, _yrs, _txt in detect_age_spans_with_values(text)]
 
 
 def span_overlaps(start: int, end: int, blocked: list[tuple[int, int]]) -> bool:

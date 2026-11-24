@@ -96,3 +96,24 @@
 - Sortie brute : `docs/results/raw/phase2_human_eval_tooling.txt`
 - Résultat : **`14 passed in 0.22s`** (`EXIT=0`)
 - Statut : **Passed** (notes humaines réelles : toujours en attente du propriétaire, jamais fabriquées)
+
+---
+
+## Phase 3 — Audit et correctifs PHI (`2026-11-24T19:29Z–19:33Z`)
+
+### Constats initiaux (avant correctif)
+1. **`scripts/eval_redaction_human.py:130` :** bug de précision confirmé — `tp / (tp + fp_non_phi)` mélangeait un décompte d'entités PHI (`tp`) avec un décompte de phrases non-PHI (`fp_non_phi`), rendant invisibles les faux positifs intra-phrase.
+2. **`medresearch_platform/security/privacy.py:12` :** `detect_age_spans` n'était pas importé ni appelé par `deidentify_clinical_text`.
+3. **`medresearch_platform/security/person_age_detector.py:347` :** `_DURATION_PREFIX_RE` ne couvrait pas les préfixes `after`, `après`, `every`, `tous les`, `toutes les`, `within`, `sous` et ne filtrait pas les valeurs `> 125` ans.
+
+### Décision & modifications
+1. **`medresearch_platform/security/person_age_detector.py` :** ajout de `detect_age_spans_with_values` avec garde élargie contre les durées/fréquences (`for 14 days`, `pendant 7 jours`, `after 2 years`, `après 3 ans`, `every 5 years`, `tous les 2 ans`) et rejet des âges impossibles (`> 125`).
+2. **`medresearch_platform/security/privacy.py` :** câblage direct de `detect_age_spans_with_values` dans `deidentify_clinical_text` (`redact_ages_over_89=True` par défaut selon HIPAA Safe Harbor §164.514(b)(2)(i)(C) → `[AGE_OVER_89_REDACTED]`, et option `redact_all_ages=False` → `[AGE_REDACTED]`).
+3. **`scripts/eval_redaction_human.py` :** calcul rigoureux de `precision` / `recall` / `f1` au niveau **span** (overlap + exact-span), `strict_full_token_recall`, détection des `false_positive_spans` y compris intra-phrase, et taux `non_phi_sentence_fp_rate` strictement séparé, ventilés par langue (`en`/`fr`) et par catégorie.
+4. **`tests/test_phase3_phi_metrics_and_age.py` :** tests prouvant le masquage HIPAA `>89 ans`, l'absence de faux positifs sur durées/dates/mesures/éponymes, et la détection des FP intra-phrase.
+
+### Commande & résultat brut
+- Commande : `.venv-vision/bin/pytest -v tests/test_phase3_phi_metrics_and_age.py tests/test_step7_w10_p10_redaction.py tests/test_security_privacy_audit.py tests/test_p19_step4_y6_text_generalization.py tests/test_step1_p10_q1_to_q7.py tests/test_iaa_and_realistic_relations.py`
+- Sortie brute : `docs/results/raw/phase3_phi_eval.txt`
+- Résultat : **`19 passed in 21.75s`** (`PYTEST_EXIT=0`)
+- Statut : **Passed** (jeu humain 60 phrases PHI : en attente du propriétaire)

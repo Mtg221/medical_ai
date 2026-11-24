@@ -9,7 +9,10 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
 
-from medresearch_platform.security.person_age_detector import detect_person_spans
+from medresearch_platform.security.person_age_detector import (
+    detect_age_spans_with_values,
+    detect_person_spans,
+)
 
 
 @dataclass(frozen=True)
@@ -121,9 +124,11 @@ def deidentify_clinical_text(
     text: str,
     *,
     date_shift_days: int = 0,
-    policy_version: str = "DEID-EN-FR-v1.0",
+    policy_version: str = "DEID-EN-FR-v1.1",
+    redact_ages_over_89: bool = True,
+    redact_all_ages: bool = False,
 ) -> DeidentificationResult:
-    """Detect and mask bilingual PII spans while shifting ISO dates by a constant subject offset."""
+    """Detect and mask bilingual PII spans (including HIPAA >89 age rule) while shifting ISO dates."""
     detected: list[DetectedPIISpan] = []
     scrubbed = text
 
@@ -137,6 +142,29 @@ def deidentify_clinical_text(
                 replacement_token=f"[{sp.pii_type}_REDACTED]",
             )
         )
+
+    if redact_all_ages or redact_ages_over_89:
+        for a_start, a_end, age_years, raw_age in detect_age_spans_with_values(text):
+            if redact_all_ages:
+                detected.append(
+                    DetectedPIISpan(
+                        pii_type="AGE",
+                        start=a_start,
+                        end=a_end,
+                        original_value=raw_age,
+                        replacement_token="[AGE_REDACTED]",
+                    )
+                )
+            elif redact_ages_over_89 and age_years > 89:
+                detected.append(
+                    DetectedPIISpan(
+                        pii_type="AGE_OVER_89",
+                        start=a_start,
+                        end=a_end,
+                        original_value=raw_age,
+                        replacement_token="[AGE_OVER_89_REDACTED]",
+                    )
+                )
 
     for pii_type, pattern in _PII_PATTERNS:
         for match in pattern.finditer(text):
