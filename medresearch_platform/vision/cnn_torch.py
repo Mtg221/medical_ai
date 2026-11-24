@@ -156,10 +156,10 @@ def _build_resnet_module(
                     nn.BatchNorm2d(32),
                     nn.ReLU(inplace=True),
                 )
-                self.stage1: nn.Module = nn.Sequential(ResBlock(32, 32, stride=1, use_se=True), ResBlock(32, 32, stride=1, use_se=True))
-                self.stage2: nn.Module = nn.Sequential(ResBlock(32, 64, stride=2, use_se=True), ResBlock(64, 64, stride=1, use_se=True))
-                self.stage3: nn.Module = nn.Sequential(ResBlock(64, 128, stride=2, use_se=True), ResBlock(128, 128, stride=1, use_se=True))
-                self.stage4: nn.Module = nn.Sequential(ResBlock(128, 256, stride=2, use_se=True), ResBlock(256, 256, stride=1, use_se=True))
+                self.stage1 = nn.Sequential(ResBlock(32, 32, stride=1, use_se=True), ResBlock(32, 32, stride=1, use_se=True))
+                self.stage2 = nn.Sequential(ResBlock(32, 64, stride=2, use_se=True), ResBlock(64, 64, stride=1, use_se=True))
+                self.stage3 = nn.Sequential(ResBlock(64, 128, stride=2, use_se=True), ResBlock(128, 128, stride=1, use_se=True))
+                self.stage4 = nn.Sequential(ResBlock(128, 256, stride=2, use_se=True), ResBlock(256, 256, stride=1, use_se=True))
                 drop_p = 0.30
             else:
                 self.stem = nn.Sequential(
