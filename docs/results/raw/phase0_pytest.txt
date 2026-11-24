@@ -1,0 +1,60 @@
+....F................................................................... [ 16%]
+........................................................................ [ 33%]
+........................................................................ [ 50%]
+..............................................................XxXxxxxXX. [ 67%]
+........................................................................ [ 84%]
+..................................................................       [100%]
+=================================== FAILURES ===================================
+______________ test_conftest_helper_builds_valid_loadable_models _______________
+
+tmp_path = PosixPath('/private/var/folders/pt/dqqy1sxn41ldb0xqyyt56pq80000gn/T/pytest-of-guest777/pytest-165/test_conftest_helper_builds_va0')
+
+    def test_conftest_helper_builds_valid_loadable_models(tmp_path: Path) -> None:
+        hybrid_dir, crf_dir = ensure_corpora_and_test_models(tmp_path, force_build_models=True)
+        assert (hybrid_dir / "manifest.json").exists()
+        assert (crf_dir / "manifest.json").exists()
+    
+        svc = ExtractionService(model_dir=hybrid_dir, classical_crf_dir=crf_dir)
+        loaded = svc.list_loaded_models()
+>       assert len(loaded) == 2
+E       AssertionError: assert 3 == 2
+E        +  where 3 = len([{'model_id': 'hybrid_v2', 'name': 'hybrid_v2', 'model_type': 'hybrid', 'seed': 1, ...}, {'model_id': 'classical_crf',..._cnn_bilstm_crf', 'name': 'hospital_char_cnn_bilstm_crf', 'model_type': 'pytorch_char_cnn_bilstm_crf', 'seed': 1, ...}])
+
+tests/test_conftest_fresh_clone.py:19: AssertionError
+=============================== warnings summary ===============================
+tests/test_api_and_cli.py:7
+  /Users/guest777/Desktop/medical/tests/test_api_and_cli.py:7: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient
+
+tests/test_api_and_cli.py: 1 warning
+tests/test_api_pipeline_consistency.py: 1 warning
+tests/test_conftest_fresh_clone.py: 1 warning
+tests/test_phase1_p1_to_p9.py: 5 warnings
+tests/test_phase2_three_axis_assertion_e2e.py: 1 warning
+tests/test_phase6_fastapi_jobs.py: 1 warning
+tests/test_phase8_reports.py: 1 warning
+tests/test_review_api_persistence.py: 1 warning
+tests/test_step7_w10_p10_redaction.py: 1 warning
+tests/test_vision_step5_api.py: 1 warning
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/torch/nn/modules/transformer.py:286: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+    warnings.warn(f"enable_nested_tensor is True, but self.use_nested_tensor is False because {why_not_sparsity_fast_path}")
+
+tests/test_hidden_doc_type_and_learnability.py::test_no_approach_reads_gold_doc_type[classical_ml]
+tests/test_hidden_doc_type_and_learnability.py::test_no_approach_reads_gold_doc_type[classical_ml]
+tests/test_phase3_approaches.py::test_all_five_approaches_smoke_eval
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/sklearn/svm/_base.py:1235: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.
+    warnings.warn(
+
+tests/test_phase3_reproducibility_and_lazy_vision.py::test_lazy_on_disk_vision_dataset_fit_and_predict
+  /Users/guest777/Desktop/medical/medresearch_platform/vision/cnn_torch.py:119: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:212.)
+    t = torch.from_numpy(a.transpose(2, 0, 1)).float().div_(255.0)
+
+tests/test_phase3_reproducibility_and_lazy_vision.py::test_safe_unpack_archive_verifies_sha256_and_blocks_traversal
+  /Users/guest777/Desktop/medical/scripts/package_release_artifacts.py:150: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    tf.extractall(path=dest_resolved)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_conftest_fresh_clone.py::test_conftest_helper_builds_valid_loadable_models
+1 failed, 416 passed, 5 xfailed, 4 xpassed, 20 warnings in 699.00s (0:11:39)
+PYTEST_EXIT=1

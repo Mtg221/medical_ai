@@ -1,0 +1,113 @@
+=== 1. SYNTH-MED-V3.1 LOCK_MANIFEST SHA-256 VERIFICATION ===
+Manifest keys: ['seed', 'sha256', 'source_commit']
+
+=== 2. SYNTH-MED-V3.1 CROSS-SPLIT LEAKAGE AUDIT ===
+  train: n=600, langs={'en': 300, 'fr': 300}, doc_types=6
+  val: n=160, langs={'en': 80, 'fr': 80}, doc_types=6
+  test_iid: n=160, langs={'en': 80, 'fr': 80}, doc_types=6
+  test_unseen_terms: n=160, langs={'en': 80, 'fr': 80}, doc_types=6
+  test_unseen_templates: n=160, langs={'en': 80, 'fr': 80}, doc_types=6
+  CLEAN train vs val: 0 doc_id, 0 patient_id, 0 norm_text overlap
+  CLEAN train vs test_iid: 0 doc_id, 0 patient_id, 0 norm_text overlap
+  CLEAN train vs test_unseen_terms: 0 doc_id, 0 patient_id, 0 norm_text overlap
+  CLEAN train vs test_unseen_templates: 0 doc_id, 0 patient_id, 0 norm_text overlap
+  CLEAN val vs test_iid: 0 doc_id, 0 patient_id, 0 norm_text overlap
+  CLEAN val vs test_unseen_terms: 0 doc_id, 0 patient_id, 0 norm_text overlap
+  CLEAN val vs test_unseen_templates: 0 doc_id, 0 patient_id, 0 norm_text overlap
+  CLEAN test_iid vs test_unseen_terms: 0 doc_id, 0 patient_id, 0 norm_text overlap
+  CLEAN test_iid vs test_unseen_templates: 0 doc_id, 0 patient_id, 0 norm_text overlap
+  CLEAN test_unseen_terms vs test_unseen_templates: 0 doc_id, 0 patient_id, 0 norm_text overlap
+
+=== 3. TEST_SET_LOG.md AUDIT ===
+  TEST_SET_LOG.md NOT FOUND
+
+=== 4. VISION v3/v4 LEAKAGE & DEDUP AUDIT ===
+  docs/results/vision/v3_leakage_audit.json: {"generated_at_utc": "2026-11-24T13:58:50Z", "elapsed_seconds": 162.91, "splits": {"train_v3_images": 31622, "val_v3_images": 1497, "locked_test_v3_images": 1624}, "overlap_checks": {"id_overlap_train_val": 0, "id_overlap_train_test": 0, "id_overlap_val_test": 0, "group_overlap_train_val": 0, "group_overlap_train_test": 0, "group_overlap_val_test": 0, "exact_sha256_overlap_train_test": 13}, "dhash_train_vs_locked_test_v3": {"overall": {"n": 1624, "exact_dhash_0": 36, "near_dup_dhash_le_4": 414, "near_dup_dhash_le_4_rate": 0.2549, "close_dhash_le_8": 846, "close_dhash_le_10": 1060, "quantiles": {"p05": 2.0, "p25": 4.0, "p50": 8.0, "p75": 12.0}}, "by_modality": {"dermoscopic": {"n": 700, "exact_dhash_0": 30, "near_dup_dhash_le_4": 298, "near_dup_dhash_le_4_rate": 0.4257, "close_dhash_le_8": 536, "close_dhash_le_10": 614, "quantiles": {"p05": 1.0, "p25": 3.0, "p50": 5.0, "p75": 8.0}}, "clinical": {"n": 574, "exact_dhash_0": 6, "near_dup_dhash_le_4": 113, "near_dup_dhash_le_4_rate": 0.1969, "close_dhash_le_8": 286, "close_dhash_le_10": 372, "quantiles": {"p05": 2.0, "p25": 5.0, "p50": 9.0, "p75": 12.0}}, "tbp_tile": {"n": 350, "exact_dhash_0": 0, "near_dup_dhash_le_4": 3, "near_dup_dhash_le_4_rate": 0.0086, "close_dhash_le_8": 24, "close_dhash_le_10": 74, "quantiles": {"p05": 8.0, "p25": 11.0, "p50": 12.0, "p75": 14.0}}}}}
+  docs/results/vision/v4_dedup_audit.json: {"generated_at_utc": "2026-11-24T14:40:46Z", "elapsed_seconds": 24.96, "source_split": "configs/vision/locked_test_v3.txt", "output_split": "configs/vision/locked_test_v4.txt", "train_v3_images_hashed": 31622, "locked_test_v3_count": 1624, "locked_test_v4_count": 1611, "removed_exact_sha256_count": 13, "post_dedup_exact_sha256_overlap_train_test": 0, "removed_by_modality": {"dermoscopic": 10, "clinical": 3, "tbp_tile": 0}}
+  configs/vision/locked_test_v4.txt: n=1611, unique=1611
+
+=== 5. HUMAN & PROXY DATA PROVENANCE CHECK ===
+  data/locked/synth_med_v3_1/test_iid.jsonl: n=160, sample_sources=['synthetic_v3_1']
+  data/locked/synth_med_v3_1/test_unseen_templates.jsonl: n=160, sample_sources=['synthetic_v3_1']
+  data/locked/synth_med_v3_1/test_unseen_terms.jsonl: n=160, sample_sources=['synthetic_v3_1']
+  data/locked/synth_med_v3_1/val.jsonl: n=160, sample_sources=['synthetic_v3_1']
+  data/processed/open_clinical/by_corpus/e3c_test.jsonl: n=18, sample_sources=['e3c_layer1']
+  data/processed/open_clinical/by_corpus/e3c_train.jsonl: n=121, sample_sources=['e3c_layer1']
+  data/processed/open_clinical/by_corpus/e3c_val.jsonl: n=26, sample_sources=['e3c_layer1']
+  data/processed/open_clinical/by_corpus/maccrobat_test.jsonl: n=28, sample_sources=['maccrobat2020']
+  data/processed/open_clinical/by_corpus/maccrobat_train.jsonl: n=138, sample_sources=['maccrobat2020']
+  data/processed/open_clinical/by_corpus/maccrobat_val.jsonl: n=34, sample_sources=['maccrobat2020']
+  data/processed/open_clinical/by_corpus/pxcorpus_test.jsonl: n=397, sample_sources=['pxcorpus']
+  data/processed/open_clinical/by_corpus/pxcorpus_train.jsonl: n=1386, sample_sources=['pxcorpus']
+  data/processed/open_clinical/by_corpus/pxcorpus_val.jsonl: n=198, sample_sources=['pxcorpus']
+  data/processed/open_clinical/test.jsonl: n=443, sample_sources=['maccrobat2020', 'pxcorpus']
+  data/processed/open_clinical/train.jsonl: n=1645, sample_sources=['maccrobat2020']
+  data/processed/open_clinical/val.jsonl: n=258, sample_sources=['maccrobat2020', 'pxcorpus']
+  data/processed/open_clinical_plus_biomed/by_corpus/bc5cdr_test.jsonl: n=600, sample_sources=['bc5cdr']
+  data/processed/open_clinical_plus_biomed/by_corpus/bc5cdr_train.jsonl: n=570, sample_sources=['bc5cdr']
+  data/processed/open_clinical_plus_biomed/by_corpus/bc5cdr_val.jsonl: n=573, sample_sources=['bc5cdr']
+  data/processed/open_clinical_plus_biomed/by_corpus/e3c_test.jsonl: n=18, sample_sources=['e3c_layer1']
+  data/processed/open_clinical_plus_biomed/by_corpus/e3c_train.jsonl: n=121, sample_sources=['e3c_layer1']
+  data/processed/open_clinical_plus_biomed/by_corpus/e3c_val.jsonl: n=26, sample_sources=['e3c_layer1']
+  data/processed/open_clinical_plus_biomed/by_corpus/maccrobat_test.jsonl: n=28, sample_sources=['maccrobat2020']
+  data/processed/open_clinical_plus_biomed/by_corpus/maccrobat_train.jsonl: n=138, sample_sources=['maccrobat2020']
+  data/processed/open_clinical_plus_biomed/by_corpus/maccrobat_val.jsonl: n=34, sample_sources=['maccrobat2020']
+  data/processed/open_clinical_plus_biomed/by_corpus/ncbi_disease_test.jsonl: n=100, sample_sources=['ncbi_disease']
+  data/processed/open_clinical_plus_biomed/by_corpus/ncbi_disease_train.jsonl: n=593, sample_sources=['ncbi_disease']
+  data/processed/open_clinical_plus_biomed/by_corpus/ncbi_disease_val.jsonl: n=100, sample_sources=['ncbi_disease']
+  data/processed/open_clinical_plus_biomed/by_corpus/pxcorpus_test.jsonl: n=397, sample_sources=['pxcorpus']
+  data/processed/open_clinical_plus_biomed/by_corpus/pxcorpus_train.jsonl: n=1386, sample_sources=['pxcorpus']
+  data/processed/open_clinical_plus_biomed/by_corpus/pxcorpus_val.jsonl: n=198, sample_sources=['pxcorpus']
+  data/processed/open_clinical_plus_biomed/test.jsonl: n=1143, sample_sources=['maccrobat2020', 'pxcorpus']
+  data/processed/open_clinical_plus_biomed/train.jsonl: n=2808, sample_sources=['maccrobat2020']
+  data/processed/open_clinical_plus_biomed/val.jsonl: n=931, sample_sources=['maccrobat2020', 'pxcorpus']
+  data/processed/realistic_llm/eval.jsonl: n=80, sample_sources=['llm_authored_free_text_single_annotator']
+  data/processed/v1/test.jsonl: n=121, sample_sources=['synthetic_v2']
+  data/processed/v1/train.jsonl: n=555, sample_sources=['synthetic_v2']
+  data/processed/v1/val.jsonl: n=124, sample_sources=['synthetic_v2']
+  data/processed/v3/test_iid.jsonl: n=160, sample_sources=['synthetic_v3']
+  data/processed/v3/test_unseen_templates.jsonl: n=160, sample_sources=['synthetic_v3']
+  data/processed/v3/test_unseen_terms.jsonl: n=160, sample_sources=['synthetic_v3']
+  data/processed/v3/train.jsonl: n=600, sample_sources=['synthetic_v3']
+  data/processed/v3/val.jsonl: n=160, sample_sources=['synthetic_v3']
+  data/processed/v3_1/test_iid.jsonl: n=160, sample_sources=['synthetic_v3_1']
+  data/processed/v3_1/test_unseen_templates.jsonl: n=160, sample_sources=['synthetic_v3_1']
+  data/processed/v3_1/test_unseen_terms.jsonl: n=160, sample_sources=['synthetic_v3_1']
+  data/processed/v3_1/train.jsonl: n=600, sample_sources=['synthetic_v3_1']
+  data/processed/v3_1/val.jsonl: n=160, sample_sources=['synthetic_v3_1']
+
+=== 1B. EXACT SHA-256 VERIFICATION OF LOCK_MANIFEST.json ===
+
+=== 3B. LOCATE TEST_SET_LOG.md ===
+  Found: docs/results/TEST_SET_LOG.md (lines=58, table_rows=51, post_hoc_flagged=0)
+
+=== 2B. OPEN_CLINICAL CROSS-SPLIT LEAKAGE CHECK ===
+  open_clinical train vs val: doc_id=0, patient_id=0, norm_text=32
+  open_clinical train vs test: doc_id=0, patient_id=0, norm_text=64
+  open_clinical val vs test: doc_id=0, patient_id=0, norm_text=8
+  open_clinical_plus_biomed train vs val: doc_id=0, patient_id=0, norm_text=32
+  open_clinical_plus_biomed train vs test: doc_id=0, patient_id=0, norm_text=64
+  open_clinical_plus_biomed val vs test: doc_id=0, patient_id=0, norm_text=8
+
+=== 1C. LOCK_MANIFEST.json CONTENTS & VERIFICATION ===
+{
+  "source_commit": "5f5e3fe",
+  "seed": 42,
+  "sha256": {
+    "val": "8547d1329b25eeb2722ce9a719a38e89e5a54fef34fbbf6bfa1fc50ccea8da9a",
+    "test_iid": "f4b1380eebab0a19cb394642579434258b28ea8faa22ad0720367fba9c070859",
+    "test_unseen_terms": "f78f675453445c3cdd1e6dc34abfccc592d327c3281fbe7b3f33861e6d0bd290",
+    "test_unseen_templates": "96eac6ae8a790a405ec3d5f4dadf9265eb6d011f321f62b3b780cd726ae754d4"
+  }
+}
+  [locked] val.jsonl: match=True sha256=8547d1329b25eeb2
+  [processed] val.jsonl: match=True sha256=8547d1329b25eeb2
+  [locked] test_iid.jsonl: match=True sha256=f4b1380eebab0a19
+  [processed] test_iid.jsonl: match=True sha256=f4b1380eebab0a19
+  [locked] test_unseen_terms.jsonl: match=True sha256=f78f675453445c3c
+  [processed] test_unseen_terms.jsonl: match=True sha256=f78f675453445c3c
+  [locked] test_unseen_templates.jsonl: match=True sha256=96eac6ae8a790a40
+  [processed] test_unseen_templates.jsonl: match=True sha256=96eac6ae8a790a40
+
+=== 2C. OPEN_CLINICAL NORM_TEXT OVERLAP BREAKDOWN ===
+  open_clinical test rows matching train norm_text: 73 / 443 by source={'pxcorpus': 73}
