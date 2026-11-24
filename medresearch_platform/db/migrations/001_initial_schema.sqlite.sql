@@ -394,6 +394,12 @@ CREATE TABLE IF NOT EXISTS revoked_tokens (
     expires_at_utc TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS login_attempts (
+    rate_key TEXT NOT NULL,
+    attempted_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_key_ts ON login_attempts(rate_key, attempted_at);
+
 CREATE INDEX IF NOT EXISTS idx_documents_institution ON documents(institution_id);
 CREATE INDEX IF NOT EXISTS idx_documents_subject ON documents(subject_id);
 CREATE INDEX IF NOT EXISTS idx_entities_document ON extracted_entities(document_id);

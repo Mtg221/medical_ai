@@ -206,3 +206,36 @@ class LoginRateLimiter:
     def reset(self, key: str) -> None:
         with self._lock:
             self._failures.pop(key, None)
+
+
+class SQLiteLoginRateLimiter:
+    """Multi-worker-safe sliding-window login rate limiter backed by SQLite `login_attempts` (SEC-002)."""
+
+    def __init__(self, db: object, *, max_attempts: int = 10, window_seconds: int = 300) -> None:
+        self._db = db
+        self.max_attempts = max(1, int(max_attempts))
+        self.window_seconds = max(1, int(window_seconds))
+
+    def check(self, key: str, *, now: float | None = None) -> tuple[bool, int]:
+        ts = time.time() if now is None else now
+        cutoff = ts - self.window_seconds
+        with self._db.transaction() as conn:  # type: ignore[attr-defined]
+            conn.execute("DELETE FROM login_attempts WHERE rate_key = ? AND attempted_at <= ?", (key, cutoff))
+            rows = conn.execute(
+                "SELECT attempted_at FROM login_attempts WHERE rate_key = ? ORDER BY attempted_at ASC",
+                (key,),
+            ).fetchall()
+            if len(rows) >= self.max_attempts:
+                oldest = float(rows[0]["attempted_at"])
+                retry_after = max(1, int(self.window_seconds - (ts - oldest)) + 1)
+                return False, retry_after
+            return True, 0
+
+    def record_failure(self, key: str, *, now: float | None = None) -> None:
+        ts = time.time() if now is None else now
+        with self._db.transaction() as conn:  # type: ignore[attr-defined]
+            conn.execute("INSERT INTO login_attempts (rate_key, attempted_at) VALUES (?, ?)", (key, ts))
+
+    def reset(self, key: str) -> None:
+        with self._db.transaction() as conn:  # type: ignore[attr-defined]
+            conn.execute("DELETE FROM login_attempts WHERE rate_key = ?", (key,))

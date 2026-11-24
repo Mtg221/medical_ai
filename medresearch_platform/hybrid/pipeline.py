@@ -11,7 +11,8 @@ import numpy as np
 
 from medresearch_platform.approaches.context_negex import (
     apply_context_and_relations,
-    classify_assertion_context,
+    classify_assertion_attributes,
+    derive_assertion_attributes_from_legacy,
 )
 from medresearch_platform.approaches.neural_seq import NeuralBiLSTMCRFTagger
 from medresearch_platform.approaches.tokenizer import tokenize_with_offsets
@@ -229,17 +230,21 @@ class HybridPipeline:
         doc_toks = tokenize_with_offsets(doc.text)
         enriched_cands: list[CandidateEntity] = []
         for c in fused_cands:
-            ctx_lbl = classify_assertion_context(doc.text, c.entity.start, c.entity.end, language=s1.language)
-            if ctx_lbl == "present" and doc.language in ("en", "fr") and doc.language != s1.language:
-                ctx_lbl = classify_assertion_context(doc.text, c.entity.start, c.entity.end, language=doc.language)
+            ctx_attrs = classify_assertion_attributes(doc.text, c.entity.start, c.entity.end, language=s1.language)
+            if ctx_attrs.legacy_assertion == "present" and doc.language in ("en", "fr") and doc.language != s1.language:
+                ctx_attrs = classify_assertion_attributes(doc.text, c.entity.start, c.entity.end, language=doc.language)
+            ctx_lbl = ctx_attrs.legacy_assertion
             if ctx_lbl != "present":
                 assert_lbl = ctx_lbl
+                attrs = ctx_attrs
             elif use_assertion_bilstm and self.assertion_model is not None:
                 assert_lbl = self.assertion_model.predict_calibrated(
                     doc.text, c.entity.start, c.entity.end, vocab, fallback_label=ctx_lbl, toks=doc_toks
                 )
+                attrs = derive_assertion_attributes_from_legacy(assert_lbl) if assert_lbl != "present" else ctx_attrs
             else:
                 assert_lbl = ctx_lbl
+                attrs = ctx_attrs
             cal_conf = self.scaler.calibrate(c.entity.confidence)
             enriched_cands.append(
                 CandidateEntity(
@@ -251,6 +256,9 @@ class HybridPipeline:
                         assertion=assert_lbl,
                         confidence=cal_conf,
                         needs_review=(cal_conf < 0.65),
+                        certainty=attrs.certainty,
+                        temporality=attrs.temporality,
+                        experiencer=attrs.experiencer,
                     ),
                     source_stage=c.source_stage,
                 )
@@ -307,6 +315,9 @@ class HybridPipeline:
                     "type": c.entity.type,
                     "text": c.entity.text,
                     "assertion": c.entity.assertion,
+                    "certainty": c.entity.certainty,
+                    "temporality": c.entity.temporality,
+                    "experiencer": c.entity.experiencer,
                     "confidence": c.entity.confidence,
                     "char_start": c.entity.start,
                     "char_end": c.entity.end,

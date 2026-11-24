@@ -101,6 +101,9 @@ def _build_lexicon_patterns() -> list[tuple[str, str, re.Pattern[str], float]]:
     for a3 in (*ANATOMY_EN, *ANATOMY_FR):
         for t in a3.variants:
             entries.append(("LEX_ANAT", "ANATOMY", t))
+    # High-precision common clinical head terms not always spelled with full subtype qualifier
+    for extra_dx in ("diabetes", "diabète", "asthma", "asthme", "hypertension", "pneumonia", "pneumonie"):
+        entries.append(("LEX_DX", "DIAGNOSIS", extra_dx))
 
     # Longest match first, deduplicated
     seen: set[tuple[str, str]] = set()

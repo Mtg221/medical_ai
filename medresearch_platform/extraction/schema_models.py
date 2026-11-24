@@ -11,6 +11,9 @@ from pydantic import BaseModel, Field
 AssertionStatusType = Literal[
     "present", "absent", "uncertain", "hypothetical", "family_history", "historical"
 ]
+CertaintyType = Literal["confirmed", "possible", "absent"]
+TemporalityType = Literal["current", "historical"]
+ExperiencerType = Literal["patient", "family"]
 NegationStatusType = Literal["affirmed", "negated", "uncertain"]
 ReviewStatusType = Literal[
     "unreviewed", "needs_review", "approved", "corrected", "rejected", "flagged", "image_unusable"
@@ -114,6 +117,9 @@ class ExtractedRecordSchema(BaseModel):
     language: str
     negation_status: NegationStatusType
     assertion_status: AssertionStatusType
+    certainty: CertaintyType = "confirmed"
+    temporality: TemporalityType = "current"
+    experiencer: ExperiencerType = "patient"
     uncertainty: float = Field(ge=0.0, le=1.0)
     temporal_information: str | None = None
     relationships: list[ExtractedRelationshipSchema] = Field(default_factory=list)

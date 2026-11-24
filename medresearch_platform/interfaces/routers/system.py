@@ -21,13 +21,13 @@ from medresearch_platform.interfaces.routers.common import (
 )
 from medresearch_platform.interfaces.schemas import TokenRequest, TokenResponse
 from medresearch_platform.security.audit import verify_audit_chain
-from medresearch_platform.security.auth import LoginRateLimiter, issue_access_token, verify_password
+from medresearch_platform.security.auth import SQLiteLoginRateLimiter, issue_access_token, verify_password
 from medresearch_platform.workflows.pipeline import MedicalResearchPlatformService
 
 
 def build_system_router(service: MedicalResearchPlatformService) -> APIRouter:
     router = APIRouter(tags=["system"])
-    login_limiter = LoginRateLimiter(max_attempts=10, window_seconds=300)
+    login_limiter = SQLiteLoginRateLimiter(service.db, max_attempts=10, window_seconds=300)
 
     @router.get("/api/v1/health")
     async def health_endpoint() -> JSONResponse:

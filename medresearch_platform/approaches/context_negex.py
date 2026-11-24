@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
+from typing import Literal
 
 from medresearch_platform.data.schema import AnnotatedDocument
 from medresearch_platform.eval_harness.metrics import (
@@ -42,8 +44,15 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             "hereditary risk: ",
             "sibling diagnosed with ",
             "mother had ",
+            "mother has ",
             "mother with ",
+            "her mother ",
+            "his mother ",
             "father had ",
+            "father has ",
+            "her father ",
+            "his father ",
+            "parents have ",
         ),
         "historical": (
             "history of ",
@@ -245,13 +254,36 @@ def _apply_general_clause_scope(
     return pre_window
 
 
-def classify_assertion_context(text: str, start: int, end: int, language: str = "en") -> str:
-    """ConText/NegEx-style assertion classification with Unicode word-boundary cue matching and general clause scope."""
+@dataclass(frozen=True)
+class AssertionAttributes:
+    """Orthogonal 3-axis clinical assertion contract (NLP-002)."""
+
+    certainty: Literal["confirmed", "possible", "absent"] = "confirmed"
+    temporality: Literal["current", "historical"] = "current"
+    experiencer: Literal["patient", "family"] = "patient"
+    legacy_assertion: str = "present"
+
+
+def derive_assertion_attributes_from_legacy(assertion: str) -> AssertionAttributes:
+    """Backward-compatible projection from legacy single-axis assertion enum without silent loss."""
+    low = str(assertion or "present").strip().lower()
+    if low == "absent":
+        return AssertionAttributes(certainty="absent", temporality="current", experiencer="patient", legacy_assertion="absent")
+    if low in {"possible", "uncertain", "hypothetical"}:
+        return AssertionAttributes(certainty="possible", temporality="current", experiencer="patient", legacy_assertion=low)
+    if low == "historical":
+        return AssertionAttributes(certainty="confirmed", temporality="historical", experiencer="patient", legacy_assertion="historical")
+    if low in {"family", "family_history"}:
+        return AssertionAttributes(certainty="confirmed", temporality="current", experiencer="family", legacy_assertion="family")
+    return AssertionAttributes(certainty="confirmed", temporality="current", experiencer="patient", legacy_assertion="present")
+
+
+def classify_assertion_attributes(text: str, start: int, end: int, language: str = "en") -> AssertionAttributes:
+    """Orthogonal 3-axis ConText/NegEx classifier (certainty × temporality × experiencer)."""
     lang = language if language in CONTEXT_CUES else "en"
     compiled = _COMPILED_CUES[lang]
     term_patterns = _COMPILED_TERMINATORS[lang]
 
-    # Restrict scope to the current sentence/clause
     pre_window = text[max(0, start - 90) : start].lower()
     post_window = text[end : min(len(text), end + 45)].lower()
 
@@ -265,42 +297,82 @@ def classify_assertion_context(text: str, start: int, end: int, language: str = 
 
     target_lower = text[start:end].lower()
     pre_window = _apply_general_clause_scope(pre_window, target_lower, post_window, lang)
-
     full_clause = pre_window + " " + target_lower + " " + post_window
-    if _matches_any(compiled["pseudo_neg"], full_clause):
-        return "present"
-    if _matches_any(compiled["family"], pre_window):
-        return "family"
-    if _matches_any(compiled["hypothetical"], pre_window):
-        return "hypothetical"
-    if _matches_any(compiled["neg_pre"], pre_window) or _matches_any(compiled["neg_post"], post_window):
-        return "absent"
-    if _matches_any(compiled["possible"], pre_window) or _matches_any(compiled["possible"], post_window):
-        return "possible"
-    if _matches_any(compiled["historical"], pre_window):
-        return "historical"
-    return "present"
+
+    is_pseudo_neg = _matches_any(compiled["pseudo_neg"], full_clause)
+    is_family = _matches_any(compiled["family"], pre_window)
+    is_hypothetical = _matches_any(compiled["hypothetical"], pre_window)
+    is_negated = (not is_pseudo_neg) and (
+        _matches_any(compiled["neg_pre"], pre_window) or _matches_any(compiled["neg_post"], post_window)
+    )
+    is_possible = (not is_pseudo_neg) and (
+        _matches_any(compiled["possible"], pre_window) or _matches_any(compiled["possible"], post_window)
+    )
+    is_historical = _matches_any(compiled["historical"], pre_window)
+
+    certainty: Literal["confirmed", "possible", "absent"]
+    if is_negated:
+        certainty = "absent"
+    elif is_possible or is_hypothetical:
+        certainty = "possible"
+    else:
+        certainty = "confirmed"
+
+    temporality: Literal["current", "historical"] = "historical" if is_historical else "current"
+    experiencer: Literal["patient", "family"] = "family" if is_family else "patient"
+
+    if is_pseudo_neg:
+        legacy = "present"
+    elif is_family:
+        legacy = "family"
+    elif is_hypothetical:
+        legacy = "hypothetical"
+    elif is_negated:
+        legacy = "absent"
+    elif is_possible:
+        legacy = "possible"
+    elif is_historical:
+        legacy = "historical"
+    else:
+        legacy = "present"
+
+    return AssertionAttributes(
+        certainty=certainty,
+        temporality=temporality,
+        experiencer=experiencer,
+        legacy_assertion=legacy,
+    )
+
+
+def classify_assertion_context(text: str, start: int, end: int, language: str = "en") -> str:
+    """Backward-compatible single-axis ConText/NegEx assertion classifier."""
+    return classify_assertion_attributes(text, start, end, language=language).legacy_assertion
 
 
 def apply_context_and_relations(
     doc: AnnotatedDocument,
     entities: list[PredictedEntity],
 ) -> tuple[list[PredictedEntity], list[PredictedRelation], list[PredictedTimex]]:
-    """Apply ConText assertion, extract proximity relations, and normalize simple TIMEX expressions."""
-    enriched: list[PredictedEntity] = [
-        PredictedEntity(
-            type=e.type,
-            start=e.start,
-            end=e.end,
-            text=e.text,
-            assertion=classify_assertion_context(doc.text, e.start, e.end, language=doc.language),
-            confidence=e.confidence,
-            needs_review=e.needs_review,
-            confidence_variance=e.confidence_variance,
-            high_uncertainty=e.high_uncertainty,
+    """Apply 3-axis ConText assertion, extract proximity relations, and normalize simple TIMEX expressions."""
+    enriched: list[PredictedEntity] = []
+    for e in entities:
+        attrs = classify_assertion_attributes(doc.text, e.start, e.end, language=doc.language)
+        enriched.append(
+            PredictedEntity(
+                type=e.type,
+                start=e.start,
+                end=e.end,
+                text=e.text,
+                assertion=attrs.legacy_assertion,
+                confidence=e.confidence,
+                needs_review=e.needs_review,
+                confidence_variance=e.confidence_variance,
+                high_uncertainty=e.high_uncertainty,
+                certainty=attrs.certainty,
+                temporality=attrs.temporality,
+                experiencer=attrs.experiencer,
+            )
         )
-        for e in entities
-    ]
 
     relations: list[PredictedRelation] = []
     # Same-line / short-window pairing for standard medical relations

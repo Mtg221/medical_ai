@@ -6,6 +6,9 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
 AssertionStatus = Literal["present", "absent", "uncertain", "hypothetical", "family_history", "historical"]
+CertaintyStatus = Literal["confirmed", "possible", "absent"]
+TemporalityStatus = Literal["current", "historical"]
+ExperiencerStatus = Literal["patient", "family"]
 NegationStatus = Literal["affirmed", "negated", "uncertain"]
 ReviewStatus = Literal["unreviewed", "needs_review", "approved", "corrected", "rejected", "flagged", "image_unusable"]
 RiskBand = Literal["low", "medium", "high", "abstained"]
@@ -97,6 +100,9 @@ class ExtractedRecord:
     review_status: ReviewStatus = "unreviewed"
     confidence_variance: float = 0.0
     high_uncertainty: bool = False
+    certainty: CertaintyStatus = "confirmed"
+    temporality: TemporalityStatus = "current"
+    experiencer: ExperiencerStatus = "patient"
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -158,12 +164,26 @@ def build_extracted_record(
     region_coordinates: RegionCoordinates | None = None,
     relationships: tuple[ExtractedRelationship, ...] = (),
     review_status: ReviewStatus = "unreviewed",
+    certainty: CertaintyStatus | None = None,
+    temporality: TemporalityStatus | None = None,
+    experiencer: ExperiencerStatus | None = None,
 ) -> ExtractedRecord:
-    """Construct an ExtractedRecord with consistent uncertainty calculation."""
+    """Construct an ExtractedRecord with consistent uncertainty and 3-axis assertion attributes."""
     bounded_conf = max(0.0, min(1.0, float(confidence_score)))
     uncertainty = round(1.0 - bounded_conf, 4)
     if assertion_status == "uncertain":
         uncertainty = max(uncertainty, 0.35)
+    eff_certainty: CertaintyStatus = certainty or (
+        "absent"
+        if (assertion_status == "absent" or negation_status == "negated")
+        else ("possible" if assertion_status in {"uncertain", "hypothetical"} else "confirmed")
+    )
+    eff_temporality: TemporalityStatus = temporality or (
+        "historical" if assertion_status == "historical" else "current"
+    )
+    eff_experiencer: ExperiencerStatus = experiencer or (
+        "family" if assertion_status == "family_history" else "patient"
+    )
     return ExtractedRecord(
         source_record_id=source_record_id,
         document_id=document_id,
@@ -186,6 +206,9 @@ def build_extracted_record(
         model_version=model_version,
         provenance=dict(provenance),
         review_status=review_status,
+        certainty=eff_certainty,
+        temporality=eff_temporality,
+        experiencer=eff_experiencer,
     )
 
 

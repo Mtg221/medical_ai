@@ -256,6 +256,106 @@ def _normalize_relative_expr(low: str, anchor: date) -> str | None:
     return None
 
 
+_OCR_DIGIT_MAP: dict[str, str] = {"o": "0", "O": "0", "s": "5", "S": "5", "l": "1", "I": "1"}
+
+
+def _repair_ocr_date_token(raw: str) -> tuple[str, bool]:
+    """Conservatively repair single-char OCR confusions (O->0, S->5, l/I->1) inside numeric date tokens."""
+    stripped = raw.strip()
+    if re.fullmatch(r"[0-9oOsSlI]{4}-[0-9oOsSlI]{2}-[0-9oOsSlI]{2}", stripped) and not re.fullmatch(
+        r"\d{4}-\d{2}-\d{2}", stripped
+    ):
+        fixed = "".join(_OCR_DIGIT_MAP.get(ch, ch) for ch in stripped)
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", fixed):
+            return fixed, True
+    if re.fullmatch(r"[0-9oOsSlI]{1,2}/[0-9oOsSlI]{1,2}/[0-9oOsSlI]{2,4}", stripped) and not re.fullmatch(
+        r"\d{1,2}/\d{1,2}/\d{2,4}", stripped
+    ):
+        fixed = "".join(_OCR_DIGIT_MAP.get(ch, ch) for ch in stripped)
+        if re.fullmatch(r"\d{1,2}/\d{1,2}/\d{2,4}", fixed):
+            return fixed, True
+    return stripped, False
+
+
+def normalize_timex_detailed(
+    text: str,
+    ttype: str,
+    document_date: str,
+    *,
+    language: str = "auto",
+) -> dict[str, object]:
+    """Normalize EN/FR TIMEX with explicit ambiguity flagging, date-range support, and OCR digit repair (TEMP-001)."""
+    repaired_txt, ocr_repaired = _repair_ocr_date_token(text)
+    low = re.sub(r"\s+", " ", repaired_txt.lower().strip()).replace("’", "'")
+
+    # 1. Explicit date ranges: "from March 1 to March 5, 2025" / "du 1 au 5 mars 2025"
+    if ttype == "DATE":
+        m_en_range = re.fullmatch(
+            r"(?:from\s+)?([a-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s+(?:to|-|–|through)\s+([a-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{4})",
+            low,
+        )
+        if m_en_range and m_en_range.group(1) in _MONTHS and m_en_range.group(3) in _MONTHS:
+            y = int(m_en_range.group(5))
+            d1 = _valid_iso_date(y, _MONTHS[m_en_range.group(1)], int(m_en_range.group(2)))
+            d2 = _valid_iso_date(y, _MONTHS[m_en_range.group(3)], int(m_en_range.group(4)))
+            if d1 and d2:
+                return {
+                    "normalized": f"{d1}/{d2}",
+                    "ambiguous": False,
+                    "needs_review": False,
+                    "reason": None,
+                    "ocr_repaired": ocr_repaired,
+                    "original_text": text,
+                }
+        m_fr_range = re.fullmatch(
+            r"(?:du\s+)?(\d{1,2})(?:er)?\s+(?:au|-|–)\s+(\d{1,2})(?:er)?\s+([a-zàâäéèêëîïôöùûü]+)\.?\s+(\d{4})",
+            low,
+        )
+        if m_fr_range and m_fr_range.group(3) in _MONTHS:
+            y = int(m_fr_range.group(4))
+            m = _MONTHS[m_fr_range.group(3)]
+            d1 = _valid_iso_date(y, m, int(m_fr_range.group(1)))
+            d2 = _valid_iso_date(y, m, int(m_fr_range.group(2)))
+            if d1 and d2:
+                return {
+                    "normalized": f"{d1}/{d2}",
+                    "ambiguous": False,
+                    "needs_review": False,
+                    "reason": None,
+                    "ocr_repaired": ocr_repaired,
+                    "original_text": text,
+                }
+
+        # 2. Ambiguous numeric DD/MM vs MM/DD check (never silently hide ambiguity)
+        m_num = re.fullmatch(r"(\d{1,2})[/\-](\d{1,2})[/\-](\d{2}|\d{4})", low)
+        if m_num:
+            a, b = int(m_num.group(1)), int(m_num.group(2))
+            year = _expand_year(m_num.group(3))
+            if 1 <= a <= 12 and 1 <= b <= 12 and a != b:
+                if language == "en":
+                    norm = _valid_iso_date(year, a, b)
+                else:
+                    norm = _valid_iso_date(year, b, a)
+                return {
+                    "normalized": norm,
+                    "ambiguous": True,
+                    "needs_review": True,
+                    "reason": "ambiguous_day_month_order",
+                    "ocr_repaired": ocr_repaired,
+                    "original_text": text,
+                }
+
+    norm_val = normalize_timex(repaired_txt, ttype, document_date)
+    return {
+        "normalized": norm_val,
+        "ambiguous": False,
+        "needs_review": bool(ocr_repaired or norm_val is None),
+        "reason": "ocr_digit_repaired" if ocr_repaired else None,
+        "ocr_repaired": ocr_repaired,
+        "original_text": text,
+    }
+
+
 def normalize_timex(text: str, ttype: str, document_date: str) -> str | None:
     """Normalize EN/FR date, relative, duration, or frequency expression against document_date."""
     low = re.sub(r"\s+", " ", text.lower().strip()).replace("’", "'")
@@ -469,12 +569,25 @@ class CRFTemporalTagger:
         _flush()
 
         regex_timex_rules: tuple[tuple[str, re.Pattern[str]], ...] = (
-            ("RELATIVE", re.compile(r"\b(?:depuis|dans|il y a|in)\s+\d+\s+(?:jours?|semaines?|mois|days?|weeks?|months?)\b", re.IGNORECASE)),
-            ("RELATIVE", re.compile(r"\b\d+\s+(?:days?|weeks?|months?)\s+ago\b", re.IGNORECASE)),
+            (
+                "RELATIVE",
+                re.compile(
+                    rf"\b(?:depuis|dans|il y a|in)\s+{_NUM_TOKEN_PATTERN}\s+(?:jours?|semaines?|mois|days?|weeks?|months?)\b",
+                    re.IGNORECASE,
+                ),
+            ),
+            ("RELATIVE", re.compile(rf"\b{_NUM_TOKEN_PATTERN}\s+(?:days?|weeks?|months?)\s+ago\b", re.IGNORECASE)),
             ("RELATIVE", re.compile(r"\b(?:hier|aujourd'hui|la veille|yesterday|today)\b", re.IGNORECASE)),
             ("DATE", re.compile(r"\b\d{4}-\d{2}-\d{2}\b")),
             ("DATE", re.compile(r"\b\d{1,2}/\d{1,2}/\d{4}\b")),
-            ("DURATION", re.compile(r"\b(?:for|pendant|durant)\s+\d+\s+(?:jours?|semaines?|mois|ans?|days?|weeks?|months?|years?)\b", re.IGNORECASE)),
+            (
+                "DURATION",
+                re.compile(
+                    rf"\b(?:for|pendant|durant|during(?:\s+the\s+last)?)\s+{_NUM_TOKEN_PATTERN}\s+"
+                    r"(?:heures?|jours?|semaines?|mois|ans?|hours?|days?|weeks?|months?|years?)\b",
+                    re.IGNORECASE,
+                ),
+            ),
         )
         for rx_type, rx_pat in regex_timex_rules:
             for m in rx_pat.finditer(text):

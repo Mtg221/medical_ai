@@ -113,9 +113,22 @@ _ASSERTION_CUE_WORDS: frozenset[str] = frozenset(
 )
 
 _DURATION_AFTER_PREP_RE = re.compile(
-    r"\b(?:depuis|pendant|for|since)\s+((?:\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|quelques|several|a\s+few)\s+"
+    r"\b(?:depuis|pendant|durant|for|since|during(?:\s+the\s+last)?)\s+"
+    r"((?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fourteen|fifteen|twenty|thirty|"
+    r"un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|quelques|several|a\s+few)\s+"
     r"(?:heures?|jours?|semaines?|mois|ans?|années?|hours?|days?|weeks?|months?|years?))\b",
     re.IGNORECASE | re.UNICODE,
+)
+
+_NON_MEDICATION_VERBS: frozenset[str] = frozenset(
+    {
+        "took", "take", "takes", "taking", "started", "stopped", "prescribed", "given", "received",
+        "prend", "prends", "pris", "prise", "reçoit", "reçu", "débuté", "arrêté",
+    }
+)
+
+_TRAILING_AUX_VERBS: frozenset[str] = frozenset(
+    {"does", "do", "did", "is", "was", "are", "were", "has", "have", "had"}
 )
 
 
@@ -127,8 +140,16 @@ def _is_disallowed_entity(ent: PredictedEntity) -> bool:
         return True
     if low in _ASSERTION_CUE_WORDS:
         return True
+    if ent.type == "MEDICATION" and low in _NON_MEDICATION_VERBS:
+        return True
     if ent.type in {"MEDICATION", "SYMPTOM", "DIAGNOSIS"} and low in _TIME_UNIT_WORDS:
         return True
+    if ent.type == "ANATOMY":
+        toks = low.split()
+        if any(t in _TIME_UNIT_WORDS for t in toks):
+            return True
+        if toks and toks[-1] in _TRAILING_AUX_VERBS:
+            return True
     return False
 
 

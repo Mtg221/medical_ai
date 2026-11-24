@@ -23,6 +23,9 @@ class PredictedEntity:
     needs_review: bool = False
     confidence_variance: float = 0.0
     high_uncertainty: bool = False
+    certainty: str = "confirmed"
+    temporality: str = "current"
+    experiencer: str = "patient"
 
 
 @dataclass(frozen=True)

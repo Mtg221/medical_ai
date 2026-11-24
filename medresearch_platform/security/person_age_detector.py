@@ -305,7 +305,8 @@ def detect_person_spans(text: str) -> list[PersonSpan]:
             spans.append(PersonSpan("PATIENT_NAME", m.start(1), m.end(1), m.group(1)))
 
     for m in _RELATIVE_PERSON_RE.finditer(text):
-        if m.group(2) and not _overlaps_eponym(m.start(0), m.end(0)):
+        rel_name = m.group(2)
+        if rel_name and rel_name[0].isupper() and not _overlaps_eponym(m.start(0), m.end(0)):
             spans.append(PersonSpan("PATIENT_NAME", m.start(0), m.end(0), m.group(0)))
 
     med_phrases, med_words = _medical_lexicon_words()
