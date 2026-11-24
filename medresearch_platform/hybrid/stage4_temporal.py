@@ -482,13 +482,13 @@ def normalize_timex(text: str, ttype: str, document_date: str) -> str | None:
             return f"PT{int(m_qh.group(1))}H"
         if re.search(r"\b(?:qhs|q\.h\.s\.?|au coucher|at bedtime)\b", low):
             return "QHS"
-        if re.search(r"\b(?:three times daily|t\.i\.d\.?|tid|3\s*fois\s*(?:par|/)\s*jour|3\s*[x×]\s*/\s*j|3\s*cp\s*/\s*j|toutes les 8 heures)\b", low):
+        if re.search(r"\b(?:three times daily|t\.i\.d\.?|tid|(?:3|trois)\s*fois\s*(?:par|/)\s*jour|3\s*[x×]\s*/\s*j|3\s*cp\s*/\s*j|toutes les 8 heures)\b", low):
             return "TID"
-        if re.search(r"\b(?:four times daily|q\.i\.d\.?|qid|4\s*fois\s*(?:par|/)\s*jour|4\s*[x×]\s*/\s*j)\b", low):
+        if re.search(r"\b(?:four times daily|q\.i\.d\.?|qid|(?:4|quatre)\s*fois\s*(?:par|/)\s*jour|4\s*[x×]\s*/\s*j)\b", low):
             return "QID"
-        if re.search(r"\b(?:twice daily|b\.i\.d\.?|bid|matin et soir|2\s*fois\s*(?:par|/)\s*jour|2\s*[x×]\s*/\s*j|1\s*cp\s*[x×]\s*2\s*/\s*j)\b", low):
+        if re.search(r"\b(?:twice daily|b\.i\.d\.?|bid|matin et soir|(?:2|deux)\s*fois\s*(?:par|/)\s*jour|2\s*[x×]\s*/\s*j|1\s*cp\s*[x×]\s*2\s*/\s*j)\b", low):
             return "BID"
-        if re.search(r"\b(?:once daily|1\s*fois\s*(?:par|/)\s*jour|q\.d\.?|qd|1\s*[x×]\s*/\s*j|1\s*cp\s*/\s*j)\b", low):
+        if re.search(r"\b(?:once daily|(?:1|une?)\s*fois\s*(?:par|/)\s*jour|q\.d\.?|qd|1\s*[x×]\s*/\s*j|1\s*cp\s*/\s*j)\b", low):
             return "QD"
         if re.search(r"\b(?:once weekly|weekly|1\s*[x×]\s*/\s*sem(?:aine)?|1\s*fois\s*(?:par|/)\s*semaine|hebdomadaire)\b", low):
             return "P1W"
@@ -585,6 +585,15 @@ class CRFTemporalTagger:
                 re.compile(
                     rf"\b(?:for|pendant|durant|during(?:\s+the\s+last)?)\s+{_NUM_TOKEN_PATTERN}\s+"
                     r"(?:heures?|jours?|semaines?|mois|ans?|hours?|days?|weeks?|months?|years?)\b",
+                    re.IGNORECASE,
+                ),
+            ),
+            (
+                "FREQUENCY",
+                re.compile(
+                    r"\b(?:once daily|twice daily|three times daily|four times daily|once weekly|as needed|"
+                    r"une fois par jour|deux fois par jour|trois fois par jour|matin et soir|au coucher|si besoin|"
+                    r"[1-4]\s*fois\s*(?:par|/)\s*jour)\b",
                     re.IGNORECASE,
                 ),
             ),

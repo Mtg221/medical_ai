@@ -715,7 +715,17 @@ class PyTorchCharCNNBiLSTMCRF:
                 paths, confs = self.net.viterbi_decode(em, batch["mask"])
                 all_tags.extend(ID_TO_TAG[tid] for tid in paths[0])
                 all_confs.extend(confs[0])
-        return decode_bio_to_entities(text, toks, all_tags, all_confs)
+        decoded = decode_bio_to_entities(text, toks, all_tags, all_confs)
+        # Closed-class EN/FR determiner/pronoun guard (prevents e.g. FR 'Sa' -> DATE confusion)
+        _closed_non_ent = frozenset({"his", "her", "their", "our", "my", "son", "sa", "ses", "leur", "le", "la", "les"})
+        return [
+            e
+            for e in decoded
+            if not (
+                e.type in {"DATE", "DIAGNOSIS", "SYMPTOM", "MEDICATION", "ANATOMY", "PROCEDURE"}
+                and e.text.strip().lower() in _closed_non_ent
+            )
+        ]
 
     def save(self, model_dir: Path | str) -> Path:
         if not self._fitted or self.net is None:

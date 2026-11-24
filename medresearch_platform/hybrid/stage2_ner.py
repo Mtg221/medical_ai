@@ -131,6 +131,14 @@ _TRAILING_AUX_VERBS: frozenset[str] = frozenset(
     {"does", "do", "did", "is", "was", "are", "were", "has", "have", "had"}
 )
 
+_CLOSED_CLASS_NON_ENTITIES: frozenset[str] = frozenset(
+    {
+        "his", "her", "their", "our", "my", "your", "its", "the", "this", "that", "these", "those",
+        "son", "sa", "ses", "leur", "leurs", "mon", "ma", "mes", "le", "la", "les", "un", "une", "des",
+        "normal", "normale", "normaux", "normales",
+    }
+)
+
 
 def _is_disallowed_entity(ent: PredictedEntity) -> bool:
     low = ent.text.strip().lower()
@@ -139,6 +147,8 @@ def _is_disallowed_entity(ent: PredictedEntity) -> bool:
     if low in _NON_ENTITY_AGE_NOUNS:
         return True
     if low in _ASSERTION_CUE_WORDS:
+        return True
+    if ent.type in {"DIAGNOSIS", "SYMPTOM", "MEDICATION", "DATE", "ANATOMY", "PROCEDURE"} and low in _CLOSED_CLASS_NON_ENTITIES:
         return True
     if ent.type == "MEDICATION" and low in _NON_MEDICATION_VERBS:
         return True
