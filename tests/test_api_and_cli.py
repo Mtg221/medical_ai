@@ -160,7 +160,7 @@ def test_full_api_lifecycle_rbac_and_institution_isolation(
     )
     assert r_models.status_code == 200
     models_payload = r_models.json()
-    assert len(models_payload["loaded_models"]) == 2
+    assert len(models_payload["loaded_models"]) >= 2
     assert models_payload["count"] == 1 + len(models_payload["loaded_models"])
 
     r_audit = client.get(

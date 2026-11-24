@@ -41,3 +41,21 @@ Status vocabulary: `Planned` | `In progress` | `Implemented` | `Tested` | `Evalu
 1. **Human Owner-Written & Double-Annotated Free-Text Notes (`docs/REALISTIC_SET_OWNER_CHECKLIST.md`):** 40 EN + 40 FR notes covering entities, assertions, relations, and TIMEX with `>= 20%` double annotation in Label Studio (`configs/label_studio_medical_en_fr.xml`), imported with `--iaa-out` via `scripts/import_label_studio_realistic.py`.
 2. **Unseen Human PHI Redaction Set (`docs/PHI_REDACTION_OWNER_TEMPLATE.jsonl`):** `>= 50` unseen EN/FR PHI sentences + `>= 10` tricky non-PHI sentences evaluated once with `scripts/eval_redaction_human.py --owner-written`.
 3. **Owner-Taken Smartphone Document Photos:** Optional final router confirmation on real owner-captured phone photos of printed clinical notes/lab sheets.
+
+---
+
+## 4. Deep Source-Code Audit Remediation Status (`F-01`–`F-11`)
+
+| Finding | Severity | Status | Evidence / Resolution |
+|---|---|---|---|
+| `F-01` Reproducible artifact packaging | Critical | **Resolved (Local Bundle Ready)** | `scripts/package_release_artifacts.py` (`verify`/`pack`/`unpack`), `docs/results/ARTIFACTS_MANIFEST.json` (`30/30` verified), `dist/release/*.tar.gz` + `checksums.sha256` |
+| `F-02` Safe model deserialization | High | **Resolved & Tested** | `weights_only=True` on all `torch.load`; zero `joblib.load`/`pickle.load` (safe JSON+NPZ in `persistence.py`); guarded by `test_no_unsafe_deserialization_calls_in_platform` |
+| `F-03` Locked-test reuse & deduplication | High | **Mitigated (`v4` Split Built)** | `configs/vision/locked_test_v4.txt` (`n=1,611`, `0` exact SHA-256 duplicates), `vision_9seed_locked_test_v4_benchmark.json` (`0.9348` AUROC / `0.7962` Sens@90% Spec); blind human owner sets pending |
+| `F-04` Clinical smartphone & shadow-mode readiness | High | **Engineering Complete** | `docs/SHADOW_MODE_CLINICAL_PROTOCOL.md`, `scripts/eval_shadow_mode.py` (8 promotion gates incl. Fitzpatrick parity), `scripts/ingest_external_clinical_derm.py` (PAD-UFES-20 / Fitzpatrick17k / DDI) |
+| `F-05` Login brute-force & token revocation | Medium | **Resolved & Tested** | Sliding-window `LoginRateLimiter` (`429`) + `jti` `revoked_tokens` table + `POST /api/v1/auth/logout` (`test_login_rate_limiting_and_token_revocation`) |
+| `F-06` Temporal calendar validation | Medium | **Resolved & Tested** | Strict `datetime.date(y, m, d)` validation rejecting impossible calendar dates in `stage4_temporal.py` (`test_pod_and_invalid_calendar_dates`) |
+| `F-07` Docs sync & root `LICENSE` | Medium | **Resolved** | Added root MIT `LICENSE` linked in `pyproject.toml`; synced `README.md` Section 1.2 with `PROJECT_STATUS.md` |
+| `F-08` Local checkpoint integrity | Medium | **Verified Clean** | `30/30` served checkpoints pass SHA-256 verification (`0` invalid, `0` pretrained) |
+| `F-09` Vision GPU host RAM OOM at `320px` | Medium | **Resolved & Tested** | Lazy on-disk `_LazyImageDataset` in `cnn_torch.py` + `train_vision_gpu.py` (`test_lazy_on_disk_vision_dataset_fit_and_predict`) |
+| `F-10` Vision `v3` visual leakage audit | Low | **Resolved & Published** | `scripts/audit_v3_leakage.py` → `docs/results/vision/v3_leakage_audit.json` & `v4_dedup_audit.json` |
+| `F-11` Legacy UI header & stale lockfile | Low | **Resolved** | `X-Workspace-UI: legacy-fallback; canonical=/react/` header on `/` (preserving zero-build fallback) + regenerated `requirements-lock.txt` |

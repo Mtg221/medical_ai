@@ -94,6 +94,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
                 "X-Content-Type-Options": "nosniff",
                 "Referrer-Policy": "no-referrer",
                 "Cache-Control": "no-store",
+                "X-Workspace-UI": "legacy-fallback; canonical=/react/",
             },
         )
 
@@ -117,6 +118,7 @@ def create_app(config: PlatformConfig | None = None) -> FastAPI:
                 "X-Content-Type-Options": "nosniff",
                 "Referrer-Policy": "no-referrer",
                 "Cache-Control": "no-store",
+                "X-Workspace-UI": "react-canonical",
             },
         )
 
