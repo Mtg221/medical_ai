@@ -1,6 +1,6 @@
 import { useState, type DragEvent, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { UploadCloud } from "lucide-react";
+import { FileText, UploadCloud } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/Badge";
@@ -12,6 +12,30 @@ import type { JobStatus } from "@/types/api";
 
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "tif", "tiff"]);
 
+const QUICK_TEXT_PRESETS: Array<{ id: string; labelEn: string; labelFr: string; filename: string; text: string }> = [
+  {
+    id: "fr_vitals",
+    labelEn: "FR Vitals & Meds",
+    labelFr: "FR Constantes & Traitement",
+    filename: "note_fr_constantes.txt",
+    text: "Le patient a une tension artérielle de 140/90 mmHg et un poids de 82 kg. Pas de fièvre. Sa mère a un diabète de type 2. Début de metformine 500 mg 2x/j PO pendant 14 jours.",
+  },
+  {
+    id: "en_note",
+    labelEn: "EN Clinical Note",
+    labelFr: "EN Note Clinique",
+    filename: "note_en_clinical.txt",
+    text: "Started metformin 500 mg BID PO for 14 days for type 2 diabetes, and lisinopril 10 mg QD PO for hypertension. No fever. History of asthma. Mother has diabetes.",
+  },
+  {
+    id: "fr_dialogue",
+    labelEn: "FR Doctor–Patient",
+    labelFr: "FR Dialogue Médecin–Patient",
+    filename: "dialogue_fr_consultation.txt",
+    text: "Médecin : Bonjour, qu'est-ce qui vous amène ?\nPatient : J'ai de la toux mais pas de fièvre. Ma mère a un diabète.\nMédecin : Votre HbA1c est à 7.4 %. Débutez amoxicilline 1 g 3x/j PO pendant 7 jours.",
+  },
+];
+
 function isImageFile(file: File): boolean {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
   return IMAGE_EXTENSIONS.has(ext) || file.type.startsWith("image/");
@@ -22,12 +46,16 @@ export function UploadJobsPage() {
   const token = useAuthStore((s) => s.token);
   const queryClient = useQueryClient();
 
+  const [inputMode, setInputMode] = useState<"file" | "text">("file");
   const [file, setFile] = useState<File | null>(null);
+  const [customText, setCustomText] = useState("");
+  const [customFilename, setCustomFilename] = useState("custom_clinical_note.txt");
   const [subjectId, setSubjectId] = useState("subj_synth_001");
-  const [specialty, setSpecialty] = useState("DERMATOLOGY");
+  const [specialty, setSpecialty] = useState("INTERNAL_MEDICINE");
   const [bodySite, setBodySite] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [textSubmittedNotice, setTextSubmittedNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [triageResult, setTriageResult] = useState<Record<string, unknown> | null>(null);
 
@@ -58,9 +86,36 @@ export function UploadJobsPage() {
 
   const handleUpload = async (e: FormEvent) => {
     e.preventDefault();
-    if (!file || !token) return;
+    if (!token) return;
     setError(null);
     setTriageResult(null);
+    setTextSubmittedNotice(null);
+
+    if (inputMode === "text") {
+      const trimmed = customText.trim();
+      if (!trimmed) return;
+      const safeBase = (customFilename.trim() || "custom_clinical_note.txt").replace(/[^a-zA-Z0-9._-]/g, "_");
+      const finalName = safeBase.toLowerCase().endsWith(".txt") ? safeBase : `${safeBase}.txt`;
+      const textFile = new File([trimmed], finalName, { type: "text/plain;charset=utf-8" });
+      setSubmitting(true);
+      try {
+        await uploadDocumentMultipart(textFile, token, {
+          subject_id: subjectId,
+          specialty,
+          document_type: "CLINICAL_NOTE",
+        });
+        setTextSubmittedNotice(finalName);
+        void queryClient.invalidateQueries({ queryKey: ["jobs"] });
+        void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Text submission failed");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    if (!file) return;
     setSubmitting(true);
     try {
       if (isImageFile(file)) {
@@ -117,45 +172,150 @@ export function UploadJobsPage() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
-        <CardHeader className="flex items-center gap-2">
-          <UploadCloud className="h-5 w-5 text-sky-700 dark:text-sky-400" aria-hidden="true" />
-          <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t("upload.title")}</h1>
+        <CardHeader className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {inputMode === "file" ? (
+              <UploadCloud className="h-5 w-5 text-sky-700 dark:text-sky-400" aria-hidden="true" />
+            ) : (
+              <FileText className="h-5 w-5 text-sky-700 dark:text-sky-400" aria-hidden="true" />
+            )}
+            <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t("upload.title")}</h1>
+          </div>
+          <div
+            role="tablist"
+            aria-label={i18n.language === "fr" ? "Mode d'entrée" : "Input mode"}
+            className="inline-flex rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 p-0.5 text-xs"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={inputMode === "file"}
+              onClick={() => {
+                setInputMode("file");
+                setError(null);
+              }}
+              className={`rounded px-2.5 py-1 font-medium transition-colors ${
+                inputMode === "file"
+                  ? "bg-white dark:bg-slate-800 text-sky-700 dark:text-sky-300 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              {i18n.language === "fr" ? "Fichier / Image" : "Upload File"}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={inputMode === "text"}
+              onClick={() => {
+                setInputMode("text");
+                setError(null);
+              }}
+              className={`rounded px-2.5 py-1 font-medium transition-colors ${
+                inputMode === "text"
+                  ? "bg-white dark:bg-slate-800 text-sky-700 dark:text-sky-300 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              {i18n.language === "fr" ? "Écrire / Coller un texte" : "Write / Paste Text"}
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={(e) => void handleUpload(e)} className="space-y-4">
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragActive(true);
-              }}
-              onDragLeave={() => setDragActive(false)}
-              onDrop={handleDrop}
-              className={`rounded-lg border-2 border-dashed p-4 text-center transition-colors ${
-                dragActive
-                  ? "border-sky-500 bg-sky-50/70 dark:bg-sky-950/40"
-                  : "border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40"
-              }`}
-            >
-              <label htmlFor="doc-file" className="block text-xs font-medium text-slate-700 dark:text-slate-200 mb-2">
-                {t("upload.dropHint")}
-              </label>
-              <input
-                id="doc-file"
-                type="file"
-                accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.tiff,.webp"
-                onChange={(e) => {
-                  setFile(e.target.files?.[0] ?? null);
-                  setTriageResult(null);
+            {inputMode === "file" ? (
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragActive(true);
                 }}
-                className="block w-full text-xs text-slate-700 dark:text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-sky-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-sky-800 dark:file:bg-sky-900 dark:file:text-sky-200"
-              />
-              {file && (
-                <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
-                  Selected: <span className="font-mono font-medium">{file.name}</span> (
-                  {isImageFile(file) ? "Image → Triage Router" : "Document → Text/OCR Pipeline"})
-                </p>
-              )}
-            </div>
+                onDragLeave={() => setDragActive(false)}
+                onDrop={handleDrop}
+                className={`rounded-lg border-2 border-dashed p-4 text-center transition-colors ${
+                  dragActive
+                    ? "border-sky-500 bg-sky-50/70 dark:bg-sky-950/40"
+                    : "border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40"
+                }`}
+              >
+                <label htmlFor="doc-file" className="block text-xs font-medium text-slate-700 dark:text-slate-200 mb-2">
+                  {t("upload.dropHint")}
+                </label>
+                <input
+                  id="doc-file"
+                  type="file"
+                  accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.tiff,.webp"
+                  onChange={(e) => {
+                    setFile(e.target.files?.[0] ?? null);
+                    setTriageResult(null);
+                  }}
+                  className="block w-full text-xs text-slate-700 dark:text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-sky-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-sky-800 dark:file:bg-sky-900 dark:file:text-sky-200"
+                />
+                {file && (
+                  <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+                    Selected: <span className="font-mono font-medium">{file.name}</span> (
+                    {isImageFile(file) ? "Image → Triage Router" : "Document → Text/OCR Pipeline"})
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="custom-clinical-text" className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                    {i18n.language === "fr"
+                      ? "Texte clinique ou dialogue médecin–patient (EN / FR)"
+                      : "Clinical note or doctor–patient dialogue (EN / FR)"}
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {QUICK_TEXT_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => {
+                          setCustomText(preset.text);
+                          setCustomFilename(preset.filename);
+                          setTextSubmittedNotice(null);
+                          setError(null);
+                        }}
+                        className="rounded border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 text-[11px] font-medium text-sky-800 dark:text-sky-200 hover:bg-sky-100 dark:hover:bg-sky-900/60"
+                      >
+                        {i18n.language === "fr" ? preset.labelFr : preset.labelEn}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <textarea
+                  id="custom-clinical-text"
+                  rows={6}
+                  value={customText}
+                  onChange={(e) => {
+                    setCustomText(e.target.value);
+                    setTextSubmittedNotice(null);
+                  }}
+                  placeholder={
+                    i18n.language === "fr"
+                      ? "Ex. : Le patient a une tension artérielle de 140/90 mmHg et un poids de 82 kg. Pas de fièvre. Sa mère a un diabète..."
+                      : "e.g., Patient started metformin 500 mg BID PO for 14 days for type 2 diabetes. No fever. Mother has hypertension..."
+                  }
+                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 dark:bg-slate-900 p-3 text-xs leading-relaxed text-slate-900 dark:text-slate-100 focus:border-sky-500 focus:outline-none"
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <label htmlFor="custom-filename" className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                      {i18n.language === "fr" ? "Nom du document (.txt)" : "Document name (.txt)"}
+                    </label>
+                    <input
+                      id="custom-filename"
+                      type="text"
+                      value={customFilename}
+                      onChange={(e) => setCustomFilename(e.target.value)}
+                      className="w-full rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900 px-2.5 py-1 text-xs font-mono"
+                    />
+                  </div>
+                  <span className="self-end pb-1 text-[11px] text-slate-500">
+                    {customText.length} {i18n.language === "fr" ? "caractères" : "chars"}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
@@ -226,8 +386,34 @@ export function UploadJobsPage() {
               </div>
             )}
 
-            <Button type="submit" disabled={!file || submitting}>
-              {submitting ? "..." : t("upload.submit")}
+            {textSubmittedNotice && (
+              <div
+                data-testid="text-submitted-banner"
+                role="status"
+                className="rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-3 text-xs flex flex-wrap items-center justify-between gap-2"
+              >
+                <span className="font-medium text-emerald-900 dark:text-emerald-200">
+                  {i18n.language === "fr"
+                    ? `Texte soumis pour extraction : ${textSubmittedNotice}`
+                    : `Text submitted for extraction: ${textSubmittedNotice}`}
+                </span>
+                <Link to="/workspace" className="underline font-semibold text-sky-700 dark:text-sky-300">
+                  {i18n.language === "fr" ? "Ouvrir dans l'Espace de travail →" : "Open in Workspace →"}
+                </Link>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={(inputMode === "file" ? !file : !customText.trim()) || submitting}
+            >
+              {submitting
+                ? "..."
+                : inputMode === "text"
+                ? i18n.language === "fr"
+                  ? "Lancer l'extraction sur le texte"
+                  : "Run Extraction on Text"
+                : t("upload.submit")}
             </Button>
           </form>
         </CardContent>
