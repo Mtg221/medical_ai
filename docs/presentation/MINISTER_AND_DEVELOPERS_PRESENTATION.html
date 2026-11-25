@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedResearch Platform v0.2.0 — Ministerial & Engineering Briefing (EN / FR)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #070d19;
+      --surface: #0f172a;
+      --surface-2: #162238;
+      --surface-3: #1e2d4a;
+      --border: rgba(148, 163, 184, 0.2);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --primary: #38bdf8;
+      --accent: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --purple: #a78bfa;
+      --teal: #14b8a6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top right, #101e36 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+
+    /* Top Control Bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 1.75rem;
+      background: rgba(7, 13, 25, 0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+    }
+    .brand-logo {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #0f766e, #38bdf8);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+    .pill {
+      font-size: 0.7rem;
+      padding: 0.18rem 0.58rem;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+    }
+    .pill-green { background: rgba(16, 185, 129, 0.14); color: #34d399; border-color: rgba(16, 185, 129, 0.35); }
+    .pill-blue { background: rgba(56, 189, 248, 0.14); color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); }
+    .pill-purple { background: rgba(167, 139, 250, 0.14); color: #c4b5fd; border-color: rgba(167, 139, 250, 0.35); }
+    .pill-warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.38); }
+    .pill-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.38); }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .btn-group {
+      display: inline-flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 2px;
+    }
+    button.btn {
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      padding: 0.35rem 0.72rem;
+      border-radius: 0.38rem;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    button.btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+    button.btn.active { background: var(--primary); color: #070d19; }
+    button.btn-outline {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.38rem 0.8rem;
+      border-radius: 0.45rem;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    button.btn-outline:hover { border-color: var(--primary); background: var(--surface-3); }
+
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--primary), var(--purple));
+      width: 0%;
+      z-index: 120;
+      transition: width 0.2s ease;
+    }
+
+    /* Main Deck Container */
+    main {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.25rem;
+    }
+
+    body.deck-mode main {
+      min-height: calc(100vh - 64px);
+      justify-content: center;
+      padding: 1.25rem 1.5rem 4.5rem;
+    }
+    body.deck-mode section.slide { display: none; }
+    body.deck-mode section.slide.active-slide { display: block; animation: fadeIn 0.22s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    section.slide.filtered-out { display: none !important; }
+
+    section.slide {
+      background: linear-gradient(155deg, rgba(15, 23, 42, 0.96) 0%, rgba(11, 18, 34, 0.98) 100%);
+      border: 1px solid var(--border);
+      border-radius: 1.15rem;
+      padding: 2.25rem 2.6rem;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      page-break-after: always;
+      position: relative;
+    }
+
+    .slide-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .slide-meta-right { display: flex; align-items: center; gap: 0.5rem; }
+
+    h1 {
+      font-size: 2.4rem;
+      line-height: 1.15;
+      margin-bottom: 0.85rem;
+      background: linear-gradient(95deg, #f8fafc 0%, #38bdf8 55%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    h2 {
+      font-size: 1.68rem;
+      line-height: 1.22;
+      margin-bottom: 0.55rem;
+      color: #f8fafc;
+    }
+    h3 {
+      font-size: 1.02rem;
+      margin-bottom: 0.45rem;
+      color: #e2e8f0;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.02rem;
+      margin-bottom: 1.35rem;
+      max-width: 920px;
+    }
+
+    /* Grids & Cards */
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.15rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+    @media (max-width: 920px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      section.slide { padding: 1.5rem; }
+      h1 { font-size: 1.8rem; }
+    }
+
+    .card {
+      background: rgba(22, 34, 56, 0.72);
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 1.15rem 1.25rem;
+    }
+    .card-accent { border-left: 3px solid var(--accent); }
+    .card-primary { border-left: 3px solid var(--primary); }
+    .card-warn { border-left: 3px solid var(--warn); background: rgba(245, 158, 11, 0.06); }
+    .card-purple { border-left: 3px solid var(--purple); }
+
+    .kpi-value {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #f8fafc;
+      margin: 0.15rem 0;
+    }
+    .kpi-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+    .kpi-sub { font-size: 0.82rem; color: #cbd5e1; margin-top: 0.2rem; }
+
+    ul.clean { list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
+    ul.clean li { position: relative; padding-left: 1.2rem; font-size: 0.92rem; color: #dbe5f1; }
+    ul.clean li::before {
+      content: "▸";
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      margin-top: 0.5rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.62rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th {
+      color: var(--primary);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: rgba(56, 189, 248, 0.06);
+    }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* Callouts & Code */
+    .callout {
+      margin-top: 1.1rem;
+      padding: 0.9rem 1.15rem;
+      border-radius: 0.75rem;
+      font-size: 0.88rem;
+      border: 1px solid var(--border);
+      background: rgba(56, 189, 248, 0.07);
+    }
+    .callout-warn {
+      background: rgba(245, 158, 11, 0.09);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #fde68a;
+    }
+    .callout-green {
+      background: rgba(16, 185, 129, 0.09);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: #a7f3d0;
+    }
+    pre.code {
+      background: #060a14;
+      border: 1px solid var(--border);
+      border-radius: 0.65rem;
+      padding: 0.95rem 1.1rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+    code.inline {
+      background: rgba(56, 189, 248, 0.12);
+      color: #7dd3fc;
+      padding: 0.1rem 0.35rem;
+      border-radius: 0.3rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.84em;
+    }
+
+    .chart-box {
+      position: relative;
+      height: 290px;
+      width: 100%;
+      background: rgba(6, 10, 20, 0.55);
+      border: 1px solid var(--border);
+      border-radius: 0.8rem;
+      padding: 0.9rem;
+    }
+
+    /* Deck Mode Floating Nav */
+    .deck-nav {
+      display: none;
+      position: fixed;
+      bottom: 1.15rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 110;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      align-items: center;
+      gap: 0.85rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    body.deck-mode .deck-nav { display: flex; }
+    .slide-counter { font-size: 0.82rem; font-weight: 700; color: var(--primary); min-width: 70px; text-align: center; }
+
+    /* Bilingual toggle */
+    body.lang-en .fr { display: none !important; }
+    body.lang-fr .en { display: none !important; }
+
+    /* Print / PDF */
+    @media print {
+      body { background: #fff; color: #0f172a; }
+      .topbar, .deck-nav, .progress-bar { display: none !important; }
+      main { max-width: 100%; padding: 0; gap: 0; }
+      section.slide {
+        display: block !important;
+        background: #fff;
+        color: #0f172a;
+        border: 1px solid #cbd5e1;
+        box-shadow: none;
+        border-radius: 0;
+        page-break-after: always;
+      }
+      .card { background: #f8fafc; border-color: #cbd5e1; }
+      h1, h2, h3, .kpi-value { color: #0f172a; -webkit-text-fill-color: #0f172a; }
+      .subtitle, .kpi-label, .kpi-sub, ul.clean li { color: #334155; }
+    }
+  </style>
+</head>
+<body class="lang-en">
+  <div class="progress-bar" id="progressBar"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">+</div>
+      <div>
+        <span>MedResearch Platform</span>
+        <span class="pill pill-green" style="margin-left:0.4rem;">v0.2.0 · 100% From Scratch</span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="btn-group" title="Audience Filter">
+        <button class="btn active" data-filter="all" onclick="setFilter('all', this)">
+          <span class="en">All (16)</span><span class="fr">Tout (16)</span>
+        </button>
+        <button class="btn" data-filter="minister" onclick="setFilter('minister', this)">
+          <span class="en">Minister &amp; Governance</span><span class="fr">Ministre &amp; Gouvernance</span>
+        </button>
+        <button class="btn" data-filter="dev" onclick="setFilter('dev', this)">
+          <span class="en">Developers &amp; ML</span><span class="fr">Développeurs &amp; ML</span>
+        </button>
+      </div>
+
+      <div class="btn-group" title="Language">
+        <button class="btn active" id="btnEn" onclick="setLang('en')">EN</button>
+        <button class="btn" id="btnFr" onclick="setLang('fr')">FR</button>
+      </div>
+
+      <button class="btn-outline" id="btnMode" onclick="toggleDeckMode()">
+        <span class="en">Slide Mode</span><span class="fr">Mode Diapo</span>
+      </button>
+      <button class="btn-outline" onclick="window.print()">
+        <span class="en">Print / PDF</span><span class="fr">Imprimer / PDF</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="deck">
+
+    <!-- ==================== SLIDE 1: COVER ==================== -->
+    <section class="slide active-slide" data-audience="both">
+      <div class="slide-meta">
+        <span><span class="en">Slide 01 / 16 — Executive &amp; Technical Briefing</span><span class="fr">Diapo 01 / 16 — Briefing Ministériel &amp; Technique</span></span>
+        <div class="slide-meta-right">
+          <span class="pill pill-blue">Minister + Developers</span>
+          <span class="pill pill-green">2026-11-25</span>
+        </div>
+      </div>
+      <h1>
+        <span class="en">MedResearch Platform: Sovereign Bilingual Medical AI</span>
+        <span class="fr">MedResearch Platform : IA Médicale Souveraine Bilingue</span>
+      </h1>
+      <p class="subtitle">
+        <span class="en">End-to-end English &amp; French clinical information extraction, document OCR, PHI privacy engineering, and a separate dermatology vision track — trained <strong>100% from scratch</strong> with zero pretrained weights, zero external AI APIs, and full scientific reproducibility.</span>
+        <span class="fr">Extraction d'information clinique bilingue anglais/français, OCR documentaire, ingénierie de confidentialité PHI et piste vision dermatologie séparée — entraînée <strong>100 % from scratch</strong>, sans poids pré-entraînés, sans API IA externe, et entièrement reproductible.</span>
+      </p>
+
+      <div class="grid-4" style="margin-top:1.4rem;">
+        <div class="card card-accent">
+          <div class="kpi-label"><span class="en">From-Scratch Models</span><span class="fr">Modèles From-Scratch</span></div>
+          <div class="kpi-value">30 / 30</div>
+          <div class="kpi-sub"><span class="en">SHA-256 verified checkpoints (344.6 MB, 0 pretrained)</span><span class="fr">Checkpoints vérifiés SHA-256 (344,6 Mo, 0 pré-entraîné)</span></div>
+        </div>
+        <div class="card card-primary">
+          <div class="kpi-label"><span class="en">CPU-Only Inference</span><span class="fr">Inférence CPU-Only</span></div>
+          <div class="kpi-value">29.2 ms</div>
+          <div class="kpi-sub"><span class="en">hybrid_v2 per note · 149.8 MB RSS (Intel i7)</span><span class="fr">hybrid_v2 par note · 149,8 Mo RSS (Intel i7)</span></div>
+        </div>
+        <div class="card card-purple">
+          <div class="kpi-label"><span class="en">Vision Track (v4)</span><span class="fr">Piste Vision (v4)</span></div>
+          <div class="kpi-value">0.9348</div>
+          <div class="kpi-sub"><span class="en">AUROC on locked_test_v4 (n=1,611, 0 exact dups)</span><span class="fr">AUROC sur locked_test_v4 (n=1 611, 0 doublon exact)</span></div>
+        </div>
+        <div class="card card-warn">
+          <div class="kpi-label"><span class="en">Quality &amp; Integrity</span><span class="fr">Qualité &amp; Intégrité</span></div>
+          <div class="kpi-value">0 Errors</div>
+          <div class="kpi-sub"><span class="en">ruff &amp; mypy (99 files) · 416+ Python &amp; 13 UI tests</span><span class="fr">ruff &amp; mypy (99 fichiers) · 416+ tests Python &amp; 13 UI</span></div>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <strong><span class="en">Governance Notice:</span><span class="fr">Mention de gouvernance :</span></strong>
+        <span class="en">Research prototype — NOT a certified medical device. All results are traceable to raw artifacts in <code class="inline">docs/results/raw/</code>. Blind human evaluation (80 owner-written notes &amp; 60 PHI sentences) and prospective hospital shadow-mode are the next governance milestones.</span>
+        <span class="fr">Prototype de recherche — NON certifié dispositif médical. Tous les résultats sont traçables dans <code class="inline">docs/results/raw/</code>. L'évaluation aveugle humaine (80 notes + 60 phrases PHI) et le mode shadow prospectif hospitalier sont les prochains jalons.</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 2: STRATEGIC VISION ==================== -->
+    <section class="slide" data-audience="minister">
+      <div class="slide-meta">
+        <span><span class="en">Slide 02 / 16 — Strategic Vision &amp; Sovereignty</span><span class="fr">Diapo 02 / 16 — Vision Stratégique &amp; Souveraineté</span></span>
+        <span class="pill pill-purple">Minister &amp; Governance</span>
+      </div>
+      <h2>
+        <span class="en">Why Sovereign, On-Premise Hospital AI Matters</span>
+        <span class="fr">Pourquoi une IA Hospitalière Souveraine et Locale est Stratégique</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Hospitals generate vast bilingual unstructured records (discharge summaries, lab sheets, prescriptions, scans) that cannot legally or ethically be sent to foreign commercial LLM APIs.</span>
+        <span class="fr">Les hôpitaux produisent d'immenses volumes de comptes rendus bilingues non structurés qui ne peuvent ni légalement ni éthiquement être transmis à des API LLM commerciales étrangères.</span>
+      </p>
+
+      <div class="grid-3">
+        <div class="card card-accent">
+          <h3><span class="en">1. Total Data Sovereignty</span><span class="fr">1. Souveraineté Totale des Données</span></h3>
+          <ul class="clean">
+            <li><span class="en">Runs 100% on-premise on standard hospital CPU hardware (no GPU cloud dependency).</span><span class="fr">Fonctionne 100 % sur site sur matériel CPU hospitalier standard (aucun cloud GPU).</span></li>
+            <li><span class="en">Zero external inference API calls, zero hidden model downloads, zero patient data leaving the institution.</span><span class="fr">Zéro appel API externe, zéro téléchargement caché, aucune donnée patient ne quitte l'établissement.</span></li>
+            <li><span class="en">Multi-institution isolation built into database &amp; RBAC (e.g., Dakar IRMD &amp; Paris CHU).</span><span class="fr">Isolation inter-institutions intégrée en base de données et RBAC (ex. IRMD Dakar &amp; CHU Paris).</span></li>
+          </ul>
+        </div>
+        <div class="card card-primary">
+          <h3><span class="en">2. Bilingual Clinical Equity (EN / FR)</span><span class="fr">2. Équité Clinique Bilingue (EN / FR)</span></h3>
+          <ul class="clean">
+            <li><span class="en">Native French &amp; English medical extraction, negation, temporal normalization, and OCR.</span><span class="fr">Extraction médicale, négation, normalisation temporelle et OCR nativement bilingues FR &amp; EN.</span></li>
+            <li><span class="en">Fitzpatrick-inclusive dermatology image quality checks and bilingual retake guidance.</span><span class="fr">Contrôles qualité dermatologiques inclusifs (Fitzpatrick) et conseils de reprise photo bilingues.</span></li>
+            <li><span class="en">Bilingual traceable clinical reports (Markdown, HTML, PDF) with mandatory safety disclaimers.</span><span class="fr">Rapports traçables bilingues (Markdown, HTML, PDF) avec mentions de sécurité obligatoires.</span></li>
+          </ul>
+        </div>
+        <div class="card card-purple">
+          <h3><span class="en">3. Full Auditability &amp; Cost Control</span><span class="fr">3. Auditabilité &amp; Maîtrise des Coûts</span></h3>
+          <ul class="clean">
+            <li><span class="en">Every weight, dataset split, and extraction decision is cryptographically hashed (SHA-256).</span><span class="fr">Chaque poids, split de données et décision d'extraction est haché (SHA-256).</span></li>
+            <li><span class="en">Zero per-token API fees: predictable national infrastructure cost under MIT open-source license.</span><span class="fr">Zéro coût par jeton API : coût d'infrastructure nationale prévisible sous licence MIT.</span></li>
+            <li><span class="en">Human-in-the-loop review queue ensures clinicians remain the sole decision-makers.</span><span class="fr">La file de revue humaine garantit que les cliniciens restent seuls décideurs.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 3: HONEST MATURITY ==================== -->
+    <section class="slide" data-audience="both">
+      <div class="slide-meta">
+        <span><span class="en">Slide 03 / 16 — Scientific Honesty &amp; Maturity</span><span class="fr">Diapo 03 / 16 — Honnêteté Scientifique &amp; Maturité</span></span>
+        <span class="pill pill-warn">Governance Transparency</span>
+      </div>
+      <h2>
+        <span class="en">Honest Maturity Assessment: What Is Proven vs. What Remains</span>
+        <span class="fr">Évaluation Honnête de Maturité : Prouvé vs. En Attente</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Trustworthy health AI begins with rigorous separation between engineering readiness, synthetic/public benchmarks, and prospective clinical validation.</span>
+        <span class="fr">Une IA de santé digne de confiance commence par une séparation rigoureuse entre maturité logicielle, benchmarks publics/synthétiques et validation clinique prospective.</span>
+      </p>
+
+      <div class="grid-2">
+        <div class="card card-accent">
+          <h3><span class="en">Proven &amp; Independently Verifiable Today</span><span class="fr">Prouvé &amp; Vérifiable Aujourd'hui</span></h3>
+          <ul class="clean">
+            <li><span class="en"><strong>100% From-Scratch Stack:</strong> 30 verified checkpoints (20 NLP + 10 Vision), zero pretrained weights.</span><span class="fr"><strong>Stack 100 % From-Scratch :</strong> 30 checkpoints vérifiés (20 NLP + 10 Vision), zéro poids pré-entraîné.</span></li>
+            <li><span class="en"><strong>Locked Synthetic &amp; Public Benchmarks:</strong> Evaluated on <code class="inline">SYNTH-MED-V3.1</code> (1,240 docs), 4,882 open-license clinical/biomed docs, 120-page OCR stress test, and <code class="inline">locked_test_v4</code> (1,611 images, 0 exact dups).</span><span class="fr"><strong>Benchmarks Gelés &amp; Publics :</strong> Évalué sur <code class="inline">SYNTH-MED-V3.1</code> (1 240 docs), 4 882 docs cliniques/biomédicaux ouverts, stress-test OCR 120 pages, et <code class="inline">locked_test_v4</code> (1 611 images, 0 doublon exact).</span></li>
+            <li><span class="en"><strong>Enterprise Security &amp; Clean Code:</strong> Argon2id, RBAC, institution isolation, SQLite brute-force throttling, CSP, hash-chained audit logs, <code class="inline">ruff=0</code>, <code class="inline">mypy=0</code>.</span><span class="fr"><strong>Sécurité &amp; Qualité Logicielle :</strong> Argon2id, RBAC, isolation, throttling SQLite, CSP, journal d'audit chaîné, <code class="inline">ruff=0</code>, <code class="inline">mypy=0</code>.</span></li>
+            <li><span class="en"><strong>Human Blind-Eval Tooling Hardened:</strong> Enforces 80 unique docs, 40 EN / 40 FR, 6 doc types, &ge;20% double annotation, mandatory adjudication, and SHA-256 freeze lock.</span><span class="fr"><strong>Outillage Blind Humain Durci :</strong> Impose 80 docs uniques, 40 EN / 40 FR, 6 types, &ge;20 % double annotation, adjudication obligatoire et verrou SHA-256.</span></li>
+          </ul>
+        </div>
+        <div class="card card-warn">
+          <h3><span class="en">Explicitly Pending Before Any Clinical Pilot</span><span class="fr">Explicitement Requis Avant Tout Pilote Clinique</span></h3>
+          <ul class="clean">
+            <li><span class="en"><strong>Human Blind Free-Text Set (<code class="inline">post_hoc: false</code>):</strong> 80 human-written &amp; double-annotated EN/FR clinical notes (starter drafts staged in Label Studio; awaiting clinician rewrite &amp; adjudication).</span><span class="fr"><strong>Jeu Aveugle Humain (<code class="inline">post_hoc: false</code>) :</strong> 80 notes cliniques écrites et double-annotées par des humains (brouillons préparés pour Label Studio ; réécriture &amp; adjudication attendues).</span></li>
+            <li><span class="en"><strong>Human Blind PHI Set:</strong> &ge;50 unseen human PHI sentences + &ge;10 tricky non-PHI clinical controls.</span><span class="fr"><strong>Jeu PHI Humain Inédit :</strong> &ge;50 phrases PHI humaines + &ge;10 phrases cliniques non-PHI pièges.</span></li>
+            <li><span class="en"><strong>External Dermatology Cohorts:</strong> PAD-UFES-20, Fitzpatrick17k, and DDI (ingestion pipeline ready; institutional access/licenses required).</span><span class="fr"><strong>Cohortes Dermatologie Externes :</strong> PAD-UFES-20, Fitzpatrick17k, DDI (pipeline prêt ; licences/accès institutionnels requis).</span></li>
+            <li><span class="en"><strong>Prospective Hospital Shadow-Mode &amp; IRB:</strong> 8 automated promotion gates including Fitzpatrick skin-tone parity before any clinician-facing deployment.</span><span class="fr"><strong>Mode Shadow Prospectif &amp; Comité d'Éthique :</strong> 8 critères de promotion incluant la parité Fitzpatrick avant tout déploiement assisté.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 4: ARCHITECTURE SVG ==================== -->
+    <section class="slide" data-audience="dev">
+      <div class="slide-meta">
+        <span><span class="en">Slide 04 / 16 — End-to-End Architecture</span><span class="fr">Diapo 04 / 16 — Architecture de Bout en Bout</span></span>
+        <span class="pill pill-blue">Developers &amp; ML</span>
+      </div>
+      <h2>
+        <span class="en">Modular Platform Architecture (Backend, AI Engines, Storage, UI)</span>
+        <span class="fr">Architecture Modulaire (Backend, Moteurs IA, Stockage, Interface)</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Clean separation of concerns: FastAPI factory (<code class="inline">132 lines</code> + 6 domain routers), isolated AI serving engines, Pydantic v2 contract, SQLite/PostgreSQL persistence, and React 19 + TypeScript workspace.</span>
+        <span class="fr">Séparation nette des responsabilités : factory FastAPI (<code class="inline">132 lignes</code> + 6 routeurs), moteurs d'inférence isolés, contrat Pydantic v2, persistance SQLite/PostgreSQL et espace React 19 + TypeScript.</span>
+      </p>
+
+      <div class="card" style="padding:1rem; overflow-x:auto;">
+        <svg viewBox="0 0 1080 320" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MedResearch Platform End-to-End Architecture">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#38bdf8" />
+            </marker>
+          </defs>
+          <!-- Column 1: Ingestion -->
+          <rect x="15" y="25" width="185" height="270" rx="12" fill="#13203a" stroke="#38bdf8" stroke-width="1.4" />
+          <text x="107" y="52" fill="#38bdf8" font-size="12" font-weight="700" text-anchor="middle">1. INGESTION &amp; GUARD</text>
+          <rect x="28" y="68" width="159" height="44" rx="7" fill="#1d2f52" stroke="#475569" />
+          <text x="107" y="88" fill="#f1f5f9" font-size="11" font-weight="600" text-anchor="middle">TXT / PDF / DOCX / IMG</text>
+          <text x="107" y="103" fill="#94a3b8" font-size="9.5" text-anchor="middle">415/413 + Zip/Traversal</text>
+          <rect x="28" y="124" width="159" height="48" rx="7" fill="#1d2f52" stroke="#475569" />
+          <text x="107" y="145" fill="#f1f5f9" font-size="11" font-weight="600" text-anchor="middle">Image Triage Router</text>
+          <text x="107" y="160" fill="#94a3b8" font-size="9.5" text-anchor="middle">Doc Scan vs. Skin Lesion</text>
+          <rect x="28" y="184" width="159" height="48" rx="7" fill="#1d2f52" stroke="#475569" />
+          <text x="107" y="205" fill="#f1f5f9" font-size="11" font-weight="600" text-anchor="middle">Bilingual OCR Engine</text>
+          <text x="107" y="220" fill="#94a3b8" font-size="9.5" text-anchor="middle">CLAHE {0,255} + 2-Col</text>
+          <rect x="28" y="242" width="159" height="38" rx="7" fill="#14332a" stroke="#10b981" />
+          <text x="107" y="265" fill="#34d399" font-size="10.5" font-weight="700" text-anchor="middle">PHI Scrubbing &amp; Vault</text>
+
+          <!-- Column 2: NLP Track -->
+          <rect x="235" y="25" width="250" height="170" rx="12" fill="#13203a" stroke="#10b981" stroke-width="1.4" />
+          <text x="360" y="50" fill="#34d399" font-size="12" font-weight="700" text-anchor="middle">2A. PRIMARY NLP TRACK (EN/FR)</text>
+          <text x="250" y="75" fill="#e2e8f0" font-size="10.5">• Stage 1: Lang, Doc-Type &amp; Sectioning</text>
+          <text x="250" y="95" fill="#e2e8f0" font-size="10.5">• Stage 2: Hybrid v2 / 18-Model Ensemble</text>
+          <text x="250" y="115" fill="#e2e8f0" font-size="10.5">• Stage 3: 3-Axis Assertion + 9 Relations</text>
+          <text x="250" y="135" fill="#e2e8f0" font-size="10.5">• Stage 4: TIMEX Norm + Ambiguity Flags</text>
+          <text x="250" y="155" fill="#e2e8f0" font-size="10.5">• Stage 5: Calibration + Consistency</text>
+          <text x="250" y="178" fill="#94a3b8" font-size="9.5">15 BiLSTM-CRF + 3 Scratch Transformers</text>
+
+          <!-- Column 2B: Vision Track -->
+          <rect x="235" y="208" width="250" height="87" rx="12" fill="#1d1836" stroke="#a78bfa" stroke-width="1.4" />
+          <text x="360" y="231" fill="#c4b5fd" font-size="12" font-weight="700" text-anchor="middle">2B. SEPARATE VISION TRACK</text>
+          <text x="250" y="252" fill="#e2e8f0" font-size="10.5">• 9-Seed Ensemble (7 SE-ResNet + 2 ConvNeXt)</text>
+          <text x="250" y="270" fill="#e2e8f0" font-size="10.5">• 4x TTA + ROI Multi-Crop + Std Guardrail</text>
+          <text x="250" y="286" fill="#94a3b8" font-size="9.5">EXIF Stripped · TBP Auto-Abstained</text>
+
+          <!-- Column 3: Storage & Governance -->
+          <rect x="520" y="25" width="245" height="270" rx="12" fill="#13203a" stroke="#f59e0b" stroke-width="1.4" />
+          <text x="642" y="52" fill="#fbbf24" font-size="12" font-weight="700" text-anchor="middle">3. CONTRACT, DB &amp; AUDIT</text>
+          <rect x="534" y="68" width="217" height="44" rx="7" fill="#1d2f52" stroke="#475569" />
+          <text x="642" y="88" fill="#f1f5f9" font-size="11" font-weight="600" text-anchor="middle">Pydantic v2 Schema Contract</text>
+          <text x="642" y="103" fill="#94a3b8" font-size="9.5" text-anchor="middle">JSON Schema + /api/v1/schema</text>
+          <rect x="534" y="124" width="217" height="52" rx="7" fill="#1d2f52" stroke="#475569" />
+          <text x="642" y="145" fill="#f1f5f9" font-size="11" font-weight="600" text-anchor="middle">SQLite / PostgreSQL (26 Tables)</text>
+          <text x="642" y="160" fill="#94a3b8" font-size="9.5" text-anchor="middle">3-Axis Cols · Jobs · Reviews · Revoked jti</text>
+          <rect x="534" y="188" width="217" height="44" rx="7" fill="#1d2f52" stroke="#475569" />
+          <text x="642" y="208" fill="#f1f5f9" font-size="11" font-weight="600" text-anchor="middle">SHA-256 Hash-Chained Audit</text>
+          <text x="642" y="223" fill="#94a3b8" font-size="9.5" text-anchor="middle">Tamper-evident · Institution Scoped</text>
+          <rect x="534" y="242" width="217" height="38" rx="7" fill="#1d2f52" stroke="#475569" />
+          <text x="642" y="265" fill="#f1f5f9" font-size="10.5" font-weight="600" text-anchor="middle">Argon2id + SQLite Rate Limiter</text>
+
+          <!-- Column 4: Interfaces & Exports -->
+          <rect x="800" y="25" width="265" height="270" rx="12" fill="#13203a" stroke="#38bdf8" stroke-width="1.4" />
+          <text x="932" y="52" fill="#38bdf8" font-size="12" font-weight="700" text-anchor="middle">4. INTERFACES &amp; EXPORTS</text>
+          <rect x="815" y="68" width="235" height="48" rx="7" fill="#1d2f52" stroke="#475569" />
+          <text x="932" y="88" fill="#f1f5f9" font-size="11" font-weight="600" text-anchor="middle">FastAPI REST + SSE Jobs</text>
+          <text x="932" y="103" fill="#94a3b8" font-size="9.5" text-anchor="middle">OpenAPI 3.1 · 6 Modular Routers</text>
+          <rect x="815" y="128" width="235" height="52" rx="7" fill="#1d2f52" stroke="#475569" />
+          <text x="932" y="149" fill="#f1f5f9" font-size="11" font-weight="600" text-anchor="middle">React 19 + TS Workspace (16 Pages)</text>
+          <text x="932" y="164" fill="#94a3b8" font-size="9.5" text-anchor="middle">Bilingual · Review Queue · Lighthouse 100</text>
+          <rect x="815" y="192" width="235" height="44" rx="7" fill="#1d2f52" stroke="#475569" />
+          <text x="932" y="212" fill="#f1f5f9" font-size="11" font-weight="600" text-anchor="middle">Traceable Reports (MD/HTML/PDF)</text>
+          <text x="932" y="227" fill="#94a3b8" font-size="9.5" text-anchor="middle">PHI-Redacted · 3-Axis Badges</text>
+          <rect x="815" y="246" width="235" height="36" rx="7" fill="#14332a" stroke="#10b981" />
+          <text x="932" y="268" fill="#34d399" font-size="10.5" font-weight="700" text-anchor="middle">Gold Export: JSONL &amp; BRAT</text>
+
+          <!-- Arrows -->
+          <line x1="200" y1="115" x2="233" y2="115" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)" />
+          <line x1="200" y1="250" x2="233" y2="250" stroke="#a78bfa" stroke-width="2" marker-end="url(#arrow)" />
+          <line x1="485" y1="115" x2="518" y2="115" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)" />
+          <line x1="485" y1="250" x2="518" y2="250" stroke="#a78bfa" stroke-width="2" marker-end="url(#arrow)" />
+          <line x1="765" y1="155" x2="798" y2="155" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)" />
+        </svg>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 5: NLP ENGINE ==================== -->
+    <section class="slide" data-audience="dev">
+      <div class="slide-meta">
+        <span><span class="en">Slide 05 / 16 — Bilingual Medical NLP Engine</span><span class="fr">Diapo 05 / 16 — Moteur NLP Médical Bilingue</span></span>
+        <span class="pill pill-blue">Developers &amp; ML</span>
+      </div>
+      <h2>
+        <span class="en">5-Stage Hybrid &amp; 18-Model Cross-Architecture Hospital Ensemble</span>
+        <span class="fr">Pipeline Hybride 5 Étapes &amp; Ensemble Hospitalier 18 Modèles</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Every neural architecture passes <code class="inline">&lt; 1e-4</code> finite-difference gradient verification (<code class="inline">test_evaluated_neural_gradients.py</code>) and is trained strictly from random initialization.</span>
+        <span class="fr">Chaque architecture neuronale passe la vérification de gradients par différences finies (<code class="inline">&lt; 1e-4</code>) et est entraînée exclusivement depuis une initialisation aléatoire.</span>
+      </p>
+
+      <div class="grid-3">
+        <div class="card card-primary">
+          <h3><span class="en">Entity &amp; Model Diversity</span><span class="fr">Diversité Entités &amp; Modèles</span></h3>
+          <ul class="clean">
+            <li><strong>14 Canonical Entity Types:</strong> <code class="inline">SYMPTOM</code>, <code class="inline">DIAGNOSIS</code>, <code class="inline">MEDICATION</code>, <code class="inline">DOSAGE</code>, <code class="inline">FREQUENCY</code>, <code class="inline">ROUTE</code>, <code class="inline">DURATION</code>, <code class="inline">LAB_TEST</code>, <code class="inline">LAB_VALUE</code>, <code class="inline">LAB_UNIT</code>, <code class="inline">PROCEDURE</code>, <code class="inline">ANATOMY</code>, <code class="inline">DATE</code>, <code class="inline">PATIENT_ID</code>.</li>
+            <li><strong>18-Model Ensemble:</strong> 15 Char-CNN-BiLSTM-CRF + 3 From-Scratch 4-Layer Medical Transformers (MLM on 6,518 E3C Layer 3 EN/FR notes) + CRF v2, 12/18 supermajority + uncertainty variance guardrail.</li>
+          </ul>
+        </div>
+        <div class="card card-accent">
+          <h3><span class="en">3-Axis Clinical Assertions (EN &amp; FR)</span><span class="fr">Assertions Cliniques 3 Axes (EN &amp; FR)</span></h3>
+          <ul class="clean">
+            <li><strong>Certainty:</strong> <code class="inline">confirmed</code> | <code class="inline">possible</code> | <code class="inline">absent</code></li>
+            <li><strong>Temporality:</strong> <code class="inline">current</code> | <code class="inline">historical</code></li>
+            <li><strong>Experiencer:</strong> <code class="inline">patient</code> | <code class="inline">family</code></li>
+            <li><span class="en">Wired end-to-end across NLP, SQLite/Postgres DB, REST API, Review Queue, JSONL/BRAT, and MD/HTML/PDF reports.</span><span class="fr">Câblé de bout en bout : NLP, SQLite/Postgres, API REST, file de revue, exports JSONL/BRAT et rapports MD/HTML/PDF.</span></li>
+            <li><span class="en"><strong>14/14</strong> EN+FR target probes verified (incl. <em>"Mother has diabetes"</em>, <em>"Le scanner actuel ne montre pas la lésion"</em>).</span><span class="fr"><strong>14/14</strong> phrases cibles EN+FR vérifiées (dont <em>« Sa mère a un diabète »</em>, <em>« Le scanner actuel ne montre pas la lésion »</em>).</span></li>
+          </ul>
+        </div>
+        <div class="card card-purple">
+          <h3><span class="en">9 Relations &amp; Temporal Policy</span><span class="fr">9 Relations &amp; Politique Temporelle</span></h3>
+          <ul class="clean">
+            <li><strong>9 Directed Relations:</strong> <code class="inline">TREATS</code>, <code class="inline">HAS_DOSAGE</code>, <code class="inline">HAS_FREQUENCY</code>, <code class="inline">HAS_ROUTE</code>, <code class="inline">HAS_VALUE</code>, <code class="inline">HAS_UNIT</code>, <code class="inline">REVEALS</code>, <code class="inline">CAUSES</code>, <code class="inline">LOCATED_IN</code>.</li>
+            <li><strong>Phase 4 Guard:</strong> Sentence-boundary &amp; intervening-head deduplication eliminates cross-medication links.</li>
+            <li><strong>Temporal Honesty:</strong> Locale ambiguity (<code class="inline">03/04/2025</code> EN vs FR) &amp; OCR digit repairs (<code class="inline">2O25-03-1O</code>) flagged <code class="inline">needs_review=true</code>; impossible dates (<code class="inline">2025-02-30</code>) rejected (<code class="inline">None</code>).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 6: NLP BENCHMARKS CHART ==================== -->
+    <section class="slide" data-audience="both">
+      <div class="slide-meta">
+        <span><span class="en">Slide 06 / 16 — Verified NLP Benchmarks</span><span class="fr">Diapo 06 / 16 — Benchmarks NLP Vérifiés</span></span>
+        <span class="pill pill-green">Raw-Output Verified</span>
+      </div>
+      <h2>
+        <span class="en">NLP Performance Across Locked Synthetic, Public Clinical &amp; Dev Splits</span>
+        <span class="fr">Performance NLP sur Splits Synthétiques Gelés, Cliniques Publics &amp; Dev</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Provenance is strictly separated: synthetic (<code class="inline">SYNTH-MED-V3.1</code>), real open clinical (<code class="inline">open_clinical_test</code>), LLM-authored proxy (<code class="inline">realistic_llm_80</code>, <code class="inline">owner_written: false</code>), and Phase 4 dev (<code class="inline">val.jsonl</code>).</span>
+        <span class="fr">La provenance est strictement séparée : synthétique (<code class="inline">SYNTH-MED-V3.1</code>), clinique ouvert (<code class="inline">open_clinical_test</code>), proxy LLM (<code class="inline">realistic_llm_80</code>, <code class="inline">owner_written: false</code>) et dev Phase 4 (<code class="inline">val.jsonl</code>).</span>
+      </p>
+
+      <div class="grid-2">
+        <div class="chart-box"><canvas id="nlpChart"></canvas></div>
+        <div class="card">
+          <h3><span class="en">Key Verified Metrics &amp; Phase 4 Dev Impact</span><span class="fr">Métriques Clés Vérifiées &amp; Impact Phase 4 (Dev)</span></h3>
+          <table>
+            <thead>
+              <tr>
+                <th><span class="en">Benchmark / Metric</span><span class="fr">Benchmark / Métrique</span></th>
+                <th class="num"><span class="en">Strict F1</span><span class="fr">F1 Strict</span></th>
+                <th class="num"><span class="en">Notes / Source</span><span class="fr">Notes / Source</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="inline">hybrid_v2</code> · <code class="inline">test_iid</code></td>
+                <td class="num"><strong>0.9972</strong></td>
+                <td class="num">SYNTH-MED-V3.1</td>
+              </tr>
+              <tr>
+                <td><code class="inline">18-Model</code> · <code class="inline">test_unseen_terms</code></td>
+                <td class="num"><strong>0.9342</strong></td>
+                <td class="num">P = 0.9572</td>
+              </tr>
+              <tr>
+                <td><code class="inline">18-Model</code> · <code class="inline">open_clinical_test</code></td>
+                <td class="num"><strong>0.6779</strong></td>
+                <td class="num">Lenient 0.7484 (P 0.7226)</td>
+              </tr>
+              <tr>
+                <td><code class="inline">18-Model</code> · <code class="inline">realistic_llm_80</code> (proxy)</td>
+                <td class="num"><strong>0.7197</strong></td>
+                <td class="num">owner_written: false</td>
+              </tr>
+              <tr>
+                <td>Phase 4 Relations (<code class="inline">val.jsonl</code>, n=160)</td>
+                <td class="num"><strong style="color:#34d399;">0.9437 → 0.9531</strong></td>
+                <td class="num">P 0.9400 → 0.9765 (-63% FP)</td>
+              </tr>
+              <tr>
+                <td>Phase 4 TIMEX (<code class="inline">val.jsonl</code>, n=160)</td>
+                <td class="num"><strong>0.9937</strong></td>
+                <td class="num">Norm Acc = 1.0000</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout" style="margin-top:0.85rem; font-size:0.82rem;">
+            <span class="en"><strong>Diagnostic honesty:</strong> On unreviewed AI-assisted starter drafts (<code class="inline">80 notes, owner_written: false</code>), frozen <code class="inline">hybrid_v2</code> scored <strong>0.4283</strong> Strict F1 (<strong>0.9485</strong> Assertion Acc) — confirming why human-adjudicated blind evaluation is essential.</span>
+            <span class="fr"><strong>Honnêteté diagnostique :</strong> Sur les 80 brouillons IA non revus (<code class="inline">owner_written: false</code>), <code class="inline">hybrid_v2</code> obtient <strong>0,4283</strong> F1 strict (<strong>0,9485</strong> précision d'assertion) — confirmant l'importance du futur jeu aveugle humain adjudiqué.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 7: OCR ROBUSTNESS ==================== -->
+    <section class="slide" data-audience="dev">
+      <div class="slide-meta">
+        <span><span class="en">Slide 07 / 16 — Document Parsing &amp; OCR</span><span class="fr">Diapo 07 / 16 — Parsing Documentaire &amp; OCR</span></span>
+        <span class="pill pill-blue">Developers &amp; ML</span>
+      </div>
+      <h2>
+        <span class="en">Bilingual OCR Stress Benchmark (120 Pages: 60 EN + 60 FR)</span>
+        <span class="fr">Stress-Test OCR Bilingue (120 Pages : 60 EN + 60 FR)</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Measured end-to-end OCR-to-NLP error propagation across 6 scan degradation tiers (<code class="inline">docs/results/v3_1_ocr_full_benchmark.json</code>) with CLAHE low-contrast rescue and 2-column reading-order detection.</span>
+        <span class="fr">Propagation d'erreurs OCR → NLP mesurée sur 6 niveaux de dégradation (<code class="inline">docs/results/v3_1_ocr_full_benchmark.json</code>) avec sauvetage CLAHE faible contraste et détection 2 colonnes.</span>
+      </p>
+
+      <div class="grid-2">
+        <div class="chart-box"><canvas id="ocrChart"></canvas></div>
+        <div class="card">
+          <h3><span class="en">Summary &amp; Engineering Invariants</span><span class="fr">Synthèse &amp; Invariants Techniques</span></h3>
+          <div class="grid-2" style="margin:0.6rem 0 0.9rem;">
+            <div class="card" style="padding:0.75rem;">
+              <div class="kpi-label">Overall CER / WER</div>
+              <div class="kpi-value" style="font-size:1.35rem;">8.62% / 21.12%</div>
+              <div class="kpi-sub">EN 8.24% · FR 8.99%</div>
+            </div>
+            <div class="card" style="padding:0.75rem;">
+              <div class="kpi-label">OCR → NLP F1 Drop</div>
+              <div class="kpi-value" style="font-size:1.35rem;">-0.085 / -0.114</div>
+              <div class="kpi-sub">CRF 0.9128 · Hybrid 0.8799</div>
+            </div>
+          </div>
+          <ul class="clean">
+            <li><span class="en"><strong>Binary Invariant Preserved:</strong> <code class="inline">preprocess_scan_image</code> strictly outputs <code class="inline">{0, 255}</code> uint8; CLAHE triggers automatically when <code class="inline">p99 - p0.1 &lt; 110.0</code>.</span><span class="fr"><strong>Invariant Binaire Préservé :</strong> sortie stricte <code class="inline">{0, 255}</code> uint8 ; CLAHE déclenché automatiquement si <code class="inline">p99 - p0.1 &lt; 110.0</code>.</span></li>
+            <li><span class="en"><strong>Exact Character-Offset Alignment:</strong> <code class="inline">map_ocr_spans_to_reference</code> passes 100% exact on clean text across all 4 splits; 17/17 OCR tests passing.</span><span class="fr"><strong>Alignement Exact des Offsets :</strong> <code class="inline">map_ocr_spans_to_reference</code> 100 % exact sur texte propre ; 17/17 tests OCR réussis.</span></li>
+            <li><span class="en"><strong>Known Failure Mode:</strong> Tier 5 multi-font skewed tables (CER 36.73%) and Tier 6 heavy 150 DPI blur (hybrid F1 -0.3015) trigger manual review warnings.</span><span class="fr"><strong>Limite Connue :</strong> Tier 5 tableaux inclinés multi-polices (CER 36,73 %) et Tier 6 flou 150 DPI (-0,3015 F1) déclenchent un signalement de revue manuelle.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 8: VISION TRACK ==================== -->
+    <section class="slide" data-audience="both">
+      <div class="slide-meta">
+        <span><span class="en">Slide 08 / 16 — Separate Dermatology Vision Track</span><span class="fr">Diapo 08 / 16 — Piste Vision Dermatologie Séparée</span></span>
+        <span class="pill pill-purple">Minister + Developers</span>
+      </div>
+      <h2>
+        <span class="en">9-Seed Cross-Architecture Skin-Lesion Ensemble (<code class="inline">locked_test_v4</code>)</span>
+        <span class="fr">Ensemble Dermatologie 9 Seeds Cross-Architecture (<code class="inline">locked_test_v4</code>)</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">7× SE-ResNetV2 + 2× From-Scratch ConvNeXt-Derm, 4× TTA, Fitzpatrick-inclusive Lesion ROI Multi-Crop, evaluated on SHA-256-deduplicated <code class="inline">locked_test_v4</code> (<code class="inline">n=1,611</code>, 0 exact byte duplicates vs. train, 0 pretrained weights).</span>
+        <span class="fr">7× SE-ResNetV2 + 2× ConvNeXt-Derm from-scratch, 4× TTA, recadrage ROI inclusif Fitzpatrick, évalué sur <code class="inline">locked_test_v4</code> dédupliqué SHA-256 (<code class="inline">n=1 611</code>, 0 doublon exact vs train, 0 poids pré-entraîné).</span>
+      </p>
+
+      <div class="grid-2">
+        <div class="chart-box"><canvas id="visionChart"></canvas></div>
+        <div class="card">
+          <h3><span class="en">Modality Calibration, Abstention &amp; Honest Limits</span><span class="fr">Calibration par Modalité, Abstention &amp; Limites Honnêtes</span></h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Modality (<code class="inline">v4</code>)</th>
+                <th class="num">n</th>
+                <th class="num">AUROC</th>
+                <th class="num">Sens@90%Spec</th>
+                <th class="num">ECE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Overall Calibrated</strong></td><td class="num">1,611</td><td class="num"><strong>0.9348</strong></td><td class="num"><strong>0.7962</strong></td><td class="num">0.0333</td></tr>
+              <tr><td>Dermoscopic</td><td class="num">690</td><td class="num"><strong>0.9727</strong></td><td class="num"><strong>0.9291</strong></td><td class="num">0.0403</td></tr>
+              <tr><td>Clinical Smartphone</td><td class="num">571</td><td class="num">0.8805</td><td class="num">0.5826</td><td class="num">0.0339</td></tr>
+              <tr><td>TBP Tile (Auto-Abstained)</td><td class="num">350</td><td class="num">0.8768</td><td class="num">0.7000</td><td class="num">0.1017</td></tr>
+              <tr><td><strong style="color:#34d399;">Low-Uncert. (std &le; 0.12)</strong></td><td class="num">1,263</td><td class="num"><strong style="color:#34d399;">0.9483</strong></td><td class="num"><strong style="color:#34d399;">0.8347</strong></td><td class="num">0.0322</td></tr>
+            </tbody>
+          </table>
+          <div class="callout callout-warn" style="margin-top:0.8rem; font-size:0.8rem;">
+            <span class="en"><strong>Disclosed Limits:</strong> Smartphone Sens@90%Spec (58.26%) is below clinical screening bar; <code class="inline">dHash &le; 4</code> near-duplicate rate (25.49% in <code class="inline">v3</code>) and Grad-CAM Adebayo saliency limits are explicitly documented. EXIF is stripped on upload; 23/23 vision tests pass.</span>
+            <span class="fr"><strong>Limites Publiées :</strong> Sens@90%Spec smartphone (58,26 %) encore insuffisante pour le dépistage ; proximité <code class="inline">dHash &le; 4</code> (25,49 % dans <code class="inline">v3</code>) et limites Grad-CAM (Adebayo) documentées. EXIF purgé à l'upload ; 23/23 tests vision réussis.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 9: PRIVACY & PHI ==================== -->
+    <section class="slide" data-audience="both">
+      <div class="slide-meta">
+        <span><span class="en">Slide 09 / 16 — Privacy &amp; Bilingual PHI Engineering</span><span class="fr">Diapo 09 / 16 — Vie Privée &amp; Ingénierie PHI Bilingue</span></span>
+        <span class="pill pill-green">HIPAA / GDPR / CNIL</span>
+      </div>
+      <h2>
+        <span class="en">PHI De-Identification, HIPAA &gt;89 Rule &amp; Honest Span-Level Metrics</span>
+        <span class="fr">Désidentification PHI, Règle HIPAA &gt;89 Ans &amp; Métriques Span-Level</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Phase 3 fixed the PHI precision bug (now true span-level P/R/F1 catching intra-sentence false positives, separated from non-PHI sentence FP rate) and wired HIPAA Safe Harbor &gt;89 age redaction.</span>
+        <span class="fr">La Phase 3 a corrigé le bug de précision PHI (P/R/F1 exact au niveau span détectant les FP intra-phrase, séparé du taux FP par phrase) et câblé le masquage HIPAA &gt;89 ans.</span>
+      </p>
+
+      <div class="grid-2">
+        <div class="chart-box"><canvas id="phiChart"></canvas></div>
+        <div class="card">
+          <h3><span class="en">Controls Verified &amp; Diagnostic Findings</span><span class="fr">Contrôles Vérifiés &amp; Constats Diagnostiques</span></h3>
+          <ul class="clean">
+            <li><span class="en"><strong>HIPAA &gt;89 Wired (<code class="inline">privacy.py</code>):</strong> Redacts <code class="inline">92-year-old</code> / <code class="inline">âgée de 94 ans</code> as <code class="inline">[AGE_OVER_89_REDACTED]</code> (optional <code class="inline">redact_all_ages=True</code>).</span><span class="fr"><strong>HIPAA &gt;89 Câblé (<code class="inline">privacy.py</code>) :</strong> masque <code class="inline">92-year-old</code> / <code class="inline">âgée de 94 ans</code> en <code class="inline">[AGE_OVER_89_REDACTED]</code> (option <code class="inline">redact_all_ages=True</code>).</span></li>
+            <li><span class="en"><strong>Zero Clinical Over-Redaction:</strong> Protected eponyms (<em>Parkinson, Crohn, Graves, Guillain-Barré</em>), treatment durations (<em>for 14 days, pendant 7 jours</em>), and lab values (<code class="inline">HbA1c 6.4%</code>).</span><span class="fr"><strong>Zéro Sur-Masquage Clinique :</strong> éponymes protégés (<em>Parkinson, Crohn, Guillain-Barré</em>), durées (<em>pendant 7 jours</em>) et biologie (<code class="inline">CRP 4 mg/L</code>).</span></li>
+            <li><span class="en"><strong>Zero PHI in Reports &amp; Exports:</strong> 19/19 PHI &amp; privacy tests pass across MD/HTML/PDF, JSONL/BRAT, and audit logs.</span><span class="fr"><strong>Zéro PHI dans Rapports &amp; Exports :</strong> 19/19 tests PHI réussis sur MD/HTML/PDF, JSONL/BRAT et journaux d'audit.</span></li>
+            <li><span class="en"><strong>60-Draft Diagnostic (<code class="inline">owner_written: false</code>):</strong> Span P=<strong>0.9394</strong>, R=<strong>0.5167</strong> (100% on Address/Email/Person/Phone/Org; exposed clear roadmap items for non-DOB dates, MRN variants, URLs, and ages &le;89 if GDPR requires).</span><span class="fr"><strong>Diagnostic 60 Brouillons (<code class="inline">owner_written: false</code>) :</strong> P=<strong>0,9394</strong>, R=<strong>0,5167</strong> (100 % sur Adresse/Email/Nom/Tél/Org ; pistes claires identifiées sur dates hors-naissance, variantes MRN, URLs).</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 10: SECURITY ARCHITECTURE ==================== -->
+    <section class="slide" data-audience="both">
+      <div class="slide-meta">
+        <span><span class="en">Slide 10 / 16 — Zero-Trust Security Architecture</span><span class="fr">Diapo 10 / 16 — Architecture Sécurité Zero-Trust</span></span>
+        <span class="pill pill-blue">Minister + Developers</span>
+      </div>
+      <h2>
+        <span class="en">Defense-in-Depth Security Controls (19/19 Security Tests Verified)</span>
+        <span class="fr">Défense en Profondeur (19/19 Tests Sécurité Vérifiés)</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Zero external infrastructure dependencies: all authentication, rate limiting, token revocation, and tamper-evident logging operate natively on-premise.</span>
+        <span class="fr">Zéro dépendance d'infrastructure externe : authentification, limitation brute-force, révocation de jetons et audit infalsifiable fonctionnent nativement sur site.</span>
+      </p>
+
+      <div class="grid-3">
+        <div class="card card-accent">
+          <h3><span class="en">Identity, RBAC &amp; Isolation</span><span class="fr">Identité, RBAC &amp; Isolation</span></h3>
+          <ul class="clean">
+            <li><strong>Argon2id</strong> password hashing (<code class="inline">memory_cost=19456</code>).</li>
+            <li><strong>HMAC-SHA256 Bearer tokens</strong> with unique <code class="inline">jti</code> &amp; instant revocation (<code class="inline">POST /api/v1/auth/logout</code>).</li>
+            <li><strong>6 Roles &amp; Institution Scope:</strong> Cross-institution access blocked with HTTP <code class="inline">403</code>.</li>
+            <li><strong><code class="inline">SQLiteLoginRateLimiter</code>:</strong> Sliding-window HTTP <code class="inline">429</code> brute-force defense (10 attempts / 300s).</li>
+          </ul>
+        </div>
+        <div class="card card-primary">
+          <h3><span class="en">Upload, Web &amp; Model Safety</span><span class="fr">Sécurité Uploads, Web &amp; Modèles</span></h3>
+          <ul class="clean">
+            <li><strong>Strict Allowlist:</strong> Rejects executables (<code class="inline">415</code>), oversized files (<code class="inline">413</code>), zip-bombs &amp; path traversal.</li>
+            <li><strong>Zero Unsafe Deserialization:</strong> 0 <code class="inline">pickle.load</code> / <code class="inline">joblib.load</code>; <code class="inline">weights_only=True</code> on all <code class="inline">torch.load</code>.</li>
+            <li><strong>Browser Hardening:</strong> Strict CSP (<code class="inline">frame-ancestors 'none'</code>, <code class="inline">base-uri 'none'</code>, safe <code class="inline">blob:</code> previews), <code class="inline">nosniff</code>, <code class="inline">no-referrer</code>, <code class="inline">no-store</code>.</li>
+          </ul>
+        </div>
+        <div class="card card-purple">
+          <h3><span class="en">Auditability &amp; Governance</span><span class="fr">Auditabilité &amp; Gouvernance</span></h3>
+          <ul class="clean">
+            <li><strong>SHA-256 Hash-Chained Audit Log:</strong> Every login, upload, review, and export is chained (<code class="inline">verify_audit_chain</code> detects tampering).</li>
+            <li><strong>Prompt-Injection Scanning:</strong> Untrusted document text scanned for instruction-override patterns.</li>
+            <li><strong>Isolated Pseudonym Vault:</strong> Reversible lookup strictly restricted to <code class="inline">INSTITUTION_ADMIN</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 11: DATA INTEGRITY ==================== -->
+    <section class="slide" data-audience="both">
+      <div class="slide-meta">
+        <span><span class="en">Slide 11 / 16 — Data Integrity &amp; Provenance</span><span class="fr">Diapo 11 / 16 — Intégrité des Données &amp; Provenance</span></span>
+        <span class="pill pill-warn">Scientific Integrity</span>
+      </div>
+      <h2>
+        <span class="en">Frozen Splits, Leakage Audits &amp; Strict Human Evaluation Protocol</span>
+        <span class="fr">Splits Gelés, Audits de Fuite &amp; Protocole Humain Strict</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Historical splits are never silently altered. Any detected overlap is transparently documented with a replacement protocol.</span>
+        <span class="fr">Les splits historiques ne sont jamais modifiés silencieusement. Tout chevauchement détecté est documenté avec un protocole de remplacement.</span>
+      </p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3><span class="en">Dataset Provenance &amp; Integrity Audit (Phase 1)</span><span class="fr">Audit de Provenance &amp; Intégrité (Phase 1)</span></h3>
+          <table>
+            <thead>
+              <tr><th>Dataset</th><th>Provenance</th><th>Integrity Status</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="inline">SYNTH-MED-V3.1</code></td>
+                <td>Synthetic (1,240 docs)</td>
+                <td><span class="pill pill-green">4/4 SHA-256 OK · 0 Leakage</span></td>
+              </tr>
+              <tr>
+                <td><code class="inline">open_clinical</code></td>
+                <td>MACCROBAT, E3C, PxCorpus</td>
+                <td><span class="pill pill-warn">73/443 PxCorpus text overlap logged</span></td>
+              </tr>
+              <tr>
+                <td><code class="inline">realistic_llm_80</code></td>
+                <td>LLM Proxy (<code class="inline">owner_written: false</code>)</td>
+                <td><span class="pill pill-blue">Proxy only · Never claimed human</span></td>
+              </tr>
+              <tr>
+                <td><code class="inline">locked_test_v4</code></td>
+                <td>ISIC / SLICE-3D / HAM (1,611)</td>
+                <td><span class="pill pill-green">0 exact SHA-256 dups vs. train</span></td>
+              </tr>
+              <tr>
+                <td><strong>Human 80 + PHI 60</strong></td>
+                <td>Owner / Clinician-Written</td>
+                <td><span class="pill pill-purple">Staged for Label Studio · Pending</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card card-accent">
+          <h3><span class="en">Enforced 80-Note Human Protocol (Phase 2)</span><span class="fr">Protocole Humain 80 Notes Appliqué (Phase 2)</span></h3>
+          <ul class="clean">
+            <li><span class="en"><strong>Exact Quotas Enforced in Code:</strong> 80 unique documents, 40 EN / 40 FR, all 6 <code class="inline">DOC_TYPES</code>, &ge;16 double-annotated (&ge;20%).</span><span class="fr"><strong>Quotas Imposés dans le Code :</strong> 80 documents uniques, 40 EN / 40 FR, 6 <code class="inline">DOC_TYPES</code>, &ge;16 double-annotés (&ge;20 %).</span></li>
+            <li><span class="en"><strong>Zero Silent Defaults:</strong> Rejects missing <code class="inline">doc_id</code>, <code class="inline">language</code>, <code class="inline">doc_type</code>, or ISO <code class="inline">document_date</code>.</span><span class="fr"><strong>Zéro Défaut Silencieux :</strong> rejette tout champ <code class="inline">doc_id</code>, <code class="inline">language</code>, <code class="inline">doc_type</code> ou <code class="inline">document_date</code> manquant.</span></li>
+            <li><span class="en"><strong>Mandatory Adjudication:</strong> Rejects unadjudicated disagreements — never silently takes annotator #1 as gold.</span><span class="fr"><strong>Adjudication Obligatoire :</strong> rejette tout désaccord non adjudiqué — ne prend jamais l'annotateur 1 comme vérité terrain.</span></li>
+            <li><span class="en"><strong>Tamper-Evident Freeze Lock:</strong> <code class="inline">eval_realistic.py --owner-written</code> verifies SHA-256 manifest before running a single <code class="inline">post_hoc: false</code> evaluation.</span><span class="fr"><strong>Verrou SHA-256 :</strong> <code class="inline">eval_realistic.py --owner-written</code> vérifie le manifeste SHA-256 avant l'évaluation unique <code class="inline">post_hoc: false</code>.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 12: ENGINEERING QUALITY & CPU ==================== -->
+    <section class="slide" data-audience="dev">
+      <div class="slide-meta">
+        <span><span class="en">Slide 12 / 16 — Code Quality, Artifacts &amp; CPU Performance</span><span class="fr">Diapo 12 / 16 — Qualité Code, Artefacts &amp; Performance CPU</span></span>
+        <span class="pill pill-blue">Developers &amp; ML</span>
+      </div>
+      <h2>
+        <span class="en">Engineering Verification &amp; CPU-Only Resource Profile</span>
+        <span class="fr">Vérification d'Ingénierie &amp; Profil Ressources CPU-Only</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Benchmarked on Intel Core i7-9750H @ 2.60 GHz, 32 GB RAM, macOS <code class="inline">x86_64</code>, CPU-only (<code class="inline">docs/results/raw/phase9_static_and_cpu.txt</code> &amp; <code class="inline">phase11_final_verify.txt</code>).</span>
+        <span class="fr">Mesuré sur Intel Core i7-9750H @ 2,60 GHz, 32 Go RAM, macOS <code class="inline">x86_64</code>, CPU-only (<code class="inline">phase9_static_and_cpu.txt</code> &amp; <code class="inline">phase11_final_verify.txt</code>).</span>
+      </p>
+
+      <div class="grid-4">
+        <div class="card card-accent">
+          <div class="kpi-label">Static Analysis</div>
+          <div class="kpi-value">0 / 0</div>
+          <div class="kpi-sub">ruff (0) · mypy (0 / 99 files)</div>
+        </div>
+        <div class="card card-primary">
+          <div class="kpi-label">Test Suites</div>
+          <div class="kpi-value">100% Pass</div>
+          <div class="kpi-sub">92 post-audit Py · 13/13 Vitest</div>
+        </div>
+        <div class="card card-purple">
+          <div class="kpi-label">hybrid_v2 Latency</div>
+          <div class="kpi-value">33 / 29 ms</div>
+          <div class="kpi-sub">Load 33.0 ms · Infer 29.2 ms</div>
+        </div>
+        <div class="card card-accent">
+          <div class="kpi-label">Memory &amp; Weights</div>
+          <div class="kpi-value">149.8 MB</div>
+          <div class="kpi-sub">RSS · 30/30 ckpts (344.6 MB)</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:1.15rem;">
+        <div class="card">
+          <h3><span class="en">Clean Database &amp; Frontend Verification</span><span class="fr">Vérification Base de Données &amp; Frontend</span></h3>
+          <ul class="clean">
+            <li><span class="en"><strong>Clean SQLite Migration:</strong> Idempotent <code class="inline">001_initial_schema</code> builds all 26 tables from empty DB (including 3-axis assertion columns &amp; <code class="inline">login_attempts</code>).</span><span class="fr"><strong>Migration SQLite Propre :</strong> <code class="inline">001_initial_schema</code> idempotente crée 26 tables depuis une base vide (colonnes 3 axes + <code class="inline">login_attempts</code>).</span></li>
+            <li><span class="en"><strong>Zero Production Mocks:</strong> React 19 UI (16 pages, Lighthouse 100/100 a11y) wired 100% to live FastAPI endpoints.</span><span class="fr"><strong>Zéro Mock en Production :</strong> interface React 19 (16 pages, Lighthouse 100/100) branchée 100 % sur l'API FastAPI.</span></li>
+            <li><span class="en"><strong>Zero Pretrained Scan:</strong> Automated grep confirms 0 <code class="inline">from_pretrained</code>, 0 OpenAI/Anthropic/HF API calls.</span><span class="fr"><strong>Scan Zéro Pré-entraîné :</strong> 0 <code class="inline">from_pretrained</code>, 0 appel API OpenAI/Anthropic/HF.</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="en">Release Artifacts Ready (Local Verified)</span><span class="fr">Artefacts de Release Vérifiés Localement</span></h3>
+          <ul class="clean">
+            <li><code class="inline">dist/release/models_nlp_18seed.tar.gz</code> — <strong>219 MB</strong> (SHA-256 OK)</li>
+            <li><code class="inline">dist/release/models_vision_9seed.tar.gz</code> — <strong>89 MB</strong> (SHA-256 OK)</li>
+            <li><code class="inline">dist/release/checksums.sha256</code> — Verified via <code class="inline">shasum -a 256 -c</code></li>
+            <li><span class="en">Safe unpacker (<code class="inline">scripts/package_release_artifacts.py</code>) verifies SHA-256, blocks path traversal &amp; symlinks, and uses Python 3.12+ <code class="inline">filter="data"</code>.</span><span class="fr">Décompresseur sûr vérifiant SHA-256, bloquant path traversal/symlinks avec <code class="inline">filter="data"</code>.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 13: LIVE DEMO SCRIPT ==================== -->
+    <section class="slide" data-audience="both">
+      <div class="slide-meta">
+        <span><span class="en">Slide 13 / 16 — 5-Minute Live Demo Walkthrough</span><span class="fr">Diapo 13 / 16 — Scénario de Démo Live (5 min)</span></span>
+        <span class="pill pill-green">Live on localhost:8000/react/</span>
+      </div>
+      <h2>
+        <span class="en">Live Demonstration Script for This Meeting</span>
+        <span class="fr">Scénario de Démonstration en Direct pour Cette Réunion</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">The platform is already running locally at <code class="inline">http://127.0.0.1:8000/react/</code> with the 18-model NLP ensemble and 9-seed Vision ensemble active.</span>
+        <span class="fr">La plateforme tourne déjà en local sur <code class="inline">http://127.0.0.1:8000/react/</code> avec l'ensemble NLP 18 modèles et l'ensemble Vision 9 seeds actifs.</span>
+      </p>
+
+      <div class="grid-2">
+        <div class="card card-primary">
+          <h3><span class="en">Part A — Clinical Document &amp; Governance (3 min)</span><span class="fr">Partie A — Document Clinique &amp; Gouvernance (3 min)</span></h3>
+          <ul class="clean">
+            <li><strong>Step 1 — Auth &amp; Roles:</strong> Sign in as <code class="inline">admin_dakar</code> (show Argon2id + Bearer token + institution scope).</li>
+            <li><strong>Step 2 — Bilingual Extraction:</strong> Upload a French or English clinical note containing negation (<em>"pas de fièvre"</em>), family history (<em>"sa mère a un diabète"</em>), and two medications (<em>metformin 500 mg BID, lisinopril 10 mg QD</em>).</li>
+            <li><strong>Step 3 — Inspect Output:</strong> Highlight exact character spans, 3-axis badges (<code class="inline">absent</code> / <code class="inline">family</code> / <code class="inline">historical</code>), non-crossing Relation Graph, and timeline.</li>
+            <li><strong>Step 4 — Human Review &amp; Export:</strong> Approve/correct an entity in <strong>Review Queue</strong>, then download a PHI-redacted bilingual PDF/HTML report and JSONL/BRAT gold export.</li>
+          </ul>
+        </div>
+        <div class="card card-purple">
+          <h3><span class="en">Part B — Vision Track &amp; Auditability (2 min)</span><span class="fr">Partie B — Piste Vision &amp; Auditabilité (2 min)</span></h3>
+          <ul class="clean">
+            <li><strong>Step 5 — Automatic Image Triage:</strong> Upload a scanned document vs. a dermatology lesion image — show automatic routing + EXIF stripping.</li>
+            <li><strong>Step 6 — Uncertainty Guardrail:</strong> Show calibrated malignancy score, ensemble std guardrail (<code class="inline">std &gt; 0.12</code> abstention), and plain EN/FR research-only capability notice.</li>
+            <li><strong>Step 7 — Benchmarks &amp; Audit Chain:</strong> Open <strong>Benchmarks / Vision Benchmark</strong> pages and verify <code class="inline">GET /api/v1/audit/verify</code> returns intact SHA-256 chain.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 14: CLINICAL ROADMAP ==================== -->
+    <section class="slide" data-audience="minister">
+      <div class="slide-meta">
+        <span><span class="en">Slide 14 / 16 — Clinical Validation Roadmap</span><span class="fr">Diapo 14 / 16 — Feuille de Route de Validation Clinique</span></span>
+        <span class="pill pill-purple">Minister &amp; Governance</span>
+      </div>
+      <h2>
+        <span class="en">4-Phase Path from Research Prototype to Governed Hospital Pilot</span>
+        <span class="fr">Feuille de Route en 4 Phases : du Prototype au Pilote Hospitalier</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Zero shortcuts: every phase has objective quantitative pass/fail gates enforced in code (<code class="inline">docs/SHADOW_MODE_CLINICAL_PROTOCOL.md</code>).</span>
+        <span class="fr">Aucun raccourci : chaque phase possède des critères quantitatifs objectifs vérifiés par le code (<code class="inline">docs/SHADOW_MODE_CLINICAL_PROTOCOL.md</code>).</span>
+      </p>
+
+      <div class="grid-4">
+        <div class="card card-accent">
+          <div class="kpi-label">Phase I · Weeks 1–3</div>
+          <h3><span class="en">Blind Human Evaluation</span><span class="fr">Évaluation Aveugle Humaine</span></h3>
+          <ul class="clean">
+            <li>2 clinicians rewrite &amp; double-annotate 80 EN/FR notes in Label Studio.</li>
+            <li>Adjudicate disagreements &amp; lock SHA-256 manifest.</li>
+            <li>Run 1 pre-registered eval (<code class="inline">post_hoc: false</code>) + 60-sentence human PHI eval.</li>
+          </ul>
+        </div>
+        <div class="card card-primary">
+          <div class="kpi-label">Phase II · Weeks 4–8</div>
+          <h3><span class="en">External Validation</span><span class="fr">Validation Externe</span></h3>
+          <ul class="clean">
+            <li>Obtain institutional access to PAD-UFES-20, Fitzpatrick17k, DDI.</li>
+            <li>Measure smartphone sensitivity across Fitzpatrick I–VI skin tones.</li>
+            <li>Expand PHI rules for non-DOB dates, local MRN formats, and URLs.</li>
+          </ul>
+        </div>
+        <div class="card card-purple">
+          <div class="kpi-label">Phase III · Months 3–5</div>
+          <h3><span class="en">Hospital Shadow-Mode</span><span class="fr">Mode Shadow Hospitalier</span></h3>
+          <ul class="clean">
+            <li>Silent parallel execution alongside clinicians (zero clinical impact).</li>
+            <li>Evaluate against 8 automated promotion gates (<code class="inline">scripts/eval_shadow_mode.py</code>), incl. skin-tone parity &amp; calibration ECE.</li>
+          </ul>
+        </div>
+        <div class="card card-warn">
+          <div class="kpi-label">Phase IV · Month 6+</div>
+          <h3><span class="en">Ethics &amp; Pilot Approval</span><span class="fr">Éthique &amp; Pilote Encadré</span></h3>
+          <ul class="clean">
+            <li>IRB / Ethics Board &amp; CNIL / national data-protection sign-off.</li>
+            <li>Human-in-the-loop assisted documentation pilot with continuous drift &amp; audit monitoring.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 15: DEVELOPER QUICKSTART ==================== -->
+    <section class="slide" data-audience="dev">
+      <div class="slide-meta">
+        <span><span class="en">Slide 15 / 16 — Developer Quickstart &amp; Reproducibility</span><span class="fr">Diapo 15 / 16 — Démarrage Développeur &amp; Reproductibilité</span></span>
+        <span class="pill pill-blue">Developers &amp; ML</span>
+      </div>
+      <h2>
+        <span class="en">Exact Reproducible Commands (CPU-Only Local Setup)</span>
+        <span class="fr">Commandes Exactes &amp; Reproductibles (Installation Locale CPU-Only)</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">All commands below were verified directly on <code class="inline">chore/completion-audit</code> with raw logs archived in <code class="inline">docs/results/raw/</code>.</span>
+        <span class="fr">Toutes les commandes ci-dessous ont été vérifiées sur <code class="inline">chore/completion-audit</code> avec sorties brutes archivées dans <code class="inline">docs/results/raw/</code>.</span>
+      </p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3><span class="en">1. Quick Dev Verification (~60s) &amp; Launch</span><span class="fr">1. Vérification Rapide (~60s) &amp; Lancement</span></h3>
+          <pre class="code"># Static analysis (0 errors)
+.venv-vision/bin/ruff check medresearch_platform scripts tests
+.venv-vision/bin/mypy medresearch_platform
+
+# Fast regression suite + React build &amp; tests
+.venv-vision/bin/pytest -q \
+  tests/test_human_realistic_protocol_strict.py \
+  tests/test_phase3_phi_metrics_and_age.py \
+  tests/test_phase4_nlp_assertions_relations_temporal.py \
+  tests/test_conftest_fresh_clone.py
+npm --prefix frontend run build &amp;&amp; npm --prefix frontend test -- --run
+
+# Start FastAPI (18-model NLP + 9-seed Vision)
+MEDRESEARCH_DEFAULT_APPROACH=hospital_ensemble \
+MEDRESEARCH_VISION_ENSEMBLE=1 \
+.venv-vision/bin/uvicorn medresearch_platform.interfaces.api:create_app \
+  --factory --host 127.0.0.1 --port 8000</pre>
+        </div>
+        <div class="card">
+          <h3><span class="en">2. Human Blind Eval &amp; Artifact Verification</span><span class="fr">2. Évaluation Aveugle Humaine &amp; Artefacts</span></h3>
+          <pre class="code"># Verify all 30 local checkpoints (SHA-256)
+.venv-vision/bin/python scripts/package_release_artifacts.py verify
+
+# Import &amp; freeze adjudicated 80-note Label Studio export
+.venv-vision/bin/python scripts/import_label_studio_realistic.py \
+  --input path/to/adjudicated_80.json \
+  --output data/processed/realistic/eval.jsonl \
+  --iaa-out docs/results/realistic_human_iaa.json
+
+# Run single pre-registered blind evaluation (post_hoc=false)
+.venv-vision/bin/python scripts/eval_realistic.py \
+  --realistic data/processed/realistic/eval.jsonl \
+  --out docs/results/realistic_human_eval.json --owner-written
+
+# Run single blind human PHI evaluation
+.venv-vision/bin/python scripts/eval_redaction_human.py \
+  --input path/to/reviewed_phi_human.jsonl \
+  --out docs/results/p10_redaction_owner_eval.json --owner-written</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 16: DECISIONS & NEXT ACTIONS ==================== -->
+    <section class="slide" data-audience="both">
+      <div class="slide-meta">
+        <span><span class="en">Slide 16 / 16 — Decisions Needed Today</span><span class="fr">Diapo 16 / 16 — Décisions Attendues Aujourd'hui</span></span>
+        <span class="pill pill-green">Action Plan</span>
+      </div>
+      <h2>
+        <span class="en">Decisions Requested from Leadership &amp; Engineering Team</span>
+        <span class="fr">Décisions Demandées à la Direction &amp; à l'Équipe Technique</span>
+      </h2>
+      <p class="subtitle">
+        <span class="en">Clear ownership to unlock independent human validation, external dermatology benchmarking, and governed hospital shadow-mode.</span>
+        <span class="fr">Responsabilités claires pour débloquer la validation aveugle humaine, l'évaluation dermatologique externe et le mode shadow hospitalier.</span>
+      </p>
+
+      <div class="grid-2">
+        <div class="card card-purple">
+          <h3><span class="en">For the Minister &amp; Hospital Leadership</span><span class="fr">Pour le Ministre &amp; la Direction Hospitalière</span></h3>
+          <ul class="clean">
+            <li><span class="en"><strong>1. Designate 2 Bilingual Clinicians:</strong> Rewrite, double-annotate (&ge;16/80), and adjudicate the staged Label Studio tasks + 60 PHI sentences (~2 days total effort).</span><span class="fr"><strong>1. Désigner 2 Cliniciens Bilingues :</strong> réécrire, double-annoter (&ge;16/80) et adjudiquer les tâches Label Studio préparées + 60 phrases PHI (~2 jours d'effort).</span></li>
+            <li><span class="en"><strong>2. Authorize External Dataset Requests:</strong> Sign institutional Data Use Agreements for PAD-UFES-20, Fitzpatrick17k, and DDI (dermatology track).</span><span class="fr"><strong>2. Autoriser les Demandes de Jeux Externes :</strong> signer les accords d'accès institutionnels pour PAD-UFES-20, Fitzpatrick17k et DDI.</span></li>
+            <li><span class="en"><strong>3. Initiate Shadow-Mode IRB / DUA:</strong> Approve silent shadow-mode protocol (<code class="inline">docs/SHADOW_MODE_CLINICAL_PROTOCOL.md</code>) at pilot hospital.</span><span class="fr"><strong>3. Initier l'IRB / DUA Mode Shadow :</strong> approuver le protocole shadow silencieux (<code class="inline">SHADOW_MODE_CLINICAL_PROTOCOL.md</code>) sur l'hôpital pilote.</span></li>
+          </ul>
+        </div>
+        <div class="card card-primary">
+          <h3><span class="en">For the Engineering &amp; ML Developers</span><span class="fr">Pour les Développeurs &amp; Ingénieurs ML</span></h3>
+          <ul class="clean">
+            <li><span class="en"><strong>1. Review &amp; Merge <code class="inline">chore/completion-audit</code>:</strong> 7 verified commits (strict 80-note tooling, PHI span P/R/F1 + HIPAA &gt;89, NLP relation fix + FR negation, 0 mypy errors, CSP blob + favicon fix).</span><span class="fr"><strong>1. Relire &amp; Merger <code class="inline">chore/completion-audit</code> :</strong> 7 commits vérifiés (protocole 80 notes, PHI span P/R/F1 + HIPAA &gt;89, relations NLP + négation FR, 0 erreur mypy, fix CSP blob + favicon).</span></li>
+            <li><span class="en"><strong>2. Publish GitHub Release <code class="inline">v0.2.0-research-artifacts</code>:</strong> Upload the SHA-256 verified NLP (219 MB) and Vision (89 MB) tarballs once authorized.</span><span class="fr"><strong>2. Publier la Release GitHub <code class="inline">v0.2.0-research-artifacts</code> :</strong> téléverser les archives vérifiées SHA-256 NLP (219 Mo) et Vision (89 Mo) après autorisation.</span></li>
+            <li><span class="en"><strong>3. Track <code class="inline">open_clinical_v2</code> &amp; PHI Patterns:</strong> Deduplicate <code class="inline">PxCorpus</code> by normalized text in future splits; expand MRN/URL/date PHI coverage after blind human eval.</span><span class="fr"><strong>3. Préparer <code class="inline">open_clinical_v2</code> &amp; Patterns PHI :</strong> dédupliquer <code class="inline">PxCorpus</code> par texte normalisé ; élargir les patterns MRN/URL/dates après l'évaluation aveugle.</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-green" style="margin-top:1.25rem; text-align:center;">
+        <strong><span class="en">Thank you — Ready for Live Demo &amp; Technical Q&amp;A</span><span class="fr">Merci — Prêt pour la Démo Live &amp; Questions Techniques</span></strong>
+        <div style="font-size:0.82rem; margin-top:0.25rem; color:#d1fae5;">
+          Full Audit Report: <code class="inline">docs/FINAL_ENGINEERING_AND_RESEARCH_COMPLETION_REPORT.md</code> · Work Log: <code class="inline">docs/WORK_LOG.md</code> · Raw Evidence: <code class="inline">docs/results/raw/</code>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="deck-nav" aria-label="Slide Navigation">
+    <button class="btn-outline" onclick="stepSlide(-1)">&larr; Prev</button>
+    <span class="slide-counter" id="slideCounter">1 / 16</span>
+    <button class="btn-outline" onclick="stepSlide(1)">Next &rarr;</button>
+  </nav>
+
+  <script>
+    let currentFilter = 'all';
+    let currentIdx = 0;
+
+    function getVisibleSlides() {
+      return Array.from(document.querySelectorAll('section.slide')).filter(s => !s.classList.contains('filtered-out'));
+    }
+
+    function updateDeckUI() {
+      const visible = getVisibleSlides();
+      if (visible.length === 0) return;
+      if (currentIdx >= visible.length) currentIdx = visible.length - 1;
+      if (currentIdx < 0) currentIdx = 0;
+      document.querySelectorAll('section.slide').forEach(s => s.classList.remove('active-slide'));
+      visible[currentIdx].classList.add('active-slide');
+      document.getElementById('slideCounter').textContent = `${currentIdx + 1} / ${visible.length}`;
+      const pct = ((currentIdx + 1) / visible.length) * 100;
+      document.getElementById('progressBar').style.width = `${pct}%`;
+    }
+
+    function setFilter(filter, btnEl) {
+      currentFilter = filter;
+      document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+      document.querySelectorAll('section.slide').forEach(slide => {
+        const aud = slide.dataset.audience || 'both';
+        const show = filter === 'all' || aud === 'both' || aud === filter;
+        slide.classList.toggle('filtered-out', !show);
+      });
+      currentIdx = 0;
+      updateDeckUI();
+    }
+
+    function setLang(lang) {
+      document.body.classList.remove('lang-en', 'lang-fr');
+      document.body.classList.add(`lang-${lang}`);
+      document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+      document.getElementById('btnFr').classList.toggle('active', lang === 'fr');
+    }
+
+    function toggleDeckMode() {
+      const isDeck = document.body.classList.toggle('deck-mode');
+      document.getElementById('btnMode').innerHTML = isDeck
+        ? '<span class="en">Scroll Mode</span><span class="fr">Mode Défilement</span>'
+        : '<span class="en">Slide Mode</span><span class="fr">Mode Diapo</span>';
+      updateDeckUI();
+    }
+
+    function stepSlide(delta) {
+      const visible = getVisibleSlides();
+      currentIdx = Math.max(0, Math.min(visible.length - 1, currentIdx + delta));
+      updateDeckUI();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!document.body.classList.contains('deck-mode')) return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); stepSlide(1); }
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); stepSlide(-1); }
+    });
+
+    window.addEventListener('scroll', () => {
+      if (document.body.classList.contains('deck-mode')) return;
+      const h = document.documentElement;
+      const pct = (h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight)) * 100;
+      document.getElementById('progressBar').style.width = `${pct}%`;
+    });
+
+    // ==================== CHARTS (100% VERIFIED RAW DATA) ====================
+    Chart.defaults.color = '#cbd5e1';
+    Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.16)';
+
+    // 1. NLP Benchmark Chart
+    new Chart(document.getElementById('nlpChart'), {
+      type: 'bar',
+      data: {
+        labels: ['test_iid\n(hybrid_v2)', 'unseen_terms\n(18-Model)', 'open_clinical\n(18-Model)', 'llm_80 proxy\n(18-Model)', 'Rel F1 Dev\n(Before→After)'],
+        datasets: [
+          {
+            label: 'Strict F1 / Baseline',
+            data: [0.9972, 0.9342, 0.6779, 0.7197, 0.9437],
+            backgroundColor: 'rgba(56, 189, 248, 0.75)',
+            borderRadius: 6
+          },
+          {
+            label: 'Lenient F1 / Post-Fix (Phase 4)',
+            data: [0.9972, 0.9572, 0.7484, 0.7683, 0.9531],
+            backgroundColor: 'rgba(16, 185, 129, 0.78)',
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 1.05 } },
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+
+    // 2. OCR Degradation Chart
+    new Chart(document.getElementById('ocrChart'), {
+      type: 'line',
+      data: {
+        labels: ['T1 300dpi', 'T2 200dpi', 'T3 Phone', 'T4 2-Col', 'T5 Table', 'T6 Blur'],
+        datasets: [
+          {
+            label: 'Mean CER (Lower is better)',
+            data: [0.0046, 0.0056, 0.0092, 0.0275, 0.3673, 0.1027],
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.18)',
+            fill: true,
+            tension: 0.3
+          },
+          {
+            label: 'Hybrid OCR Strict F1',
+            data: [0.9859, 0.9804, 0.9574, 0.8852, 0.7489, 0.6881],
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56, 189, 248, 0.12)',
+            fill: false,
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 1.05 } },
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+
+    // 3. Vision v4 Modality Chart
+    new Chart(document.getElementById('visionChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Overall (v4)', 'Dermoscopic', 'Clinical Phone', 'TBP (Abstained)', 'Low Uncert.'],
+        datasets: [
+          {
+            label: 'AUROC',
+            data: [0.9348, 0.9727, 0.8805, 0.8768, 0.9483],
+            backgroundColor: 'rgba(167, 139, 250, 0.82)',
+            borderRadius: 6
+          },
+          {
+            label: 'Sens @ 90% Spec',
+            data: [0.7962, 0.9291, 0.5826, 0.7000, 0.8347],
+            backgroundColor: 'rgba(16, 185, 129, 0.78)',
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 1.05 } },
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+
+    // 4. PHI 60-Draft Diagnostic Breakdown
+    new Chart(document.getElementById('phiChart'), {
+      type: 'bar',
+      data: {
+        labels: ['ADDRESS', 'EMAIL', 'PERSON', 'PHONE', 'ORG', 'DATE*', 'AGE*', 'MRN', 'URL', 'OTHER'],
+        datasets: [{
+          label: 'Recall on 60 Fictional Drafts (owner_written: false)',
+          data: [1.0, 1.0, 1.0, 1.0, 1.0, 0.1667, 0.0, 0.0, 0.0, 0.0],
+          backgroundColor: [
+            '#10b981','#10b981','#10b981','#10b981','#10b981',
+            '#f59e0b','#f59e0b','#ef4444','#ef4444','#ef4444'
+          ],
+          borderRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 1.05 } },
+        plugins: {
+          legend: { position: 'bottom' },
+          title: { display: true, text: '*AGE defaults to HIPAA >89 only; DATE shifts ISO dates instead of redacting non-DOB' }
+        }
+      }
+    });
+
+    updateDeckUI();
+  </script>
+</body>
+</html>
