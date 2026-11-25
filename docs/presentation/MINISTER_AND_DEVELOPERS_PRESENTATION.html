@@ -462,7 +462,7 @@
         <div class="card card-accent">
           <h3><span class="en">1. Total Data Sovereignty</span><span class="fr">1. Souveraineté Totale des Données</span></h3>
           <ul class="clean">
-            <li><span class="en">Runs 100% on-premise on standard hospital CPU hardware (no GPU cloud dependency).</span><span class="fr">Fonctionne 100 % sur site sur matériel CPU hospitalier standard (aucun cloud GPU).</span></li>
+            <li><span class="en">Inference runs 100% on-premise on standard hospital CPU hardware (offline training on public/synthetic non-PHI data can optionally use Kaggle GPU).</span><span class="fr">L'inférence tourne 100 % sur site sur CPU hospitalier standard (l'entraînement hors ligne sur données publiques/synthétiques sans PHI peut utiliser un GPU Kaggle).</span></li>
             <li><span class="en">Zero external inference API calls, zero hidden model downloads, zero patient data leaving the institution.</span><span class="fr">Zéro appel API externe, zéro téléchargement caché, aucune donnée patient ne quitte l'établissement.</span></li>
             <li><span class="en">Multi-institution isolation built into database &amp; RBAC (e.g., Dakar IRMD &amp; Paris CHU).</span><span class="fr">Isolation inter-institutions intégrée en base de données et RBAC (ex. IRMD Dakar &amp; CHU Paris).</span></li>
           </ul>
@@ -994,7 +994,7 @@
           <ul class="clean">
             <li><span class="en"><strong>Clean SQLite Migration:</strong> Idempotent <code class="inline">001_initial_schema</code> builds all 26 tables from empty DB (including 3-axis assertion columns &amp; <code class="inline">login_attempts</code>).</span><span class="fr"><strong>Migration SQLite Propre :</strong> <code class="inline">001_initial_schema</code> idempotente crée 26 tables depuis une base vide (colonnes 3 axes + <code class="inline">login_attempts</code>).</span></li>
             <li><span class="en"><strong>Zero Production Mocks:</strong> React 19 UI (16 pages, Lighthouse 100/100 a11y) wired 100% to live FastAPI endpoints.</span><span class="fr"><strong>Zéro Mock en Production :</strong> interface React 19 (16 pages, Lighthouse 100/100) branchée 100 % sur l'API FastAPI.</span></li>
-            <li><span class="en"><strong>Zero Pretrained Scan:</strong> Automated grep confirms 0 <code class="inline">from_pretrained</code>, 0 OpenAI/Anthropic/HF API calls.</span><span class="fr"><strong>Scan Zéro Pré-entraîné :</strong> 0 <code class="inline">from_pretrained</code>, 0 appel API OpenAI/Anthropic/HF.</span></li>
+            <li><span class="en"><strong>Offline Training vs. On-Premise Inference:</strong> Multi-seed PyTorch NLP &amp; Vision training (<code class="inline">train_vision_gpu.py</code>, lazy on-disk <code class="inline">_LazyImageDataset</code>) supports Kaggle GPU on public/synthetic non-PHI datasets; hospital inference is 100% CPU-only.</span><span class="fr"><strong>Entraînement vs. Inférence Locale :</strong> l'entraînement PyTorch multi-seeds (<code class="inline">train_vision_gpu.py</code>, <code class="inline">_LazyImageDataset</code>) supporte un GPU Kaggle sur données publiques/synthétiques sans PHI ; l'inférence hospitalière est 100 % CPU-only.</span></li>
           </ul>
         </div>
         <div class="card">
