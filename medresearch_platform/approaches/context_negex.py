@@ -118,13 +118,24 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
         "terminators": (".", ";", "\n", " but ", " however ", " except ", " although ", " whereas "),
     },
     "fr": {
-        "pseudo_neg": ("sans changement", "pas d'augmentation", "non éliminé", "non exclu", "sans rendez-vous"),
+        "pseudo_neg": (
+            "sans changement",
+            "pas d'augmentation",
+            "non éliminé",
+            "non exclu",
+            "sans rendez-vous",
+            "impossible d'exclure",
+        ),
         "neg_pre": (
             "absence de ",
             "absence d'",
             "sans ",
             "pas de ",
             "pas d'",
+            "n'a pas ",
+            "n'ai pas ",
+            "ne prend pas ",
+            "ne prends pas ",
             "pas d'argument pour ",
             "pas de signe en faveur de ",
             "pas de signe en faveur d'",
@@ -384,7 +395,7 @@ _POST_CLAUSE_BREAK_RE = re.compile(
     re.IGNORECASE,
 )
 _UNRESOLVED_RE = re.compile(
-    r"\b(?:not\s+excluded|not\s+excludcd|cannot\s+(?:be\s+)?exclud(?:e|ed)|not\s+ruled\s+out|non\s+exclu|non\s+[ée]limin[ée]|not\s+assessed)\b",
+    r"\b(?:not\s+excluded|not\s+excludcd|cannot\s+(?:be\s+)?exclud(?:e|ed)|not\s+ruled\s+out|non\s+exclu|non\s+[ée]limin[ée]|impossible\s+d['’]exclure|not\s+assessed)\b",
     re.IGNORECASE,
 )
 _UNPERFORMED_SCAN_RE = re.compile(
@@ -395,6 +406,7 @@ _FUTURE_PLANNED_RE = re.compile(
     r"\b(?:follow[- ]up\s+in|suivi\s+dans|in\s+\d+\s+(?:days?|weeks?|months?)|"
     r"in\s+(?:one|two|three|four|six)\s+(?:days?|weeks?|months?)|"
     r"dans\s+(?:un|deux|trois|quatre|six|\d+)\s+(?:jours?|semaines?|mois)|"
+    r"will\s+order|plan\s+to\s+order|va\s+prescrire|pr[ée]voir\s+une?|"
     r"scheduled\s+for|planned\s+for|appointment\s+pending|tomorrow|demain)\b",
     re.IGNORECASE,
 )
@@ -402,7 +414,21 @@ _DISCONTINUED_RE = re.compile(
     r"\b(?:stopped|discontinued|arr[êe]t[ée]?|interrompu)\b",
     re.IGNORECASE,
 )
-_RESOLVED_RE = re.compile(r"\b(?:resolved|r[ée]solu|r[ée]solue|gu[ée]ri)\b", re.IGNORECASE)
+_RESOLVED_RE = re.compile(
+    r"\b(?:resolved|disappeared|subsided|gone\s+now|r[ée]solu|r[ée]solue|gu[ée]ri|a\s+disparu|disparu)\b",
+    re.IGNORECASE,
+)
+_QUESTION_PRE_RE = re.compile(
+    r"\b(?:are\s+you\s+(?:experiencing|having|feeling)|do\s+you\s+(?:have|feel|experience)|have\s+you\s+(?:had|noticed)|"
+    r"avez[- ]vous|ressentez[- ]vous|souffrez[- ]vous|est[- ]ce\s+que\s+vous\s+avez)\b",
+    re.IGNORECASE,
+)
+_PRESCRIBED_NOT_TAKEN_RE = re.compile(
+    r"\b(?:never\s+took|did\s+not\s+take|didn['’]t\s+take|jamais\s+pris(?:e)?|ne\s+l['’]ai\s+jamais\s+pris(?:e)?)\b",
+    re.IGNORECASE,
+)
+_EN_CLUE_RE = re.compile(r"\b(?:no\s+|denies|without|mother|father|brother|sister|never\s+took|history\s+of|ruled\s+out)\b", re.IGNORECASE)
+_FR_CLUE_RE = re.compile(r"\b(?:pas\s+de|pas\s+d['’]|sans\s+|aucune?|m[èe]re|p[èe]re|fr[èe]re|s[œo]ur|jamais\s+pris|ant[ée]c[ée]dent|absence\s+de)\b", re.IGNORECASE)
 _RECURRENT_RE = re.compile(r"\b(?:recurrent|r[ée]cidivant|r[ée]current)\b", re.IGNORECASE)
 _SUSPECTED_RE = re.compile(r"\b(?:suspect(?:ed)?|suspicion|rule\s+out|[ée]voquant)\b", re.IGNORECASE)
 _POST_SEEK_URGENT_RE = re.compile(
@@ -487,9 +513,9 @@ def derive_assertion_attributes_from_legacy(assertion: str) -> AssertionAttribut
 
 
 def classify_assertion_attributes(text: str, start: int, end: int, language: str = "en") -> AssertionAttributes:
-    """Orthogonal 3-axis + section-aware fine-grained ConText/NegEx classifier."""
+    """Orthogonal 3-axis + section-aware fine-grained ConText/NegEx classifier with EN/FR code-switch support."""
+    is_mixed_req = str(language or "en").strip().lower() in ("mixed", "auto")
     lang = language if language in CONTEXT_CUES else "en"
-    compiled = _COMPILED_CUES[lang]
     term_patterns = _COMPILED_TERMINATORS[lang]
 
     section = detect_section_at_offset(text, start)
@@ -512,23 +538,37 @@ def classify_assertion_attributes(text: str, start: int, end: int, language: str
     pre_window = _apply_general_clause_scope(pre_window, target_lower, post_window, lang)
     full_clause = pre_window + " " + target_lower + " " + post_window
 
-    is_unresolved = bool(_UNRESOLVED_RE.search(full_clause))
-    is_pseudo_neg = _matches_any(compiled["pseudo_neg"], full_clause)
-    is_family = _matches_any(compiled["family"], pre_window) or (section == "family_history")
-    # Extended same-sentence/same-line lookahead (up to 120 chars) for return-precaution urgent action clauses
+    # Code-switch detection: if language is mixed/auto, or clause contains clear cues from the other language,
+    # evaluate both EN and FR cue banks instead of forcing a single document-level language.
+    active_langs: tuple[str, ...]
+    if is_mixed_req or (lang == "fr" and _EN_CLUE_RE.search(full_clause)) or (lang == "en" and _FR_CLUE_RE.search(full_clause)):
+        active_langs = ("en", "fr")
+    else:
+        active_langs = (lang,)
+
+    def _any_lang(cat: str, window: str) -> bool:
+        return any(_matches_any(_COMPILED_CUES[lg][cat], window) for lg in active_langs)
+
+    # Extended same-sentence/same-line lookahead (up to 120 chars) for return-precaution, resolved, and not-taken clauses
     line_post = text[end : min(len(text), end + 120)].lower()
     for stop_ch in ("\n", ".", ";"):
         s_idx = line_post.find(stop_ch)
         if s_idx != -1:
             line_post = line_post[:s_idx]
 
+    is_unresolved = bool(_UNRESOLVED_RE.search(full_clause))
+    is_pseudo_neg = _any_lang("pseudo_neg", full_clause)
+    is_family = _any_lang("family", pre_window) or (section == "family_history")
+    is_question = bool(_QUESTION_PRE_RE.search(pre_window))
     is_hypothetical = (
-        _matches_any(compiled["hypothetical"], pre_window)
+        _any_lang("hypothetical", pre_window)
         or bool(_POST_SEEK_URGENT_RE.search(line_post))
         or (section == "return_precautions")
+        or is_question
     )
+    is_prescribed_not_taken = bool(_PRESCRIBED_NOT_TAKEN_RE.search(line_post))
     is_negated = (not is_pseudo_neg) and (not is_unresolved) and (
-        _matches_any(compiled["neg_pre"], pre_window) or _matches_any(compiled["neg_post"], post_window)
+        _any_lang("neg_pre", pre_window) or _any_lang("neg_post", post_window) or is_prescribed_not_taken
     )
     # Safety check: never treat a negative scan finding as confirmed absent if the same paragraph states study was not performed
     if is_negated:
@@ -542,17 +582,18 @@ def classify_assertion_attributes(text: str, start: int, end: int, language: str
     has_trailing_qmark = bool(re.match(r"^\s*['’\"”)]*\?", text[end : min(len(text), end + 6)]))
     is_possible = (not is_pseudo_neg) and (
         has_trailing_qmark
-        or _matches_any(compiled["possible"], pre_window)
-        or _matches_any(compiled["possible"], post_window)
+        or _any_lang("possible", pre_window)
+        or _any_lang("possible", post_window)
     )
     is_future = bool(_FUTURE_PLANNED_RE.search(full_clause))
     is_discontinued = bool(_DISCONTINUED_RE.search(full_clause))
-    is_resolved = bool(_RESOLVED_RE.search(full_clause))
+    is_resolved = bool(_RESOLVED_RE.search(full_clause)) or bool(_RESOLVED_RE.search(line_post))
     is_recurrent = bool(_RECURRENT_RE.search(full_clause))
     is_historical = (
-        _matches_any(compiled["historical"], pre_window)
-        or _matches_any(compiled["historical"], post_window)
+        _any_lang("historical", pre_window)
+        or _any_lang("historical", post_window)
         or is_discontinued
+        or is_resolved
     )
 
     certainty: Literal["confirmed", "possible", "absent"]
@@ -569,6 +610,8 @@ def classify_assertion_attributes(text: str, start: int, end: int, language: str
 
     if is_unresolved:
         assertion_detail = "unresolved"
+    elif is_question:
+        assertion_detail = "hypothetical"
     elif is_hypothetical:
         assertion_detail = "conditional"
     elif is_discontinued:
@@ -577,6 +620,8 @@ def classify_assertion_attributes(text: str, start: int, end: int, language: str
         assertion_detail = "absent"
     elif is_future:
         assertion_detail = "planned"
+    elif is_resolved:
+        assertion_detail = "resolved"
     elif is_possible:
         assertion_detail = "suspected" if _SUSPECTED_RE.search(full_clause) else "possible"
     else:

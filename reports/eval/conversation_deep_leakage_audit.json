@@ -1,0 +1,38 @@
+{
+  "archive_sha256": "c99267e95e6e44adabc42de42857a322d7bbe131154dbc04bf17400aef093ac7",
+  "n_train": 960,
+  "n_val": 122,
+  "n_test": 118,
+  "exact_text_overlap_train_test": 0,
+  "normalized_text_overlap_train_test": 0,
+  "char5gram_cosine_test_to_train": {
+    "mean_max_sim": 0.5137,
+    "median_max_sim": 0.5113,
+    "p95_max_sim": 0.5941,
+    "max_sim": 0.6322,
+    "near_dups_ge_080": 0,
+    "near_dups_ge_070": 0
+  },
+  "template_skeleton_word_2_4gram_cosine": {
+    "mean_max_sim": 0.5919,
+    "median_max_sim": 0.5891,
+    "p95_max_sim": 0.6939,
+    "docs_ge_080_template_sim": 0,
+    "docs_ge_070_template_sim": 6
+  },
+  "shared_turn_templates": {
+    "test_turns_total": 1993,
+    "test_turns_exact_in_train": 1637,
+    "shared_turn_rate": 0.8214
+  },
+  "entity_surface_overlap": {
+    "test_entities_total": 4716,
+    "test_entities_seen_in_train": 4476,
+    "seen_entity_rate": 0.9491,
+    "unseen_test_entities_n": 240
+  },
+  "numerical_value_overlap": {
+    "test_num_tokens_total": 855,
+    "seen_in_train_rate": 0.7953
+  }
+}
