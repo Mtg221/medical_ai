@@ -42,11 +42,13 @@ _ASSERTION_TO_NEGATION: dict[str, NegationStatus] = {
 
 
 _NON_CLINICAL_BY_TYPE: dict[str, frozenset[str]] = {
-    "LAB_TEST": frozenset({"vs", "dates", "date", "ocr", "illegible", "t5h"}),
+    "LAB_TEST": frozenset(
+        {"vs", "dates", "date", "ocr", "illegible", "t5h", "reference", "reference <", "ref", "mmhg", "bpm", "ng/l", "mg/dl"}
+    ),
     "PROCEDURE": frozenset({"ocr", "illegible", "reflexes"}),
     "SYMPTOM": frozenset({"pharmacy record", "alert", "oriented", "oriented x3", "positional", "taking", "dry"}),
     "FREQUENCY": frozenset({"old", "child"}),
-    "MEDICATION": frozenset({"says", "taking", "reported", "noted", "prescribed"}),
+    "MEDICATION": frozenset({"says", "taking", "reported", "noted", "prescribed", "air"}),
     "DIAGNOSIS": frozenset({"as", "in", "of", "to", "for", "and", "or"}),
 }
 _LAB_NAMES_NOT_PROCEDURE: frozenset[str] = frozenset(
@@ -89,27 +91,122 @@ _PAIN_PREFIX_RE = re.compile(r"(?:pain|cp|douleur|eva|score|→|->)\s*[:\-]?\s*$
 _TRUNCATED_CONTRACTION_RE = re.compile(r"^[a-z]\s+[a-z]")
 _UNIT_ONLY_RE = re.compile(r"^(?:m[1il]u/l|mg/dl|g/dl|mmol/l|x10\^9/l|bpm|mmhg|%|[^\w\d]+)$", re.IGNORECASE)
 _OCR_CORRUPTED_VAL_RE = re.compile(r"\?|[0-9][OBA]|[OBA][0-9]")
+_OCR_ALPHA_NOISE_RE = re.compile(r"[A-Za-z][013@][A-Za-z]|[A-Za-z]{2,}[013@]\b|\b[013@][A-Za-z]{2,}")
 _STRUCTURED_VITAL_LAB_RE = re.compile(
-    r"(?:^|\n|\|)\s*(?:[-•*]\s*)?"
+    r"(?:^|\n|\||;|,\s*)\s*(?:[-•*]\s*)?"
+    r"(?:(?P<time>\d{1,2}:\d{2})\s*[—–\-:]\s*)?"
     r"(?P<name>"
-    r"BP(?:\s+repeat)?|HR(?:\s+repeat)?|RR|Temp(?:erature|érature)?|SpO2(?:\s+repeat)?|"
-    r"Weight|Poids|Height|Taille|Tension(?:\s+art[ée]rielle)?|"
-    r"hs-TnI|Troponin|HbA1c|Hb|WBC|Platelets|Plaquettes|Na|Sodium|K|Potassium|"
+    r"BP(?:\s+repeat)?|HR(?:\s+repeat)?|Pulse|RR|Temp(?:erature|érature)?|SpO2(?:\s+repeat)?|"
+    r"Weight|Wt|Poids|Height|Ht|Taille|BMI|Tension(?:\s+art[ée]rielle)?|"
+    r"hs-TnI|Troponin(?:\s+[IT])?|TnI|HbA1c|Hb|WBC|Platelets|Plaquettes|Na|Sodium|K|Potassium|"
     r"Creatinine|Creat|Cr[ée]atinine|Urea|Ur[ée]e|Glucose|LDL|CRP|D-dimer|BNP|B12|TSH"
     r")"
-    r"\s*(?:\|\s*|\t+|:\s*|(?:\bde\b|\bà\b)\s+|\s+)"
+    r"(?:\s*(?:\|\s*|\t+|:\s*|(?:\bde\b|\bà\b)\s+|\s+)|(?=\d))"
     r"(?P<val>(?:\d[0-9OBA?./]{0,11})(?:\s*/\s*[0-9OBA?]{1,4})?)"
-    r"(?:\s*(?P<unit>mmHg|bpm|/min|°C|C|%|kg|cm|g/dL|mg/dL|mmol/L|µmol/L|mg/L|ng/L|ng/mL|pg/mL|mIU/L|[×x]10\^9/L))?",
+    r"(?:\s*(?P<unit>mmHg|bpm|/min|°C|C|%|kg|cm|m\b|g/dL|mg/dL|mmol/L|µmol/L|mg/L|ng/L|ng/mL|pg/mL|mIU/L|[×x]10\^9/L))?",
     re.IGNORECASE,
 )
+_REF_RANGE_RE = re.compile(
+    r"^\s*\((?:ref(?:erence)?|norm(?:al|ale)?|N)\s*[:=]?\s*(?P<spec>[^)]{1,40})\)",
+    re.IGNORECASE,
+)
+_OXYGEN_COND_RE = re.compile(
+    r"^\s*(?:on\s+)?(?P<cond>room\s+air|RA\b|air\s+ambiant|AA\b|O2\s*\d+(?:\.\d+)?\s*L(?:/min)?|nasal\s+cannula|lunettes(?:\s+\d+\s*L)?)",
+    re.IGNORECASE,
+)
+_MED_ORDERED_NOT_ADMIN_RE = re.compile(
+    r"\b(?:ordered\s+(?:but\s+)?not\s+(?:yet\s+)?administered|ordered,?\s*not\s+given|not\s+administered|non\s+administr[ée])\b",
+    re.IGNORECASE,
+)
+_MED_NOT_TAKING_RE = re.compile(
+    r"\b(?:not\s+taking|no\s+active\s+prescription|denies\s+taking|ne\s+prend\s+pas)\b",
+    re.IGNORECASE,
+)
+_MED_DISCONTINUED_RE = re.compile(
+    r"\b(?:stopped|discontinued|arr[êe]t[ée]?|interrompu)\b",
+    re.IGNORECASE,
+)
+_MED_PRN_RE = re.compile(r"\b(?:prn|as\s+needed|si\s+besoin)\b", re.IGNORECASE)
+_MED_LAST_TAKEN_PAST_RE = re.compile(
+    r"\b(?:last\s+taken\s+(?:yesterday|last\s+night|\d+\s+(?:days?|hours?)\s+ago)|last\s+dose|pris\s+hier)\b",
+    re.IGNORECASE,
+)
+_MED_UNCERTAIN_RE = re.compile(
+    r"\b(?:active\?|current\?|when\s+I\s+remember|sometimes\s+forgets|verify)\b|\?",
+    re.IGNORECASE,
+)
+_FREQ_NORM_MAP: dict[str, str] = {
+    "od": "once daily",
+    "qd": "once daily",
+    "daily": "once daily",
+    "bid": "twice daily",
+    "tid": "three times daily",
+    "qid": "four times daily",
+    "qhs": "at bedtime",
+    "nightly": "at bedtime",
+    "prn": "as needed",
+}
 _FUNCTIONAL_TAIL_RELS: frozenset[str] = frozenset(
     {"HAS_DOSAGE", "HAS_FREQUENCY", "HAS_ROUTE", "HAS_VALUE", "HAS_UNIT"}
 )
 
 
+def _normalize_ocr_clinical_token(raw_text: str, entity_type: str) -> tuple[str | None, bool]:
+    """Return (normalized_candidate, is_ocr_corrupted) for noisy OCR tokens without fabricating digits for '?'."""
+    txt = raw_text.strip()
+    if not txt:
+        return None, False
+    if entity_type in {"LAB_VALUE", "DOSAGE"}:
+        if not _OCR_CORRUPTED_VAL_RE.search(txt):
+            return None, False
+        if "?" in txt:
+            return None, True
+        cand = re.sub(r"(?<=\d)[Oo]|[Oo](?=\d)", "0", txt)
+        cand = re.sub(r"(?<=\d)B|B(?=\d)", "8", cand)
+        cand = re.sub(r"(?<=\d)A|A(?=\d)", "4", cand)
+        return (cand if cand != txt else None), True
+    if _OCR_ALPHA_NOISE_RE.search(txt) or "?" in txt:
+        if "?" in txt:
+            return None, True
+        cand = txt.replace("@", "a")
+        cand = re.sub(r"(?<=[A-Za-z])0(?=[A-Za-z])|(?<=[A-Za-z]{2})0\b", "o", cand)
+        cand = re.sub(r"(?<=[A-Za-z])3(?=[A-Za-z])", "e", cand)
+        cand = re.sub(r"(?<=[A-Za-z])1(?=[A-Za-z])", "i", cand)
+        return (cand if cand != txt else None), True
+    return None, False
+
+
+def _interpret_reference_range(val_txt: str, ref_spec: str) -> str:
+    """Interpret a numeric lab value against a parsed reference range specification."""
+    if _OCR_CORRUPTED_VAL_RE.search(val_txt):
+        return "uncertain"
+    m_num = re.search(r"-?\d+(?:\.\d+)?", val_txt)
+    if not m_num:
+        return "uncertain"
+    val = float(m_num.group(0))
+    m_lt = re.search(r"<\s*=?\s*(\d+(?:\.\d+)?)", ref_spec)
+    if m_lt:
+        hi = float(m_lt.group(1))
+        return "within_range" if val <= hi else "high"
+    m_gt = re.search(r">\s*=?\s*(\d+(?:\.\d+)?)", ref_spec)
+    if m_gt:
+        lo = float(m_gt.group(1))
+        return "within_range" if val >= lo else "low"
+    m_rng = re.search(r"(\d+(?:\.\d+)?)\s*[-–—]\s*(\d+(?:\.\d+)?)", ref_spec)
+    if m_rng:
+        lo, hi = float(m_rng.group(1)), float(m_rng.group(2))
+        if val < lo:
+            return "low"
+        if val > hi:
+            return "high"
+        return "within_range"
+    return "uncertain"
+
+
 def _extract_structured_vitals_and_labs(
     text: str,
     existing_entities: list[Any],
+    meta_by_span: dict[tuple[int, int], dict[str, Any]] | None = None,
 ) -> tuple[list[Any], list[Any]]:
     """Deterministically extract EN/FR tabular/bulleted vital & lab measurements without adding any ML model."""
     from medresearch_platform.eval_harness.metrics import PredictedEntity, PredictedRelation
@@ -127,14 +224,12 @@ def _extract_structured_vitals_and_labs(
         val_txt = m.group("val").strip()
         if not val_txt or not any(ch.isdigit() for ch in val_txt):
             continue
-        # Strip trailing punctuation from value span
         while ve > vs and text[ve - 1] in ".,;":
             ve -= 1
         val_txt = text[vs:ve]
         if not val_txt:
             continue
 
-        # Reuse existing LAB_TEST if it overlaps name span, else add new LAB_TEST
         head_ent = next(
             (e for e in existing_entities if e.type == "LAB_TEST" and max(e.start, ns) < min(e.end, ne)),
             None,
@@ -186,8 +281,10 @@ def _extract_structured_vitals_and_labs(
                 )
             )
 
+        tail_pos = ve
         if m.group("unit"):
             us, ue = m.span("unit")
+            tail_pos = max(tail_pos, ue)
             unit_ent = next(
                 (e for e in existing_entities if e.type == "LAB_UNIT" and max(e.start, us) < min(e.end, ue)),
                 None,
@@ -216,7 +313,148 @@ def _extract_structured_vitals_and_labs(
                     )
                 )
 
+        if meta_by_span is not None:
+            meta: dict[str, Any] = {}
+            if m.group("time"):
+                meta["measurement_time"] = m.group("time")
+            after = text[tail_pos : min(len(text), tail_pos + 60)]
+            m_ref = _REF_RANGE_RE.match(after)
+            if m_ref:
+                spec = m_ref.group("spec").strip()
+                meta["reference_range"] = spec
+                meta["interpretation"] = _interpret_reference_range(val_txt, spec)
+            if head_ent.text.lower().startswith("spo2"):
+                m_o2 = _OXYGEN_COND_RE.match(after)
+                if m_o2:
+                    raw_c = m_o2.group("cond").strip()
+                    meta["oxygen_condition"] = (
+                        "room_air" if raw_c.lower() in {"room air", "ra", "air ambiant", "aa"} else raw_c
+                    )
+            if meta:
+                meta_by_span[(head_ent.start, head_ent.end)] = meta
+                if val_ent is not None:
+                    meta_by_span[(val_ent.start, val_ent.end)] = dict(meta)
+
     return new_ents, new_rels
+
+
+_NKDA_RE = re.compile(r"\b(?:nkda|no\s+known\s+(?:drug\s+)?allergies|aucune\s+allergie\s+connue)\b", re.IGNORECASE)
+_ALLERGY_POS_RE = re.compile(
+    r"\b(?:allerg(?:y|ic|ies|ique)\s*(?:to|:|-|—)?\s*(?!(?:nkda|none|no\b|nil|unknown|aucune|pas\s+d)\b)(?:penicillin|latex|aspirin|amoxicillin|sulfa|iodine|peanuts?|shellfish|contrast|[a-z]{4,})|"
+    r"(?:penicillin|latex|amoxicillin|aspirin)\s*(?:-|—|:)\s*(?:rash|itching|hives|anaphylaxis|urticaria))\b",
+    re.IGNORECASE,
+)
+
+
+def _canon_clinical_concept(raw: str) -> str:
+    low = re.sub(r"[^a-z0-9]+", " ", raw.lower()).strip()
+    aliases = {
+        "htn": "hypertension",
+        "t2dm": "type 2 diabetes",
+        "dm2": "type 2 diabetes",
+        "diabetes": "type 2 diabetes",
+        "type 2 diabetes": "type 2 diabetes",
+        "sob": "shortness of breath",
+        "cp": "chest pain",
+        "temp": "temperature",
+        "temperature": "temperature",
+        "bp": "blood pressure",
+        "hr": "heart rate",
+        "pulse": "heart rate",
+        "spo2": "spo2",
+    }
+    return aliases.get(low, low)
+
+
+def detect_clinical_contradictions(
+    records: list[ExtractedRecord] | tuple[ExtractedRecord, ...],
+    text: str,
+) -> list[dict[str, Any]]:
+    """Detect explicit clinical contradictions in a document while preserving both sides and spans."""
+    contradictions: list[dict[str, Any]] = []
+
+    # 1. NKDA vs affirmed allergy mention
+    m_nkda = _NKDA_RE.search(text)
+    m_allergy = _ALLERGY_POS_RE.search(text)
+    if m_nkda and m_allergy:
+        contradictions.append(
+            {
+                "topic": "allergy_status",
+                "status": "unresolved",
+                "side_a": {"text": m_nkda.group(0), "span": [m_nkda.start(), m_nkda.end()], "assertion": "absent"},
+                "side_b": {"text": m_allergy.group(0), "span": [m_allergy.start(), m_allergy.end()], "assertion": "present"},
+            }
+        )
+
+    # 2. Same patient diagnosis/symptom affirmed AND negated
+    by_concept: dict[str, list[ExtractedRecord]] = {}
+    for rec in records:
+        if rec.entity_type in {"DIAGNOSIS", "SYMPTOM"} and rec.experiencer == "patient":
+            canon = _canon_clinical_concept(rec.original_text)
+            if len(canon) >= 3:
+                by_concept.setdefault(canon, []).append(rec)
+    for canon, recs in by_concept.items():
+        pos = [r for r in recs if r.assertion_status == "present"]
+        neg = [r for r in recs if r.assertion_status == "absent"]
+        if pos and neg:
+            contradictions.append(
+                {
+                    "topic": f"polarity:{canon}",
+                    "status": "unresolved",
+                    "side_a": {"text": pos[0].original_text, "span": [pos[0].char_start, pos[0].char_end], "assertion": "present"},
+                    "side_b": {"text": neg[0].original_text, "span": [neg[0].char_start, neg[0].char_end], "assertion": "absent"},
+                }
+            )
+
+    # 3. Conflicting doses for the same medication (including inline "X 10 mg ... 5 mg" clauses)
+    med_doses: dict[str, list[tuple[str, int, int]]] = {}
+    for rec in records:
+        if rec.entity_type != "MEDICATION":
+            continue
+        med_key = _canon_clinical_concept(rec.original_text)
+        for rel in rec.relationships:
+            if rel.relation_type == "HAS_DOSAGE":
+                med_doses.setdefault(med_key, []).append((rel.target_value.strip().lower(), rec.char_start, rec.char_end))
+        # Also scan same line for alternative dose mentions (e.g., "10 mg daily; patient says 5 mg")
+        line_end = text.find("\n", rec.char_end)
+        line_txt = text[rec.char_start : (line_end if line_end != -1 else len(text))]
+        for dm in re.finditer(r"\b(\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|units?))\b", line_txt, re.IGNORECASE):
+            d_norm = re.sub(r"\s+", " ", dm.group(1).strip().lower())
+            med_doses.setdefault(med_key, []).append(
+                (d_norm, rec.char_start + dm.start(), rec.char_start + dm.end())
+            )
+    for med_key, items in med_doses.items():
+        distinct: dict[str, tuple[int, int]] = {}
+        for d_val, s, e in items:
+            if d_val not in distinct:
+                distinct[d_val] = (s, e)
+        if len(distinct) >= 2:
+            vals = list(distinct.items())
+            contradictions.append(
+                {
+                    "topic": f"medication_dose:{med_key}",
+                    "status": "unresolved",
+                    "side_a": {"text": vals[0][0], "span": list(vals[0][1])},
+                    "side_b": {"text": vals[1][0], "span": list(vals[1][1])},
+                }
+            )
+
+    # 4. Unperformed scan vs negative imaging statement
+    for para in text.split("\n\n"):
+        if re.search(r"\b(?:study\s+not\s+performed|not\s+performed|cancelled|canceled|non\s+r[ée]alis[ée])\b", para, re.IGNORECASE):
+            m_neg = re.search(r"\b(?:no\s+evidence\s+of\s+[A-Za-z0-9 \-]{2,30}|normal\s+study)\b", para, re.IGNORECASE)
+            if m_neg:
+                p_off = text.find(para)
+                contradictions.append(
+                    {
+                        "topic": "imaging_unperformed_vs_negative",
+                        "status": "unresolved",
+                        "side_a": {"text": m_neg.group(0), "span": [p_off + m_neg.start(), p_off + m_neg.end()]},
+                        "side_b": {"text": "study_not_performed", "span": [p_off, p_off + len(para)]},
+                    }
+                )
+
+    return contradictions
 
 
 def _retype_entity(ent: Any, new_type: str) -> Any:
@@ -266,8 +504,15 @@ def _filter_non_clinical_artifacts(entities: list[Any], text: str) -> list[Any]:
             prefix = text[max(0, ent.start - 30) : ent.start]
             if _PAIN_PREFIX_RE.search(prefix):
                 continue
-        # Record IDs (NOISE-0027, SYN-00481, ER-2) and ages (4? / 47 years, 6O y) are NOT DATE
-        if etype == "DATE" and (_RECORD_ID_RE.match(raw) or _AGE_LIKE_RE.search(raw)):
+        # Record IDs (NOISE-0027, SYN-00481, ER-2), ages (4? / 47 years, 6O y), and vital prefixes (SpO2 9) are NOT DATE
+        if etype == "DATE" and (
+            _RECORD_ID_RE.match(raw)
+            or _AGE_LIKE_RE.search(raw)
+            or re.match(r"^(?:spo2|bp|hr|rr|temp|tni)\b", raw, re.IGNORECASE)
+        ):
+            continue
+        # Multi-line spans in LAB_UNIT or LAB_VALUE are malformed OCR/CRF bleed-through
+        if etype in {"LAB_UNIT", "LAB_VALUE"} and "\n" in raw:
             continue
         # 4-digit calendar years (2021) are NOT DOSAGE
         if etype == "DOSAGE" and _PURE_YEAR_RE.match(raw):
@@ -582,8 +827,9 @@ class ExtractionService:
                             del merged[k]
                         merged[key] = he
                         source_stage_by_key[key] = "hybrid_v2"
+            meta_by_span: dict[tuple[int, int], dict[str, Any]] = {}
             ens_ents = _filter_non_clinical_artifacts(sorted(merged.values(), key=lambda x: x.start), doc.text)
-            struct_ents, struct_rels = _extract_structured_vitals_and_labs(doc.text, ens_ents)
+            struct_ents, struct_rels = _extract_structured_vitals_and_labs(doc.text, ens_ents, meta_by_span=meta_by_span)
             combined_ents = sorted(ens_ents + struct_ents, key=lambda x: x.start)
             enriched_ents, ens_rels, _ = apply_context_and_relations(doc, combined_ents)
             merged_rels = _merge_and_dedup_relations(enriched_ents, [pred_h.relations, struct_rels, ens_rels])
@@ -601,10 +847,13 @@ class ExtractionService:
             model_version = f"seed{model.seed}+torch_partial_crf"
             warnings = tuple(payload.get("validation", {}).get("warnings", []))
         elif eff_approach == "hybrid_v2" or approach == "hybrid_v2":
+            meta_by_span = {}
             model = self._get_hybrid()
             pred_raw, payload = model.extract_document(doc)
             filtered_ents = _filter_non_clinical_artifacts(pred_raw.entities, doc.text)
-            struct_ents, struct_rels = _extract_structured_vitals_and_labs(doc.text, filtered_ents)
+            struct_ents, struct_rels = _extract_structured_vitals_and_labs(
+                doc.text, filtered_ents, meta_by_span=meta_by_span
+            )
             combined_ents = sorted(filtered_ents + struct_ents, key=lambda x: x.start)
             filtered_rels = _merge_and_dedup_relations(combined_ents, [pred_raw.relations, struct_rels])
             pred = DocumentPrediction(
@@ -625,6 +874,7 @@ class ExtractionService:
             model_version = f"seed{model.seed}@{manifest.get('git_commit', 'unknown')}"
             warnings = tuple(payload.get("validation", {}).get("warnings", []))
         elif approach == "classical_crf":
+            meta_by_span = {}
             crf_model = self._get_classical_crf()
             pred = crf_model.predict_document(doc)
             manifest = crf_model.manifest
@@ -645,6 +895,7 @@ class ExtractionService:
             manifest=manifest,
             source_stage_by_key=source_stage_by_key,
             warnings=warnings,
+            meta_by_span=meta_by_span,
         )
 
     def _prediction_to_result(
@@ -660,7 +911,10 @@ class ExtractionService:
         manifest: dict[str, Any],
         source_stage_by_key: dict[tuple[str, int, int], str],
         warnings: tuple[str, ...],
+        meta_by_span: dict[tuple[int, int], dict[str, Any]] | None = None,
     ) -> ExtractionResult:
+        from medresearch_platform.approaches.context_negex import classify_assertion_attributes
+
         ent_by_span = {(e.start, e.end): e for e in pred.entities}
         rels_by_head: dict[tuple[int, int], list[ExtractedRelationship]] = {}
         for rel in pred.relations:
@@ -679,6 +933,7 @@ class ExtractionService:
 
         cfg_dict = manifest.get("cfg") if isinstance(manifest.get("cfg"), dict) else None
         review_threshold = self.get_review_threshold(cfg_dict)
+        span_meta_map = meta_by_span or {}
 
         records: list[ExtractedRecord] = []
         for idx, ent in enumerate(pred.entities):
@@ -688,36 +943,123 @@ class ExtractionService:
                 None,
             )
             stage_name = source_stage_by_key.get((ent.type, ent.start, ent.end), model_name)
+            ctx_attrs = classify_assertion_attributes(text, ent.start, ent.end, language=pred.language)
             assertion_contract = _ASSERTION_TO_CONTRACT.get(ent.assertion, "present")
             negation_contract = _ASSERTION_TO_NEGATION.get(ent.assertion, "affirmed")
             ent_conf = float(ent.confidence)
             ent_var = round(float(getattr(ent, "confidence_variance", 0.0)), 4)
             is_high_unc = bool(getattr(ent, "high_uncertainty", False))
+            ocr_cand, is_ocr_corrupted = _normalize_ocr_clinical_token(ent.text, ent.type)
+            if is_ocr_corrupted:
+                is_high_unc = True
+                ent_conf = min(ent_conf, 0.65)
+                assertion_contract = "uncertain"
+                negation_contract = "uncertain"
+
+            # P2: Medication status & normalized frequency enrichment
+            med_meta: dict[str, Any] = {}
+            if ent.type == "MEDICATION":
+                line_s = text.rfind("\n", 0, ent.start)
+                line_e = text.find("\n", ent.end)
+                med_ctx = text[(line_s + 1 if line_s != -1 else 0) : (line_e if line_e != -1 else len(text))]
+                if _MED_ORDERED_NOT_ADMIN_RE.search(med_ctx):
+                    med_meta["medication_status"] = "ordered_not_administered"
+                    assertion_contract = "uncertain"
+                    negation_contract = "uncertain"
+                elif _MED_NOT_TAKING_RE.search(med_ctx):
+                    med_meta["medication_status"] = "not_taking"
+                    assertion_contract = "absent"
+                    negation_contract = "negated"
+                elif _MED_DISCONTINUED_RE.search(med_ctx):
+                    med_meta["medication_status"] = "discontinued"
+                elif _MED_PRN_RE.search(med_ctx):
+                    med_meta["medication_status"] = "prn_active"
+                    if _MED_LAST_TAKEN_PAST_RE.search(med_ctx):
+                        med_meta["last_administered_temporality"] = "historical"
+                elif _MED_UNCERTAIN_RE.search(med_ctx):
+                    med_meta["medication_status"] = "uncertain"
+                else:
+                    med_meta["medication_status"] = "active"
+                for rel in rels_by_head.get((ent.start, ent.end), []):
+                    if rel.relation_type == "HAS_FREQUENCY":
+                        norm_f = _FREQ_NORM_MAP.get(rel.target_value.strip().lower())
+                        if norm_f:
+                            med_meta["normalized_frequency"] = norm_f
+            elif ent.type == "FREQUENCY":
+                norm_f = _FREQ_NORM_MAP.get(ent.text.strip().lower())
+                if norm_f:
+                    med_meta["normalized_frequency"] = norm_f
+
             is_low_conf = ent_conf < review_threshold
-            needs_rev = is_low_conf or is_high_unc
+            needs_rev = is_low_conf or is_high_unc or is_ocr_corrupted
             record_review_status: ReviewStatus = "needs_review" if needs_rev else "unreviewed"
-            if is_low_conf and is_high_unc:
-                review_reason = "low_confidence,high_ensemble_uncertainty"
-            elif is_low_conf:
-                review_reason = "low_confidence"
-            elif is_high_unc:
-                review_reason = "high_ensemble_uncertainty"
-            else:
-                review_reason = ""
-            raw_cert = getattr(ent, "certainty", "confirmed")
-            raw_temp = getattr(ent, "temporality", "current")
-            raw_exp = getattr(ent, "experiencer", "patient")
+            reasons: list[str] = []
+            if is_low_conf:
+                reasons.append("low_confidence")
+            if is_high_unc:
+                reasons.append("high_ensemble_uncertainty")
+            if is_ocr_corrupted:
+                reasons.append("ocr_corrupted")
+            review_reason = ",".join(reasons)
+
+            raw_cert = getattr(ent, "certainty", ctx_attrs.certainty)
+            raw_temp = getattr(ent, "temporality", ctx_attrs.temporality)
+            raw_exp = getattr(ent, "experiencer", ctx_attrs.experiencer)
             ent_certainty: Literal["confirmed", "possible", "absent"] = (
-                "absent"
-                if raw_cert == "absent"
-                else ("possible" if raw_cert == "possible" else "confirmed")
+                "possible"
+                if (is_ocr_corrupted or med_meta.get("medication_status") == "ordered_not_administered")
+                else ("absent" if raw_cert == "absent" else ("possible" if raw_cert == "possible" else "confirmed"))
             )
             ent_temporality: Literal["current", "historical"] = (
-                "historical" if raw_temp == "historical" else "current"
+                "historical"
+                if (raw_temp == "historical" or med_meta.get("medication_status") == "discontinued")
+                else "current"
             )
             ent_experiencer: Literal["patient", "family"] = (
                 "family" if raw_exp == "family" else "patient"
             )
+            extra_span_meta = span_meta_map.get((ent.start, ent.end), {})
+            prov_dict: dict[str, Any] = {
+                "source_stage": stage_name,
+                "raw_assertion": ent.assertion,
+                "section": ctx_attrs.section,
+                "experiencer_detail": ctx_attrs.experiencer_detail,
+                "assertion_detail": ctx_attrs.assertion_detail,
+                "temporality_detail": ctx_attrs.temporality_detail,
+                "predicted_doc_type": pred.predicted_doc_type,
+                "review_reason": review_reason,
+                "review_threshold": review_threshold,
+                "confidence_variance": ent_var,
+                "high_uncertainty": is_high_unc,
+                "ocr_corrupted": is_ocr_corrupted,
+                "corpus_id": manifest.get("corpus_id", "unknown"),
+                "corpus_hash": manifest.get("corpus_hash", ""),
+                "git_commit": manifest.get("git_commit", "unknown"),
+                "files_sha256": manifest.get("files", {}),
+                "relations": [
+                    {
+                        "type": r.type,
+                        "head_start": r.head_start,
+                        "head_end": r.head_end,
+                        "tail_start": r.tail_start,
+                        "tail_end": r.tail_end,
+                        "confidence": r.confidence,
+                    }
+                    for r in pred.relations
+                    if r.head_start == ent.start and r.head_end == ent.end
+                ],
+                "timex": [
+                    {"type": t.type, "start": t.start, "end": t.end, "text": t.text, "normalized": t.normalized}
+                    for t in pred.timex
+                ],
+            }
+            if ocr_cand is not None:
+                prov_dict["normalized_candidate"] = ocr_cand
+            if extra_span_meta:
+                prov_dict.update(extra_span_meta)
+            if med_meta:
+                prov_dict.update(med_meta)
+
             records.append(
                 ExtractedRecord(
                     source_record_id=f"{source_record_id}_{idx}",
@@ -725,7 +1067,7 @@ class ExtractionService:
                     original_text=ent.text,
                     extracted_value=ent.text,
                     entity_type=ent.type,
-                    normalized_concept=matched_timex,
+                    normalized_concept=matched_timex or ocr_cand,
                     char_start=ent.start,
                     char_end=ent.end,
                     page_number=page_num,
@@ -745,36 +1087,15 @@ class ExtractionService:
                     certainty=ent_certainty,
                     temporality=ent_temporality,
                     experiencer=ent_experiencer,
-                    provenance={
-                        "source_stage": stage_name,
-                        "raw_assertion": ent.assertion,
-                        "predicted_doc_type": pred.predicted_doc_type,
-                        "review_reason": review_reason,
-                        "review_threshold": review_threshold,
-                        "confidence_variance": ent_var,
-                        "high_uncertainty": is_high_unc,
-                        "corpus_id": manifest.get("corpus_id", "unknown"),
-                        "corpus_hash": manifest.get("corpus_hash", ""),
-                        "git_commit": manifest.get("git_commit", "unknown"),
-                        "files_sha256": manifest.get("files", {}),
-                        "relations": [
-                            {
-                                "type": r.type,
-                                "head_start": r.head_start,
-                                "head_end": r.head_end,
-                                "tail_start": r.tail_start,
-                                "tail_end": r.tail_end,
-                                "confidence": r.confidence,
-                            }
-                            for r in pred.relations
-                            if r.head_start == ent.start and r.head_end == ent.end
-                        ],
-                        "timex": [
-                            {"type": t.type, "start": t.start, "end": t.end, "text": t.text, "normalized": t.normalized}
-                            for t in pred.timex
-                        ],
-                    },
+                    provenance=prov_dict,
                 )
+            )
+
+        contradictions = detect_clinical_contradictions(records, text)
+        all_warnings = list(warnings)
+        for c in contradictions:
+            all_warnings.append(
+                f"contradiction:{c['topic']}:{c['side_a']['text']} vs {c['side_b']['text']}"
             )
 
         return ExtractionResult(
@@ -785,5 +1106,5 @@ class ExtractionService:
             model_version=model_version,
             records=tuple(records),
             modality_status={"text": "evaluated_model", "ocr": "tesseract_layout"},
-            warnings=warnings,
+            warnings=tuple(all_warnings),
         )
