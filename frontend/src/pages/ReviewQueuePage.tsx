@@ -767,9 +767,11 @@ export function ReviewQueuePage() {
                   >
                     <span>
                       <strong>
-                        {rev.review_decision === "approve"
+                        {["approve", "approved", "approved_ground_truth"].includes(
+                          String(rev.review_decision ?? "").toLowerCase()
+                        )
                           ? "APPROVED_GROUND_TRUTH"
-                          : rev.review_decision === "reject"
+                          : ["reject", "rejected"].includes(String(rev.review_decision ?? "").toLowerCase())
                           ? "REJECTED"
                           : rev.review_decision}
                       </strong>{" "}
