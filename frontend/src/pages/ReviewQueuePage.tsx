@@ -606,7 +606,7 @@ export function ReviewQueuePage() {
                 const isFocused = idx === focusedIdx;
                 const labelText = getEntityText(ent);
                 const statusUpper = String(ent.review_status || "").toUpperCase();
-                const isApproved = statusUpper === "APPROVED";
+                const isApproved = statusUpper === "APPROVED" || statusUpper === "APPROVED_GROUND_TRUTH";
                 const isRejected = statusUpper === "REJECTED";
                 const isCorrected = statusUpper === "CORRECTED";
                 const isFlagged = statusUpper === "FLAGGED";
@@ -680,6 +680,11 @@ export function ReviewQueuePage() {
                         <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
                           chars {ent.char_start}–{ent.char_end}
                         </span>
+                        {ent.review_status ? (
+                          <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                            · {ent.review_status}
+                          </span>
+                        ) : null}
                         {ent.review_reason ? (
                           <span className="text-amber-700 dark:text-amber-300 font-medium">
                             ({ent.review_reason})
