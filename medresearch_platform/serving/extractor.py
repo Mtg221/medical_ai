@@ -87,7 +87,12 @@ _PURE_YEAR_RE = re.compile(r"^(?:19|20)\d{2}$")
 _AGE_LIKE_RE = re.compile(r"\b\d+\s*(?:years?|yrs?|y\.?o\.?|y\b|ans?)\b|\b\d+\?\s*/\s*\d+", re.IGNORECASE)
 _ROOM_AIR_PREFIX_RE = re.compile(r"(?:%|spo2|o2|room\s+air)\s*$", re.IGNORECASE)
 _PAIN_SCORE_RE = re.compile(r"^\d{1,2}/10$")
-_PAIN_PREFIX_RE = re.compile(r"(?:pain|cp|douleur|eva|score|→|->)\s*[:\-|\s]{0,4}$", re.IGNORECASE)
+_PAIN_PREFIX_RE = re.compile(
+    r"(?:pain|cp|douleur|eva|score|→|->)"
+    r"(?:\s+(?:now|currently|is|was|at|rated|score|improved\s+to|decreased\s+to|down\s+to|up\s+to|[àa]|[ée]valu[ée]e?\s+[àa]))?"
+    r"\s*[:\-|\s]{0,4}$",
+    re.IGNORECASE,
+)
 _TRUNCATED_CONTRACTION_RE = re.compile(r"^[a-z]\s+[a-z]")
 _UNIT_ONLY_RE = re.compile(r"^(?:m[1il]u/l|mg/dl|g/dl|mmol/l|x10\^9/l|bpm|mmhg|%|[^\w\d]+)$", re.IGNORECASE)
 _OCR_CORRUPTED_VAL_RE = re.compile(r"\?|[0-9][OBA]|[OBA][0-9]")
@@ -252,8 +257,25 @@ def _extract_structured_vitals_and_labs(
             occupied.append((ns, ne))
 
         is_ocr_bad = bool(_OCR_CORRUPTED_VAL_RE.search(val_txt))
+        val_unit_end = m.span("unit")[1] if m.group("unit") else ve
+        # P1 generalizable OCR/ratio fragment coalescing: if CRF split or mistyped a ratio/OCR
+        # measurement (e.g. "142/86" -> "142", "118/74 mmHg" -> DATE, "12?/7B" -> PATIENT_ID "B"),
+        # replace all overlapping fragments inside [vs, val_unit_end] with clean LAB_VALUE + LAB_UNIT.
+        partial_frags = [
+            e
+            for e in existing_entities
+            if e.start >= vs
+            and e.end <= val_unit_end
+            and not (e.type == "LAB_VALUE" and e.start == vs and e.end == ve)
+            and not (m.group("unit") and e.type == "LAB_UNIT" and e.start == m.span("unit")[0] and e.end == m.span("unit")[1])
+        ]
+        if partial_frags:
+            frag_spans = {(e.start, e.end) for e in partial_frags}
+            existing_entities[:] = [e for e in existing_entities if (e.start, e.end) not in frag_spans]
+            occupied[:] = [sp for sp in occupied if sp not in frag_spans]
+
         val_ent = next(
-            (e for e in existing_entities if e.type == "LAB_VALUE" and max(e.start, vs) < min(e.end, ve)),
+            (e for e in existing_entities if e.type == "LAB_VALUE" and e.start == vs and e.end == ve),
             None,
         )
         if val_ent is None and not _overlaps(vs, ve):
@@ -408,38 +430,57 @@ def detect_clinical_contradictions(
                 }
             )
 
-    # 3. Conflicting doses for the same medication (including inline "X 10 mg ... 5 mg" clauses)
-    med_doses: dict[str, list[tuple[str, int, int]]] = {}
+    # 3. Conflicting doses for the same medication within the same clinical scope
+    #    (avoids falsely colliding home maintenance doses in Medications with acute loading orders in Plan)
+    med_doses: dict[tuple[str, str], list[tuple[str, int, int, str]]] = {}
+    seen_order_conflict: set[str] = set()
     for rec in records:
         if rec.entity_type != "MEDICATION":
             continue
         med_key = _canon_clinical_concept(rec.original_text)
         rec_start = rec.char_start if rec.char_start is not None else 0
         rec_end = rec.char_end if rec.char_end is not None else rec_start
+        rec_sec = str(rec.provenance.get("section", "general"))
+        med_status = str(rec.provenance.get("medication_status", "active"))
+        if med_status == "ordered_not_administered" and med_key not in seen_order_conflict:
+            seen_order_conflict.add(med_key)
+            contradictions.append(
+                {
+                    "topic": f"medication_order_vs_administration:{med_key}",
+                    "status": "unresolved",
+                    "reason": "Medication ordered but explicitly marked not administered",
+                    "side_a": {"text": rec.original_text, "span": [rec_start, rec_end], "section": rec_sec, "status": "ordered"},
+                    "side_b": {"text": "not administered", "span": [rec_start, rec_end], "section": rec_sec, "status": "not_administered"},
+                }
+            )
+        scope = "plan_order" if (rec_sec == "plan" or med_status == "ordered_not_administered") else "maintenance"
         for rel in rec.relationships:
             if rel.relation_type == "HAS_DOSAGE":
-                med_doses.setdefault(med_key, []).append((rel.target_value.strip().lower(), rec_start, rec_end))
+                med_doses.setdefault((med_key, scope), []).append(
+                    (rel.target_value.strip().lower(), rec_start, rec_end, rec_sec)
+                )
         # Also scan same line for alternative dose mentions (e.g., "10 mg daily; patient says 5 mg")
         line_end = text.find("\n", rec_end)
         line_txt = text[rec_start : (line_end if line_end != -1 else len(text))]
         for dm in re.finditer(r"\b(\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|units?))\b", line_txt, re.IGNORECASE):
             d_norm = re.sub(r"\s+", " ", dm.group(1).strip().lower())
-            med_doses.setdefault(med_key, []).append(
-                (d_norm, rec_start + dm.start(), rec_start + dm.end())
+            med_doses.setdefault((med_key, scope), []).append(
+                (d_norm, rec_start + dm.start(), rec_start + dm.end(), rec_sec)
             )
-    for med_key, items in med_doses.items():
-        distinct: dict[str, tuple[int, int]] = {}
-        for d_val, s, e in items:
+    for (med_key, scope), items in med_doses.items():
+        distinct: dict[str, tuple[int, int, str]] = {}
+        for d_val, s, e, sec in items:
             if d_val not in distinct:
-                distinct[d_val] = (s, e)
+                distinct[d_val] = (s, e, sec)
         if len(distinct) >= 2:
             vals = list(distinct.items())
             contradictions.append(
                 {
                     "topic": f"medication_dose:{med_key}",
                     "status": "unresolved",
-                    "side_a": {"text": vals[0][0], "span": list(vals[0][1])},
-                    "side_b": {"text": vals[1][0], "span": list(vals[1][1])},
+                    "reason": f"Conflicting doses within {scope} scope",
+                    "side_a": {"text": vals[0][0], "span": [vals[0][1][0], vals[0][1][1]], "section": vals[0][1][2]},
+                    "side_b": {"text": vals[1][0], "span": [vals[1][1][0], vals[1][1][1]], "section": vals[1][1][2]},
                 }
             )
 

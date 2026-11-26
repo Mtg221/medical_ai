@@ -414,7 +414,10 @@ _DISCONTINUED_RE = re.compile(
 _RESOLVED_RE = re.compile(r"\b(?:resolved|r[ée]solu|r[ée]solue|gu[ée]ri)\b", re.IGNORECASE)
 _RECURRENT_RE = re.compile(r"\b(?:recurrent|r[ée]cidivant|r[ée]current)\b", re.IGNORECASE)
 _SUSPECTED_RE = re.compile(r"\b(?:suspect(?:ed)?|suspicion|rule\s+out|[ée]voquant)\b", re.IGNORECASE)
-_POST_SEEK_URGENT_RE = re.compile(r"\b(?:seek\s+urgent|reassess\s+asap)\b", re.IGNORECASE)
+_POST_SEEK_URGENT_RE = re.compile(
+    r"\b(?:seek\s+urgent|reassess\s+asap|return\s+(?:immediately|to\s+(?:the\s+)?(?:ed|er))|go\s+to\s+(?:the\s+)?(?:ed|er)|call\s+911|consulter\s+en\s+urgence|retourner\s+aux\s+urgences)\b",
+    re.IGNORECASE,
+)
 
 _REL_DETAIL_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\b(?:mother|maternal|m[èe]re|maternel(?:le)?)\b", re.IGNORECASE), "mother"),
@@ -521,9 +524,16 @@ def classify_assertion_attributes(text: str, start: int, end: int, language: str
     is_unresolved = bool(_UNRESOLVED_RE.search(full_clause))
     is_pseudo_neg = _matches_any(compiled["pseudo_neg"], full_clause)
     is_family = _matches_any(compiled["family"], pre_window) or (section == "family_history")
+    # Extended same-sentence/same-line lookahead (up to 120 chars) for return-precaution urgent action clauses
+    line_post = text[end : min(len(text), end + 120)].lower()
+    for stop_ch in ("\n", ".", ";"):
+        s_idx = line_post.find(stop_ch)
+        if s_idx != -1:
+            line_post = line_post[:s_idx]
+
     is_hypothetical = (
         _matches_any(compiled["hypothetical"], pre_window)
-        or bool(_POST_SEEK_URGENT_RE.search(post_window))
+        or bool(_POST_SEEK_URGENT_RE.search(line_post))
         or (section == "return_precautions")
     )
     is_negated = (not is_pseudo_neg) and (not is_unresolved) and (
