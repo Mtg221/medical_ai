@@ -26,7 +26,7 @@ class IngestDocumentRequest(BaseModel):
     text: str = ""
     content_base64: str | None = None
     dataset_id: str = "ds_synth_bilingual_v1"
-    subject_id: str = "subj_synth_001"
+    subject_id: str = ""
     family_id: str = "fam_synth_upload"
     split_assignment: str = "unassigned"
     encounter_date_iso: str = "2026-06-01"

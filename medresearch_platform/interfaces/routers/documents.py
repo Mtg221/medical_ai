@@ -264,7 +264,7 @@ def build_documents_router(
         background_tasks: BackgroundTasks,
         file: UploadFile = File(...),
         dataset_id: str = Form("ds_synth_bilingual_v1"),
-        subject_id: str = Form("subj_synth_001"),
+        subject_id: str = Form(""),
         family_id: str = Form("fam_synth_upload"),
         split_assignment: str = Form("unassigned"),
         encounter_date_iso: str = Form("2026-06-01"),

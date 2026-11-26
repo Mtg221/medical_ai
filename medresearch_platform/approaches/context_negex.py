@@ -16,7 +16,7 @@ from medresearch_platform.eval_harness.metrics import (
 # Language-parameterized ConText/NegEx cue tables
 CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
     "en": {
-        "pseudo_neg": ("no increase", "no change", "not ruled out"),
+        "pseudo_neg": ("no increase", "no change", "not ruled out", "not excluded", "not excludcd", "cannot exclude"),
         "neg_pre": (
             "no ",
             "not ",
@@ -121,11 +121,13 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             "old prescription",
             "old note",
             "old chart",
+            "stopped ",
+            "has resolved",
         ),
         "terminators": (".", ";", "\n", " but ", " however ", " except ", " although ", " whereas "),
     },
     "fr": {
-        "pseudo_neg": ("sans changement", "pas d'augmentation", "non éliminé"),
+        "pseudo_neg": ("sans changement", "pas d'augmentation", "non éliminé", "non exclu", "sans rendez-vous"),
         "neg_pre": (
             "absence de ",
             "absence d'",
@@ -174,6 +176,7 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             " non retrouvée",
             " non retrouvés",
             " non retrouvées",
+            " peu vraisemblable",
         ),
         "possible": (
             "suspicion de ",
@@ -185,6 +188,7 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             "doute sur ",
             "éliminer ",
             "visant à écarter ",
+            "on discute ",
         ),
         "hypothetical": (
             "si ",
@@ -207,6 +211,13 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             "son père ",
             "mère ",
             "père ",
+            "frère ",
+            "sœur ",
+            "soeur ",
+            "antécédent maternel",
+            "antécédent paternel",
+            "maternel",
+            "paternel",
         ),
         "historical": (
             "antécédent ",
@@ -329,36 +340,165 @@ def _apply_general_clause_scope(
     return pre_window
 
 
+_SECTION_HEADER_RE = re.compile(
+    r"(?:^|\n)\s*(?:#{1,4}\s*|\d+\.\s*)?"
+    r"(?P<hdr>"
+    r"chief\s+complaint|presenting\s+complaint|history\s+of\s+present\s+illness|hpi|motif\s+de\s+consultation|"
+    r"past\s+medical\s+history|past\s+history|pmhx?|ant[ée]c[ée]dents(?:\s+m[ée]dicaux)?|"
+    r"family\s+history|ant[ée]c[ée]dents\s+familiaux|"
+    r"medications?(?:\s+list|\s+reconciliation)?|traitements?(?:\s+de\s+sortie)?|"
+    r"allergies?|"
+    r"vital\s+signs?|vitals|constantes|"
+    r"physical\s+examination|examination|examen\s+clinique|"
+    r"investigations?|laboratory|blood\s+tests?|biologie|imagerie|imaging|"
+    r"assessment(?:\s+fragments)?|impression|avis\s+et\s+diagnostic|"
+    r"plan(?:\s*/\s*disposition|\s*/\s*follow-up)?|conduite\s+[àa]\s+tenir|"
+    r"return\s+precautions?"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_SECTION_CANON_MAP: tuple[tuple[tuple[str, ...], str], ...] = (
+    (("family", "familiaux"), "family_history"),
+    (("past", "pmh", "antécédent", "antecedent"), "pmh"),
+    (("medication", "traitement"), "medications"),
+    (("allerg",), "allergies"),
+    (("vital", "constante"), "vitals"),
+    (("exam",), "exam"),
+    (("lab", "blood", "biologie", "investigation"), "labs"),
+    (("imag",), "imaging"),
+    (("return precaution",), "return_precautions"),
+    (("assessment", "impression", "diagnostic"), "assessment"),
+    (("plan", "conduite"), "plan"),
+    (("chief", "presenting", "hpi", "history of present", "motif"), "hpi"),
+)
+
+
+def detect_section_at_offset(text: str, offset: int) -> str:
+    """Return the canonical clinical section governing character `offset` in `text`."""
+    prefix = text[: max(0, offset)]
+    last_hdr: str | None = None
+    for m in _SECTION_HEADER_RE.finditer(prefix):
+        last_hdr = m.group("hdr").lower()
+    if not last_hdr:
+        return "general"
+    for needles, canon in _SECTION_CANON_MAP:
+        if any(n in last_hdr for n in needles):
+            return canon
+    return "general"
+
+
+_POST_CLAUSE_BREAK_RE = re.compile(
+    r",\s*(?:though\s+|although\s+|negative\s+for|positive\s+for|no\s+|denies\s+|without\s+|pas\s+de\s+|sans\s+)",
+    re.IGNORECASE,
+)
+_UNRESOLVED_RE = re.compile(
+    r"\b(?:not\s+excluded|not\s+excludcd|cannot\s+(?:be\s+)?exclud(?:e|ed)|not\s+ruled\s+out|non\s+exclu|non\s+[ée]limin[ée]|not\s+assessed)\b",
+    re.IGNORECASE,
+)
+_UNPERFORMED_SCAN_RE = re.compile(
+    r"\b(?:study\s+not\s+performed|not\s+performed|cancelled|canceled|not\s+done|not\s+completed|non\s+r[ée]alis[ée])\b",
+    re.IGNORECASE,
+)
+_FUTURE_PLANNED_RE = re.compile(
+    r"\b(?:follow[- ]up\s+in|suivi\s+dans|in\s+\d+\s+(?:days?|weeks?|months?)|"
+    r"in\s+(?:one|two|three|four|six)\s+(?:days?|weeks?|months?)|"
+    r"dans\s+(?:un|deux|trois|quatre|six|\d+)\s+(?:jours?|semaines?|mois)|"
+    r"scheduled\s+for|planned\s+for|appointment\s+pending|tomorrow|demain)\b",
+    re.IGNORECASE,
+)
+_DISCONTINUED_RE = re.compile(
+    r"\b(?:stopped|discontinued|arr[êe]t[ée]?|interrompu)\b",
+    re.IGNORECASE,
+)
+_RESOLVED_RE = re.compile(r"\b(?:resolved|r[ée]solu|r[ée]solue|gu[ée]ri)\b", re.IGNORECASE)
+_RECURRENT_RE = re.compile(r"\b(?:recurrent|r[ée]cidivant|r[ée]current)\b", re.IGNORECASE)
+_SUSPECTED_RE = re.compile(r"\b(?:suspect(?:ed)?|suspicion|rule\s+out|[ée]voquant)\b", re.IGNORECASE)
+_POST_SEEK_URGENT_RE = re.compile(r"\b(?:seek\s+urgent|reassess\s+asap)\b", re.IGNORECASE)
+
+_REL_DETAIL_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\b(?:mother|maternal|m[èe]re|maternel(?:le)?)\b", re.IGNORECASE), "mother"),
+    (re.compile(r"\b(?:father|paternal|p[èe]re|paternel(?:le)?)\b", re.IGNORECASE), "father"),
+    (re.compile(r"\b(?:brother|fr[èe]re)\b", re.IGNORECASE), "brother"),
+    (re.compile(r"\b(?:sister|s[œo]ur)\b", re.IGNORECASE), "sister"),
+    (re.compile(r"\b(?:sibling|family|familial(?:e|ux)?|grandmother|grandfather|parent)\b", re.IGNORECASE), "other_family"),
+)
+
+
+def _infer_experiencer_detail(pre_window: str, is_family: bool) -> str:
+    if not is_family:
+        return "patient"
+    best_pos = -1
+    best_label = "other_family"
+    for pat, label in _REL_DETAIL_PATTERNS:
+        for m in pat.finditer(pre_window):
+            if m.start() >= best_pos:
+                best_pos = m.start()
+                best_label = label
+    return best_label
+
+
 @dataclass(frozen=True)
 class AssertionAttributes:
-    """Orthogonal 3-axis clinical assertion contract (NLP-002)."""
+    """Orthogonal 3-axis + fine-grained P1 clinical assertion contract."""
 
     certainty: Literal["confirmed", "possible", "absent"] = "confirmed"
     temporality: Literal["current", "historical"] = "current"
     experiencer: Literal["patient", "family"] = "patient"
     legacy_assertion: str = "present"
+    experiencer_detail: str = "patient"
+    assertion_detail: str = "present"
+    temporality_detail: str = "current"
+    section: str = "general"
 
 
 def derive_assertion_attributes_from_legacy(assertion: str) -> AssertionAttributes:
     """Backward-compatible projection from legacy single-axis assertion enum without silent loss."""
     low = str(assertion or "present").strip().lower()
     if low == "absent":
-        return AssertionAttributes(certainty="absent", temporality="current", experiencer="patient", legacy_assertion="absent")
+        return AssertionAttributes(
+            certainty="absent",
+            temporality="current",
+            experiencer="patient",
+            legacy_assertion="absent",
+            assertion_detail="absent",
+        )
     if low in {"possible", "uncertain", "hypothetical"}:
-        return AssertionAttributes(certainty="possible", temporality="current", experiencer="patient", legacy_assertion=low)
+        return AssertionAttributes(
+            certainty="possible",
+            temporality="current",
+            experiencer="patient",
+            legacy_assertion=low,
+            assertion_detail="conditional" if low == "hypothetical" else low,
+        )
     if low == "historical":
-        return AssertionAttributes(certainty="confirmed", temporality="historical", experiencer="patient", legacy_assertion="historical")
+        return AssertionAttributes(
+            certainty="confirmed",
+            temporality="historical",
+            experiencer="patient",
+            legacy_assertion="historical",
+            temporality_detail="historical",
+            assertion_detail="present",
+        )
     if low in {"family", "family_history"}:
-        return AssertionAttributes(certainty="confirmed", temporality="current", experiencer="family", legacy_assertion="family")
+        return AssertionAttributes(
+            certainty="confirmed",
+            temporality="current",
+            experiencer="family",
+            legacy_assertion="family",
+            experiencer_detail="other_family",
+            assertion_detail="present",
+        )
     return AssertionAttributes(certainty="confirmed", temporality="current", experiencer="patient", legacy_assertion="present")
 
 
 def classify_assertion_attributes(text: str, start: int, end: int, language: str = "en") -> AssertionAttributes:
-    """Orthogonal 3-axis ConText/NegEx classifier (certainty × temporality × experiencer)."""
+    """Orthogonal 3-axis + section-aware fine-grained ConText/NegEx classifier."""
     lang = language if language in CONTEXT_CUES else "en"
     compiled = _COMPILED_CUES[lang]
     term_patterns = _COMPILED_TERMINATORS[lang]
 
+    section = detect_section_at_offset(text, start)
     pre_window = text[max(0, start - 90) : start].lower()
     post_window = text[end : min(len(text), end + 45)].lower()
 
@@ -370,40 +510,91 @@ def classify_assertion_attributes(text: str, start: int, end: int, language: str
         if m_post:
             post_window = post_window[: m_post.start()]
 
+    m_post_comma = _POST_CLAUSE_BREAK_RE.search(post_window)
+    if m_post_comma:
+        post_window = post_window[: m_post_comma.start()]
+
     target_lower = text[start:end].lower()
     pre_window = _apply_general_clause_scope(pre_window, target_lower, post_window, lang)
     full_clause = pre_window + " " + target_lower + " " + post_window
 
+    is_unresolved = bool(_UNRESOLVED_RE.search(full_clause))
     is_pseudo_neg = _matches_any(compiled["pseudo_neg"], full_clause)
-    is_family = _matches_any(compiled["family"], pre_window)
-    is_hypothetical = _matches_any(compiled["hypothetical"], pre_window) or _matches_any(
-        compiled["hypothetical"], post_window
+    is_family = _matches_any(compiled["family"], pre_window) or (section == "family_history")
+    is_hypothetical = (
+        _matches_any(compiled["hypothetical"], pre_window)
+        or bool(_POST_SEEK_URGENT_RE.search(post_window))
+        or (section == "return_precautions")
     )
-    is_negated = (not is_pseudo_neg) and (
+    is_negated = (not is_pseudo_neg) and (not is_unresolved) and (
         _matches_any(compiled["neg_pre"], pre_window) or _matches_any(compiled["neg_post"], post_window)
     )
+    # Safety check: never treat a negative scan finding as confirmed absent if the same paragraph states study was not performed
+    if is_negated:
+        para_start = text.rfind("\n\n", 0, start)
+        para_end = text.find("\n\n", end)
+        para_txt = text[(para_start + 2 if para_start != -1 else 0) : (para_end if para_end != -1 else len(text))]
+        if _UNPERFORMED_SCAN_RE.search(para_txt):
+            is_negated = False
+            is_unresolved = True
+
     has_trailing_qmark = bool(re.match(r"^\s*['’\"”)]*\?", text[end : min(len(text), end + 6)]))
     is_possible = (not is_pseudo_neg) and (
         has_trailing_qmark
         or _matches_any(compiled["possible"], pre_window)
         or _matches_any(compiled["possible"], post_window)
     )
-    is_historical = _matches_any(compiled["historical"], pre_window) or _matches_any(
-        compiled["historical"], post_window
+    is_future = bool(_FUTURE_PLANNED_RE.search(full_clause))
+    is_discontinued = bool(_DISCONTINUED_RE.search(full_clause))
+    is_resolved = bool(_RESOLVED_RE.search(full_clause))
+    is_recurrent = bool(_RECURRENT_RE.search(full_clause))
+    is_historical = (
+        _matches_any(compiled["historical"], pre_window)
+        or _matches_any(compiled["historical"], post_window)
+        or is_discontinued
     )
 
     certainty: Literal["confirmed", "possible", "absent"]
     if is_negated:
         certainty = "absent"
-    elif is_possible or is_hypothetical:
+    elif is_unresolved or is_possible or is_hypothetical:
         certainty = "possible"
     else:
         certainty = "confirmed"
 
     temporality: Literal["current", "historical"] = "historical" if is_historical else "current"
     experiencer: Literal["patient", "family"] = "family" if is_family else "patient"
+    experiencer_detail = _infer_experiencer_detail(pre_window, is_family)
 
-    if is_pseudo_neg:
+    if is_unresolved:
+        assertion_detail = "unresolved"
+    elif is_hypothetical:
+        assertion_detail = "conditional"
+    elif is_discontinued:
+        assertion_detail = "discontinued"
+    elif is_negated:
+        assertion_detail = "absent"
+    elif is_future:
+        assertion_detail = "planned"
+    elif is_possible:
+        assertion_detail = "suspected" if _SUSPECTED_RE.search(full_clause) else "possible"
+    else:
+        assertion_detail = "present"
+
+    if is_future or is_hypothetical:
+        temporality_detail = "future_planned"
+    elif is_resolved:
+        temporality_detail = "resolved"
+    elif is_recurrent:
+        temporality_detail = "recurrent"
+    elif is_historical:
+        temporality_detail = "historical"
+    else:
+        temporality_detail = "current"
+
+    if is_unresolved:
+        legacy = "possible"
+    elif is_pseudo_neg:
         legacy = "present"
     elif is_family:
         legacy = "family"
@@ -423,6 +614,10 @@ def classify_assertion_attributes(text: str, start: int, end: int, language: str
         temporality=temporality,
         experiencer=experiencer,
         legacy_assertion=legacy,
+        experiencer_detail=experiencer_detail,
+        assertion_detail=assertion_detail,
+        temporality_detail=temporality_detail,
+        section=section,
     )
 
 
