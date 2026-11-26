@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Download, Edit3, Flag, X } from "lucide-react";
+import { Check, Copy, Download, Edit3, Flag, X } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
@@ -11,6 +11,7 @@ import type {
   DocumentDetailResponse,
   DocumentSummary,
   ExtractedEntity,
+  ExtractedRelation,
   HumanReviewRecord,
   ReviewSubmissionRequest,
 } from "@/types/api";
@@ -43,11 +44,94 @@ const CERTAINTY_OPTIONS = ["confirmed", "possible", "absent"] as const;
 const TEMPORALITY_OPTIONS = ["current", "historical"] as const;
 const EXPERIENCER_OPTIONS = ["patient", "family"] as const;
 
+const MERGEABLE_REL_TYPES = new Set([
+  "HAS_VALUE",
+  "HAS_UNIT",
+  "HAS_DOSAGE",
+  "HAS_FREQUENCY",
+  "HAS_ROUTE",
+]);
+
+function buildSimpleKeyValueLines(
+  detail: DocumentDetailResponse | undefined,
+  approvedOnly: boolean
+): Array<{ key: string; value: string; approved: boolean }> {
+  if (!detail) return [];
+  const lines: Array<{ key: string; value: string; approved: boolean }> = [];
+  if (detail.document.subject_id) {
+    lines.push({ key: "patient", value: detail.document.subject_id, approved: true });
+  }
+
+  const kept = detail.entities.filter((e) => {
+    const st = String(e.review_status || "").toUpperCase();
+    if (st === "REJECTED") return false;
+    if (approvedOnly) return st === "APPROVED" || st === "CORRECTED";
+    return true;
+  });
+
+  const byId = new Map<string, ExtractedEntity>(kept.map((e) => [e.entity_id, e]));
+  const childrenByHead = new Map<string, ExtractedEntity[]>();
+  const consumedIds = new Set<string>();
+
+  for (const rel of (detail.relations ?? []) as ExtractedRelation[]) {
+    if (!MERGEABLE_REL_TYPES.has(rel.relation_type)) continue;
+    const head = byId.get(rel.source_entity_id);
+    const tail = byId.get(rel.target_entity_id);
+    if (!head || !tail || head.entity_id === tail.entity_id) continue;
+    const arr = childrenByHead.get(head.entity_id) ?? [];
+    if (!arr.some((x) => x.entity_id === tail.entity_id)) {
+      arr.push(tail);
+      childrenByHead.set(head.entity_id, arr);
+      consumedIds.add(tail.entity_id);
+    }
+  }
+
+  const sortedKept = kept.slice().sort((a, b) => a.char_start - b.char_start);
+  for (const ent of sortedKept) {
+    if (consumedIds.has(ent.entity_id)) continue;
+    const st = String(ent.review_status || "").toUpperCase();
+    const isApproved = st === "APPROVED" || st === "CORRECTED";
+    const text = getEntityText(ent);
+    const kids = (childrenByHead.get(ent.entity_id) ?? []).slice().sort((a, b) => a.char_start - b.char_start);
+
+    const tags: string[] = [];
+    if (ent.certainty === "absent" || ent.assertion_status === "NEGATED") tags.push("absent");
+    else if (ent.certainty === "possible" || ent.assertion_status === "UNCERTAIN") tags.push("possible");
+    if (ent.temporality === "historical") tags.push("historical");
+    if (ent.experiencer === "family" || ent.assertion_status === "FAMILY_HISTORY") tags.push("family");
+    const tagSuffix = tags.length > 0 ? ` (${tags.join(", ")})` : "";
+
+    if (ent.entity_type === "LAB_TEST" && kids.length > 0) {
+      lines.push({
+        key: `${text.toLowerCase()}${tagSuffix}`,
+        value: kids.map((k) => getEntityText(k)).join(" "),
+        approved: isApproved,
+      });
+    } else if (ent.entity_type === "MEDICATION" && kids.length > 0) {
+      lines.push({
+        key: `medication${tagSuffix}`,
+        value: [text, ...kids.map((k) => getEntityText(k))].join(" "),
+        approved: isApproved,
+      });
+    } else {
+      const prettyType = ent.entity_type.toLowerCase().replace(/_/g, " ");
+      lines.push({
+        key: `${prettyType}${tagSuffix}`,
+        value: text,
+        approved: isApproved,
+      });
+    }
+  }
+  return lines;
+}
+
 export function ReviewQueuePage() {
   const token = useAuthStore((s) => s.token);
   const queryClient = useQueryClient();
   const [selectedDocId, setSelectedDocId] = useState<string>("");
   const [onlyFlagged, setOnlyFlagged] = useState<boolean>(false);
+  const [simpleApprovedOnly, setSimpleApprovedOnly] = useState<boolean>(false);
+  const [copiedSimple, setCopiedSimple] = useState<boolean>(false);
   const [focusedIdx, setFocusedIdx] = useState<number>(0);
   const [editingEntity, setEditingEntity] = useState<ExtractedEntity | null>(null);
   const [corrType, setCorrType] = useState<string>("DIAGNOSIS");
@@ -123,6 +207,20 @@ export function ReviewQueuePage() {
     (e) => e.review_status !== "AI_PREDICTED" && e.review_status !== "needs_review"
   ).length;
   const progressPct = allEntities.length > 0 ? Math.round((reviewedCount / allEntities.length) * 100) : 0;
+
+  const simpleLines = buildSimpleKeyValueLines(detailQuery.data, simpleApprovedOnly);
+  const simpleOutputText = simpleLines.map((l) => `${l.key} = ${l.value}`).join("\n");
+
+  const handleCopySimple = async () => {
+    if (!simpleOutputText) return;
+    try {
+      await navigator.clipboard.writeText(simpleOutputText);
+      setCopiedSimple(true);
+      setTimeout(() => setCopiedSimple(false), 1800);
+    } catch {
+      setStatusMessage("Copy failed — select text manually.");
+    }
+  };
 
   const docText =
     detailQuery.data?.document.deidentified_preview ||
@@ -435,6 +533,52 @@ export function ReviewQueuePage() {
               </div>
             </form>
           )}
+
+          {/* Simple Key = Value Live Output (updates immediately on Approve / Reject) */}
+          <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50/40 p-3.5 space-y-2 dark:border-emerald-900 dark:bg-emerald-950/20">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-bold uppercase tracking-wide text-emerald-900 dark:text-emerald-200">
+                  Simple Structured Output (updates live on Approve / Reject)
+                </h2>
+                <Badge tone="emerald">{simpleLines.length} fields</Badge>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                <label className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={simpleApprovedOnly}
+                    onChange={(e) => setSimpleApprovedOnly(e.target.checked)}
+                  />
+                  Approved only
+                </label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void handleCopySimple()}
+                  disabled={!simpleOutputText}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {copiedSimple ? "Copied!" : "Copy"}
+                </Button>
+              </div>
+            </div>
+            {simpleLines.length === 0 ? (
+              <p className="text-xs text-slate-500">
+                {simpleApprovedOnly
+                  ? "Click Approve on entities below to populate the verified output."
+                  : "No active entities for this document."}
+              </p>
+            ) : (
+              <pre
+                data-testid="simple-kv-output"
+                className="rounded border border-emerald-200/80 bg-white dark:border-emerald-900/60 dark:bg-slate-900 px-3 py-2.5 font-mono text-xs leading-6 text-slate-900 dark:text-slate-100 whitespace-pre-wrap select-all"
+              >
+                {simpleOutputText}
+              </pre>
+            )}
+          </div>
 
           {/* Clear, explicit 1-line decision legend */}
           <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 flex flex-wrap items-center gap-x-4 gap-y-1">
