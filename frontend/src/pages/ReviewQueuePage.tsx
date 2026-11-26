@@ -64,8 +64,16 @@ function buildSimpleKeyValueLines(
 
   const kept = detail.entities.filter((e) => {
     const st = String(e.review_status || "").toUpperCase();
-    if (st === "REJECTED") return false;
-    if (approvedOnly) return st === "APPROVED" || st === "CORRECTED";
+    if (st === "REJECTED" || st === "REJECT" || st.startsWith("REJECTED_")) return false;
+    if (approvedOnly) {
+      return (
+        st === "APPROVED" ||
+        st === "APPROVED_GROUND_TRUTH" ||
+        st === "CORRECTED" ||
+        st.startsWith("APPROVED_") ||
+        st.startsWith("CORRECTED_")
+      );
+    }
     return true;
   });
 
@@ -90,7 +98,12 @@ function buildSimpleKeyValueLines(
   for (const ent of sortedKept) {
     if (consumedIds.has(ent.entity_id)) continue;
     const st = String(ent.review_status || "").toUpperCase();
-    const isApproved = st === "APPROVED" || st === "CORRECTED";
+    const isApproved =
+      st === "APPROVED" ||
+      st === "APPROVED_GROUND_TRUTH" ||
+      st === "CORRECTED" ||
+      st.startsWith("APPROVED_") ||
+      st.startsWith("CORRECTED_");
     const text = getEntityText(ent);
     const kids = (childrenByHead.get(ent.entity_id) ?? []).slice().sort((a, b) => a.char_start - b.char_start);
 
