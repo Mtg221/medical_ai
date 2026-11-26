@@ -45,11 +45,15 @@ _NON_CLINICAL_BY_TYPE: dict[str, frozenset[str]] = {
     "LAB_TEST": frozenset(
         {"vs", "dates", "date", "ocr", "illegible", "t5h", "reference", "reference <", "ref", "mmhg", "bpm", "ng/l", "mg/dl"}
     ),
-    "PROCEDURE": frozenset({"ocr", "illegible", "reflexes"}),
-    "SYMPTOM": frozenset({"pharmacy record", "alert", "oriented", "oriented x3", "positional", "taking", "dry"}),
+    "PROCEDURE": frozenset({"ocr", "illegible", "reflexes", "physical examination", "examination", "examen clinique"}),
+    "SYMPTOM": frozenset(
+        {"pharmacy record", "alert", "oriented", "oriented x3", "positional", "taking", "dry", "symptoms", "symptom", "symptômes"}
+    ),
     "FREQUENCY": frozenset({"old", "child"}),
-    "MEDICATION": frozenset({"says", "taking", "reported", "noted", "prescribed", "air"}),
-    "DIAGNOSIS": frozenset({"as", "in", "of", "to", "for", "and", "or"}),
+    "MEDICATION": frozenset(
+        {"says", "taking", "reported", "noted", "prescribed", "air", "medications", "medication", "traitements", "score"}
+    ),
+    "DIAGNOSIS": frozenset({"as", "in", "of", "to", "for", "and", "or", "diagnosis", "neurological diagnosis"}),
 }
 _LAB_NAMES_NOT_PROCEDURE: frozenset[str] = frozenset(
     {
@@ -58,6 +62,7 @@ _LAB_NAMES_NOT_PROCEDURE: frozenset[str] = frozenset(
         "hemoglobin",
         "hba1c",
         "wbc",
+        "white blood cells",
         "glucose",
         "platelets",
         "tsh",
@@ -72,15 +77,26 @@ _LAB_NAMES_NOT_PROCEDURE: frozenset[str] = frozenset(
         "troponin",
         "hs-tni",
         "spo2",
+        "oxygen saturation",
+        "saturation en oxygène",
         "bp",
+        "blood pressure",
         "hr",
+        "heart rate",
+        "fréquence cardiaque",
         "rr",
+        "respiratory rate",
+        "fréquence respiratoire",
         "temp",
+        "temperature",
+        "température",
+        "pain score",
         "na",
         "k",
     }
 )
 _FREQUENCY_NOT_ROUTE: frozenset[str] = frozenset({"prn", "od", "qd", "bid", "tid", "qid", "qhs", "daily", "nightly"})
+_ROUTE_NOT_FREQUENCY: frozenset[str] = frozenset({"orally", "oral", "po", "iv", "im", "sc", "subcutaneous", "topical", "inhaled"})
 _DIAGNOSIS_NOT_SYMPTOM: frozenset[str] = frozenset({"diabetes", "type 2 diabetes", "hypertension", "diabète"})
 _RECORD_ID_RE = re.compile(r"^[A-Z]{2,10}[-_]\d{1,8}$")
 _PURE_YEAR_RE = re.compile(r"^(?:19|20)\d{2}$")
@@ -101,14 +117,17 @@ _STRUCTURED_VITAL_LAB_RE = re.compile(
     r"(?:^|\n|\||;|,\s*)\s*(?:[-•*]\s*)?"
     r"(?:(?P<time>\d{1,2}:\d{2})\s*[—–\-:]\s*)?"
     r"(?P<name>"
-    r"BP(?:\s+repeat)?|HR(?:\s+repeat)?|Pulse|RR|Temp(?:erature|érature)?|SpO2(?:\s+repeat)?|"
-    r"Weight|Wt|Poids|Height|Ht|Taille|BMI|Tension(?:\s+art[ée]rielle)?|"
-    r"hs-TnI|Troponin(?:\s+[IT])?|TnI|HbA1c|Hb|WBC|Platelets|Plaquettes|Na|Sodium|K|Potassium|"
+    r"Blood\s+pressure|BP(?:\s+repeat)?|Heart\s+rate|HR(?:\s+repeat)?|Pulse|"
+    r"Respiratory\s+rate|RR|Temp(?:erature|érature)?|Oxygen\s+saturation|SpO2(?:\s+repeat)?|"
+    r"Pain\s+score|Weight|Wt|Poids|Height|Ht|Taille|BMI|"
+    r"Tension(?:\s+art[ée]rielle)?|Fr[ée]quence\s+cardiaque|Fr[ée]quence\s+respiratoire|Saturation\s+en\s+oxyg[èe]ne|"
+    r"hs-TnI|Troponin(?:\s+[IT])?|TnI|HbA1c|Hemoglobin|H[ée]moglobine|Hb|White\s+blood\s+cells|WBC|"
+    r"Platelets|Plaquettes|Na|Sodium|K|Potassium|"
     r"Creatinine|Creat|Cr[ée]atinine|Urea|Ur[ée]e|Glucose|LDL|CRP|D-dimer|BNP|B12|TSH"
     r")"
     r"(?:\s*(?:\|\s*|\t+|:\s*|(?:\bde\b|\bà\b)\s+|\s+)|(?=\d))"
     r"(?P<val>(?:\d[0-9OBA?./]{0,11})(?:\s*/\s*[0-9OBA?]{1,4})?)"
-    r"(?:\s*(?P<unit>mmHg|bpm|/min|°C|C|%|kg|cm|m\b|g/dL|mg/dL|mmol/L|µmol/L|mg/L|ng/L|ng/mL|pg/mL|mIU/L|[×x]10\^9/L))?",
+    r"(?:\s*(?P<unit>mmHg|beats/min|breaths/min|bpm|/min|°C|C|%|kg|cm|m\b|g/dL|mg/dL|mmol/L|µmol/L|mg/L|ng/L|ng/mL|pg/mL|mIU/L|[×x]\s*10(?:\^9|⁹)/L))?",
     re.IGNORECASE,
 )
 _REF_RANGE_RE = re.compile(
@@ -578,6 +597,9 @@ def _filter_non_clinical_artifacts(entities: list[Any], text: str) -> list[Any]:
         # Medication frequencies (PRN, OD, BID, etc.) misclassified as ROUTE -> retype to FREQUENCY
         elif etype == "ROUTE" and low in _FREQUENCY_NOT_ROUTE:
             ent = _retype_entity(ent, "FREQUENCY")
+        # Medication routes (orally, PO, IV, etc.) misclassified as FREQUENCY -> retype to ROUTE
+        elif etype == "FREQUENCY" and low in _ROUTE_NOT_FREQUENCY:
+            ent = _retype_entity(ent, "ROUTE")
         # Diagnoses (diabetes, hypertension) misclassified as SYMPTOM -> retype to DIAGNOSIS
         elif etype == "SYMPTOM" and low in _DIAGNOSIS_NOT_SYMPTOM:
             ent = _retype_entity(ent, "DIAGNOSIS")
