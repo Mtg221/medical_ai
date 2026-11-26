@@ -87,7 +87,7 @@ _PURE_YEAR_RE = re.compile(r"^(?:19|20)\d{2}$")
 _AGE_LIKE_RE = re.compile(r"\b\d+\s*(?:years?|yrs?|y\.?o\.?|y\b|ans?)\b|\b\d+\?\s*/\s*\d+", re.IGNORECASE)
 _ROOM_AIR_PREFIX_RE = re.compile(r"(?:%|spo2|o2|room\s+air)\s*$", re.IGNORECASE)
 _PAIN_SCORE_RE = re.compile(r"^\d{1,2}/10$")
-_PAIN_PREFIX_RE = re.compile(r"(?:pain|cp|douleur|eva|score|→|->)\s*[:\-]?\s*$", re.IGNORECASE)
+_PAIN_PREFIX_RE = re.compile(r"(?:pain|cp|douleur|eva|score|→|->)\s*[:\-|\s]{0,4}$", re.IGNORECASE)
 _TRUNCATED_CONTRACTION_RE = re.compile(r"^[a-z]\s+[a-z]")
 _UNIT_ONLY_RE = re.compile(r"^(?:m[1il]u/l|mg/dl|g/dl|mmol/l|x10\^9/l|bpm|mmhg|%|[^\w\d]+)$", re.IGNORECASE)
 _OCR_CORRUPTED_VAL_RE = re.compile(r"\?|[0-9][OBA]|[OBA][0-9]")
@@ -172,6 +172,8 @@ def _normalize_ocr_clinical_token(raw_text: str, entity_type: str) -> tuple[str 
         cand = re.sub(r"(?<=[A-Za-z])0(?=[A-Za-z])|(?<=[A-Za-z]{2})0\b", "o", cand)
         cand = re.sub(r"(?<=[A-Za-z])3(?=[A-Za-z])", "e", cand)
         cand = re.sub(r"(?<=[A-Za-z])1(?=[A-Za-z])", "i", cand)
+        if any(c.isalpha() for c in txt) and all(c.isupper() for c in txt if c.isalpha()):
+            cand = cand.upper()
         return (cand if cand != txt else None), True
     return None, False
 
@@ -442,7 +444,11 @@ def detect_clinical_contradictions(
     # 4. Unperformed scan vs negative imaging statement
     for para in text.split("\n\n"):
         if re.search(r"\b(?:study\s+not\s+performed|not\s+performed|cancelled|canceled|non\s+r[ée]alis[ée])\b", para, re.IGNORECASE):
-            m_neg = re.search(r"\b(?:no\s+evidence\s+of\s+[A-Za-z0-9 \-]{2,30}|normal\s+study)\b", para, re.IGNORECASE)
+            m_neg = re.search(
+                r"\b(?:no\s+(?:evidence\s+of\s+)?(?:pulmonary\s+embolism|pe\b|acute\s+[A-Za-z0-9 \-]{2,25})|no\s+evidence\s+of\s+[A-Za-z0-9 \-]{2,30}|normal\s+study)\b",
+                para,
+                re.IGNORECASE,
+            )
             if m_neg:
                 p_off = text.find(para)
                 contradictions.append(
@@ -520,9 +526,12 @@ def _filter_non_clinical_artifacts(entities: list[Any], text: str) -> list[Any]:
         # Pure unit strings or punctuation noise ("+? /", "m1U/L") are NOT LAB_VALUE
         if etype == "LAB_VALUE" and (_UNIT_ONLY_RE.match(raw) or not any(ch.isdigit() for ch in raw)):
             continue
-        # Core lab/vital analytes misclassified as PROCEDURE -> retype to LAB_TEST
-        if etype == "PROCEDURE" and low in _LAB_NAMES_NOT_PROCEDURE:
+        # Core lab/vital analytes misclassified as PROCEDURE or LAB_VALUE -> retype to LAB_TEST
+        if etype in {"PROCEDURE", "LAB_VALUE"} and low in _LAB_NAMES_NOT_PROCEDURE:
             ent = _retype_entity(ent, "LAB_TEST")
+        # Numeric BP ratios ("168/96") misclassified as LAB_UNIT -> retype to LAB_VALUE
+        elif etype == "LAB_UNIT" and re.match(r"^\d{2,3}/\d{2,3}$", raw):
+            ent = _retype_entity(ent, "LAB_VALUE")
         # Medication frequencies (PRN, OD, BID, etc.) misclassified as ROUTE -> retype to FREQUENCY
         elif etype == "ROUTE" and low in _FREQUENCY_NOT_ROUTE:
             ent = _retype_entity(ent, "FREQUENCY")

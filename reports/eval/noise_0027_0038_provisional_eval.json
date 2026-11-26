@@ -1,0 +1,41 @@
+{
+  "status": "provisional_against_draft_unreviewed_refs",
+  "documents": {
+    "NOISE-0027": {
+      "ref_status": "draft_unreviewed",
+      "total_checks": 15,
+      "passed": 13,
+      "failed_ids": [
+        "n27_07",
+        "n27_08"
+      ],
+      "pass_rate": 0.8667,
+      "total_extracted_records": 204,
+      "contradictions_detected": 1,
+      "contradiction_topics": [
+        "allergy_status"
+      ]
+    },
+    "NOISE-0038": {
+      "ref_status": "draft_unreviewed",
+      "total_checks": 15,
+      "passed": 13,
+      "failed_ids": [
+        "n38_13",
+        "n38_15"
+      ],
+      "pass_rate": 0.8667,
+      "total_extracted_records": 388,
+      "contradictions_detected": 7,
+      "contradiction_topics": [
+        "allergy_status",
+        "imaging_unperformed_vs_negative",
+        "medication_dose:amlodipine",
+        "medication_dose:aspirin",
+        "polarity:hypertension",
+        "polarity:tenderness",
+        "polarity:type 2 diabetes"
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "cpu_verification": {
+    "se_resnet_v2": {
+      "params": 1228970,
+      "mal_logit_shape": [
+        2
+      ],
+      "dx_logits_shape": [
+        2,
+        7
+      ],
+      "loss": 2.5165,
+      "gradients_nonzero": true,
+      "deterministic_cpu_eval": true
+    },
+    "convnext_derm": {
+      "params": 2492954,
+      "mal_logit_shape": [
+        2
+      ],
+      "dx_logits_shape": [
+        2,
+        7
+      ],
+      "loss": 3.0185,
+      "gradients_nonzero": true,
+      "deterministic_cpu_eval": true
+    }
+  },
+  "locked_test_v4_benchmark_path": "docs/results/raw/vision_9seed_locked_test_v4_benchmark.json",
+  "locked_test_v4_summary": {
+    "dermoscopic_test_metrics": {},
+    "modality_note": "Dermoscopic locked_test_v4 (HAM10000+ISIC2019, patient-grouped) verified; external clinical smartphone datasets (PAD-UFES-20, Fitzpatrick17k, DDI) require institutional access and are NOT mixed with dermoscopic metrics."
+  }
+}

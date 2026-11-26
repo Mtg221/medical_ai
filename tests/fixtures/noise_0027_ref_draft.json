@@ -1,0 +1,26 @@
+{
+  "document_id": "NOISE-0027",
+  "fixture_path": "tests/fixtures/noise_0027.txt",
+  "status": "draft_unreviewed",
+  "review_required_by": "project_owner_or_clinical_annotator",
+  "reviewer_signoff": null,
+  "reviewed_at": null,
+  "provenance_note": "Derived strictly from tests/fixtures/noise_0027.txt for provisional regression benchmarking only. Not human-verified gold ground truth.",
+  "expected_clinical_checks": [
+    {"id": "n27_01", "category": "family_history", "text": "migraine", "context": "mother—migraine", "expected_experiencer": "family", "expected_experiencer_detail": "mother"},
+    {"id": "n27_02", "category": "family_history", "text": "stroke", "context": "brother—‘stroke?? age 5O’", "expected_experiencer": "family", "expected_experiencer_detail": "brother"},
+    {"id": "n27_03", "category": "negation", "text": "vision loss", "context": "denies vision loss", "expected_assertion": "absent"},
+    {"id": "n27_04", "category": "negation", "text": "slurred speech", "context": "no slurred speech", "expected_assertion": "absent"},
+    {"id": "n27_05", "category": "negation", "text": "meningismus", "context": "no meningismus", "expected_assertion": "absent"},
+    {"id": "n27_06", "category": "negation", "text": "intracranial hemorrhage", "context": "No acute intracranial hemorrhage", "expected_assertion": "absent"},
+    {"id": "n27_07", "category": "return_precautions", "text": "worsening headache", "context": "seek urgent evaluation", "expected_assertion_detail": "conditional"},
+    {"id": "n27_08", "category": "vital", "entity_type": "LAB_TEST", "text": "BP", "expected_value": "142/86", "expected_unit": "mmHg"},
+    {"id": "n27_09", "category": "vital", "entity_type": "LAB_TEST", "text": "HR", "expected_value": "88", "expected_unit": "bpm"},
+    {"id": "n27_10", "category": "vital", "entity_type": "LAB_TEST", "text": "SpO2", "expected_value": "98", "expected_unit": "%", "expected_oxygen_condition": "room_air"},
+    {"id": "n27_11", "category": "lab", "entity_type": "LAB_TEST", "text": "Hb", "expected_value": "14.1", "expected_unit": "g/dL"},
+    {"id": "n27_12", "category": "lab", "entity_type": "LAB_TEST", "text": "TSH", "expected_value": "1.8", "expected_unit": "mIU/L"},
+    {"id": "n27_13", "category": "ocr_corrupted", "text": "2?1", "expected_ocr_corrupted": true, "expected_certainty": "possible"},
+    {"id": "n27_14", "category": "contradiction", "expected_topic": "allergy_status", "description": "NKDA vs latex—itching"},
+    {"id": "n27_15", "category": "artifact_suppression", "forbidden_entities": [["DATE", "NOISE-0027"], ["DATE", "6/10"], ["DIAGNOSIS", "RA"], ["DOSAGE", "2021"], ["LAB_TEST", "T5H"]]}
+  ]
+}

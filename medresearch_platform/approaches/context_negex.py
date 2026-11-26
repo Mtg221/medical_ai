@@ -341,7 +341,7 @@ def _apply_general_clause_scope(
 
 
 _SECTION_HEADER_RE = re.compile(
-    r"(?:^|\n)\s*(?:#{1,4}\s*|\d+\.\s*)?"
+    r"(?:^|\n)\s*(?:#{1,4}\s*|\d+\.\s*|[-•*]\s*)?"
     r"(?P<hdr>"
     r"chief\s+complaint|presenting\s+complaint|history\s+of\s+present\s+illness|hpi|motif\s+de\s+consultation|"
     r"past\s+medical\s+history|past\s+history|pmhx?|ant[ée]c[ée]dents(?:\s+m[ée]dicaux)?|"
