@@ -1,0 +1,106 @@
+{
+  "archive": "medical_conversation_dataset_en_fr.zip",
+  "total_records": 1200,
+  "duplicate_ids": 0,
+  "missing_text_records": 0,
+  "offset_mismatches": 0,
+  "dangling_relations": 0,
+  "invalid_records_count": 0,
+  "invalid_records_sample": [],
+  "encounter_split_leakage": {
+    "train_val": 0,
+    "train_test": 0,
+    "val_test": 0
+  },
+  "patient_split_leakage": {
+    "train_val": 0,
+    "train_test": 0,
+    "val_test": 0
+  },
+  "exact_text_split_leakage": {
+    "train_val": 0,
+    "train_test": 0,
+    "val_test": 0
+  },
+  "splits": {
+    "train": 960,
+    "validation": 122,
+    "test": 118
+  },
+  "languages": {
+    "en": 550,
+    "fr": 550,
+    "mixed": 100
+  },
+  "noise_severities": {
+    "clean": 600,
+    "moderate": 300,
+    "high": 300
+  },
+  "entity_types": {
+    "SEVERITY": 2346,
+    "SYMPTOM": 4828,
+    "ANATOMY": 1432,
+    "DURATION": 3508,
+    "CONTEXT": 2240,
+    "VITAL_SIGN": 2988,
+    "LAB_VALUE": 5968,
+    "LAB_UNIT": 5720,
+    "MEDICAL_HISTORY": 1263,
+    "DATE": 2906,
+    "FAMILY_MEMBER": 1200,
+    "FAMILY_HISTORY": 1200,
+    "MEDICATION": 2547,
+    "DOSAGE": 2547,
+    "ROUTE": 1838,
+    "FREQUENCY": 2104,
+    "ALLERGY": 1200,
+    "LAB_TEST": 2980,
+    "EXAMINATION": 1200,
+    "EXAM_FINDING": 1272,
+    "IMAGING_EXAM": 1200,
+    "DIAGNOSIS": 1200,
+    "PROCEDURE": 810,
+    "IMAGING_FINDING": 1024
+  },
+  "relation_types": {
+    "symptom_has_location": 1432,
+    "symptom_has_severity": 2346,
+    "symptom_has_duration": 2346,
+    "symptom_has_context": 2240,
+    "test_has_unit": 5720,
+    "test_has_result": 5968,
+    "family_member_has_diagnosis": 1200,
+    "entity_has_temporality": 1706,
+    "medication_has_dose": 2484,
+    "medication_has_route": 1838,
+    "medication_has_frequency": 2104,
+    "finding_belongs_to_examination": 1272,
+    "patient_has_diagnosis": 1200,
+    "imaging_has_finding": 1024,
+    "medication_treats_symptom": 26
+  },
+  "assertions": {
+    "present": 49788,
+    "absent": 4229,
+    "conditional": 216,
+    "conflicting": 808,
+    "possible": 382,
+    "hypothetical": 98
+  },
+  "experiencers": {
+    "patient": 53121,
+    "family": 2400
+  },
+  "temporalities": {
+    "current": 40900,
+    "recurrent": 2511,
+    "historical": 5567,
+    "planned": 3998,
+    "resolved": 2545
+  },
+  "total_spans_audited": 55521,
+  "overlapping_span_pairs": 0,
+  "ocr_corrupted_spans": 3581,
+  "total_relations_audited": 32906
+}
