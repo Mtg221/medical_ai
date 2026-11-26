@@ -154,13 +154,53 @@ export function buildClinicalRecordJson(
     uncertainties: [],
   };
 
+  const seenSymptom = new Map<string, Record<string, string>>();
+  const seenDiag = new Map<string, Record<string, string>>();
+  const seenHist = new Map<string, Record<string, string>>();
+  const seenMed = new Map<string, Record<string, string>>();
+  const seenLab = new Set<string>();
+  const seenExam = new Set<string>();
+  const seenUnc = new Set<string>();
+
+  const addUnc = (msg: string) => {
+    if (!seenUnc.has(msg)) {
+      seenUnc.add(msg);
+      record.uncertainties.push(msg);
+    }
+  };
+
+  const mergeFinding = (
+    bucket: Map<string, Record<string, string>>,
+    targetArr: Array<Record<string, string>>,
+    key: string,
+    item: Record<string, string>,
+    label: string
+  ) => {
+    const existing = bucket.get(key);
+    if (!existing) {
+      bucket.set(key, item);
+      targetArr.push(item);
+      return;
+    }
+    if (existing.assertion && item.assertion && existing.assertion !== item.assertion) {
+      if (existing.assertion !== "conflicting") {
+        addUnc(`Conflicting assertion for "${label}": ${existing.assertion} vs ${item.assertion}`);
+        existing.assertion = "conflicting";
+      }
+    }
+    if (!existing.anatomy && item.anatomy) existing.anatomy = item.anatomy;
+    if (!existing.temporal_status && item.temporal_status) existing.temporal_status = item.temporal_status;
+    if (!existing.experiencer && item.experiencer) existing.experiencer = item.experiencer;
+  };
+
   const sortedKept = kept.slice().sort((a, b) => a.char_start - b.char_start);
   for (const ent of sortedKept) {
     const text = getEntityText(ent);
+    const lowKey = text.trim().toLowerCase();
     const approved = isEntityApproved(ent.review_status);
     if (!approved && (ent.review_status === "needs_review" || ent.review_reason)) {
       const reason = ent.review_reason || "needs_review";
-      record.uncertainties.push(`${reason}: "${text}" (${ent.entity_type})`);
+      addUnc(`${reason}: "${text}" (${ent.entity_type})`);
     }
     if (consumedIds.has(ent.entity_id)) continue;
 
@@ -180,15 +220,15 @@ export function buildClinicalRecordJson(
       if (anat) item.anatomy = getEntityText(anat.tail);
       if (isHistorical) item.temporal_status = "historical";
       if (isFamily) item.experiencer = "family";
-      record.symptoms.push(item);
+      mergeFinding(seenSymptom, record.symptoms, lowKey, item, text);
     } else if (ent.entity_type === "DIAGNOSIS") {
       const item: Record<string, string> = { entity: text, assertion };
       if (isHistorical) item.temporal_status = "historical";
       if (isFamily) item.experiencer = "family";
       if (isHistorical || isFamily) {
-        record.medical_history.push(item);
+        mergeFinding(seenHist, record.medical_history, `${lowKey}:${isFamily ? "fam" : "hist"}`, item, text);
       } else {
-        record.diagnoses.push(item);
+        mergeFinding(seenDiag, record.diagnoses, lowKey, item, text);
       }
     } else if (ent.entity_type === "MEDICATION") {
       const item: Record<string, string> = { name: text };
@@ -198,8 +238,21 @@ export function buildClinicalRecordJson(
       if (dose) item.dose = getEntityText(dose.tail);
       if (freq) item.frequency = getEntityText(freq.tail);
       if (route) item.route = getEntityText(route.tail);
-      if (assertion !== "present") item.status = assertion === "absent" ? "not taking" : assertion;
-      record.medications.push(item);
+      if (isHistorical) item.status = "historical_or_discontinued";
+      else if (assertion !== "present") item.status = assertion === "absent" ? "not taking" : assertion;
+      const existingMed = seenMed.get(lowKey);
+      if (!existingMed) {
+        seenMed.set(lowKey, item);
+        record.medications.push(item);
+      } else {
+        if (!existingMed.dose && item.dose) existingMed.dose = item.dose;
+        if (!existingMed.frequency && item.frequency) existingMed.frequency = item.frequency;
+        if (!existingMed.route && item.route) existingMed.route = item.route;
+        if (existingMed.status !== item.status && (existingMed.status || item.status)) {
+          existingMed.status = "conflicting";
+          addUnc(`Conflicting medication status for "${text}"`);
+        }
+      }
     } else if (ent.entity_type === "LAB_TEST") {
       const item: Record<string, string> = { test: text };
       const val = kids.find((k) => k.relType === "HAS_VALUE");
@@ -207,13 +260,21 @@ export function buildClinicalRecordJson(
       if (val) item.value = getEntityText(val.tail);
       if (unit) item.unit = getEntityText(unit.tail);
       if (assertion !== "present") item.assertion = assertion;
-      record.laboratory_and_vitals.push(item);
+      const sig = `${lowKey}|${item.value ?? ""}|${item.unit ?? ""}`;
+      if (!seenLab.has(sig)) {
+        seenLab.add(sig);
+        record.laboratory_and_vitals.push(item);
+      }
     } else if (ent.entity_type === "PROCEDURE") {
       const item: Record<string, string> = { name: text };
       const reveals = kids.find((k) => k.relType === "REVEALS");
       if (reveals) item.finding = getEntityText(reveals.tail);
-      if (assertion !== "present") item.assertion = assertion;
-      record.examinations.push(item);
+      if (assertion !== "present") item.status = assertion === "possible" ? "pending_or_uncertain" : assertion;
+      const sig = `${lowKey}|${item.finding ?? ""}|${item.status ?? ""}`;
+      if (!seenExam.has(sig)) {
+        seenExam.add(sig);
+        record.examinations.push(item);
+      }
     } else if (ent.entity_type === "DATE" && !record.encounter.date && ent.normalized_text) {
       record.encounter.date = ent.normalized_text;
     }

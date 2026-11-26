@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Any, Literal
 
@@ -38,6 +39,106 @@ _ASSERTION_TO_NEGATION: dict[str, NegationStatus] = {
     "conditional": "uncertain",
     "family": "affirmed",
 }
+
+
+_NON_CLINICAL_BY_TYPE: dict[str, frozenset[str]] = {
+    "LAB_TEST": frozenset({"vs", "dates", "date", "ocr", "illegible", "t5h"}),
+    "PROCEDURE": frozenset({"ocr", "illegible", "reflexes"}),
+    "SYMPTOM": frozenset({"pharmacy record", "alert", "oriented", "oriented x3", "positional"}),
+    "FREQUENCY": frozenset({"old"}),
+}
+_LAB_NAMES_NOT_PROCEDURE: frozenset[str] = frozenset({"hb", "hgb", "hemoglobin", "wbc", "glucose", "platelets", "tsh", "b12", "creatinine", "creat"})
+_RECORD_ID_RE = re.compile(r"^[A-Z]{2,10}[-_]\d{1,8}$")
+_PURE_YEAR_RE = re.compile(r"^(?:19|20)\d{2}$")
+_AGE_LIKE_RE = re.compile(r"\b\d+\s*(?:years?|yrs?|y\.?o\.?|y\b|ans?)\b|\b\d+\?\s*/\s*\d+", re.IGNORECASE)
+_ROOM_AIR_PREFIX_RE = re.compile(r"(?:%|spo2|o2|room\s+air)\s*$", re.IGNORECASE)
+_UNIT_ONLY_RE = re.compile(r"^(?:m[1il]u/l|mg/dl|g/dl|mmol/l|x10\^9/l|bpm|mmhg|%|[^\w\d]+)$", re.IGNORECASE)
+_FUNCTIONAL_TAIL_RELS: frozenset[str] = frozenset(
+    {"HAS_DOSAGE", "HAS_FREQUENCY", "HAS_ROUTE", "HAS_VALUE", "HAS_UNIT"}
+)
+
+
+def _filter_non_clinical_artifacts(entities: list[Any], text: str) -> list[Any]:
+    """Remove generalizable OCR/template/non-clinical false positives and fix obvious lab-vs-procedure typing."""
+    from medresearch_platform.eval_harness.metrics import PredictedEntity
+
+    out: list[Any] = []
+    for ent in entities:
+        raw = str(ent.text).strip()
+        low = raw.lower()
+        etype = str(ent.type)
+
+        if low in _NON_CLINICAL_BY_TYPE.get(etype, frozenset()):
+            continue
+        # Room Air ("SpO2 98% RA") is NOT Rheumatoid Arthritis
+        if etype == "DIAGNOSIS" and raw == "RA":
+            prefix = text[max(0, ent.start - 18) : ent.start]
+            if _ROOM_AIR_PREFIX_RE.search(prefix):
+                continue
+        # "mass" inside "mass effect" is a radiology finding, not a patient symptom
+        if etype == "SYMPTOM" and low == "mass":
+            post = text[ent.end : min(len(text), ent.end + 12)].lower()
+            if post.startswith(" effect"):
+                continue
+        # Record IDs (NOISE-0027, SYN-00481, ER-2) and ages (4? / 47 years, 6O y) are NOT DATE
+        if etype == "DATE" and (_RECORD_ID_RE.match(raw) or _AGE_LIKE_RE.search(raw)):
+            continue
+        # 4-digit calendar years (2021) are NOT DOSAGE
+        if etype == "DOSAGE" and _PURE_YEAR_RE.match(raw):
+            continue
+        # Pure unit strings or punctuation noise ("+? /", "m1U/L") are NOT LAB_VALUE
+        if etype == "LAB_VALUE" and (_UNIT_ONLY_RE.match(raw) or not any(ch.isdigit() for ch in raw)):
+            continue
+        # Core lab analytes misclassified as PROCEDURE -> retype to LAB_TEST
+        if etype == "PROCEDURE" and low in _LAB_NAMES_NOT_PROCEDURE:
+            ent = PredictedEntity(
+                type="LAB_TEST",
+                start=ent.start,
+                end=ent.end,
+                text=ent.text,
+                assertion=ent.assertion,
+                confidence=ent.confidence,
+                needs_review=ent.needs_review,
+                confidence_variance=getattr(ent, "confidence_variance", 0.0),
+                high_uncertainty=getattr(ent, "high_uncertainty", False),
+                certainty=getattr(ent, "certainty", "confirmed"),
+                temporality=getattr(ent, "temporality", "current"),
+                experiencer=getattr(ent, "experiencer", "patient"),
+            )
+        out.append(ent)
+    return out
+
+
+def _merge_and_dedup_relations(
+    entities: list[Any],
+    rel_lists: list[list[Any]],
+) -> list[Any]:
+    """Merge relation lists, keep only relations whose endpoints exist, and deduplicate functional modifier tails."""
+    valid_spans = {(e.start, e.end) for e in entities}
+    seen_exact: set[tuple[str, int, int, int, int]] = set()
+    non_func: list[Any] = []
+    best_func: dict[tuple[str, int, int], tuple[int, int, float, Any]] = {}
+
+    for rlist in rel_lists:
+        for r in rlist:
+            if (r.head_start, r.head_end) not in valid_spans or (r.tail_start, r.tail_end) not in valid_spans:
+                continue
+            key = (r.type, r.head_start, r.head_end, r.tail_start, r.tail_end)
+            if key in seen_exact:
+                continue
+            seen_exact.add(key)
+            if r.type in _FUNCTIONAL_TAIL_RELS:
+                tkey = (r.type, r.tail_start, r.tail_end)
+                is_prec = 0 if r.head_end <= r.tail_start else 1
+                gap = abs(r.tail_start - r.head_end) if r.head_end <= r.tail_start else abs(r.head_start - r.tail_end)
+                rank = (is_prec, gap, -float(r.confidence))
+                prev = best_func.get(tkey)
+                if prev is None or rank < (prev[0], prev[1], prev[2]):
+                    best_func[tkey] = (rank[0], rank[1], rank[2], r)
+            else:
+                non_func.append(r)
+
+    return non_func + [entry[3] for entry in best_func.values()]
 
 
 def _resolve_page_and_bbox(
@@ -302,15 +403,16 @@ class ExtractionService:
                             del merged[k]
                         merged[key] = he
                         source_stage_by_key[key] = "hybrid_v2"
-            ens_ents = sorted(merged.values(), key=lambda x: x.start)
+            ens_ents = _filter_non_clinical_artifacts(sorted(merged.values(), key=lambda x: x.start), doc.text)
             enriched_ents, ens_rels, _ = apply_context_and_relations(doc, ens_ents)
+            merged_rels = _merge_and_dedup_relations(enriched_ents, [pred_h.relations, ens_rels])
             pred = DocumentPrediction(
                 doc_id=doc.doc_id,
                 language=doc.language,
                 doc_type=doc.doc_type,
                 predicted_doc_type=pred_h.predicted_doc_type,
                 entities=enriched_ents,
-                relations=pred_h.relations or ens_rels,
+                relations=merged_rels,
                 timex=pred_h.timex,
             )
             manifest = model.manifest
@@ -319,7 +421,18 @@ class ExtractionService:
             warnings = tuple(payload.get("validation", {}).get("warnings", []))
         elif eff_approach == "hybrid_v2" or approach == "hybrid_v2":
             model = self._get_hybrid()
-            pred, payload = model.extract_document(doc)
+            pred_raw, payload = model.extract_document(doc)
+            filtered_ents = _filter_non_clinical_artifacts(pred_raw.entities, doc.text)
+            filtered_rels = _merge_and_dedup_relations(filtered_ents, [pred_raw.relations])
+            pred = DocumentPrediction(
+                doc_id=pred_raw.doc_id,
+                language=pred_raw.language,
+                doc_type=pred_raw.doc_type,
+                predicted_doc_type=pred_raw.predicted_doc_type,
+                entities=filtered_ents,
+                relations=filtered_rels,
+                timex=pred_raw.timex,
+            )
             for item in payload.get("records", []):
                 prov = item.get("provenance", {})
                 key = (str(item.get("entity_type")), int(item.get("char_start", 0)), int(item.get("char_end", 0)))

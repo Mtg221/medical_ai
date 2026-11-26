@@ -1,0 +1,115 @@
+Outpatient Neurology / Primary Care — Referral Bundle
+
+Facility: Northside Clinic??
+Department: Neuro / PCP
+Document ID: NOISE-0027
+Patient: SYNTHETIC SUBJECT
+Age: 4? / 47 years?
+Gender: M?
+Encounter date: 02-11-2026 / 11/02/26 (format unclear)
+
+1. Referral reason / chief complaint
+‘Headache + dizzy spells + numbness??’ x 3 wks (or 3 mos per scanned note).
+
+Pt says headache at back of head, ‘comes & goes’, worse after computer / when stand up. Occasional blurry vision? denies vision loss. Numbness in LEFT hand digits 3-5, not whole arm.
+
+Copy OCR: hedache / dizzyness / numbnes / lft hand / 3—5 / worse whn stnding??
+
+One note says symptoms started 19/10, another says 29/10.
+2. Past history
+Hx: migraine? ‘migraine’ crossed out? / migraine since teens (uncertain). HTN: no? ‘borderline BP’ in old chart. Asthma (childhood, inactive?). Cervical injury: denies / old note ‘neck strain 2021’.
+
+Surgery: none documented; ‘tonsils?’ OCR.
+
+Family: mother—migraine; brother—‘stroke?? age 5O’ (uncertain).
+3. Medication list — imported / handwritten conflict
+- Ibuprofen 400 mg PO PRN — ‘3x day’? / patient reports 1–2 doses weekly.
+- Propranolol 20 mg BID? marked discontinued in 2024 / current? unclear.
+- Salbutamol inhaler—old prescription, uses rarely?
+- ‘vitamin B12’ 1000 mcg / 1OOO? supplement, no pharmacy record.
+- Allergies: NKDA? separate page: ‘latex—itching’ (verify).
+4. Vitals — several readings, OCR errors
+Parameter	Value
+BP	142/86 mmHg
+HR	88 bpm
+RR	16/min
+Temp	36.8 C
+SpO2	98% RA
+Second BP	14?/8B (OCR)
+Second pulse	9O
+Weight	81.5 kg?
+Height	17O cm?
+Pain	6/10 (head)
+Glucose	blank / n/a
+
+5. Examination
+General: alert, oriented x3, no acute distress.
+
+Neuro: speech fluent? / ‘slurred’ appears in copied template but negated in later line: ‘no slurred speech’. Face symmetric. Strength 5/5? in all limbs; left grip ‘4+’ or ‘4/5’.
+
+Sensory: decreased sensation? left fingers—patient reports; exam ‘intact’ (conflict).
+
+Reflexes 2+? / OCR ‘Z+’.
+
+Gait: normal? ‘unsteady on tandem’ handwritten.
+
+Eye exam: pupils equal/reactive, blurry vision reported but not observed.
+
+Neck: mild stiffness? no meningismus.
+
+Duplicate: ‘alert and oriented’ repeated 3x.
+6. Investigations
+CT head (date? 01/11):
+
+‘No acute intracranial hemorrhage or mass effect.’
+
+Tiny phrase at end: ‘mild sinus mucosal thicken—’.
+
+Report duplicated.
+
+MRI: ordered / not completed / appointment pending.
+
+CBC:
+- Hb 14.1 g/dL
+- WBC 6.4
+- Platelets 2?1 x10^9/L (unclear)
+BMP:
+- Na 140
+- K 3.9
+- Creat 0.9 mg/dL
+- Glucose 104 mg/dL
+B12: 2O1 pg/mL? / borderline? Lab date not shown.
+
+TSH: 1.8 mIU/L.
+
+OCR: T5H / 1.8 / m1U/L
+
+ECG: sinus rhythm 8? bpm, artifact noted.
+7. Assessment fragments / differential (not confirmed)
+1. Headache, recurrent—type unclear (migraine? tension?).
+2. Dizziness / lightheadedness, positional? ‘vertigo’ in triage but pt denies spinning.
+3. Paresthesia left hand, intermittent.
+4. Elevated BP reading (not established HTN?).
+5. Low-normal B12? value uncertain.
+Differential in margin: migraine; cervical radic?; orthostatic sx; vascular event not assessed in this note.
+
+‘Do not assume’ written in margin.
+8. Plan / follow-up — fragments
+- MRI brain: requested, not yet done.
+- Review symptoms / repeat neuro exam at follow-up.
+- BP recheck.
+- B12 result review.
+- Referral: Neurology—status unclear (faxed? pending?).
+- Return precautions text partially corrupted: ‘worsening headache, weakness, speech / vision changes—seek urgent evaluation’ [fragment].
+- Follow-up 2–4 weeks? / ‘2-4’ OCR.
+9. Noise / integrity flags
+- Header mismatch: ‘Neuro’ vs ‘Primary Care’.
+- Age 4? vs 47.
+- Dates 02-11-2026 vs 11/02/26.
+- Duplicate CT report.
+- Contradictory sensory exam.
+- Possible template copy ‘slurred speech’ with explicit negation later.
+- Medication status conflict (propranolol).
+- Unit corruption: m1U/L, x10^9/L partly unreadable.
+- Footer: Page 1 of 3 / page 3?
+- Signature missing / scanned stamp: ILLEGIBLE.

@@ -33,18 +33,54 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             "excluded ",
         ),
         "neg_post": (" ruled out", " excluded", " negative", " absent", " was not observed", " not observed"),
-        "possible": ("suspected ", "possible ", "probable ", "likely ", "question of ", "rule out ", "suspect ", "uncertain whether "),
-        "hypothetical": ("if ", "return if ", "should ", "in case of ", "watch for ", "return precautions given for "),
+        "possible": (
+            "suspected ",
+            "possible ",
+            "probable ",
+            "likely ",
+            "question of ",
+            "rule out ",
+            "suspect ",
+            "uncertain whether ",
+            "uncertain",
+            "unclear",
+            "borderline ",
+            "differential",
+            "not established",
+            "pending",
+            "not yet done",
+            "not completed",
+        ),
+        "hypothetical": (
+            "if ",
+            "return if ",
+            "should ",
+            "in case of ",
+            "watch for ",
+            "return precautions",
+            "seek urgent",
+        ),
         "family": (
             "family history of ",
             "family medical history notable for ",
             "family history:",
+            "family:",
             "family history reveals ",
             "paternal history includes ",
             "hereditary risk: ",
             "sibling diagnosed with ",
             "mother ",
+            "mother—",
+            "mother-",
             "father ",
+            "father—",
+            "father-",
+            "brother ",
+            "brother—",
+            "brother-",
+            "sister ",
+            "sister—",
+            "sister-",
             "maternal ",
             "paternal ",
             "mother had ",
@@ -68,6 +104,12 @@ CONTEXT_CUES: dict[str, dict[str, tuple[str, ...]]] = {
             "pmh includes ",
             "historical conditions: ",
             "known ",
+            "childhood",
+            "inactive",
+            "discontinued",
+            "old prescription",
+            "old note",
+            "old chart",
         ),
         "terminators": (".", ";", "\n", " but ", " however ", " except ", " although ", " whereas "),
     },
@@ -323,14 +365,21 @@ def classify_assertion_attributes(text: str, start: int, end: int, language: str
 
     is_pseudo_neg = _matches_any(compiled["pseudo_neg"], full_clause)
     is_family = _matches_any(compiled["family"], pre_window)
-    is_hypothetical = _matches_any(compiled["hypothetical"], pre_window)
+    is_hypothetical = _matches_any(compiled["hypothetical"], pre_window) or _matches_any(
+        compiled["hypothetical"], post_window
+    )
     is_negated = (not is_pseudo_neg) and (
         _matches_any(compiled["neg_pre"], pre_window) or _matches_any(compiled["neg_post"], post_window)
     )
+    has_trailing_qmark = bool(re.match(r"^\s*['’\"”)]*\?", text[end : min(len(text), end + 6)]))
     is_possible = (not is_pseudo_neg) and (
-        _matches_any(compiled["possible"], pre_window) or _matches_any(compiled["possible"], post_window)
+        has_trailing_qmark
+        or _matches_any(compiled["possible"], pre_window)
+        or _matches_any(compiled["possible"], post_window)
     )
-    is_historical = _matches_any(compiled["historical"], pre_window)
+    is_historical = _matches_any(compiled["historical"], pre_window) or _matches_any(
+        compiled["historical"], post_window
+    )
 
     certainty: Literal["confirmed", "possible", "absent"]
     if is_negated:
@@ -412,9 +461,9 @@ def apply_context_and_relations(
                 rtype = "HAS_FREQUENCY"
             elif head.type == "MEDICATION" and tail.type == "ROUTE" and head.end <= tail.start:
                 rtype = "HAS_ROUTE"
-            elif head.type == "LAB_TEST" and tail.type == "LAB_VALUE" and head.end <= tail.start and tail.start - head.end <= 8:
+            elif head.type == "LAB_TEST" and tail.type == "LAB_VALUE" and head.end <= tail.start and tail.start - head.end <= 16:
                 rtype = "HAS_VALUE"
-            elif head.type == "LAB_VALUE" and tail.type == "LAB_UNIT" and head.end <= tail.start and tail.start - head.end <= 5:
+            elif head.type in ("LAB_VALUE", "LAB_TEST") and tail.type == "LAB_UNIT" and head.end <= tail.start and tail.start - head.end <= 16:
                 rtype = "HAS_UNIT"
             elif head.type == "MEDICATION" and tail.type == "DIAGNOSIS" and tail.end <= head.start:
                 rtype = "TREATS"

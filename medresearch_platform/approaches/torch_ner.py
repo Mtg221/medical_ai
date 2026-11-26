@@ -853,9 +853,13 @@ def ensemble_torch_ner_predictions(
         voter_confs = [float(e.confidence) for e in ents]
         mean_conf = float(np.mean(voter_confs))
         if len(ents) >= min_votes or mean_conf >= hi_conf_threshold:
+            vote_ratio = len(ents) / float(n_models)
+            voter_std = round(float(np.std(voter_confs)), 4) if len(voter_confs) > 1 else 0.0
             full_scores = voter_confs + [0.0] * (n_models - len(ents))
             seed_std = round(float(np.std(full_scores)), 4)
-            is_high_unc = bool(seed_std > 0.12)
+            # Flag high uncertainty only on genuine cross-seed disagreement (<75% vote consensus)
+            # or high confidence spread among voting models, avoiding false alarms on 17/18 supermajorities.
+            is_high_unc = bool(vote_ratio < 0.75 or voter_std > 0.12)
             boost = 0.04 * (len(ents) - 1)
             merged_ent = PredictedEntity(
                 type=ents[0].type,
