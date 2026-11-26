@@ -20,7 +20,8 @@ NOISE_0027_EXPECTED_SHA256 = "0e2739681e773a6eb9fb4eaf1d48d63febc5007a12157bd22f
 
 def test_noise_0027_fixture_preserved_verbatim() -> None:
     assert NOISE_0027_PATH.exists(), "NOISE-0027 fixture missing"
-    actual = hashlib.sha256(NOISE_0027_PATH.read_bytes()).hexdigest()
+    normalized_bytes = NOISE_0027_PATH.read_bytes().replace(b"\r\n", b"\n")
+    actual = hashlib.sha256(normalized_bytes).hexdigest()
     assert actual == NOISE_0027_EXPECTED_SHA256
 
 

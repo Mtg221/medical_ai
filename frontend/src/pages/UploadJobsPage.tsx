@@ -123,7 +123,7 @@ export function UploadJobsPage() {
     try {
       if (isImageFile(file)) {
         const res = await uploadImageMultipart(file, token, {
-          subject_id: effectiveSubjectId,
+          subject_id: subjectId.trim() || "subj_synth_001",
           body_site: bodySite.trim() || undefined,
         });
         setTriageResult(res);
