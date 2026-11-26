@@ -1,0 +1,193 @@
+# CITY GENERAL HOSPITAL
+## EMERGENCY DEPARTMENT — CARDIOLOGY CONSULTATION
+
+**DOCUMENT ID:** NOISE-0038  
+**PATIENT:** John M. / Jon M. / J.M.  
+**MRN:** 00?8317  
+**AGE:** 6O years? / 60 y.o.  
+**SEX:** M  
+**DATE:** 26/11/26 — 11/26/2026?  
+**ARRIVAL:** 08:4?  
+**DEPARTMENT:** ED / Cardio  
+**PAGE:** 1 of 3 (page 2 duplicated?)
+
+---
+
+### 1. CHIEF COMPLAINT
+
+"Chest pain and can't catch breath" x 2 days? maybe since yesterday evening.
+
+Triage: CP 7/10, radiates to left arm? Patient says "not really arm, more shoulder". Shortness of breath on stairs. Some sweating. No vomiting. Nausea? denied in later note.
+
+Triage nurse writes: "possible cardiac event, ECG stat".
+
+Patient states pain started after carrying heavy bags, worse with movement and deep breathing. Another note: pain started while watching TV, no exertion. Pain now 3/10 after rest.
+
+"Feels heart beating fast sometimes" x 1 month? / 1 week.
+
+Denies syncope. Denies loss of consciousness. Dizziness? "little light headed when standing up". No spinning sensation.
+
+Cough for 5 days, dry? One note says productive yellow sputum. No fever reported, but triage temp 37.9? Repeat 37.1.
+
+### 2. HISTORY OF PRESENT ILLNESS
+
+Known hypertension? Patient says "I was told BP high once", no regular follow-up. Problem list says HTN since 2018. Another discharge summary says "no confirmed hypertension".
+
+Type 2 diabetes listed in old record, patient denies diabetes. HbA1c? unknown.
+
+Hypercholesterolemia documented 2022. Patient stopped statin "a few months ago" because of muscle pain. Exact date unknown.
+
+Previous admission for chest pain in 2023? ECG normal then. No report available.
+
+Patient reports father died after "heart attack" age 5? / 58. Mother has diabetes. Brother has "irregular heartbeat" (possibly atrial fibrillation). Patient denies known family history of sudden cardiac death.
+
+Smoking: stopped 2019? Another section says current smoker, 3 cigarettes/day. Alcohol occasional. No recreational drug use reported.
+
+### 3. MEDICATIONS
+
+Medication reconciliation incomplete.
+
+- Amlodipine 10 mg PO daily — current? Patient says 5 mg "when I remember".
+- Metformin 500 mg BID — old prescription, patient denies taking it.
+- Atorvastatin 40 mg at night — stopped? "muscle pain"; pharmacy list still active.
+- Aspirin 81 mg daily — patient says "only when chest hurts". Another note says no aspirin.
+- Ibuprofen 400 mg PRN — last taken yesterday.
+- Omeprazole 20 mg OD — maybe current.
+- "Nitro..." in old prescription, name unclear; patient denies using nitroglycerin.
+- Allergy: penicillin? rash as child. Another field says NKDA.
+- Contrast allergy? "felt hot during scan", no documented reaction.
+
+### 4. VITAL SIGNS
+
+| Parameter | Value | Comment |
+|---|---|---|
+| BP | 168/96 | Triage |
+| BP repeat | 15B/9? | OCR |
+| HR | 112 bpm | Triage |
+| HR repeat | 9O | handwritten? |
+| RR | 22/min | |
+| Temp | 37.9°C / 37.1°C | conflicting |
+| SpO2 | 94% RA | |
+| SpO2 repeat | 96% | oxygen? |
+| Weight | 92 kg? | |
+| Height | 17? cm | |
+| Pain | 7/10 → 3/10 | after rest |
+
+Nursing note: "O2 2L started?" Another entry: "room air throughout". Oxygen administration uncertain.
+
+### 5. PHYSICAL EXAMINATION
+
+General: awake, alert, oriented x3. Appears anxious. No acute distress? "mild distress" in triage.
+
+CVS: tachycardia, regular rhythm? Another examiner: irregular pulse. No murmur documented. Peripheral pulses present.
+
+Respiratory: mild wheeze? Later note says lungs clear bilaterally. No crackles. Patient breathing fast.
+
+Chest wall: tenderness on left costochondral area. Pain reproduced on palpation. Another note: "no reproducible tenderness".
+
+Abdomen: soft, non-tender.
+
+Legs: no edema. Left calf tenderness? crossed out. No unilateral swelling.
+
+Neurology: no focal deficit. Strength 5/5. "left arm weakness?" from triage, patient later denies weakness. No facial droop. Speech normal.
+
+### 6. INVESTIGATIONS
+
+**ECG — 09:02**
+
+Sinus tachycardia? Rate 108. PR 16? ms. QRS 9? ms. QTc 46? ms. No ST elevation. T-wave inversion in lead III? Machine text: "possible inferior ischemia". Physician note: "nonspecific changes, no acute ischemic pattern".
+
+**Repeat ECG — 10:1?**
+
+Sinus rhythm 96 bpm. No acute ST changes. Duplicate ECG attached, same timestamp? Not sure.
+
+**Troponin**
+
+- hs-TnI: 18 ng/L (reference < 19?) 
+- Repeat: 2O ng/L? at 3 hours.
+- Another printout: 0.02 ng/mL.
+- Lab comment: "result pending / verified" both visible.
+- No clear serial trend in the scanned copy.
+
+**Blood tests**
+
+- Hb: 13.2 g/dL
+- WBC: 11.8 ×10^9/L
+- Platelets: 24? ×10^9/L
+- Na: 138 mmol/L
+- K: 3.4 mmol/L
+- Creatinine: 1.3 mg/dL (baseline unknown)
+- Urea: 7.8 mmol/L
+- Glucose: 1?8 mg/dL
+- HbA1c: 6.?%
+- LDL: 4.1 mmol/L (old result?)
+- CRP: 18 mg/L
+- D-dimer: 0.8 mg/L FEU? (unit unclear)
+- BNP: not ordered? Another note says 1?0 pg/mL.
+
+**Chest X-ray**
+
+No focal consolidation. Mild cardiomegaly? Radiologist: "cardiac silhouette upper normal". No pleural effusion. No pneumothorax. Image quality limited by rotation.
+
+**CT pulmonary angiogram**
+
+Requested? Ordered? Cancelled? Report section contains "No pulmonary embolism" but another section says "study not performed due to elevated creatinine". Verify actual status from the source.
+
+### 7. ASSESSMENT
+
+1. Chest pain — ACS? versus musculoskeletal chest pain.
+2. Tachycardia, resolved? 
+3. Hypertension / elevated BP.
+4. Possible type 2 diabetes — status unclear.
+5. Dyslipidemia, medication non-adherence.
+6. Mild hypokalemia.
+7. Possible viral respiratory infection? 
+8. PE considered, not confirmed.
+9. Anxiety? Patient denies anxiety disorder.
+10. Rule out myocardial infarction.
+
+Cardiology note: "low/intermediate risk, correlate with serial troponin and ECG". Another note: "admit for monitoring". Disposition field says discharged home.
+
+### 8. PLAN / DISPOSITION
+
+- Repeat troponin after 3 hours — result unclear.
+- Repeat ECG — performed?
+- Potassium replacement 40 mEq PO? Administration not confirmed.
+- Aspirin 300 mg loading dose? Ordered but MAR says "not administered".
+- Consider echocardiogram tomorrow — not performed during this visit?
+- Review antihypertensive medication.
+- Stop ibuprofen? Instruction unclear.
+- Follow-up cardiology in 1 week / 4 weeks.
+- Return if chest pain worsens, fainting, severe breathlessness, sweating or new weakness.
+- Discharge summary says "stable, pain free".
+- Nursing note at 11:42: "patient still reports mild chest discomfort 2/10".
+- Patient left ED at 12:0? with family.
+
+**SIGNATURE:** Dr. A. K. / Dr. A.K.?  
+**STATUS:** Signed? / Draft  
+**DOCUMENT GENERATED:** 26/11/2026 12:31
+
+---
+
+### 9. OCR / SCANNING ARTIFACTS
+
+- "CARDI0LOGY" (zero instead of O)
+- "chest p@in"
+- "TnI 2O"
+- "BP 15B/9?"
+- "SpO2 9A%"
+- "M3tformin"
+- "Aml0dipine"
+- "No ST elevat1on"
+- "PE not excludcd"
+- "D/C home??"
+- Duplicate ECG page.
+- Missing medication administration record.
+- Two different patient spellings.
+- Age appears as 6O and 60.
+- Mixed date formats.
+- Several handwritten corrections.
+- Conflicting troponin units.
+- Unclear CT pulmonary angiogram status.
+- Inconsistent discharge status.
+- Missing final signature.

@@ -44,24 +44,202 @@ _ASSERTION_TO_NEGATION: dict[str, NegationStatus] = {
 _NON_CLINICAL_BY_TYPE: dict[str, frozenset[str]] = {
     "LAB_TEST": frozenset({"vs", "dates", "date", "ocr", "illegible", "t5h"}),
     "PROCEDURE": frozenset({"ocr", "illegible", "reflexes"}),
-    "SYMPTOM": frozenset({"pharmacy record", "alert", "oriented", "oriented x3", "positional"}),
-    "FREQUENCY": frozenset({"old"}),
+    "SYMPTOM": frozenset({"pharmacy record", "alert", "oriented", "oriented x3", "positional", "taking", "dry"}),
+    "FREQUENCY": frozenset({"old", "child"}),
+    "MEDICATION": frozenset({"says", "taking", "reported", "noted", "prescribed"}),
+    "DIAGNOSIS": frozenset({"as", "in", "of", "to", "for", "and", "or"}),
 }
-_LAB_NAMES_NOT_PROCEDURE: frozenset[str] = frozenset({"hb", "hgb", "hemoglobin", "wbc", "glucose", "platelets", "tsh", "b12", "creatinine", "creat"})
+_LAB_NAMES_NOT_PROCEDURE: frozenset[str] = frozenset(
+    {
+        "hb",
+        "hgb",
+        "hemoglobin",
+        "hba1c",
+        "wbc",
+        "glucose",
+        "platelets",
+        "tsh",
+        "b12",
+        "creatinine",
+        "creat",
+        "urea",
+        "ldl",
+        "crp",
+        "d-dimer",
+        "bnp",
+        "troponin",
+        "hs-tni",
+        "spo2",
+        "bp",
+        "hr",
+        "rr",
+        "temp",
+        "na",
+        "k",
+    }
+)
+_FREQUENCY_NOT_ROUTE: frozenset[str] = frozenset({"prn", "od", "qd", "bid", "tid", "qid", "qhs", "daily", "nightly"})
+_DIAGNOSIS_NOT_SYMPTOM: frozenset[str] = frozenset({"diabetes", "type 2 diabetes", "hypertension", "diabète"})
 _RECORD_ID_RE = re.compile(r"^[A-Z]{2,10}[-_]\d{1,8}$")
 _PURE_YEAR_RE = re.compile(r"^(?:19|20)\d{2}$")
 _AGE_LIKE_RE = re.compile(r"\b\d+\s*(?:years?|yrs?|y\.?o\.?|y\b|ans?)\b|\b\d+\?\s*/\s*\d+", re.IGNORECASE)
 _ROOM_AIR_PREFIX_RE = re.compile(r"(?:%|spo2|o2|room\s+air)\s*$", re.IGNORECASE)
+_PAIN_SCORE_RE = re.compile(r"^\d{1,2}/10$")
+_PAIN_PREFIX_RE = re.compile(r"(?:pain|cp|douleur|eva|score|→|->)\s*[:\-]?\s*$", re.IGNORECASE)
+_TRUNCATED_CONTRACTION_RE = re.compile(r"^[a-z]\s+[a-z]")
 _UNIT_ONLY_RE = re.compile(r"^(?:m[1il]u/l|mg/dl|g/dl|mmol/l|x10\^9/l|bpm|mmhg|%|[^\w\d]+)$", re.IGNORECASE)
+_OCR_CORRUPTED_VAL_RE = re.compile(r"\?|[0-9][OBA]|[OBA][0-9]")
+_STRUCTURED_VITAL_LAB_RE = re.compile(
+    r"(?:^|\n|\|)\s*(?:[-•*]\s*)?"
+    r"(?P<name>"
+    r"BP(?:\s+repeat)?|HR(?:\s+repeat)?|RR|Temp(?:erature|érature)?|SpO2(?:\s+repeat)?|"
+    r"Weight|Poids|Height|Taille|Tension(?:\s+art[ée]rielle)?|"
+    r"hs-TnI|Troponin|HbA1c|Hb|WBC|Platelets|Plaquettes|Na|Sodium|K|Potassium|"
+    r"Creatinine|Creat|Cr[ée]atinine|Urea|Ur[ée]e|Glucose|LDL|CRP|D-dimer|BNP|B12|TSH"
+    r")"
+    r"\s*(?:\|\s*|\t+|:\s*|(?:\bde\b|\bà\b)\s+|\s+)"
+    r"(?P<val>(?:\d[0-9OBA?./]{0,11})(?:\s*/\s*[0-9OBA?]{1,4})?)"
+    r"(?:\s*(?P<unit>mmHg|bpm|/min|°C|C|%|kg|cm|g/dL|mg/dL|mmol/L|µmol/L|mg/L|ng/L|ng/mL|pg/mL|mIU/L|[×x]10\^9/L))?",
+    re.IGNORECASE,
+)
 _FUNCTIONAL_TAIL_RELS: frozenset[str] = frozenset(
     {"HAS_DOSAGE", "HAS_FREQUENCY", "HAS_ROUTE", "HAS_VALUE", "HAS_UNIT"}
 )
 
 
-def _filter_non_clinical_artifacts(entities: list[Any], text: str) -> list[Any]:
-    """Remove generalizable OCR/template/non-clinical false positives and fix obvious lab-vs-procedure typing."""
+def _extract_structured_vitals_and_labs(
+    text: str,
+    existing_entities: list[Any],
+) -> tuple[list[Any], list[Any]]:
+    """Deterministically extract EN/FR tabular/bulleted vital & lab measurements without adding any ML model."""
+    from medresearch_platform.eval_harness.metrics import PredictedEntity, PredictedRelation
+
+    new_ents: list[Any] = []
+    new_rels: list[Any] = []
+    occupied: list[tuple[int, int]] = [(e.start, e.end) for e in existing_entities]
+
+    def _overlaps(s: int, e: int) -> bool:
+        return any(max(s, os_) < min(e, oe_) for os_, oe_ in occupied)
+
+    for m in _STRUCTURED_VITAL_LAB_RE.finditer(text):
+        ns, ne = m.span("name")
+        vs, ve = m.span("val")
+        val_txt = m.group("val").strip()
+        if not val_txt or not any(ch.isdigit() for ch in val_txt):
+            continue
+        # Strip trailing punctuation from value span
+        while ve > vs and text[ve - 1] in ".,;":
+            ve -= 1
+        val_txt = text[vs:ve]
+        if not val_txt:
+            continue
+
+        # Reuse existing LAB_TEST if it overlaps name span, else add new LAB_TEST
+        head_ent = next(
+            (e for e in existing_entities if e.type == "LAB_TEST" and max(e.start, ns) < min(e.end, ne)),
+            None,
+        )
+        if head_ent is None:
+            if _overlaps(ns, ne):
+                continue
+            head_ent = PredictedEntity(
+                type="LAB_TEST",
+                start=ns,
+                end=ne,
+                text=text[ns:ne],
+                assertion="present",
+                confidence=0.92,
+                needs_review=False,
+            )
+            new_ents.append(head_ent)
+            occupied.append((ns, ne))
+
+        is_ocr_bad = bool(_OCR_CORRUPTED_VAL_RE.search(val_txt))
+        val_ent = next(
+            (e for e in existing_entities if e.type == "LAB_VALUE" and max(e.start, vs) < min(e.end, ve)),
+            None,
+        )
+        if val_ent is None and not _overlaps(vs, ve):
+            val_ent = PredictedEntity(
+                type="LAB_VALUE",
+                start=vs,
+                end=ve,
+                text=val_txt,
+                assertion="possible" if is_ocr_bad else "present",
+                confidence=0.62 if is_ocr_bad else 0.92,
+                needs_review=is_ocr_bad,
+                high_uncertainty=is_ocr_bad,
+                certainty="possible" if is_ocr_bad else "confirmed",
+            )
+            new_ents.append(val_ent)
+            occupied.append((vs, ve))
+
+        if val_ent is not None:
+            new_rels.append(
+                PredictedRelation(
+                    type="HAS_VALUE",
+                    head_start=head_ent.start,
+                    head_end=head_ent.end,
+                    tail_start=val_ent.start,
+                    tail_end=val_ent.end,
+                    confidence=0.92,
+                )
+            )
+
+        if m.group("unit"):
+            us, ue = m.span("unit")
+            unit_ent = next(
+                (e for e in existing_entities if e.type == "LAB_UNIT" and max(e.start, us) < min(e.end, ue)),
+                None,
+            )
+            if unit_ent is None and not _overlaps(us, ue):
+                unit_ent = PredictedEntity(
+                    type="LAB_UNIT",
+                    start=us,
+                    end=ue,
+                    text=text[us:ue],
+                    assertion="present",
+                    confidence=0.92,
+                    needs_review=False,
+                )
+                new_ents.append(unit_ent)
+                occupied.append((us, ue))
+            if unit_ent is not None:
+                new_rels.append(
+                    PredictedRelation(
+                        type="HAS_UNIT",
+                        head_start=head_ent.start,
+                        head_end=head_ent.end,
+                        tail_start=unit_ent.start,
+                        tail_end=unit_ent.end,
+                        confidence=0.92,
+                    )
+                )
+
+    return new_ents, new_rels
+
+
+def _retype_entity(ent: Any, new_type: str) -> Any:
     from medresearch_platform.eval_harness.metrics import PredictedEntity
 
+    return PredictedEntity(
+        type=new_type,
+        start=ent.start,
+        end=ent.end,
+        text=ent.text,
+        assertion=ent.assertion,
+        confidence=ent.confidence,
+        needs_review=ent.needs_review,
+        confidence_variance=getattr(ent, "confidence_variance", 0.0),
+        high_uncertainty=getattr(ent, "high_uncertainty", False),
+        certainty=getattr(ent, "certainty", "confirmed"),
+        temporality=getattr(ent, "temporality", "current"),
+        experiencer=getattr(ent, "experiencer", "patient"),
+    )
+
+
+def _filter_non_clinical_artifacts(entities: list[Any], text: str) -> list[Any]:
+    """Remove generalizable OCR/template/non-clinical false positives and fix obvious clinical misclassifications."""
     out: list[Any] = []
     for ent in entities:
         raw = str(ent.text).strip()
@@ -70,7 +248,10 @@ def _filter_non_clinical_artifacts(entities: list[Any], text: str) -> list[Any]:
 
         if low in _NON_CLINICAL_BY_TYPE.get(etype, frozenset()):
             continue
-        # Room Air ("SpO2 98% RA") is NOT Rheumatoid Arthritis
+        # Truncated contraction spans like "t catch breath" (from "can't catch breath")
+        if etype == "SYMPTOM" and _TRUNCATED_CONTRACTION_RE.match(raw) and ent.start > 0 and text[ent.start - 1] in "'’":
+            continue
+        # Room Air ("SpO2 98% RA", "94% RA") is NOT Rheumatoid Arthritis
         if etype == "DIAGNOSIS" and raw == "RA":
             prefix = text[max(0, ent.start - 18) : ent.start]
             if _ROOM_AIR_PREFIX_RE.search(prefix):
@@ -79,6 +260,11 @@ def _filter_non_clinical_artifacts(entities: list[Any], text: str) -> list[Any]:
         if etype == "SYMPTOM" and low == "mass":
             post = text[ent.end : min(len(text), ent.end + 12)].lower()
             if post.startswith(" effect"):
+                continue
+        # Pain scores ("7/10", "3/10", "6/10") are NOT DATE
+        if etype == "DATE" and _PAIN_SCORE_RE.match(raw):
+            prefix = text[max(0, ent.start - 30) : ent.start]
+            if _PAIN_PREFIX_RE.search(prefix):
                 continue
         # Record IDs (NOISE-0027, SYN-00481, ER-2) and ages (4? / 47 years, 6O y) are NOT DATE
         if etype == "DATE" and (_RECORD_ID_RE.match(raw) or _AGE_LIKE_RE.search(raw)):
@@ -89,22 +275,15 @@ def _filter_non_clinical_artifacts(entities: list[Any], text: str) -> list[Any]:
         # Pure unit strings or punctuation noise ("+? /", "m1U/L") are NOT LAB_VALUE
         if etype == "LAB_VALUE" and (_UNIT_ONLY_RE.match(raw) or not any(ch.isdigit() for ch in raw)):
             continue
-        # Core lab analytes misclassified as PROCEDURE -> retype to LAB_TEST
+        # Core lab/vital analytes misclassified as PROCEDURE -> retype to LAB_TEST
         if etype == "PROCEDURE" and low in _LAB_NAMES_NOT_PROCEDURE:
-            ent = PredictedEntity(
-                type="LAB_TEST",
-                start=ent.start,
-                end=ent.end,
-                text=ent.text,
-                assertion=ent.assertion,
-                confidence=ent.confidence,
-                needs_review=ent.needs_review,
-                confidence_variance=getattr(ent, "confidence_variance", 0.0),
-                high_uncertainty=getattr(ent, "high_uncertainty", False),
-                certainty=getattr(ent, "certainty", "confirmed"),
-                temporality=getattr(ent, "temporality", "current"),
-                experiencer=getattr(ent, "experiencer", "patient"),
-            )
+            ent = _retype_entity(ent, "LAB_TEST")
+        # Medication frequencies (PRN, OD, BID, etc.) misclassified as ROUTE -> retype to FREQUENCY
+        elif etype == "ROUTE" and low in _FREQUENCY_NOT_ROUTE:
+            ent = _retype_entity(ent, "FREQUENCY")
+        # Diagnoses (diabetes, hypertension) misclassified as SYMPTOM -> retype to DIAGNOSIS
+        elif etype == "SYMPTOM" and low in _DIAGNOSIS_NOT_SYMPTOM:
+            ent = _retype_entity(ent, "DIAGNOSIS")
         out.append(ent)
     return out
 
@@ -404,8 +583,10 @@ class ExtractionService:
                         merged[key] = he
                         source_stage_by_key[key] = "hybrid_v2"
             ens_ents = _filter_non_clinical_artifacts(sorted(merged.values(), key=lambda x: x.start), doc.text)
-            enriched_ents, ens_rels, _ = apply_context_and_relations(doc, ens_ents)
-            merged_rels = _merge_and_dedup_relations(enriched_ents, [pred_h.relations, ens_rels])
+            struct_ents, struct_rels = _extract_structured_vitals_and_labs(doc.text, ens_ents)
+            combined_ents = sorted(ens_ents + struct_ents, key=lambda x: x.start)
+            enriched_ents, ens_rels, _ = apply_context_and_relations(doc, combined_ents)
+            merged_rels = _merge_and_dedup_relations(enriched_ents, [pred_h.relations, struct_rels, ens_rels])
             pred = DocumentPrediction(
                 doc_id=doc.doc_id,
                 language=doc.language,
@@ -423,13 +604,15 @@ class ExtractionService:
             model = self._get_hybrid()
             pred_raw, payload = model.extract_document(doc)
             filtered_ents = _filter_non_clinical_artifacts(pred_raw.entities, doc.text)
-            filtered_rels = _merge_and_dedup_relations(filtered_ents, [pred_raw.relations])
+            struct_ents, struct_rels = _extract_structured_vitals_and_labs(doc.text, filtered_ents)
+            combined_ents = sorted(filtered_ents + struct_ents, key=lambda x: x.start)
+            filtered_rels = _merge_and_dedup_relations(combined_ents, [pred_raw.relations, struct_rels])
             pred = DocumentPrediction(
                 doc_id=pred_raw.doc_id,
                 language=pred_raw.language,
                 doc_type=pred_raw.doc_type,
                 predicted_doc_type=pred_raw.predicted_doc_type,
-                entities=filtered_ents,
+                entities=combined_ents,
                 relations=filtered_rels,
                 timex=pred_raw.timex,
             )

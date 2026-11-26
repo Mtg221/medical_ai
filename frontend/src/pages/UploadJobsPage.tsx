@@ -50,7 +50,7 @@ export function UploadJobsPage() {
   const [file, setFile] = useState<File | null>(null);
   const [customText, setCustomText] = useState("");
   const [customFilename, setCustomFilename] = useState("custom_clinical_note.txt");
-  const [subjectId, setSubjectId] = useState("subj_synth_001");
+  const [subjectId, setSubjectId] = useState("");
   const [specialty, setSpecialty] = useState("INTERNAL_MEDICINE");
   const [bodySite, setBodySite] = useState("");
   const [dragActive, setDragActive] = useState(false);
@@ -91,6 +91,9 @@ export function UploadJobsPage() {
     setTriageResult(null);
     setTextSubmittedNotice(null);
 
+    const effectiveSubjectId =
+      subjectId.trim() || `subj_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+
     if (inputMode === "text") {
       const trimmed = customText.trim();
       if (!trimmed) return;
@@ -100,7 +103,7 @@ export function UploadJobsPage() {
       setSubmitting(true);
       try {
         await uploadDocumentMultipart(textFile, token, {
-          subject_id: subjectId,
+          subject_id: effectiveSubjectId,
           specialty,
           document_type: "CLINICAL_NOTE",
         });
@@ -120,7 +123,7 @@ export function UploadJobsPage() {
     try {
       if (isImageFile(file)) {
         const res = await uploadImageMultipart(file, token, {
-          subject_id: subjectId,
+          subject_id: effectiveSubjectId,
           body_site: bodySite.trim() || undefined,
         });
         setTriageResult(res);
@@ -128,7 +131,7 @@ export function UploadJobsPage() {
         void queryClient.invalidateQueries({ queryKey: ["patient-record"] });
       } else {
         await uploadDocumentMultipart(file, token, {
-          subject_id: subjectId,
+          subject_id: effectiveSubjectId,
           specialty,
           document_type: "CLINICAL_NOTE",
         });
@@ -325,6 +328,7 @@ export function UploadJobsPage() {
                 <input
                   id="subject-id"
                   type="text"
+                  placeholder={i18n.language === "fr" ? "Auto-unique par document" : "Auto-unique per document"}
                   value={subjectId}
                   onChange={(e) => setSubjectId(e.target.value)}
                   className="w-full rounded border border-slate-300 dark:border-slate-700 dark:bg-slate-900 px-2.5 py-1.5 text-xs"

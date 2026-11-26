@@ -1,0 +1,2979 @@
+{
+  "document_id": "NOISE-0038",
+  "n_entities": 223,
+  "n_linked_labs": 21,
+  "records": [
+    {
+      "entity_type": "DATE",
+      "text": "** 00?8317",
+      "char_start": 150,
+      "char_end": 160,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "FREQUENCY",
+      "text": ".o",
+      "char_start": 188,
+      "char_end": 190,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "26/11/26",
+      "char_start": 217,
+      "char_end": 225,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "11/26/2026",
+      "char_start": 228,
+      "char_end": 238,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "4?",
+      "char_start": 258,
+      "char_end": 260,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "* 1 of 3 (page 2 duplicated",
+      "char_start": 301,
+      "char_end": 328,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "Chest pain",
+      "char_start": 362,
+      "char_end": 372,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "yesterday evening",
+      "char_start": 419,
+      "char_end": 436,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "left arm",
+      "char_start": 468,
+      "char_end": 476,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "shoulder",
+      "char_start": 513,
+      "char_end": 521,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "Shortness of breath",
+      "char_start": 524,
+      "char_end": 543,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "sweating",
+      "char_start": 560,
+      "char_end": 568,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "vomiting",
+      "char_start": 573,
+      "char_end": 581,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "Nausea",
+      "char_start": 583,
+      "char_end": 589,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "ECG",
+      "char_start": 660,
+      "char_end": 663,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "pain",
+      "char_start": 687,
+      "char_end": 691,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "Pain",
+      "char_start": 826,
+      "char_end": 830,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "3/10",
+      "char_start": 835,
+      "char_end": 839,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "syncope",
+      "char_start": 919,
+      "char_end": 926,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "loss of consciousness",
+      "char_start": 935,
+      "char_end": 956,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "Dizziness",
+      "char_start": 958,
+      "char_end": 967,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "spinning sensation",
+      "char_start": 1012,
+      "char_end": 1030,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "Cough",
+      "char_start": 1033,
+      "char_end": 1038,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DURATION",
+      "text": "5 days",
+      "char_start": 1043,
+      "char_end": 1049,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "fever",
+      "char_start": 1099,
+      "char_end": 1104,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "hypertension",
+      "char_start": 1192,
+      "char_end": 1204,
+      "certainty": "possible",
+      "temporality": "historical",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "HTN",
+      "char_start": 1286,
+      "char_end": 1289,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "hypertension\"",
+      "char_start": 1347,
+      "char_end": 1360,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "Type 2 diabetes",
+      "char_start": 1363,
+      "char_end": 1378,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "diabetes",
+      "char_start": 1416,
+      "char_end": 1424,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "HbA1c",
+      "char_start": 1426,
+      "char_end": 1431,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "Hypercholesterolemia",
+      "char_start": 1443,
+      "char_end": 1463,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "statin",
+      "char_start": 1497,
+      "char_end": 1503,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "TREATS",
+          "head_start": 1497,
+          "head_end": 1503,
+          "tail_start": 1443,
+          "tail_end": 1463,
+          "confidence": 0.99
+        }
+      ]
+    },
+    {
+      "entity_type": "DATE",
+      "text": "few months ago",
+      "char_start": 1507,
+      "char_end": 1521,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "muscle pain",
+      "char_start": 1534,
+      "char_end": 1545,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "chest pain",
+      "char_start": 1591,
+      "char_end": 1601,
+      "certainty": "confirmed",
+      "temporality": "historical",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "in 2023",
+      "char_start": 1602,
+      "char_end": 1609,
+      "certainty": "possible",
+      "temporality": "historical",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "ECG",
+      "char_start": 1611,
+      "char_end": 1614,
+      "certainty": "confirmed",
+      "temporality": "historical",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "heart",
+      "char_start": 1685,
+      "char_end": 1690,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "family",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "diabetes",
+      "char_start": 1723,
+      "char_end": 1731,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "family",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "atrial fibrillation",
+      "char_start": 1777,
+      "char_end": 1796,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "family",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "2019",
+      "char_start": 1878,
+      "char_end": 1882,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "# 3",
+      "char_start": 1997,
+      "char_end": 2000,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "FREQUENCY",
+      "text": ".",
+      "char_start": 2051,
+      "char_end": 2052,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "Amlodipine",
+      "char_start": 2056,
+      "char_end": 2066,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_DOSAGE",
+          "head_start": 2056,
+          "head_end": 2066,
+          "tail_start": 2067,
+          "tail_end": 2072,
+          "confidence": 1.0
+        },
+        {
+          "type": "HAS_ROUTE",
+          "head_start": 2056,
+          "head_end": 2066,
+          "tail_start": 2073,
+          "tail_end": 2075,
+          "confidence": 1.0
+        },
+        {
+          "type": "HAS_FREQUENCY",
+          "head_start": 2056,
+          "head_end": 2066,
+          "tail_start": 2076,
+          "tail_end": 2081,
+          "confidence": 0.99
+        },
+        {
+          "type": "HAS_DOSAGE",
+          "head_start": 2056,
+          "head_end": 2066,
+          "tail_start": 2106,
+          "tail_end": 2110,
+          "confidence": 0.99
+        },
+        {
+          "type": "HAS_FREQUENCY",
+          "head_start": 2056,
+          "head_end": 2066,
+          "tail_start": 2117,
+          "tail_end": 2118,
+          "confidence": 0.9638
+        }
+      ]
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "10 mg",
+      "char_start": 2067,
+      "char_end": 2072,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "ROUTE",
+      "text": "PO",
+      "char_start": 2073,
+      "char_end": 2075,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "FREQUENCY",
+      "text": "daily",
+      "char_start": 2076,
+      "char_end": 2081,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "5 mg",
+      "char_start": 2106,
+      "char_end": 2110,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "FREQUENCY",
+      "text": "I",
+      "char_start": 2117,
+      "char_end": 2118,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "Metformin",
+      "char_start": 2132,
+      "char_end": 2141,
+      "certainty": "confirmed",
+      "temporality": "historical",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_DOSAGE",
+          "head_start": 2132,
+          "head_end": 2141,
+          "tail_start": 2142,
+          "tail_end": 2148,
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "500 mg",
+      "char_start": 2142,
+      "char_end": 2148,
+      "certainty": "confirmed",
+      "temporality": "historical",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "Atorvastatin",
+      "char_start": 2201,
+      "char_end": 2213,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_DOSAGE",
+          "head_start": 2201,
+          "head_end": 2213,
+          "tail_start": 2214,
+          "tail_end": 2219,
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "40 mg",
+      "char_start": 2214,
+      "char_end": 2219,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "muscle pain",
+      "char_start": 2241,
+      "char_end": 2252,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "Aspirin",
+      "char_start": 2285,
+      "char_end": 2292,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_DOSAGE",
+          "head_start": 2285,
+          "head_end": 2292,
+          "tail_start": 2293,
+          "tail_end": 2298,
+          "confidence": 1.0
+        },
+        {
+          "type": "HAS_FREQUENCY",
+          "head_start": 2285,
+          "head_end": 2292,
+          "tail_start": 2299,
+          "tail_end": 2304,
+          "confidence": 0.99
+        }
+      ]
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "81 mg",
+      "char_start": 2293,
+      "char_end": 2298,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "FREQUENCY",
+      "text": "daily",
+      "char_start": 2299,
+      "char_end": 2304,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "chest",
+      "char_start": 2331,
+      "char_end": 2336,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "aspirin",
+      "char_start": 2366,
+      "char_end": 2373,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "Ibuprofen",
+      "char_start": 2377,
+      "char_end": 2386,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_DOSAGE",
+          "head_start": 2377,
+          "head_end": 2386,
+          "tail_start": 2387,
+          "tail_end": 2393,
+          "confidence": 1.0
+        },
+        {
+          "type": "HAS_ROUTE",
+          "head_start": 2377,
+          "head_end": 2386,
+          "tail_start": 2394,
+          "tail_end": 2397,
+          "confidence": 0.9994
+        },
+        {
+          "type": "HAS_FREQUENCY",
+          "head_start": 2377,
+          "head_end": 2386,
+          "tail_start": 2394,
+          "tail_end": 2397,
+          "confidence": 0.99
+        }
+      ]
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "400 mg",
+      "char_start": 2387,
+      "char_end": 2393,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "FREQUENCY",
+      "text": "PRN",
+      "char_start": 2394,
+      "char_end": 2397,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "yesterday",
+      "char_start": 2411,
+      "char_end": 2420,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "Omeprazole",
+      "char_start": 2424,
+      "char_end": 2434,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_DOSAGE",
+          "head_start": 2424,
+          "head_end": 2434,
+          "tail_start": 2435,
+          "tail_end": 2440,
+          "confidence": 1.0
+        },
+        {
+          "type": "HAS_ROUTE",
+          "head_start": 2424,
+          "head_end": 2434,
+          "tail_start": 2441,
+          "tail_end": 2443,
+          "confidence": 0.9992
+        },
+        {
+          "type": "HAS_FREQUENCY",
+          "head_start": 2424,
+          "head_end": 2434,
+          "tail_start": 2441,
+          "tail_end": 2443,
+          "confidence": 0.8184
+        }
+      ]
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "20 mg",
+      "char_start": 2435,
+      "char_end": 2440,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "FREQUENCY",
+      "text": "OD",
+      "char_start": 2441,
+      "char_end": 2443,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "nitroglycerin",
+      "char_start": 2530,
+      "char_end": 2543,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "Allergy",
+      "char_start": 2547,
+      "char_end": 2554,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "rash",
+      "char_start": 2568,
+      "char_end": 2572,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "BP",
+      "char_start": 2745,
+      "char_end": 2747,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 2745,
+          "head_end": 2747,
+          "tail_start": 2750,
+          "tail_end": 2756,
+          "confidence": 0.6639
+        },
+        {
+          "type": "HAS_VALUE",
+          "head_start": 2745,
+          "head_end": 2747,
+          "tail_start": 2750,
+          "tail_end": 2756,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "168/96",
+      "char_start": 2750,
+      "char_end": 2756,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "BP repeat",
+      "char_start": 2770,
+      "char_end": 2779,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 2770,
+          "head_end": 2779,
+          "tail_start": 2782,
+          "tail_end": 2784,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "15",
+      "char_start": 2782,
+      "char_end": 2784,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 2782,
+          "head_end": 2784,
+          "tail_start": 2784,
+          "tail_end": 2787,
+          "confidence": 0.9861
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "B/9",
+      "char_start": 2784,
+      "char_end": 2787,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "HR",
+      "char_start": 2799,
+      "char_end": 2801,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 2799,
+          "head_end": 2801,
+          "tail_start": 2804,
+          "tail_end": 2811,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "112 bpm",
+      "char_start": 2804,
+      "char_end": 2811,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "HR repeat",
+      "char_start": 2825,
+      "char_end": 2834,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 2825,
+          "head_end": 2834,
+          "tail_start": 2837,
+          "tail_end": 2839,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "9O",
+      "char_start": 2837,
+      "char_end": 2839,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "RR",
+      "char_start": 2859,
+      "char_end": 2861,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 2859,
+          "head_end": 2861,
+          "tail_start": 2864,
+          "tail_end": 2867,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "22/",
+      "char_start": 2864,
+      "char_end": 2867,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "Temp",
+      "char_start": 2877,
+      "char_end": 2881,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 2877,
+          "head_end": 2881,
+          "tail_start": 2884,
+          "tail_end": 2888,
+          "confidence": 0.92
+        },
+        {
+          "type": "HAS_VALUE",
+          "head_start": 2877,
+          "head_end": 2881,
+          "tail_start": 2893,
+          "tail_end": 2897,
+          "confidence": 0.9813
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "37.9",
+      "char_start": 2884,
+      "char_end": 2888,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 2884,
+          "head_end": 2888,
+          "tail_start": 2888,
+          "tail_end": 2890,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "°C",
+      "char_start": 2888,
+      "char_end": 2890,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "37.1",
+      "char_start": 2893,
+      "char_end": 2897,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "SpO2",
+      "char_start": 2918,
+      "char_end": 2922,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 2918,
+          "head_end": 2922,
+          "tail_start": 2925,
+          "tail_end": 2927,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "94",
+      "char_start": 2925,
+      "char_end": 2927,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 2925,
+          "head_end": 2927,
+          "tail_start": 2927,
+          "tail_end": 2928,
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "%",
+      "char_start": 2927,
+      "char_end": 2928,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "SpO2 repeat",
+      "char_start": 2938,
+      "char_end": 2949,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 2938,
+          "head_end": 2949,
+          "tail_start": 2952,
+          "tail_end": 2955,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "96%",
+      "char_start": 2952,
+      "char_end": 2955,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "Weight",
+      "char_start": 2970,
+      "char_end": 2976,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 2970,
+          "head_end": 2976,
+          "tail_start": 2979,
+          "tail_end": 2981,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "92",
+      "char_start": 2979,
+      "char_end": 2981,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 2979,
+          "head_end": 2981,
+          "tail_start": 2982,
+          "tail_end": 2984,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "kg",
+      "char_start": 2982,
+      "char_end": 2984,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "Height",
+      "char_start": 2992,
+      "char_end": 2998,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 2992,
+          "head_end": 2998,
+          "tail_start": 3005,
+          "tail_end": 3006,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "DATE",
+      "text": "17?",
+      "char_start": 3001,
+      "char_end": 3004,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "c",
+      "char_start": 3005,
+      "char_end": 3006,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "7",
+      "char_start": 3021,
+      "char_end": 3022,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "2L",
+      "char_start": 3067,
+      "char_end": 3069,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "Oxygen",
+      "char_start": 3118,
+      "char_end": 3124,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "acute distress",
+      "char_start": 3237,
+      "char_end": 3251,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "distress",
+      "char_start": 3259,
+      "char_end": 3267,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "tachycardia",
+      "char_start": 3286,
+      "char_end": 3297,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "irregular pulse",
+      "char_start": 3333,
+      "char_end": 3348,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "murmur",
+      "char_start": 3353,
+      "char_end": 3359,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "lungs",
+      "char_start": 3442,
+      "char_end": 3447,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "crackles",
+      "char_start": 3470,
+      "char_end": 3478,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "Chest wall",
+      "char_start": 3505,
+      "char_end": 3515,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "tenderness",
+      "char_start": 3517,
+      "char_end": 3527,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "LOCATED_IN",
+          "head_start": 3517,
+          "head_end": 3527,
+          "tail_start": 3531,
+          "tail_end": 3554,
+          "confidence": 0.99
+        }
+      ]
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "left costochondral area",
+      "char_start": 3531,
+      "char_end": 3554,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "tenderness",
+      "char_start": 3617,
+      "char_end": 3627,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "Abdomen",
+      "char_start": 3631,
+      "char_end": 3638,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "Legs",
+      "char_start": 3659,
+      "char_end": 3663,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "edema",
+      "char_start": 3668,
+      "char_end": 3673,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "LOCATED_IN",
+          "head_start": 3668,
+          "head_end": 3673,
+          "tail_start": 3675,
+          "tail_end": 3684,
+          "confidence": 0.99
+        }
+      ]
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "Left calf",
+      "char_start": 3675,
+      "char_end": 3684,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "tenderness",
+      "char_start": 3685,
+      "char_end": 3695,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "unilateral swelling",
+      "char_start": 3713,
+      "char_end": 3732,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "Strength 5/5",
+      "char_start": 3764,
+      "char_end": 3776,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "weakness",
+      "char_start": 3833,
+      "char_end": 3841,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "ECG",
+      "char_start": 3901,
+      "char_end": 3904,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "Rate",
+      "char_start": 3935,
+      "char_end": 3939,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "PR",
+      "char_start": 3945,
+      "char_end": 3947,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "46?",
+      "char_start": 3971,
+      "char_end": 3974,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "ST elevation",
+      "char_start": 3982,
+      "char_end": 3994,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "T-wave inversion",
+      "char_start": 3996,
+      "char_end": 4012,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "inferior ischemia",
+      "char_start": 4050,
+      "char_end": 4067,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "PATIENT_ID",
+      "text": "\"",
+      "char_start": 4086,
+      "char_end": 4087,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "nonspecific changes",
+      "char_start": 4087,
+      "char_end": 4106,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "acute ischemic pattern\"",
+      "char_start": 4111,
+      "char_end": 4134,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "ECG",
+      "char_start": 4146,
+      "char_end": 4149,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "96 bpm",
+      "char_start": 4174,
+      "char_end": 4180,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "ST changes",
+      "char_start": 4191,
+      "char_end": 4201,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "ECG",
+      "char_start": 4213,
+      "char_end": 4216,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "hs-TnI",
+      "char_start": 4270,
+      "char_end": 4276,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4270,
+          "head_end": 4276,
+          "tail_start": 4278,
+          "tail_end": 4285,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "18 ng/L",
+      "char_start": 4278,
+      "char_end": 4285,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "2",
+      "char_start": 4315,
+      "char_end": 4316,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 4315,
+          "head_end": 4316,
+          "tail_start": 4320,
+          "tail_end": 4322,
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "/L",
+      "char_start": 4320,
+      "char_end": 4322,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "0.02 ng/mL",
+      "char_start": 4356,
+      "char_end": 4366,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "Hb",
+      "char_start": 4490,
+      "char_end": 4492,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4490,
+          "head_end": 4492,
+          "tail_start": 4494,
+          "tail_end": 4503,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "13.2 g/dL",
+      "char_start": 4494,
+      "char_end": 4503,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "WBC",
+      "char_start": 4506,
+      "char_end": 4509,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4506,
+          "head_end": 4509,
+          "tail_start": 4511,
+          "tail_end": 4515,
+          "confidence": 0.9972
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "11.8",
+      "char_start": 4511,
+      "char_end": 4515,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 4511,
+          "head_end": 4515,
+          "tail_start": 4516,
+          "tail_end": 4523,
+          "confidence": 0.8703
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "×10^9/L",
+      "char_start": 4516,
+      "char_end": 4523,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "Platelets",
+      "char_start": 4526,
+      "char_end": 4535,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "24? ×10^",
+      "char_start": 4537,
+      "char_end": 4545,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "Na",
+      "char_start": 4551,
+      "char_end": 4553,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4551,
+          "head_end": 4553,
+          "tail_start": 4555,
+          "tail_end": 4565,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "138 mmol/L",
+      "char_start": 4555,
+      "char_end": 4565,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "K",
+      "char_start": 4568,
+      "char_end": 4569,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4568,
+          "head_end": 4569,
+          "tail_start": 4571,
+          "tail_end": 4581,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "3.4 mmol/L",
+      "char_start": 4571,
+      "char_end": 4581,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "Creatinine",
+      "char_start": 4584,
+      "char_end": 4594,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4584,
+          "head_end": 4594,
+          "tail_start": 4596,
+          "tail_end": 4605,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "1.3 mg/dL",
+      "char_start": 4596,
+      "char_end": 4605,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "Urea",
+      "char_start": 4627,
+      "char_end": 4631,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4627,
+          "head_end": 4631,
+          "tail_start": 4633,
+          "tail_end": 4636,
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "7.8",
+      "char_start": 4633,
+      "char_end": 4636,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 4633,
+          "head_end": 4636,
+          "tail_start": 4637,
+          "tail_end": 4643,
+          "confidence": 0.99
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "mmol/L",
+      "char_start": 4637,
+      "char_end": 4643,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "Glucose",
+      "char_start": 4646,
+      "char_end": 4653,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 4646,
+          "head_end": 4653,
+          "tail_start": 4661,
+          "tail_end": 4664,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "8 mg",
+      "char_start": 4657,
+      "char_end": 4661,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "/dL",
+      "char_start": 4661,
+      "char_end": 4664,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "HbA1c",
+      "char_start": 4667,
+      "char_end": 4672,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4667,
+          "head_end": 4672,
+          "tail_start": 4674,
+          "tail_end": 4677,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "6.?",
+      "char_start": 4674,
+      "char_end": 4677,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 4674,
+          "head_end": 4677,
+          "tail_start": 4677,
+          "tail_end": 4678,
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "%",
+      "char_start": 4677,
+      "char_end": 4678,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "LDL",
+      "char_start": 4681,
+      "char_end": 4684,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4681,
+          "head_end": 4684,
+          "tail_start": 4686,
+          "tail_end": 4696,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "4.1 mmol/L",
+      "char_start": 4686,
+      "char_end": 4696,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "CRP",
+      "char_start": 4713,
+      "char_end": 4716,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4713,
+          "head_end": 4716,
+          "tail_start": 4718,
+          "tail_end": 4725,
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "18 mg/L",
+      "char_start": 4718,
+      "char_end": 4725,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "D-dimer",
+      "char_start": 4728,
+      "char_end": 4735,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 4728,
+          "head_end": 4735,
+          "tail_start": 4737,
+          "tail_end": 4740,
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "0.8",
+      "char_start": 4737,
+      "char_end": 4740,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 4737,
+          "head_end": 4740,
+          "tail_start": 4741,
+          "tail_end": 4745,
+          "confidence": 0.99
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "mg/L",
+      "char_start": 4741,
+      "char_end": 4745,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "BNP",
+      "char_start": 4768,
+      "char_end": 4771,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "0",
+      "char_start": 4806,
+      "char_end": 4807,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 4806,
+          "head_end": 4807,
+          "tail_start": 4810,
+          "tail_end": 4813,
+          "confidence": 0.7534
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "/mL",
+      "char_start": 4810,
+      "char_end": 4813,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "Chest",
+      "char_start": 4818,
+      "char_end": 4823,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "X-ray",
+      "char_start": 4824,
+      "char_end": 4829,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "focal consolidation",
+      "char_start": 4836,
+      "char_end": 4855,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "cardiomegaly",
+      "char_start": 4862,
+      "char_end": 4874,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "pleural effusion",
+      "char_start": 4927,
+      "char_end": 4943,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "pneumothorax",
+      "char_start": 4948,
+      "char_end": 4960,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "rotation",
+      "char_start": 4987,
+      "char_end": 4995,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "CT pulmonary angiogram",
+      "char_start": 5000,
+      "char_end": 5022,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "pulmonary embolism",
+      "char_start": 5085,
+      "char_end": 5103,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "creatinine",
+      "char_start": 5167,
+      "char_end": 5177,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "TREATS",
+          "head_start": 5167,
+          "head_end": 5177,
+          "tail_start": 5085,
+          "tail_end": 5103,
+          "confidence": 0.99
+        }
+      ]
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "Chest pain",
+      "char_start": 5241,
+      "char_end": 5251,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "ACS",
+      "char_start": 5254,
+      "char_end": 5257,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "musculoskeletal chest pain",
+      "char_start": 5266,
+      "char_end": 5292,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "Tachycardia",
+      "char_start": 5297,
+      "char_end": 5308,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "Hypertension",
+      "char_start": 5324,
+      "char_end": 5336,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "type 2 diabetes",
+      "char_start": 5364,
+      "char_end": 5379,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "Dyslipidemia",
+      "char_start": 5401,
+      "char_end": 5413,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "hypokalemia",
+      "char_start": 5449,
+      "char_end": 5460,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "PE",
+      "char_start": 5507,
+      "char_end": 5509,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "Anxiety",
+      "char_start": 5540,
+      "char_end": 5547,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "anxiety disorder",
+      "char_start": 5564,
+      "char_end": 5580,
+      "certainty": "absent",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "myocardial infarction",
+      "char_start": 5595,
+      "char_end": 5616,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "troponin",
+      "char_start": 5682,
+      "char_end": 5690,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "ECG",
+      "char_start": 5695,
+      "char_end": 5698,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "after 3 hours",
+      "char_start": 5825,
+      "char_end": 5838,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "ECG",
+      "char_start": 5866,
+      "char_end": 5869,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "Potassium",
+      "char_start": 5885,
+      "char_end": 5894,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_DOSAGE",
+          "head_start": 5885,
+          "head_end": 5894,
+          "tail_start": 5907,
+          "tail_end": 5913,
+          "confidence": 0.9704
+        },
+        {
+          "type": "HAS_ROUTE",
+          "head_start": 5885,
+          "head_end": 5894,
+          "tail_start": 5914,
+          "tail_end": 5916,
+          "confidence": 0.9704
+        }
+      ]
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "40 mEq",
+      "char_start": 5907,
+      "char_end": 5913,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "ROUTE",
+      "text": "PO",
+      "char_start": 5914,
+      "char_end": 5916,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "Aspirin",
+      "char_start": 5950,
+      "char_end": 5957,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_DOSAGE",
+          "head_start": 5950,
+          "head_end": 5957,
+          "tail_start": 5958,
+          "tail_end": 5964,
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "entity_type": "DOSAGE",
+      "text": "300 mg",
+      "char_start": 5958,
+      "char_end": 5964,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "ibuprofen",
+      "char_start": 6135,
+      "char_end": 6144,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "1 week / 4 weeks",
+      "char_start": 6193,
+      "char_end": 6209,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "chest pain",
+      "char_start": 6223,
+      "char_end": 6233,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "fainting",
+      "char_start": 6243,
+      "char_end": 6251,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "breathlessness",
+      "char_start": 6260,
+      "char_end": 6274,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "sweating",
+      "char_start": 6276,
+      "char_end": 6284,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "weakness",
+      "char_start": 6292,
+      "char_end": 6300,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "chest",
+      "char_start": 6401,
+      "char_end": 6406,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "SYMPTOM",
+      "text": "discomfort",
+      "char_start": 6407,
+      "char_end": 6417,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "MEDICATION",
+      "text": "K",
+      "char_start": 6488,
+      "char_end": 6489,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "STATUS",
+      "char_start": 6507,
+      "char_end": 6513,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "26/11/2026 12",
+      "char_start": 6559,
+      "char_end": 6572,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": []
+    },
+    {
+      "entity_type": "ANATOMY",
+      "text": "chest",
+      "char_start": 6653,
+      "char_end": 6658,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "BP",
+      "char_start": 6679,
+      "char_end": 6681,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": [
+        {
+          "type": "HAS_VALUE",
+          "head_start": 6679,
+          "head_end": 6681,
+          "tail_start": 6682,
+          "tail_end": 6684,
+          "confidence": 0.8546
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_VALUE",
+      "text": "15",
+      "char_start": 6682,
+      "char_end": 6684,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 6682,
+          "head_end": 6684,
+          "tail_start": 6684,
+          "tail_end": 6687,
+          "confidence": 0.9876
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "B/9",
+      "char_start": 6684,
+      "char_end": 6687,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "SpO2",
+      "char_start": 6693,
+      "char_end": 6697,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "needs_review",
+      "relations": [
+        {
+          "type": "HAS_UNIT",
+          "head_start": 6693,
+          "head_end": 6697,
+          "tail_start": 6700,
+          "tail_end": 6701,
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "entity_type": "LAB_UNIT",
+      "text": "%",
+      "char_start": 6700,
+      "char_end": 6701,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DIAGNOSIS",
+      "text": "PE",
+      "char_start": 6755,
+      "char_end": 6757,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "ECG",
+      "char_start": 6799,
+      "char_end": 6802,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "DATE",
+      "text": "6O",
+      "char_start": 6905,
+      "char_end": 6907,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "LAB_TEST",
+      "text": "Several handwritten corrections",
+      "char_start": 6940,
+      "char_end": 6971,
+      "certainty": "confirmed",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    },
+    {
+      "entity_type": "PROCEDURE",
+      "text": "CT pulmonary angiogram status",
+      "char_start": 7013,
+      "char_end": 7042,
+      "certainty": "possible",
+      "temporality": "current",
+      "experiencer": "patient",
+      "review_status": "unreviewed",
+      "relations": []
+    }
+  ]
+}

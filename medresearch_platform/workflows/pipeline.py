@@ -422,6 +422,8 @@ class MedicalResearchPlatformService:
                 f"Document page count {parsed.page_count} exceeds max {self.config.max_document_pages}."
             )
 
+        if not subject_raw_id or not subject_raw_id.strip():
+            subject_raw_id = f"subj_{uuid.uuid4().hex[:10]}"
         pseudonym_code, shift_days = derive_pseudonym_and_shift(
             subject_raw_id, self.config.pseudonym_vault_key
         )
