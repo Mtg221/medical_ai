@@ -206,11 +206,25 @@ export function buildClinicalRecordJson(
     const text = getEntityText(ent);
     const lowKey = text.trim().toLowerCase();
     const approved = isEntityApproved(ent.review_status);
-    if (!approved && (ent.review_status === "needs_review" || ent.review_reason)) {
-      const reason = ent.review_reason || "needs_review";
-      addUnc(`${reason}: "${text}" (${ent.entity_type})`);
+    const prov = ((ent as unknown as Record<string, unknown>).provenance ?? {}) as Record<string, unknown>;
+    const rawAssertion = String(prov.raw_assertion ?? "").toLowerCase();
+    const assertionDetail = String(prov.assertion_detail ?? "").toLowerCase();
+    const section = String(prov.section ?? "").toLowerCase();
+    const isConditionalReturn =
+      rawAssertion === "hypothetical" ||
+      assertionDetail === "conditional" ||
+      ent.assertion_status === "HYPOTHETICAL" ||
+      section === "return_precautions";
+
+    if (!approved && (prov.ocr_corrupted === true || (ent.review_reason && ent.review_reason.includes("ocr_corrupted")))) {
+      addUnc(`ocr_corrupted: "${text}" (${ent.entity_type})`);
     }
     if (consumedIds.has(ent.entity_id)) continue;
+    // Do not merge conditional/hypothetical return-precaution warnings ("return immediately if X occurs")
+    // into the patient's current symptoms or diagnoses.
+    if (isConditionalReturn && (ent.entity_type === "SYMPTOM" || ent.entity_type === "DIAGNOSIS")) {
+      continue;
+    }
 
     const kids = relsByHead.get(ent.entity_id) ?? [];
     const assertion =
@@ -221,18 +235,21 @@ export function buildClinicalRecordJson(
         : "present";
     const isHistorical = ent.temporality === "historical" || ent.temporal_status === "HISTORICAL";
     const isFamily = ent.experiencer === "family" || ent.assertion_status === "FAMILY_HISTORY";
+    const experiencerLabel = isFamily
+      ? String(prov.experiencer_detail || "family")
+      : "patient";
 
     if (ent.entity_type === "SYMPTOM") {
       const item: Record<string, string> = { entity: text, assertion };
       const anat = kids.find((k) => k.relType === "LOCATED_IN");
       if (anat) item.anatomy = getEntityText(anat.tail);
       if (isHistorical) item.temporal_status = "historical";
-      if (isFamily) item.experiencer = "family";
+      if (isFamily) item.experiencer = experiencerLabel;
       mergeFinding(seenSymptom, record.symptoms, lowKey, item, text);
     } else if (ent.entity_type === "DIAGNOSIS") {
       const item: Record<string, string> = { entity: text, assertion };
       if (isHistorical) item.temporal_status = "historical";
-      if (isFamily) item.experiencer = "family";
+      if (isFamily) item.experiencer = experiencerLabel;
       if (isHistorical || isFamily) {
         mergeFinding(seenHist, record.medical_history, `${lowKey}:${isFamily ? "fam" : "hist"}`, item, text);
       } else {
@@ -265,7 +282,18 @@ export function buildClinicalRecordJson(
       const item: Record<string, string> = { test: text };
       const val = kids.find((k) => k.relType === "HAS_VALUE");
       const unit = kids.find((k) => k.relType === "HAS_UNIT");
-      if (val) item.value = getEntityText(val.tail);
+      if (val) {
+        const rawVal = getEntityText(val.tail).trim();
+        const mSplit = !unit
+          ? rawVal.match(/^(\d+(?:[.,/]\d+)?)\s+(mmHg|beats\/min|breaths\/min|bpm|\/min|°C|C|%|g\/dL|mg\/dL|mmol\/L|µmol\/L|mg\/L|ng\/L|ng\/mL|pg\/mL|mIU\/L|[×x]\s*10(?:\^9|⁹)\/L)$/i)
+          : null;
+        if (mSplit) {
+          item.value = mSplit[1];
+          item.unit = mSplit[2];
+        } else {
+          item.value = rawVal;
+        }
+      }
       if (unit) item.unit = getEntityText(unit.tail);
       if (assertion !== "present") item.assertion = assertion;
       const sig = `${lowKey}|${item.value ?? ""}|${item.unit ?? ""}`;
