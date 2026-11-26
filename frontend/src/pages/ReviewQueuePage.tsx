@@ -766,7 +766,14 @@ export function ReviewQueuePage() {
                     className="rounded border border-slate-200 px-2.5 py-1.5 flex flex-wrap justify-between gap-2 dark:border-slate-700"
                   >
                     <span>
-                      <strong>{rev.review_decision}</strong> · {String(rev.previous_value.entity_type ?? "")} →{" "}
+                      <strong>
+                        {rev.review_decision === "approve"
+                          ? "APPROVED_GROUND_TRUTH"
+                          : rev.review_decision === "reject"
+                          ? "REJECTED"
+                          : rev.review_decision}
+                      </strong>{" "}
+                      · {String(rev.previous_value.entity_type ?? "")} →{" "}
                       {String(rev.corrected_value.entity_type ?? "")} ({rev.rationale})
                     </span>
                     <span className="text-slate-500 dark:text-slate-400">
