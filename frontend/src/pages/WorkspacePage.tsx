@@ -16,6 +16,7 @@ import {
   getEntityTypeStyle,
 } from "@/utils/entityStyles";
 import {
+  buildClinicalRecordJson,
   buildSimpleKeyValueLines,
   isEntityApproved,
   isEntityRejected,
@@ -90,6 +91,7 @@ export function WorkspacePage() {
   const [selectedDocId, setSelectedDocId] = useState<string | null>(() => searchParams.get("doc"));
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(() => searchParams.get("entity"));
   const [rightTab, setRightTab] = useState<"entities" | "graph" | "json">("entities");
+  const [simpleFormat, setSimpleFormat] = useState<"kv" | "json">("json");
   const [simpleApprovedOnly, setSimpleApprovedOnly] = useState<boolean>(false);
   const [copiedSimple, setCopiedSimple] = useState<boolean>(false);
 
@@ -122,7 +124,13 @@ export function WorkspacePage() {
 
   const detail = detailQuery.data;
   const simpleLines = buildSimpleKeyValueLines(detail, simpleApprovedOnly);
-  const simpleOutputText = simpleLines.map((l) => `${l.key} = ${l.value}`).join("\n");
+  const clinicalJson = buildClinicalRecordJson(detail, simpleApprovedOnly);
+  const simpleOutputText =
+    simpleFormat === "json"
+      ? clinicalJson
+        ? JSON.stringify(clinicalJson, null, 2)
+        : ""
+      : simpleLines.map((l) => `${l.key} = ${l.value}`).join("\n");
 
   const handleCopySimple = async () => {
     if (!simpleOutputText) return;
@@ -256,9 +264,35 @@ export function WorkspacePage() {
           {rightTab === "entities" && detail && (
             <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50/40 p-2.5 space-y-2 dark:border-emerald-900 dark:bg-emerald-950/20">
               <div className="flex flex-wrap items-center justify-between gap-1.5">
-                <span className="text-[11px] font-bold uppercase tracking-wide text-emerald-900 dark:text-emerald-200">
-                  Simple Output (key = value)
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-emerald-900 dark:text-emerald-200">
+                    Structured Output
+                  </span>
+                  <div className="inline-flex rounded border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 p-0.5 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setSimpleFormat("json")}
+                      className={`rounded px-1.5 py-0.5 font-semibold ${
+                        simpleFormat === "json"
+                          ? "bg-emerald-600 text-white"
+                          : "text-slate-600 dark:text-slate-300"
+                      }`}
+                    >
+                      Clinical JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSimpleFormat("kv")}
+                      className={`rounded px-1.5 py-0.5 font-semibold ${
+                        simpleFormat === "kv"
+                          ? "bg-emerald-600 text-white"
+                          : "text-slate-600 dark:text-slate-300"
+                      }`}
+                    >
+                      key = value
+                    </button>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2 text-[11px]">
                   <label className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300 cursor-pointer">
                     <input
