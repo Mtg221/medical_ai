@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Clock, FileSearch, Network, Code2, X } from "lucide-react";
+import { Check, Clock, Copy, FileSearch, Network, Code2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +15,11 @@ import {
   getEntityText,
   getEntityTypeStyle,
 } from "@/utils/entityStyles";
+import {
+  buildSimpleKeyValueLines,
+  isEntityApproved,
+  isEntityRejected,
+} from "@/utils/simpleOutput";
 
 function HighlightedPageText({
   text,
@@ -85,6 +90,8 @@ export function WorkspacePage() {
   const [selectedDocId, setSelectedDocId] = useState<string | null>(() => searchParams.get("doc"));
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(() => searchParams.get("entity"));
   const [rightTab, setRightTab] = useState<"entities" | "graph" | "json">("entities");
+  const [simpleApprovedOnly, setSimpleApprovedOnly] = useState<boolean>(false);
+  const [copiedSimple, setCopiedSimple] = useState<boolean>(false);
 
   const docsQuery = useQuery({
     queryKey: ["documents"],
@@ -114,6 +121,19 @@ export function WorkspacePage() {
   });
 
   const detail = detailQuery.data;
+  const simpleLines = buildSimpleKeyValueLines(detail, simpleApprovedOnly);
+  const simpleOutputText = simpleLines.map((l) => `${l.key} = ${l.value}`).join("\n");
+
+  const handleCopySimple = async () => {
+    if (!simpleOutputText) return;
+    try {
+      await navigator.clipboard.writeText(simpleOutputText);
+      setCopiedSimple(true);
+      setTimeout(() => setCopiedSimple(false), 1800);
+    } catch {
+      // ignore clipboard denial
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -233,72 +253,135 @@ export function WorkspacePage() {
               Review failed: {reviewMutation.error instanceof Error ? reviewMutation.error.message : "Unknown error"}
             </div>
           )}
+          {rightTab === "entities" && detail && (
+            <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50/40 p-2.5 space-y-2 dark:border-emerald-900 dark:bg-emerald-950/20">
+              <div className="flex flex-wrap items-center justify-between gap-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-emerald-900 dark:text-emerald-200">
+                  Simple Output (key = value)
+                </span>
+                <div className="flex items-center gap-2 text-[11px]">
+                  <label className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={simpleApprovedOnly}
+                      onChange={(e) => setSimpleApprovedOnly(e.target.checked)}
+                    />
+                    Approved only
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void handleCopySimple()}
+                    disabled={!simpleOutputText}
+                    className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 disabled:opacity-50"
+                  >
+                    <Copy className="h-3 w-3" />
+                    {copiedSimple ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+              {simpleLines.length === 0 ? (
+                <p className="text-[11px] text-slate-500">
+                  {simpleApprovedOnly
+                    ? "Click Approve on entities below to populate the verified output."
+                    : "No active entities."}
+                </p>
+              ) : (
+                <pre
+                  data-testid="workspace-simple-kv-output"
+                  className="rounded border border-emerald-200/80 bg-white dark:border-emerald-900/60 dark:bg-slate-900 px-2.5 py-2 font-mono text-xs leading-5 text-slate-900 dark:text-slate-100 whitespace-pre-wrap select-all max-h-44 overflow-y-auto"
+                >
+                  {simpleOutputText}
+                </pre>
+              )}
+            </div>
+          )}
+
           {rightTab === "entities" &&
             detail?.entities.map((ent) => {
               const tStyle = getEntityTypeStyle(ent.entity_type);
               const aStyle = getAssertionStyle(ent.assertion_status, ent.temporal_status);
+              const approved = isEntityApproved(ent.review_status);
+              const rejected = isEntityRejected(ent.review_status);
+              const statusBadgeLabel = approved
+                ? "✓ Approved"
+                : rejected
+                ? "✗ Rejected"
+                : "Pending Review";
+              const statusBadgeTone = approved ? "emerald" : rejected ? "rose" : "amber";
               return (
               <div
                 key={ent.entity_id}
                 onClick={() => setSelectedEntityId(ent.entity_id)}
-                className={`rounded-md border p-2.5 text-xs cursor-pointer ${
+                className={`rounded-md border p-2.5 text-xs cursor-pointer transition-colors ${
                   ent.entity_id === selectedEntityId
                     ? "border-sky-400 bg-sky-50 dark:bg-sky-950/40"
+                    : approved
+                    ? "border-emerald-300 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/25"
+                    : rejected
+                    ? "border-rose-300 bg-rose-50/50 dark:border-rose-800 dark:bg-rose-950/25"
                     : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className={`font-semibold text-slate-900 dark:text-slate-100 ${aStyle.textClass}`}>
+                  <span
+                    className={`font-semibold ${
+                      rejected
+                        ? "line-through text-rose-800 dark:text-rose-300"
+                        : `text-slate-900 dark:text-slate-100 ${aStyle.textClass}`
+                    }`}
+                  >
                     {getEntityText(ent)}
                   </span>
                   <div className="flex items-center gap-1">
                     <span className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${tStyle.chipClass}`}>
                       {ent.entity_type}
                     </span>
-                    <Badge tone={aStyle.canonical === "absent" ? "rose" : aStyle.canonical === "possible" ? "amber" : "emerald"}>
-                      {aStyle.badge ? `${aStyle.badge} · ` : ""}{ent.assertion_status}
-                    </Badge>
+                    <Badge tone={statusBadgeTone}>{statusBadgeLabel}</Badge>
                   </div>
                 </div>
                 <div className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">
-                  {ent.entity_type} · {ent.normalized_text} · span [{ent.char_start}, {ent.char_end}]
-                  {ent.certainty || ent.temporality || ent.experiencer
-                    ? ` · ${ent.certainty ?? "confirmed"}/${ent.temporality ?? "current"}/${ent.experiencer ?? "patient"}`
-                    : ""}
+                  {ent.certainty === "absent" || ent.assertion_status === "NEGATED"
+                    ? "Absent / Negated"
+                    : ent.certainty === "possible" || ent.assertion_status === "UNCERTAIN"
+                    ? "Possible / Uncertain"
+                    : "Confirmed"}{" "}
+                  · {ent.temporality === "historical" ? "Historical" : "Current"} ·{" "}
+                  {ent.experiencer === "family" ? "Family" : "Patient"}
+                  {ent.review_reason ? ` · ${ent.review_reason}` : ""}
                 </div>
-                <div className="flex items-center justify-between mt-2">
-                  <div className="flex items-center gap-1">
-                    <Badge tone={ent.review_status === "needs_review" ? "amber" : "slate"}>
-                      {ent.review_status === "needs_review" ? "needs review" : ent.review_status}
-                    </Badge>
-                    {ent.review_reason ? (
-                      <span className="text-[10px] text-amber-700 dark:text-amber-300">{ent.review_reason}</span>
-                    ) : null}
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        reviewMutation.mutate({ entityId: ent.entity_id, decision: "APPROVE_AS_GROUND_TRUTH" });
-                      }}
-                    >
-                      <Check className="h-3 w-3 text-emerald-700" aria-hidden="true" />
-                      {t("workspace.approve")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        reviewMutation.mutate({ entityId: ent.entity_id, decision: "REJECT" });
-                      }}
-                    >
-                      <X className="h-3 w-3 text-rose-700" aria-hidden="true" />
-                      {t("workspace.reject")}
-                    </Button>
-                  </div>
+                <div className="flex items-center justify-end gap-1.5 mt-2">
+                  <button
+                    type="button"
+                    disabled={reviewMutation.isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      reviewMutation.mutate({ entityId: ent.entity_id, decision: "APPROVE_AS_GROUND_TRUTH" });
+                    }}
+                    className={`inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition-colors ${
+                      approved
+                        ? "bg-emerald-700 text-white ring-2 ring-emerald-400"
+                        : "bg-emerald-600 text-white hover:bg-emerald-700"
+                    } disabled:opacity-50`}
+                  >
+                    <Check className="h-3 w-3" aria-hidden="true" />
+                    {t("workspace.approve")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={reviewMutation.isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      reviewMutation.mutate({ entityId: ent.entity_id, decision: "REJECT" });
+                    }}
+                    className={`inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition-colors ${
+                      rejected
+                        ? "bg-rose-700 text-white ring-2 ring-rose-400"
+                        : "bg-rose-600 text-white hover:bg-rose-700"
+                    } disabled:opacity-50`}
+                  >
+                    <X className="h-3 w-3" aria-hidden="true" />
+                    {t("workspace.reject")}
+                  </button>
                 </div>
               </div>
               );
