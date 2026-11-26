@@ -1,0 +1,437 @@
+{
+  "generated_at_utc": "2026-11-18T16:34:15Z",
+  "split_evaluated": "val_v3",
+  "variants": {
+    "pixels_only": {
+      "model_dir": "models/derm_cnn_no_meta",
+      "train_info": {
+        "seed": 1,
+        "include_metadata": false,
+        "parameter_count": 1229484,
+        "epochs_run": 4,
+        "best_val_auroc": 0.7835,
+        "dx_labelled_train_count": 2057,
+        "dx_head_supported": true,
+        "temperature_mal": 1.4,
+        "temperature_dx": 1.5,
+        "elapsed_seconds": 1168.25,
+        "history": [
+          {
+            "epoch": 1.0,
+            "loss": 1.2654,
+            "val_auroc": 0.7835,
+            "sec": 290.54
+          },
+          {
+            "epoch": 2.0,
+            "loss": 1.2085,
+            "val_auroc": 0.7334,
+            "sec": 281.47
+          },
+          {
+            "epoch": 3.0,
+            "loss": 1.1973,
+            "val_auroc": 0.7815,
+            "sec": 292.85
+          },
+          {
+            "epoch": 4.0,
+            "loss": 1.1651,
+            "val_auroc": 0.7197,
+            "sec": 281.3
+          }
+        ],
+        "initial_weights_sha256": "88d4990aa5e3c01c62ecd61f699bb8e7408144e89a5679b01e97d231c973773c",
+        "pretrained_weights_used": false
+      },
+      "val_metrics": {
+        "n_val_labelled": 1497,
+        "overall_val_auroc": 0.7835,
+        "by_modality": {
+          "dermoscopic": {
+            "n": 850,
+            "malignant": 350,
+            "benign": 500,
+            "auroc": 0.8377
+          },
+          "clinical": {
+            "n": 352,
+            "malignant": 202,
+            "benign": 150,
+            "auroc": 0.6358
+          },
+          "tbp_tile": {
+            "n": 295,
+            "malignant": 45,
+            "benign": 250,
+            "auroc": 0.6547
+          }
+        },
+        "by_dataset": {
+          "fitzpatrick17k": {
+            "n": 209,
+            "malignant": 136,
+            "benign": 73,
+            "auroc": 0.5341
+          },
+          "isic": {
+            "n": 1288,
+            "malignant": 461,
+            "benign": 827,
+            "auroc": 0.8035
+          },
+          "skindisnet": {
+            "n": 0,
+            "malignant": 0,
+            "benign": 0,
+            "auroc": null
+          }
+        },
+        "by_dataset_modality": {
+          "fitzpatrick17k__clinical": {
+            "n": 209,
+            "malignant": 136,
+            "benign": 73,
+            "auroc": 0.5341
+          },
+          "isic__dermoscopic": {
+            "n": 850,
+            "malignant": 350,
+            "benign": 500,
+            "auroc": 0.8377
+          },
+          "isic__clinical": {
+            "n": 143,
+            "malignant": 66,
+            "benign": 77,
+            "auroc": 0.7497
+          },
+          "isic__tbp_tile": {
+            "n": 295,
+            "malignant": 45,
+            "benign": 250,
+            "auroc": 0.6547
+          }
+        }
+      }
+    },
+    "modality_only": {
+      "model_dir": "models/derm_cnn_mod_only_seed1",
+      "train_info": {
+        "seed": 1,
+        "include_metadata": true,
+        "parameter_count": 1229580,
+        "epochs_run": 7,
+        "best_val_auroc": 0.8251,
+        "dx_labelled_train_count": 2057,
+        "dx_head_supported": true,
+        "temperature_mal": 1.0,
+        "temperature_dx": 1.2,
+        "elapsed_seconds": 2373.8,
+        "history": [
+          {
+            "epoch": 1.0,
+            "loss": 1.2576,
+            "val_auroc": 0.7634,
+            "sec": 326.58
+          },
+          {
+            "epoch": 2.0,
+            "loss": 1.1771,
+            "val_auroc": 0.7885,
+            "sec": 298.05
+          },
+          {
+            "epoch": 3.0,
+            "loss": 1.1604,
+            "val_auroc": 0.8029,
+            "sec": 306.66
+          },
+          {
+            "epoch": 4.0,
+            "loss": 1.1191,
+            "val_auroc": 0.8251,
+            "sec": 325.68
+          },
+          {
+            "epoch": 5.0,
+            "loss": 1.1052,
+            "val_auroc": 0.8114,
+            "sec": 337.86
+          },
+          {
+            "epoch": 6.0,
+            "loss": 1.0953,
+            "val_auroc": 0.7796,
+            "sec": 353.08
+          },
+          {
+            "epoch": 7.0,
+            "loss": 1.0538,
+            "val_auroc": 0.8247,
+            "sec": 395.52
+          }
+        ],
+        "initial_weights_sha256": "e58c37d51b8093f05a1d55b1b81fe7e8ea5c274062e8e8c8f1f69380fc41ea58",
+        "pretrained_weights_used": false
+      },
+      "val_metrics": {
+        "n_val_labelled": 1497,
+        "overall_val_auroc": 0.8251,
+        "by_modality": {
+          "dermoscopic": {
+            "n": 850,
+            "malignant": 350,
+            "benign": 500,
+            "auroc": 0.8588
+          },
+          "clinical": {
+            "n": 352,
+            "malignant": 202,
+            "benign": 150,
+            "auroc": 0.7196
+          },
+          "tbp_tile": {
+            "n": 295,
+            "malignant": 45,
+            "benign": 250,
+            "auroc": 0.61
+          }
+        },
+        "by_dataset": {
+          "fitzpatrick17k": {
+            "n": 209,
+            "malignant": 136,
+            "benign": 73,
+            "auroc": 0.581
+          },
+          "isic": {
+            "n": 1288,
+            "malignant": 461,
+            "benign": 827,
+            "auroc": 0.845
+          },
+          "skindisnet": {
+            "n": 0,
+            "malignant": 0,
+            "benign": 0,
+            "auroc": null
+          }
+        },
+        "by_dataset_modality": {
+          "fitzpatrick17k__clinical": {
+            "n": 209,
+            "malignant": 136,
+            "benign": 73,
+            "auroc": 0.581
+          },
+          "isic__dermoscopic": {
+            "n": 850,
+            "malignant": 350,
+            "benign": 500,
+            "auroc": 0.8588
+          },
+          "isic__clinical": {
+            "n": 143,
+            "malignant": 66,
+            "benign": 77,
+            "auroc": 0.9073
+          },
+          "isic__tbp_tile": {
+            "n": 295,
+            "malignant": 45,
+            "benign": 250,
+            "auroc": 0.61
+          }
+        }
+      }
+    },
+    "full_body_site_dropout_40": {
+      "model_dir": "models/derm_cnn_bsdrop40_seed1",
+      "train_info": {
+        "seed": 1,
+        "include_metadata": true,
+        "parameter_count": 1229580,
+        "epochs_run": 12,
+        "best_val_auroc": 0.8678,
+        "dx_labelled_train_count": 2057,
+        "dx_head_supported": true,
+        "temperature_mal": 1.1,
+        "temperature_dx": 1.1,
+        "elapsed_seconds": 4658.66,
+        "history": [
+          {
+            "epoch": 1.0,
+            "loss": 1.2542,
+            "val_auroc": 0.7787,
+            "sec": 420.16
+          },
+          {
+            "epoch": 2.0,
+            "loss": 1.1699,
+            "val_auroc": 0.7913,
+            "sec": 429.07
+          },
+          {
+            "epoch": 3.0,
+            "loss": 1.1493,
+            "val_auroc": 0.8112,
+            "sec": 406.85
+          },
+          {
+            "epoch": 4.0,
+            "loss": 1.109,
+            "val_auroc": 0.603,
+            "sec": 386.65
+          },
+          {
+            "epoch": 5.0,
+            "loss": 1.096,
+            "val_auroc": 0.8221,
+            "sec": 372.15
+          },
+          {
+            "epoch": 6.0,
+            "loss": 1.0853,
+            "val_auroc": 0.7973,
+            "sec": 365.08
+          },
+          {
+            "epoch": 7.0,
+            "loss": 1.0417,
+            "val_auroc": 0.8395,
+            "sec": 373.02
+          },
+          {
+            "epoch": 8.0,
+            "loss": 1.043,
+            "val_auroc": 0.8539,
+            "sec": 383.45
+          },
+          {
+            "epoch": 9.0,
+            "loss": 1.0359,
+            "val_auroc": 0.8489,
+            "sec": 367.49
+          },
+          {
+            "epoch": 10.0,
+            "loss": 1.0059,
+            "val_auroc": 0.8622,
+            "sec": 370.18
+          },
+          {
+            "epoch": 11.0,
+            "loss": 0.9808,
+            "val_auroc": 0.8667,
+            "sec": 371.11
+          },
+          {
+            "epoch": 12.0,
+            "loss": 0.9756,
+            "val_auroc": 0.8678,
+            "sec": 381.27
+          }
+        ],
+        "initial_weights_sha256": "e58c37d51b8093f05a1d55b1b81fe7e8ea5c274062e8e8c8f1f69380fc41ea58",
+        "pretrained_weights_used": false
+      },
+      "val_metrics": {
+        "n_val_labelled": 1497,
+        "overall_val_auroc": 0.8678,
+        "by_modality": {
+          "dermoscopic": {
+            "n": 850,
+            "malignant": 350,
+            "benign": 500,
+            "auroc": 0.8847
+          },
+          "clinical": {
+            "n": 352,
+            "malignant": 202,
+            "benign": 150,
+            "auroc": 0.7876
+          },
+          "tbp_tile": {
+            "n": 295,
+            "malignant": 45,
+            "benign": 250,
+            "auroc": 0.6618
+          }
+        },
+        "by_dataset": {
+          "fitzpatrick17k": {
+            "n": 209,
+            "malignant": 136,
+            "benign": 73,
+            "auroc": 0.5994
+          },
+          "isic": {
+            "n": 1288,
+            "malignant": 461,
+            "benign": 827,
+            "auroc": 0.8885
+          },
+          "skindisnet": {
+            "n": 0,
+            "malignant": 0,
+            "benign": 0,
+            "auroc": null
+          }
+        },
+        "by_dataset_modality": {
+          "fitzpatrick17k__clinical": {
+            "n": 209,
+            "malignant": 136,
+            "benign": 73,
+            "auroc": 0.5994
+          },
+          "isic__dermoscopic": {
+            "n": 850,
+            "malignant": 350,
+            "benign": 500,
+            "auroc": 0.8847
+          },
+          "isic__clinical": {
+            "n": 143,
+            "malignant": 66,
+            "benign": 77,
+            "auroc": 0.9689
+          },
+          "isic__tbp_tile": {
+            "n": 295,
+            "malignant": 45,
+            "benign": 250,
+            "auroc": 0.6618
+          }
+        }
+      }
+    }
+  },
+  "decision": {
+    "rule": "Keep the variant whose val AUROC gain over pixels_only survives (> 0) within EACH dataset (fitzpatrick17k AND isic); otherwise serve pixels_only.",
+    "selected_variant": "full_body_site_dropout_40",
+    "selected_model_dir": "models/derm_cnn_bsdrop40_seed1",
+    "comparisons_vs_pixels_only": {
+      "pixels_only": {
+        "delta_vs_pixels_fitzpatrick17k": 0.0,
+        "delta_vs_pixels_isic": 0.0,
+        "delta_vs_pixels_overall": 0.0,
+        "survives_within_each_dataset": false
+      },
+      "modality_only": {
+        "delta_vs_pixels_fitzpatrick17k": 0.0469,
+        "delta_vs_pixels_isic": 0.0415,
+        "delta_vs_pixels_overall": 0.0416,
+        "survives_within_each_dataset": true
+      },
+      "full_body_site_dropout_40": {
+        "delta_vs_pixels_fitzpatrick17k": 0.0653,
+        "delta_vs_pixels_isic": 0.085,
+        "delta_vs_pixels_overall": 0.0843,
+        "survives_within_each_dataset": true
+      }
+    }
+  },
+  "elapsed_seconds": 7193.76
+}

@@ -1,0 +1,14 @@
+approach: transformer
+eval_split: val
+data_dir: data/processed/v3
+output_root: experiments/runs/v3
+epochs: 12
+lr: 0.018
+hidden_dim: 32
+max_train_docs: 200
+patience: 4
+dropout: 0.15
+seeds:
+  - 1
+  - 2
+  - 3

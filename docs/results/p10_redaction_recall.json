@@ -1,0 +1,11 @@
+{
+  "n_sentences": 52,
+  "n_phi_items": 111,
+  "tp": 111,
+  "fn": 0,
+  "fp_on_non_phi_sentences": 0,
+  "recall": 1.0,
+  "precision": 1.0,
+  "missed": [],
+  "false_positives": []
+}

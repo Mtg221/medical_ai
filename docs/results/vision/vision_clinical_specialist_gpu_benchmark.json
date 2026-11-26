@@ -1,0 +1,87 @@
+{
+  "evaluated_at_utc": "2026-11-23T04:02:32Z",
+  "pretrained_weights_used": false,
+  "image_size": 256,
+  "seeds": [
+    6,
+    7
+  ],
+  "saved_dirs": [
+    "/tmp/med_models_clin256/derm_cnn_bsdrop40_seed6",
+    "/tmp/med_models_clin256/derm_cnn_seed7"
+  ],
+  "n_train": 31622,
+  "n_val": 1497,
+  "n_locked_test": 1624,
+  "val_fitted_modality_temperatures": {
+    "dermoscopic": 0.9,
+    "clinical": 1.05,
+    "tbp_tile": 0.95
+  },
+  "overall_raw": {
+    "n": 1624,
+    "malignant": 747,
+    "benign": 877,
+    "auroc": 0.9184,
+    "sens_at_90_spec": 0.7497,
+    "ece": 0.0343,
+    "brier": 0.1144
+  },
+  "overall_per_modality_calibrated": {
+    "n": 1624,
+    "malignant": 747,
+    "benign": 877,
+    "auroc": 0.9191,
+    "sens_at_90_spec": 0.7537,
+    "ece": 0.0342,
+    "brier": 0.1139
+  },
+  "by_modality_calibrated": {
+    "dermoscopic": {
+      "n": 700,
+      "malignant": 300,
+      "benign": 400,
+      "auroc": 0.9515,
+      "sens_at_90_spec": 0.8433,
+      "ece": 0.0405,
+      "brier": 0.0891
+    },
+    "clinical": {
+      "n": 574,
+      "malignant": 347,
+      "benign": 227,
+      "auroc": 0.8778,
+      "sens_at_90_spec": 0.585,
+      "ece": 0.0345,
+      "brier": 0.1302
+    },
+    "tbp_tile": {
+      "n": 350,
+      "malignant": 100,
+      "benign": 250,
+      "auroc": 0.8235,
+      "sens_at_90_spec": 0.62,
+      "ece": 0.0676,
+      "brier": 0.137
+    }
+  },
+  "histopathology_confirmed_all": {
+    "n": 591,
+    "malignant": 491,
+    "benign": 100,
+    "auroc": 0.8049,
+    "sens_at_90_spec": 0.5662,
+    "ece": 0.1679,
+    "brier": 0.1612
+  },
+  "histopathology_confirmed_dermoscopic": {
+    "n": 359,
+    "malignant": 300,
+    "benign": 59,
+    "auroc": 0.8076,
+    "sens_at_90_spec": 0.5067,
+    "ece": 0.1344,
+    "brier": 0.1362
+  },
+  "elapsed_seconds": 17752.29
+}

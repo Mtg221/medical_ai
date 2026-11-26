@@ -1,0 +1,26 @@
+{
+  "document_id": "NOISE-0038",
+  "fixture_path": "tests/fixtures/noise_0038.txt",
+  "status": "draft_unreviewed",
+  "review_required_by": "project_owner_or_clinical_annotator",
+  "reviewer_signoff": null,
+  "reviewed_at": null,
+  "provenance_note": "Derived strictly from tests/fixtures/noise_0038.txt for provisional regression benchmarking only. Not human-verified gold ground truth.",
+  "expected_clinical_checks": [
+    {"id": "n38_01", "category": "family_history", "text": "heart attack", "context": "father died after \"heart attack\"", "expected_experiencer": "family", "expected_experiencer_detail": "father"},
+    {"id": "n38_02", "category": "family_history", "text": "diabetes", "context": "Mother has diabetes", "expected_experiencer": "family", "expected_experiencer_detail": "mother"},
+    {"id": "n38_03", "category": "family_history", "text": "atrial fibrillation", "context": "Brother has \"irregular heartbeat\" (possibly atrial fibrillation)", "expected_experiencer": "family", "expected_experiencer_detail": "brother"},
+    {"id": "n38_04", "category": "negation", "text": "vomiting", "context": "No vomiting", "expected_assertion": "absent"},
+    {"id": "n38_05", "category": "negation", "text": "syncope", "context": "Denies syncope", "expected_assertion": "absent"},
+    {"id": "n38_06", "category": "unperformed_scan", "text": "pulmonary embolism", "context": "No pulmonary embolism", "expected_assertion_not": "absent", "expected_assertion_detail": "unresolved"},
+    {"id": "n38_07", "category": "med_ordered_not_admin", "text": "Aspirin", "context": "Aspirin 300 mg loading dose? Ordered but MAR says \"not administered\"", "expected_med_status": "ordered_not_administered"},
+    {"id": "n38_08", "category": "med_prn_past", "text": "Ibuprofen", "context": "Ibuprofen 400 mg PRN — last taken yesterday", "expected_med_status": "prn_active", "expected_last_admin": "historical"},
+    {"id": "n38_09", "category": "med_not_taking", "text": "Metformin", "context": "patient denies taking it", "expected_med_status": "not_taking"},
+    {"id": "n38_10", "category": "vital", "entity_type": "LAB_TEST", "text": "BP", "expected_value": "168/96"},
+    {"id": "n38_11", "category": "vital", "entity_type": "LAB_TEST", "text": "SpO2", "expected_value": "94", "expected_unit": "%", "expected_oxygen_condition": "room_air"},
+    {"id": "n38_12", "category": "lab", "entity_type": "LAB_TEST", "text": "hs-TnI", "expected_value": "18", "expected_unit": "ng/L", "expected_interpretation": "within_range"},
+    {"id": "n38_13", "category": "ocr_corrupted", "text": "15B/9?", "expected_ocr_corrupted": true, "expected_certainty": "possible"},
+    {"id": "n38_14", "category": "contradiction", "expected_topics": ["allergy_status", "medication_dose:amlodipine", "imaging_unperformed_vs_negative"]},
+    {"id": "n38_15", "category": "artifact_suppression", "forbidden_entities": [["DATE", "NOISE-0038"], ["DATE", "7/10"], ["DATE", "3/10"], ["DIAGNOSIS", "RA"], ["ROUTE", "OD"], ["ROUTE", "PRN"]]}
+  ]
+}

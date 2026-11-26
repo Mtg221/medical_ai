@@ -1,0 +1,306 @@
+{
+  "elapsed_s": 194.8,
+  "models": [
+    "derm_cnn_clinical_seed6",
+    "derm_cnn_clinical_seed7",
+    "derm_convnext_seed10",
+    "derm_convnext_seed11"
+  ],
+  "val_selected_weights": {
+    "w_crop80": 0.5,
+    "w_convnext": 0.0
+  },
+  "val_v3_clinical_n": 352,
+  "val_v3_baseline_spec": {
+    "n": 352,
+    "malignant": 202,
+    "benign": 150,
+    "auroc": 0.8647,
+    "sens_at_90_spec": 0.4752,
+    "ece": 0.0403,
+    "brier": 0.1383
+  },
+  "val_v3_crop80_only": {
+    "n": 352,
+    "malignant": 202,
+    "benign": 150,
+    "auroc": 0.8678,
+    "sens_at_90_spec": 0.5396,
+    "ece": 0.0332,
+    "brier": 0.14
+  },
+  "val_v3_convnext_only": {
+    "n": 352,
+    "malignant": 202,
+    "benign": 150,
+    "auroc": 0.8281,
+    "sens_at_90_spec": 0.4752,
+    "ece": 0.0618,
+    "brier": 0.1618
+  },
+  "val_v3_opt_blend": {
+    "n": 352,
+    "malignant": 202,
+    "benign": 150,
+    "auroc": 0.869,
+    "sens_at_90_spec": 0.5198,
+    "ece": 0.0256,
+    "brier": 0.138
+  },
+  "locked_test_v4_clinical_n": 571,
+  "test_v4_baseline_spec": {
+    "n": 571,
+    "malignant": 345,
+    "benign": 226,
+    "auroc": 0.8783,
+    "sens_at_90_spec": 0.5449,
+    "ece": 0.0271,
+    "brier": 0.1298,
+    "auroc_ci95": [
+      0.8484,
+      0.905
+    ],
+    "sens90_ci95": [
+      0.4256,
+      0.6887
+    ]
+  },
+  "test_v4_crop80_only": {
+    "n": 571,
+    "malignant": 345,
+    "benign": 226,
+    "auroc": 0.8782,
+    "sens_at_90_spec": 0.5565,
+    "ece": 0.022,
+    "brier": 0.1297,
+    "auroc_ci95": [
+      0.8462,
+      0.9053
+    ],
+    "sens90_ci95": [
+      0.4593,
+      0.6797
+    ]
+  },
+  "test_v4_convnext_only": {
+    "n": 571,
+    "malignant": 345,
+    "benign": 226,
+    "auroc": 0.823,
+    "sens_at_90_spec": 0.3913,
+    "ece": 0.0667,
+    "brier": 0.1562,
+    "auroc_ci95": [
+      0.7881,
+      0.8575
+    ],
+    "sens90_ci95": [
+      0.3368,
+      0.5059
+    ]
+  },
+  "test_v4_opt_blend": {
+    "n": 571,
+    "malignant": 345,
+    "benign": 226,
+    "auroc": 0.8807,
+    "sens_at_90_spec": 0.5739,
+    "ece": 0.0409,
+    "brier": 0.1282,
+    "auroc_ci95": [
+      0.8504,
+      0.9068
+    ],
+    "sens90_ci95": [
+      0.4287,
+      0.6878
+    ]
+  },
+  "test_v4_subgroups": {
+    "ita_dark_lt10": {
+      "n": 276,
+      "baseline_spec": {
+        "n": 276,
+        "malignant": 161,
+        "benign": 115,
+        "auroc": 0.8639,
+        "sens_at_90_spec": 0.4658,
+        "ece": 0.0615,
+        "brier": 0.1347,
+        "auroc_ci95": [
+          0.8203,
+          0.9029
+        ],
+        "sens90_ci95": [
+          0.2896,
+          0.6288
+        ]
+      },
+      "val_tuned_blend": {
+        "n": 276,
+        "malignant": 161,
+        "benign": 115,
+        "auroc": 0.8692,
+        "sens_at_90_spec": 0.4472,
+        "ece": 0.0699,
+        "brier": 0.1309,
+        "auroc_ci95": [
+          0.822,
+          0.9054
+        ],
+        "sens90_ci95": [
+          0.2954,
+          0.6222
+        ]
+      }
+    },
+    "ita_med_10_41": {
+      "n": 69,
+      "baseline_spec": {
+        "n": 69,
+        "malignant": 45,
+        "benign": 24,
+        "auroc": 0.8417,
+        "sens_at_90_spec": 0.3556,
+        "ece": 0.1056,
+        "brier": 0.1455,
+        "auroc_ci95": [
+          0.7216,
+          0.9383
+        ],
+        "sens90_ci95": [
+          0.1237,
+          0.8864
+        ]
+      },
+      "val_tuned_blend": {
+        "n": 69,
+        "malignant": 45,
+        "benign": 24,
+        "auroc": 0.8444,
+        "sens_at_90_spec": 0.3556,
+        "ece": 0.0962,
+        "brier": 0.1468,
+        "auroc_ci95": [
+          0.7316,
+          0.9407
+        ],
+        "sens90_ci95": [
+          0.0666,
+          0.8925
+        ]
+      }
+    },
+    "ita_light_gt41": {
+      "n": 226,
+      "baseline_spec": {
+        "n": 226,
+        "malignant": 139,
+        "benign": 87,
+        "auroc": 0.9047,
+        "sens_at_90_spec": 0.6906,
+        "ece": 0.0516,
+        "brier": 0.119,
+        "auroc_ci95": [
+          0.862,
+          0.9436
+        ],
+        "sens90_ci95": [
+          0.5759,
+          0.8126
+        ]
+      },
+      "val_tuned_blend": {
+        "n": 226,
+        "malignant": 139,
+        "benign": 87,
+        "auroc": 0.9059,
+        "sens_at_90_spec": 0.7122,
+        "ece": 0.051,
+        "brier": 0.1193,
+        "auroc_ci95": [
+          0.8661,
+          0.9425
+        ],
+        "sens90_ci95": [
+          0.5515,
+          0.8127
+        ]
+      }
+    },
+    "source_fitzpatrick17k": {
+      "n": 368,
+      "baseline_spec": {
+        "n": 368,
+        "malignant": 256,
+        "benign": 112,
+        "auroc": 0.7241,
+        "sens_at_90_spec": 0.2695,
+        "ece": 0.0438,
+        "brier": 0.183,
+        "auroc_ci95": [
+          0.6666,
+          0.7806
+        ],
+        "sens90_ci95": [
+          0.2122,
+          0.4108
+        ]
+      },
+      "val_tuned_blend": {
+        "n": 368,
+        "malignant": 256,
+        "benign": 112,
+        "auroc": 0.7319,
+        "sens_at_90_spec": 0.293,
+        "ece": 0.0683,
+        "brier": 0.1793,
+        "auroc_ci95": [
+          0.6769,
+          0.7873
+        ],
+        "sens90_ci95": [
+          0.2095,
+          0.3808
+        ]
+      }
+    },
+    "source_isic_clinical": {
+      "n": 203,
+      "baseline_spec": {
+        "n": 203,
+        "malignant": 89,
+        "benign": 114,
+        "auroc": 0.9904,
+        "sens_at_90_spec": 0.9888,
+        "ece": 0.0596,
+        "brier": 0.0333,
+        "auroc_ci95": [
+          0.9746,
+          0.9994
+        ],
+        "sens90_ci95": [
+          0.9628,
+          1.0
+        ]
+      },
+      "val_tuned_blend": {
+        "n": 203,
+        "malignant": 89,
+        "benign": 114,
+        "auroc": 0.9898,
+        "sens_at_90_spec": 0.9888,
+        "ece": 0.063,
+        "brier": 0.0357,
+        "auroc_ci95": [
+          0.9736,
+          0.9992
+        ],
+        "sens90_ci95": [
+          0.9579,
+          1.0
+        ]
+      }
+    }
+  }
+}

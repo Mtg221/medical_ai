@@ -1,0 +1,161 @@
+{
+  "evaluated_at_utc": "2026-11-24T01:16:28Z",
+  "pretrained_weights_used": false,
+  "encoder_type": "from_scratch_medical_transformer_crf",
+  "e3c_layer3_unlabeled_docs": 6518,
+  "models_trained": [
+    {
+      "seed": 16,
+      "encoder_type": "transformer",
+      "d_model": 256,
+      "num_layers": 4,
+      "e3c_docs": 6518,
+      "sec": 2072.56,
+      "sha256": "91917fcbbfbd61cdd3522ae895598059efcc636fc5fa39978fd2b7050ffa0b1b"
+    },
+    {
+      "seed": 17,
+      "encoder_type": "transformer",
+      "d_model": 256,
+      "num_layers": 4,
+      "e3c_docs": 6518,
+      "sec": 2076.49,
+      "sha256": "fa5b8056bf86b1080d01acd18bb77de3d60623a400640d5e9fe83e368f4d9e6c"
+    },
+    {
+      "seed": 18,
+      "encoder_type": "transformer",
+      "d_model": 320,
+      "num_layers": 4,
+      "e3c_docs": 6518,
+      "sec": 2433.19,
+      "sha256": "0cf43fb62877fbb9f0e45a8bc479c960d8c43a40e4a561ca62c0f0b8bd10e654"
+    }
+  ],
+  "splits": {
+    "synth_val": {
+      "transformer_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.98092,
+        "lenient_f1": 0.989097,
+        "precision": 0.984947,
+        "recall": 0.976926,
+        "assertion_macro_f1": 0.773214,
+        "doc_acc": 1.0,
+        "en_f1": 0.976959,
+        "fr_f1": 0.985169
+      },
+      "hospital_ensemble_transformer_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.988634,
+        "lenient_f1": 0.995759,
+        "precision": 0.988467,
+        "recall": 0.988802,
+        "assertion_macro_f1": 0.776238,
+        "doc_acc": 1.0,
+        "en_f1": 0.984918,
+        "fr_f1": 0.992619
+      }
+    },
+    "synth_unseen_terms": {
+      "transformer_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.845016,
+        "lenient_f1": 0.878831,
+        "precision": 0.900188,
+        "recall": 0.796216,
+        "assertion_macro_f1": 0.728544,
+        "doc_acc": 1.0,
+        "en_f1": 0.868286,
+        "fr_f1": 0.820327
+      },
+      "hospital_ensemble_transformer_3gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.89036,
+        "lenient_f1": 0.924644,
+        "precision": 0.91108,
+        "recall": 0.870561,
+        "assertion_macro_f1": 0.753669,
+        "doc_acc": 1.0,
+        "en_f1": 0.911258,
+        "fr_f1": 0.868384
+      }
+    },
+    "open_clinical_test": {
+      "transformer_3gpu": {
+        "num_docs": 443,
+        "strict_f1": 0.612383,
+        "lenient_f1": 0.683209,
+        "precision": 0.633915,
+        "recall": 0.592265,
+        "assertion_macro_f1": 0.221954,
+        "doc_acc": 1.0,
+        "en_f1": 0.478165,
+        "fr_f1": 0.773885,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.340972,
+            "lenient_f1": 0.441797
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.4904,
+            "lenient_f1": 0.585704
+          },
+          "pxcorpus": {
+            "strict_f1": 0.897507,
+            "lenient_f1": 0.92036
+          }
+        }
+      },
+      "hospital_ensemble_transformer_3gpu": {
+        "num_docs": 443,
+        "strict_f1": 0.633857,
+        "lenient_f1": 0.712275,
+        "precision": 0.633047,
+        "recall": 0.634669,
+        "assertion_macro_f1": 0.220365,
+        "doc_acc": 1.0,
+        "en_f1": 0.514681,
+        "fr_f1": 0.782336,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.382353,
+            "lenient_f1": 0.50692
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.52914,
+            "lenient_f1": 0.631185
+          },
+          "pxcorpus": {
+            "strict_f1": 0.899032,
+            "lenient_f1": 0.921853
+          }
+        }
+      }
+    },
+    "realistic_llm_80": {
+      "transformer_3gpu": {
+        "num_docs": 80,
+        "strict_f1": 0.672294,
+        "lenient_f1": 0.761101,
+        "precision": 0.707336,
+        "recall": 0.640559,
+        "assertion_macro_f1": 0.657361,
+        "doc_acc": 0.7625,
+        "en_f1": 0.672677,
+        "fr_f1": 0.671863
+      },
+      "hospital_ensemble_transformer_3gpu": {
+        "num_docs": 80,
+        "strict_f1": 0.709315,
+        "lenient_f1": 0.802812,
+        "precision": 0.713074,
+        "recall": 0.705594,
+        "assertion_macro_f1": 0.646041,
+        "doc_acc": 0.7625,
+        "en_f1": 0.696059,
+        "fr_f1": 0.724036
+      }
+    }
+  }
+}

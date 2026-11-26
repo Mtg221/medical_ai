@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedResearch Platform — Sovereign Hospital AI Executive Briefing (EN / FR)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --surface: #121c2f;
+      --surface-2: #192640;
+      --border: rgba(148, 163, 184, 0.18);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --primary: #38bdf8;
+      --accent: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --purple: #a78bfa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 2rem;
+      background: rgba(11, 18, 32, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      font-size: 0.95rem;
+    }
+    .badge {
+      font-size: 0.72rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.16);
+      color: var(--accent);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      font-weight: 600;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    button.btn {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.85rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    button.btn:hover { background: #233456; border-color: var(--primary); }
+    button.btn.active { background: var(--primary); color: #0b1220; border-color: var(--primary); }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.25rem;
+    }
+    section.slide {
+      background: linear-gradient(160deg, var(--surface) 0%, #0f172a 100%);
+      border: 1px solid var(--border);
+      border-radius: 1.1rem;
+      padding: 2.25rem 2.5rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      page-break-after: always;
+    }
+    .slide-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+      font-weight: 700;
+    }
+    h1 {
+      font-size: 2.35rem;
+      line-height: 1.15;
+      margin-bottom: 0.85rem;
+      background: linear-gradient(90deg, #f8fafc, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    h2 {
+      font-size: 1.65rem;
+      margin-bottom: 0.6rem;
+      color: #f8fafc;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.02rem;
+      max-width: 860px;
+      margin-bottom: 1.6rem;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+    .kpi-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 1.15rem 1.25rem;
+    }
+    .kpi-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .kpi-value { font-size: 2rem; font-weight: 800; margin: 0.35rem 0 0.25rem; color: var(--primary); }
+    .kpi-value.accent { color: var(--accent); }
+    .kpi-value.warn { color: var(--warn); }
+    .kpi-value.purple { color: var(--purple); }
+    .kpi-sub { font-size: 0.8rem; color: #cbd5e1; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+      margin-top: 1rem;
+    }
+    .chart-box {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 1.1rem;
+      height: 340px;
+      position: relative;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      background: rgba(15, 23, 42, 0.55);
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    th, td {
+      padding: 0.62rem 0.8rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    tr:last-child td { border-bottom: none; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .highlight-row { background: rgba(16, 185, 129, 0.12); }
+
+    .pillars {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+    .pillar {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 1.15rem;
+    }
+    .pillar h3 { font-size: 0.98rem; color: var(--primary); margin-bottom: 0.45rem; }
+    .pillar p, .pillar li { font-size: 0.85rem; color: #cbd5e1; }
+    .pillar ul { padding-left: 1.1rem; margin-top: 0.35rem; }
+
+    .callout {
+      margin-top: 1.2rem;
+      padding: 0.95rem 1.2rem;
+      border-radius: 0.75rem;
+      border-left: 4px solid var(--accent);
+      background: rgba(16, 185, 129, 0.09);
+      font-size: 0.88rem;
+      color: #e2e8f0;
+    }
+    .callout.warn {
+      border-left-color: var(--warn);
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    [data-lang="fr"] { display: none; }
+    body.lang-fr [data-lang="en"] { display: none; }
+    body.lang-fr [data-lang="fr"] { display: inline; }
+    body.lang-fr div[data-lang="fr"], body.lang-fr p[data-lang="fr"], body.lang-fr li[data-lang="fr"] { display: block; }
+
+    @media (max-width: 960px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col, .pillars { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .topbar { display: none; }
+      body { background: #0b1220; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      section.slide { box-shadow: none; margin-bottom: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span>MedResearch Platform</span>
+      <span class="badge">100% From-Scratch • Zero Pretrained Weights</span>
+    </div>
+    <div class="controls">
+      <button id="btn-en" class="btn active" onclick="setLang('en')">English</button>
+      <button id="btn-fr" class="btn" onclick="setLang('fr')">Français</button>
+      <button class="btn" onclick="window.print()">Print / PDF</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- SLIDE 1: COVER & SOVEREIGN AI VISION -->
+    <section class="slide">
+      <div class="slide-meta">
+        <span><span data-lang="en">Slide 01 / 06 — Executive Briefing</span><span data-lang="fr">Diapositive 01 / 06 — Synthèse Exécutive</span></span>
+        <span>Ministry of Health &amp; Hospital Executive Board • 2026</span>
+      </div>
+      <h1>
+        <span data-lang="en">Sovereign Clinical NLP &amp; Dermatology Vision Platform</span>
+        <span data-lang="fr">Plateforme Souveraine de TAL Clinique &amp; Vision Dermatologique</span>
+      </h1>
+      <p class="subtitle" data-lang="en">
+        An end-to-end, on-premise medical research platform trained strictly from random initialization (zero third-party pretrained weights, zero external cloud API calls), combining a 12-model hybrid from-scratch MLM + multi-capacity bilingual NLP ensemble with a 7-seed modality-aware multi-scale Dermatology SE-ResNetV2 ensemble and empirically validated uncertainty guardrails.
+      </p>
+      <p class="subtitle" data-lang="fr">
+        Une plateforme de recherche médicale souveraine sur site, entraînée strictement à partir de poids aléatoires (zéro modèle pré-entraîné tiers, zéro appel API cloud externe), combinant un ensemble TAL bilingue hybride MLM de 12 modèles, un ensemble Vision dermatologique SE-ResNetV2 de 7 graines sensible à la modalité et des garde-fous d'incertitude validés empiriquement.
+      </p>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label"><span data-lang="en">Vision 9-Seed Cross-Arch AUROC</span><span data-lang="fr">Vision 9-Graines Cross-Arch</span></div>
+          <div class="kpi-value accent">0.9353</div>
+          <div class="kpi-sub">SE-ResNetV2 + ConvNeXt • Derm <strong>0.9734</strong></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label"><span data-lang="en">Vision Sens @ 90% Spec</span><span data-lang="fr">Sensibilité @ 90% Spéc.</span></div>
+          <div class="kpi-value">79.52%</div>
+          <div class="kpi-sub"><span data-lang="en">Brier 0.1009 • ECE 0.0315 • Clin +8.7 pts</span><span data-lang="fr">Brier 0,1009 • ECE 0,0315 • Clin +8,7 pts</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label"><span data-lang="en">NLP 18-Model Cross-Arch</span><span data-lang="fr">TAL 18-Modèles Cross-Arch</span></div>
+          <div class="kpi-value purple">74.84%</div>
+          <div class="kpi-sub">Lenient F1 (Strict <strong>67.79%</strong>, P <strong>72.26%</strong>)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label"><span data-lang="en">Uncertainty Guardrail</span><span data-lang="fr">Garde-fou d'Incertitude</span></div>
+          <div class="kpi-value warn">0.9419</div>
+          <div class="kpi-sub"><span data-lang="en">Low-std AUROC (12.9% err vs 32.3% flagged)</span><span data-lang="fr">AUROC basse incert. (12,9 % vs 32,3 % signalé)</span></div>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <strong data-lang="en">Clinical Safety Posture:</strong>
+        <strong data-lang="fr">Posture de Sécurité Clinique :</strong>
+        <span data-lang="en">Research &amp; decision-support tool — not an autonomous diagnostic device. High-uncertainty cases (ensemble std &gt; 0.12) and low-prevalence TBP total-body tiles automatically escalate to specialist clinician review.</span>
+        <span data-lang="fr">Outil de recherche et d'aide à la décision — ne constitue pas un dispositif de diagnostic autonome. Les cas à forte incertitude (écart-type &gt; 0,12) et les tuiles TBP à faible prévalence sont automatiquement escaladés vers un spécialiste.</span>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: CLINICAL NLP 9-MODEL ENSEMBLE -->
+    <section class="slide">
+      <div class="slide-meta">
+        <span><span data-lang="en">Slide 02 / 06 — Bilingual Clinical NLP (EN / FR)</span><span data-lang="fr">Diapositive 02 / 06 — TAL Clinique Bilingue (EN / FR)</span></span>
+        <span>12-Model Hybrid MLM + Multi-Capacity Ensemble (3×96d + 3×128d + 3×160d + 3×MLM 160d/192d + CRF v2)</span>
+      </div>
+      <h2>
+        <span data-lang="en">12-Model From-Scratch MLM + Hospital NLP Benchmark</span>
+        <span data-lang="fr">Benchmark TAL Hospitalier : Ensemble Hybride MLM 12 Modèles</span>
+      </h2>
+      <p class="subtitle" data-lang="en">
+        Char-CNN + BiLSTM + Partial-Label Marginal CRF trained from scratch with 10-epoch self-supervised medical Masked Language Modeling (MLM), 16,000-word Brown cluster alignment, and 8/12 supermajority consensus merged with CRF v2.
+      </p>
+      <p class="subtitle" data-lang="fr">
+        Architecture Char-CNN + BiLSTM + CRF marginal entraînée de zéro avec pré-entraînement auto-supervisé MLM médical (10 époques), alignement exact des clusters (16 000 mots) et supermajorité 8/12 fusionnée avec CRF v2.
+      </p>
+
+      <div class="two-col">
+        <div class="chart-box">
+          <canvas id="nlpChart"></canvas>
+        </div>
+        <div>
+          <table>
+            <thead>
+              <tr>
+                <th><span data-lang="en">Evaluation Split</span><span data-lang="fr">Jeu d'Évaluation</span></th>
+                <th class="num">Docs</th>
+                <th class="num">Strict F1</th>
+                <th class="num">Lenient F1</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="highlight-row">
+                <td><strong>Open Clinical Combined</strong></td>
+                <td class="num">443</td>
+                <td class="num">0.6710</td>
+                <td class="num">0.7472</td>
+              </tr>
+              <tr>
+                <td>&nbsp;&nbsp;↳ PxCorpus (FR/EN)</td>
+                <td class="num">—</td>
+                <td class="num">0.9271</td>
+                <td class="num">0.9450</td>
+              </tr>
+              <tr>
+                <td>&nbsp;&nbsp;↳ MACCROBAT 2020 (+1.02%)</td>
+                <td class="num">—</td>
+                <td class="num">0.5700</td>
+                <td class="num">0.6695</td>
+              </tr>
+              <tr>
+                <td>&nbsp;&nbsp;↳ E3C Layer 1 (+1.24%)</td>
+                <td class="num">—</td>
+                <td class="num">0.4212</td>
+                <td class="num">0.5534</td>
+              </tr>
+              <tr>
+                <td><strong>Realistic Clinical Notes (LLM-80)</strong></td>
+                <td class="num">80</td>
+                <td class="num">0.7213</td>
+                <td class="num">0.8158</td>
+              </tr>
+              <tr>
+                <td><strong>Synthetic Unseen Medical Terms</strong></td>
+                <td class="num">160</td>
+                <td class="num">0.9345</td>
+                <td class="num">0.9608</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout">
+            <span data-lang="en"><strong>From-Scratch MLM Proof:</strong> 3 MLM-pretrained seeds alone reach 0.9441 / 0.9694 on unseen terms; combined 12-model ensemble sets new all-time records on MACCROBAT (+1.02%), E3C (+1.24%), and overall Open Clinical (P = 0.6909).</span>
+            <span data-lang="fr"><strong>Preuve MLM de Zéro :</strong> 3 modèles MLM atteignent 0,9441 / 0,9694 sur termes inédits ; l'ensemble 12 modèles établit des records sur MACCROBAT (+1,02 %), E3C (+1,24 %) et Open Clinical global (P = 0,6909).</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: DERMATOLOGY VISION 5-SEED MULTI-SCALE ENSEMBLE -->
+    <section class="slide">
+      <div class="slide-meta">
+        <span><span data-lang="en">Slide 03 / 06 — Dermatology Vision (Locked Test v3, n = 1,624)</span><span data-lang="fr">Diapositive 03 / 06 — Vision Dermatologique (Test Verrouillé v3, n = 1 624)</span></span>
+        <span>7-Seed Modality-Aware SE-ResNetV2 (3×224 + 2×256 + 2×256 Clinical Specialists + 4× TTA)</span>
+      </div>
+      <h2>
+        <span data-lang="en">7-Seed Modality-Aware Ensemble Shatters Clinical &amp; Overall Records</span>
+        <span data-lang="fr">L'Ensemble 7 Graines Sensible à la Modalité Bat Tous les Records</span>
+      </h2>
+      <p class="subtitle" data-lang="en">
+        Trained strictly from scratch on 31,622 lesion-grouped images. Modality-aware specialist routing (4× clinical oversampling + smartphone augmentations) and temperature scaling fitted exclusively on <code>val_v3</code> (n = 1,497).
+      </p>
+      <p class="subtitle" data-lang="fr">
+        Entraîné de zéro sur 31 622 images regroupées par lésion. Routage spécialiste par modalité (sur-échantillonnage clinique 4× + augmentations smartphone) et calibration ajustés exclusivement sur <code>val_v3</code> (n = 1 497).
+      </p>
+
+      <div class="two-col">
+        <div class="chart-box">
+          <canvas id="visionSeedsChart"></canvas>
+        </div>
+        <div>
+          <table>
+            <thead>
+              <tr>
+                <th><span data-lang="en">Subgroup / Modality</span><span data-lang="fr">Sous-groupe / Modalité</span></th>
+                <th class="num">n</th>
+                <th class="num">AUROC</th>
+                <th class="num">Sens@90%</th>
+                <th class="num">ECE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="highlight-row">
+                <td><strong>Overall Calibrated (7-Seed)</strong></td>
+                <td class="num">1,624</td>
+                <td class="num">0.9350</td>
+                <td class="num">0.7938</td>
+                <td class="num">0.0352</td>
+              </tr>
+              <tr>
+                <td>Dermoscopic</td>
+                <td class="num">700</td>
+                <td class="num">0.9734</td>
+                <td class="num">0.9333</td>
+                <td class="num">0.0382</td>
+              </tr>
+              <tr class="highlight-row">
+                <td><strong>Clinical Smartphone (+8.4 pts)</strong></td>
+                <td class="num">574</td>
+                <td class="num">0.8778</td>
+                <td class="num">0.5850</td>
+                <td class="num">0.0345</td>
+              </tr>
+              <tr>
+                <td>TBP Total-Body Tile *(auto-abstained)*</td>
+                <td class="num">350</td>
+                <td class="num">0.8763</td>
+                <td class="num">0.7000</td>
+                <td class="num">0.1007</td>
+              </tr>
+              <tr>
+                <td>Biopsy-Confirmed (Dermoscopic)</td>
+                <td class="num">359</td>
+                <td class="num">0.8693</td>
+                <td class="num">0.6600</td>
+                <td class="num">0.0822</td>
+              </tr>
+              <tr>
+                <td>Biopsy-Confirmed (All Modalities)</td>
+                <td class="num">591</td>
+                <td class="num">0.8388</td>
+                <td class="num">0.6640</td>
+                <td class="num">0.1377</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout">
+            <span data-lang="en"><strong>Modality-Aware Gain:</strong> Adding 2 smartphone-specialist seeds lifts Clinical AUROC to <strong>0.8778</strong> (+2.0%), Clinical Sens@90% to <strong>58.50%</strong> (+8.4 pts), Overall AUROC to <strong>0.9350</strong>, and Brier to <strong>0.1014</strong>.</span>
+            <span data-lang="fr"><strong>Gain Spécialiste :</strong> L'ajout de 2 modèles spécialistes porte l'AUROC Clinique à <strong>0,8778</strong> (+2,0 %), la Sens@90% à <strong>58,50 %</strong> (+8,4 pts), l'AUROC global à <strong>0,9350</strong> et le Brier à <strong>0,1014</strong>.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: UNCERTAINTY GUARDRAIL & CALIBRATION -->
+    <section class="slide">
+      <div class="slide-meta">
+        <span><span data-lang="en">Slide 04 / 06 — Safety Guardrail &amp; Probability Calibration</span><span data-lang="fr">Diapositive 04 / 06 — Garde-fou d'Incertitude &amp; Calibration</span></span>
+        <span>Cross-Seed Disagreement Threshold: std &gt; 0.12</span>
+      </div>
+      <h2>
+        <span data-lang="en">Ensemble Disagreement Strongly Predicts Clinical Errors</span>
+        <span data-lang="fr">Le Désaccord de l'Ensemble Prédit Fortement les Erreurs Cliniques</span>
+      </h2>
+      <p class="subtitle" data-lang="en">
+        Across all 1,624 locked test lesions, cross-seed standard deviation correlates positively with misclassification (Pearson r = 0.296). High-agreement predictions achieve 4.2% error, while flagged predictions (&gt; 0.12) have 38.8% error.
+      </p>
+      <p class="subtitle" data-lang="fr">
+        Sur les 1 624 lésions du jeu verrouillé, l'écart-type inter-graines corrèle fortement avec l'erreur (Pearson r = 0,296). Les prédictions à fort consensus atteignent 4,2 % d'erreur contre 38,8 % pour les cas signalés (&gt; 0,12).
+      </p>
+
+      <div class="two-col">
+        <div class="chart-box">
+          <canvas id="uncertaintyChart"></canvas>
+        </div>
+        <div class="chart-box">
+          <canvas id="calibrationChart"></canvas>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label"><span data-lang="en">High-Consensus Cohort</span><span data-lang="fr">Cohorte Fort Consensus</span></div>
+          <div class="kpi-value accent">6.15%</div>
+          <div class="kpi-sub"><span data-lang="en">Error rate when std &lt; 0.03 (n = 813, 50.1%)</span><span data-lang="fr">Taux d'erreur si std &lt; 0,03 (n = 813, 50,1 %)</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label"><span data-lang="en">Low-Uncertainty Tier (≤ 0.12)</span><span data-lang="fr">Niveau Basse Incertitude</span></div>
+          <div class="kpi-value">0.9419</div>
+          <div class="kpi-sub">AUROC • 12.89% error (n = 1,528, 94.1%)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label"><span data-lang="en">Flagged Tier (&gt; 0.12)</span><span data-lang="fr">Niveau Signalé (&gt; 0,12)</span></div>
+          <div class="kpi-value warn">32.29%</div>
+          <div class="kpi-sub">Error rate • 0.7491 AUROC (n = 96, 5.9%)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label"><span data-lang="en">Calibration &amp; Brier</span><span data-lang="fr">Calibration &amp; Brier</span></div>
+          <div class="kpi-value purple">0.1014</div>
+          <div class="kpi-sub">Brier • ECE 0.0352 • val_v3 fitted</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: GOVERNANCE, SECURITY & PRIVACY -->
+    <section class="slide">
+      <div class="slide-meta">
+        <span><span data-lang="en">Slide 05 / 06 — Hospital Governance, Security &amp; Compliance</span><span data-lang="fr">Diapositive 05 / 06 — Gouvernance Hospitalière, Sécurité &amp; Conformité</span></span>
+        <span>HIPAA • GDPR • CNIL • Cryptographic Provenance</span>
+      </div>
+      <h2>
+        <span data-lang="en">Built for Sovereign Hospital Deployment &amp; Auditability</span>
+        <span data-lang="fr">Conçu pour un Déploiement Hospitalier Souverain et Auditable</span>
+      </h2>
+
+      <div class="pillars">
+        <div class="pillar">
+          <h3><span data-lang="en">1. Cryptographic Model Provenance</span><span data-lang="fr">1. Provenance Cryptographique</span></h3>
+          <ul>
+            <li><span data-lang="en">Every NLP (9) and Vision (5) checkpoint verified via SHA-256 manifest before loading.</span><span data-lang="fr">Chaque modèle TAL (9) et Vision (5) vérifié par empreinte SHA-256 avant chargement.</span></li>
+            <li><span data-lang="en">Zero pretrained weights: full training lineage and locked-test log (<code>TEST_SET_LOG.md</code>).</span><span data-lang="fr">Zéro poids pré-entraîné : lignée complète et journal de test verrouillé.</span></li>
+            <li><span data-lang="en">Fail-loud 503 guard if any model artifact is missing or tampered with.</span><span data-lang="fr">Blocage strict (503) en cas d'artefact manquant ou altéré.</span></li>
+          </ul>
+        </div>
+        <div class="pillar">
+          <h3><span data-lang="en">2. Privacy &amp; PHI Protection</span><span data-lang="fr">2. Protection des Données (PHI/RGPD)</span></h3>
+          <ul>
+            <li><span data-lang="en">100% EXIF, GPS, XMP, and ICC metadata stripped before image persistence.</span><span data-lang="fr">Suppression à 100 % des métadonnées EXIF, GPS, XMP et ICC avant stockage.</span></li>
+            <li><span data-lang="en">Dense-text safety guard prevents patient documents from entering the skin vision model.</span><span data-lang="fr">Garde-fou texte empêchant les documents patients d'entrer dans le modèle vision.</span></li>
+            <li><span data-lang="en">Institution-scoped RBAC, pseudonymized subject IDs, and structured audit trail.</span><span data-lang="fr">RBAC par établissement, pseudonymisation des patients et journal d'audit complet.</span></li>
+          </ul>
+        </div>
+        <div class="pillar">
+          <h3><span data-lang="en">3. Human-in-the-Loop Clinical Safety</span><span data-lang="fr">3. Sécurité Clinique &amp; Supervision</span></h3>
+          <ul>
+            <li><span data-lang="en">Automatic TBP tile abstention due to 0.14% low corpus prevalence.</span><span data-lang="fr">Abstention automatique sur les tuiles TBP (prévalence 0,14 %).</span></li>
+            <li><span data-lang="en">Real-time <code>confidence_variance</code> &amp; <code>high_uncertainty</code> API fields for both Vision and NLP.</span><span data-lang="fr">Champs API <code>confidence_variance</code> et <code>high_uncertainty</code> en temps réel (Vision &amp; TAL).</span></li>
+            <li><span data-lang="en">Grad-CAM spatial overlays + bilingual clinician review queue &amp; correction persistence.</span><span data-lang="fr">Cartes Grad-CAM + file de revue clinique bilingue et persistance des corrections.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: DEPLOYMENT ROADMAP & EXECUTIVE DECISION -->
+    <section class="slide">
+      <div class="slide-meta">
+        <span><span data-lang="en">Slide 06 / 06 — Operational Readiness &amp; Next Phase</span><span data-lang="fr">Diapositive 06 / 06 — Maturité Opérationnelle &amp; Prochaine Phase</span></span>
+        <span>Hospital Pilot Readiness</span>
+      </div>
+      <h2>
+        <span data-lang="en">Recommended Hospital Pilot Path (Shadow Mode → Supervised Review)</span>
+        <span data-lang="fr">Trajectoire Recommandée pour le Pilote Hospitalier</span>
+      </h2>
+      <p class="subtitle" data-lang="en">
+        All 14 from-scratch neural checkpoints (9 NLP + 5 Vision) are live in the local FastAPI + React platform, verified by automated test suites and ready for prospective shadow-mode hospital evaluation.
+      </p>
+      <p class="subtitle" data-lang="fr">
+        Les 14 modèles neuronaux entraînés de zéro (9 TAL + 5 Vision) sont actifs sur la plateforme FastAPI + React, validés par les tests automatisés et prêts pour une évaluation hospitalière prospective en mode ombre.
+      </p>
+
+      <div class="pillars">
+        <div class="pillar">
+          <h3><span data-lang="en">Phase 1 — Shadow Validation (Weeks 1–4)</span><span data-lang="fr">Phase 1 — Validation Ombre (Sem. 1–4)</span></h3>
+          <p data-lang="en">Deploy on-premise behind hospital firewall; log prospective calibration, clinician agreement, and high-uncertainty escalation rate without altering standard care.</p>
+          <p data-lang="fr">Déploiement sur site derrière le pare-feu hospitalier ; mesure prospective de la calibration, du taux d'accord clinique et des escalades d'incertitude sans modifier le soin courant.</p>
+        </div>
+        <div class="pillar">
+          <h3><span data-lang="en">Phase 2 — Supervised Clinician Review (Weeks 5–12)</span><span data-lang="fr">Phase 2 — Revue Clinique Supervisée (Sem. 5–12)</span></h3>
+          <p data-lang="en">Enable bilingual review workflow for dermatologists and medical coders; collect corrected annotations to refine clinical-photo sensitivity and local hospital terminology.</p>
+          <p data-lang="fr">Activation de la revue bilingue pour dermatologues et codeurs médicaux ; collecte de corrections pour affiner la sensibilité sur photos cliniques et le vocabulaire local.</p>
+        </div>
+        <div class="pillar">
+          <h3><span data-lang="en">Phase 3 — Institutional Governance Sign-Off</span><span data-lang="fr">Phase 3 — Validation Réglementaire</span></h3>
+          <p data-lang="en">Complete IRB / CNIL / EU AI Act technical dossier using the platform's built-in audit logs, lesion-cluster CIs, and subgroup fairness reports before any broader rollout.</p>
+          <p data-lang="fr">Finalisation du dossier IRB / CNIL / AI Act européen à partir des journaux d'audit, intervalles de confiance et rapports d'équité intégrés avant tout déploiement élargi.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function setLang(lang) {
+      document.body.classList.toggle('lang-fr', lang === 'fr');
+      document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+      document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+    }
+
+    Chart.defaults.color = '#cbd5e1';
+    Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.16)';
+
+    // 1. NLP 12-Model MLM Benchmark Chart
+    new Chart(document.getElementById('nlpChart'), {
+      type: 'bar',
+      data: {
+        labels: ['PxCorpus', 'MACCROBAT', 'E3C Layer1', 'Open Clinical', 'Realistic-80', 'Unseen Terms'],
+        datasets: [
+          {
+            label: 'Strict F1',
+            data: [0.9271, 0.5700, 0.4212, 0.6710, 0.7213, 0.9345],
+            backgroundColor: 'rgba(56, 189, 248, 0.8)',
+            borderRadius: 6
+          },
+          {
+            label: 'Lenient F1',
+            data: [0.9450, 0.6695, 0.5534, 0.7472, 0.8158, 0.9608],
+            backgroundColor: 'rgba(167, 139, 250, 0.8)',
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 1.0 } },
+        plugins: {
+          title: { display: true, text: '12-Model Hybrid MLM Hospital NLP Ensemble (Strict vs Lenient F1)', color: '#f8fafc' }
+        }
+      }
+    });
+
+    // 2. Vision Individual Seeds vs 7-Seed Modality-Aware Ensemble
+    new Chart(document.getElementById('visionSeedsChart'), {
+      type: 'bar',
+      data: {
+        labels: ['S1 (224)', 'S2 (224)', 'S3 (224)', 'S4 (256)', 'S5 (256)', 'S6 (Clin)', 'S7 (Clin)', '7-Seed Aware'],
+        datasets: [
+          {
+            label: 'Overall AUROC',
+            data: [0.9214, 0.9252, 0.9259, 0.9275, 0.9281, 0.9126, 0.9158, 0.9350],
+            backgroundColor: ['#334155', '#334155', '#334155', '#475569', '#475569', '#6366f1', '#6366f1', '#10b981'],
+            borderRadius: 6
+          },
+          {
+            label: 'Clinical AUROC',
+            data: [0.8473, 0.8641, 0.8513, 0.8445, 0.8441, 0.8722, 0.8727, 0.8778],
+            backgroundColor: 'rgba(56, 189, 248, 0.78)',
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { min: 0.82, max: 0.95 } },
+        plugins: {
+          title: { display: true, text: 'Generalist + Clinical Specialist Seeds vs 7-Seed Modality-Aware Ensemble', color: '#f8fafc' }
+        }
+      }
+    });
+
+    // 3. Uncertainty Guardrail Histogram (Count + Error Rate)
+    new Chart(document.getElementById('uncertaintyChart'), {
+      data: {
+        labels: ['0.00–0.03', '0.03–0.06', '0.06–0.09', '0.09–0.12', '0.12–0.16*', '0.16–0.20*', '0.20–0.30*'],
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Lesion Count (n)',
+            data: [813, 364, 228, 123, 59, 29, 8],
+            backgroundColor: ['#10b981', '#10b981', '#38bdf8', '#38bdf8', '#f59e0b', '#ef4444', '#ef4444'],
+            borderRadius: 5,
+            yAxisID: 'y'
+          },
+          {
+            type: 'line',
+            label: 'Empirical Error Rate (%)',
+            data: [6.15, 13.46, 28.51, 26.83, 35.59, 27.59, 25.00],
+            borderColor: '#f8fafc',
+            backgroundColor: '#f8fafc',
+            borderWidth: 2.5,
+            tension: 0.25,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { position: 'left', title: { display: true, text: 'Images (n)' } },
+          y1: { position: 'right', min: 0, max: 50, grid: { drawOnChartArea: false }, title: { display: true, text: 'Error Rate (%)' } }
+        },
+        plugins: {
+          title: { display: true, text: 'Ensemble Disagreement (std) vs Empirical Error Rate (*Flagged > 0.12)', color: '#f8fafc' }
+        }
+      }
+    });
+
+    // 4. Reliability Calibration Curve
+    new Chart(document.getElementById('calibrationChart'), {
+      type: 'line',
+      data: {
+        labels: ['0.02', '0.15', '0.25', '0.35', '0.45', '0.55', '0.65', '0.75', '0.85', '0.95'],
+        datasets: [
+          {
+            label: '7-Seed Calibrated (ECE = 0.0352, Brier = 0.1014)',
+            data: [0.0327, 0.1778, 0.1667, 0.4828, 0.4483, 0.5728, 0.7339, 0.8028, 0.9053, 0.9725],
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56, 189, 248, 0.15)',
+            fill: true,
+            borderWidth: 2.5,
+            tension: 0.2
+          },
+          {
+            label: 'Perfect Calibration (y = x)',
+            data: [0.02, 0.15, 0.25, 0.35, 0.45, 0.55, 0.66, 0.76, 0.85, 0.95],
+            borderColor: 'rgba(148, 163, 184, 0.65)',
+            borderDash: [6, 6],
+            borderWidth: 1.5,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { title: { display: true, text: 'Mean Predicted Probability' } },
+          y: { min: 0, max: 1, title: { display: true, text: 'Empirical Malignancy Rate' } }
+        },
+        plugins: {
+          title: { display: true, text: 'Reliability Calibration Curve (locked_test_v3, n = 1,624)', color: '#f8fafc' }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

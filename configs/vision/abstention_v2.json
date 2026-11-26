@@ -1,0 +1,7 @@
+{
+  "rule": "abstain_if_max_prob_below_threshold",
+  "min_confidence": 0.65,
+  "selected_on": "val",
+  "val_coverage": 0.8681,
+  "val_selective_error": 0.102
+}

@@ -1,0 +1,156 @@
+=== PHI PYTEST SUITE ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /Users/guest777/Desktop/medical/.venv-vision/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/guest777/Desktop/medical
+configfile: pyproject.toml
+plugins: platformdirs-4.14.5, cov-7.1.0, anyio-4.16.0
+collecting ... collected 19 items
+
+tests/test_phase3_phi_metrics_and_age.py::test_age_redaction_hipaa_over_89_and_zero_duration_false_positives PASSED [  5%]
+tests/test_phase3_phi_metrics_and_age.py::test_eval_redaction_human_computes_true_span_level_precision_and_catches_intra_sentence_fp PASSED [ 10%]
+tests/test_step7_w10_p10_redaction.py::test_w10_30_en_fr_phi_redaction_and_clinician_token PASSED [ 15%]
+tests/test_step7_w10_p10_redaction.py::test_w10_no_phi_survives_in_reports_exports_or_api PASSED [ 21%]
+tests/test_security_privacy_audit.py::test_argon2_password_and_hmac_token_rbac PASSED [ 26%]
+tests/test_security_privacy_audit.py::test_bilingual_pii_deidentification_and_interval_preserving_date_shift PASSED [ 31%]
+tests/test_security_privacy_audit.py::test_isolated_pseudonym_vault_authorization PASSED [ 36%]
+tests/test_security_privacy_audit.py::test_untrusted_document_and_prompt_injection_defenses PASSED [ 42%]
+tests/test_security_privacy_audit.py::test_tamper_evident_audit_log_and_phi_scrubbing PASSED [ 47%]
+tests/test_security_privacy_audit.py::test_login_rate_limiting_and_token_revocation PASSED [ 52%]
+tests/test_security_privacy_audit.py::test_no_unsafe_deserialization_calls_in_platform PASSED [ 57%]
+tests/test_p19_step4_y6_text_generalization.py::test_p19_step4_eponyms_protected_and_relatives_and_ages_detected PASSED [ 63%]
+tests/test_p19_step4_y6_text_generalization.py::test_p19_step4_20_en_and_20_fr_y6_generalization_sentences PASSED [ 68%]
+tests/test_step1_p10_q1_to_q7.py::test_p10_deidentify_names_and_redact_in_reports PASSED [ 73%]
+tests/test_step1_p10_q1_to_q7.py::test_q1_to_q7_and_r2_a2_probes_on_hybrid_v2 PASSED [ 78%]
+tests/test_iaa_and_realistic_relations.py::test_import_parses_relations_and_normalized_timex PASSED [ 84%]
+tests/test_iaa_and_realistic_relations.py::test_import_rejects_unknown_relation_and_dangling_region PASSED [ 89%]
+tests/test_iaa_and_realistic_relations.py::test_double_annotation_iaa_metrics PASSED [ 94%]
+tests/test_iaa_and_realistic_relations.py::test_human_phi_redaction_runner_on_template PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv-vision/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_step7_w10_p10_redaction.py::test_w10_no_phi_survives_in_reports_exports_or_api
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/torch/nn/modules/transformer.py:286: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+    warnings.warn(f"enable_nested_tensor is True, but self.use_nested_tensor is False because {why_not_sparsity_fast_path}")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 19 passed, 2 warnings in 21.75s ========================
+PYTEST_EXIT=0
+=== TEMPLATE SMOKE RUNNER ===
+{
+  "evaluated_at_utc": "2026-11-24T19:33:09Z",
+  "dataset": "docs/PHI_REDACTION_OWNER_TEMPLATE.jsonl",
+  "dataset_sha256": "1b4f2089975daed1356728ba40ec101db2478ac200295d3631285e10cef97d8f",
+  "owner_written": false,
+  "metric_methodology": "span_level_exact_and_overlap_separated_from_sentence_fp_rate",
+  "n_sentences": 4,
+  "n_non_phi_sentences": 2,
+  "n_phi_items": 6,
+  "tp": 6,
+  "fn": 0,
+  "span_fp": 0,
+  "fp_on_non_phi_sentences": 0,
+  "non_phi_sentence_fp_rate": 0.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "exact_span_precision": 0.8333,
+  "exact_span_recall": 0.8333,
+  "exact_span_f1": 0.8333,
+  "strict_full_token_recall": 1.0,
+  "by_type": {
+    "DOB": {
+      "tp": 2,
+      "fn": 0,
+      "fp": 0,
+      "exact_tp": 2,
+      "strict_tp": 2,
+      "total": 2,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "strict_full_token_recall": 1.0
+    },
+    "IPP": {
+      "tp": 1,
+      "fn": 0,
+      "fp": 0,
+      "exact_tp": 1,
+      "strict_tp": 1,
+      "total": 1,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "strict_full_token_recall": 1.0
+    },
+    "PERSON": {
+      "tp": 2,
+      "fn": 0,
+      "fp": 0,
+      "exact_tp": 1,
+      "strict_tp": 2,
+      "total": 2,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "strict_full_token_recall": 1.0
+    },
+    "PHONE": {
+      "tp": 1,
+      "fn": 0,
+      "fp": 0,
+      "exact_tp": 1,
+      "strict_tp": 1,
+      "total": 1,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "strict_full_token_recall": 1.0
+    }
+  },
+  "by_language": {
+    "en": {
+      "tp": 3,
+      "fn": 0,
+      "fp": 0,
+      "exact_tp": 3,
+      "exact_fn": 0,
+      "exact_fp": 0,
+      "strict_tp": 3,
+      "strict_fn": 0,
+      "non_phi_sentences": 1,
+      "fp_non_phi_sentences": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "exact_span_precision": 1.0,
+      "exact_span_recall": 1.0,
+      "exact_span_f1": 1.0,
+      "strict_full_token_recall": 1.0,
+      "non_phi_sentence_fp_rate": 0.0
+    },
+    "fr": {
+      "tp": 3,
+      "fn": 0,
+      "fp": 0,
+      "exact_tp": 2,
+      "exact_fn": 1,
+      "exact_fp": 1,
+      "strict_tp": 3,
+      "strict_fn": 0,
+      "non_phi_sentences": 1,
+      "fp_non_phi_sentences": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "exact_span_precision": 0.6667,
+      "exact_span_recall": 0.6667,
+      "exact_span_f1": 0.6667,
+      "strict_full_token_recall": 1.0,
+      "non_phi_sentence_fp_rate": 0.0
+    }
+  }
+}

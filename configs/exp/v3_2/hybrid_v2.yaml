@@ -1,0 +1,14 @@
+approach: hybrid
+dataset_dir: data/processed/v3_1
+seeds: [1, 2, 3, 4, 5]
+hidden_dim: 32
+epochs: 10
+aux_epochs: 6
+lr: 0.018
+use_crf_ensemble: true
+use_rules_layer: true
+use_assertion_bilstm: false
+use_relation_cnn: true
+use_temporal_crf: true
+use_transformer_fusion: false
+review_threshold: 0.60

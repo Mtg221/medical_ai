@@ -1,0 +1,10 @@
+{
+  "source_commit": "5f5e3fe",
+  "seed": 42,
+  "sha256": {
+    "val": "8547d1329b25eeb2722ce9a719a38e89e5a54fef34fbbf6bfa1fc50ccea8da9a",
+    "test_iid": "f4b1380eebab0a19cb394642579434258b28ea8faa22ad0720367fba9c070859",
+    "test_unseen_terms": "f78f675453445c3cdd1e6dc34abfccc592d327c3281fbe7b3f33861e6d0bd290",
+    "test_unseen_templates": "96eac6ae8a790a405ec3d5f4dadf9265eb6d011f321f62b3b780cd726ae754d4"
+  }
+}

@@ -1,0 +1,8 @@
+approach: classical_ml
+eval_split: val
+data_dir: data/processed/v3
+output_root: experiments/runs/v3
+seeds:
+  - 1
+  - 2
+  - 3

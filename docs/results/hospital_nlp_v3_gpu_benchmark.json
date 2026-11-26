@@ -1,0 +1,169 @@
+{
+  "evaluated_at_utc": "2026-11-20T11:29:20Z",
+  "pretrained_weights_used": false,
+  "models": [
+    {
+      "seed": 4,
+      "hidden_dim": 128,
+      "sec": 418.23,
+      "sha256": "218b072ab257ec174799f04abadcc3e5ddab249ae255fd915774b52771f9b03c"
+    },
+    {
+      "seed": 5,
+      "hidden_dim": 128,
+      "sec": 340.84,
+      "sha256": "f21cbc3de4542296767457207319d01c6d44c042ef9f3a6c2565505b62cac750"
+    },
+    {
+      "seed": 6,
+      "hidden_dim": 128,
+      "sec": 407.44,
+      "sha256": "74ce1b1c459ce2e9e5ed835992e4a4e90507cf23ed66dc367cd5bdc1288b2e40"
+    },
+    {
+      "seed": 7,
+      "hidden_dim": 160,
+      "sec": 474.03,
+      "sha256": "b25250df605a09a9aa0a1494a3b45a4bbbaa54386ca112e250c8f488aaca7fb6"
+    },
+    {
+      "seed": 8,
+      "hidden_dim": 160,
+      "sec": 469.65,
+      "sha256": "dc69d1847452070624a36249673f9e4187e4f8d9b00ba4189caa9fcad3846d8a"
+    },
+    {
+      "seed": 9,
+      "hidden_dim": 160,
+      "sec": 460.7,
+      "sha256": "2a86d69b79fd364d32852a0d5d7a90c42efa51e76f5580a584007468e62ead20"
+    }
+  ],
+  "splits": {
+    "synth_val": {
+      "torch_6gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.994898,
+        "lenient_f1": 0.997279,
+        "precision": 0.997272,
+        "recall": 0.992535,
+        "assertion_macro_f1": 0.778313,
+        "doc_acc": 1.0,
+        "en_f1": 0.996383,
+        "fr_f1": 0.993308
+      },
+      "hospital_ensemble_6gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.997624,
+        "lenient_f1": 0.999321,
+        "precision": 0.997963,
+        "recall": 0.997285,
+        "assertion_macro_f1": 0.776405,
+        "doc_acc": 1.0,
+        "en_f1": 0.99803,
+        "fr_f1": 0.997189
+      }
+    },
+    "synth_unseen_terms": {
+      "torch_6gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.916184,
+        "lenient_f1": 0.943101,
+        "precision": 0.941197,
+        "recall": 0.892466,
+        "assertion_macro_f1": 0.767139,
+        "doc_acc": 1.0,
+        "en_f1": 0.911104,
+        "fr_f1": 0.921426
+      },
+      "hospital_ensemble_6gpu": {
+        "num_docs": 160,
+        "strict_f1": 0.93053,
+        "lenient_f1": 0.958452,
+        "precision": 0.943383,
+        "recall": 0.918022,
+        "assertion_macro_f1": 0.771003,
+        "doc_acc": 1.0,
+        "en_f1": 0.92928,
+        "fr_f1": 0.931826
+      }
+    },
+    "open_clinical_test": {
+      "torch_6gpu": {
+        "num_docs": 443,
+        "strict_f1": 0.657318,
+        "lenient_f1": 0.730912,
+        "precision": 0.67687,
+        "recall": 0.638863,
+        "assertion_macro_f1": 0.219477,
+        "doc_acc": 1.0,
+        "en_f1": 0.534658,
+        "fr_f1": 0.818056,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.392593,
+            "lenient_f1": 0.509259
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.546259,
+            "lenient_f1": 0.643205
+          },
+          "pxcorpus": {
+            "strict_f1": 0.944262,
+            "lenient_f1": 0.962477
+          }
+        }
+      },
+      "hospital_ensemble_6gpu": {
+        "num_docs": 443,
+        "strict_f1": 0.664165,
+        "lenient_f1": 0.74531,
+        "precision": 0.668555,
+        "recall": 0.659832,
+        "assertion_macro_f1": 0.21758,
+        "doc_acc": 1.0,
+        "en_f1": 0.548182,
+        "fr_f1": 0.818356,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.411297,
+            "lenient_f1": 0.548985
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.560345,
+            "lenient_f1": 0.664224
+          },
+          "pxcorpus": {
+            "strict_f1": 0.943013,
+            "lenient_f1": 0.962613
+          }
+        }
+      }
+    },
+    "realistic_llm_80": {
+      "torch_6gpu": {
+        "num_docs": 80,
+        "strict_f1": 0.685842,
+        "lenient_f1": 0.782966,
+        "precision": 0.736167,
+        "recall": 0.641958,
+        "assertion_macro_f1": 0.621654,
+        "doc_acc": 0.7625,
+        "en_f1": 0.67666,
+        "fr_f1": 0.695925
+      },
+      "hospital_ensemble_6gpu": {
+        "num_docs": 80,
+        "strict_f1": 0.710602,
+        "lenient_f1": 0.820917,
+        "precision": 0.728341,
+        "recall": 0.693706,
+        "assertion_macro_f1": 0.631606,
+        "doc_acc": 0.7625,
+        "en_f1": 0.703476,
+        "fr_f1": 0.718491
+      }
+    }
+  },
+  "elapsed_seconds": 2761.29
+}

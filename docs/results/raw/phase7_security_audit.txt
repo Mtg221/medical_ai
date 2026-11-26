@@ -1,0 +1,56 @@
+=== SECURITY PYTEST SUITE ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /Users/guest777/Desktop/medical/.venv-vision/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/guest777/Desktop/medical
+configfile: pyproject.toml
+plugins: platformdirs-4.14.5, cov-7.1.0, anyio-4.16.0
+collecting ... collected 19 items
+
+tests/test_security_privacy_audit.py::test_argon2_password_and_hmac_token_rbac PASSED [  5%]
+tests/test_security_privacy_audit.py::test_bilingual_pii_deidentification_and_interval_preserving_date_shift PASSED [ 10%]
+tests/test_security_privacy_audit.py::test_isolated_pseudonym_vault_authorization PASSED [ 15%]
+tests/test_security_privacy_audit.py::test_untrusted_document_and_prompt_injection_defenses PASSED [ 21%]
+tests/test_security_privacy_audit.py::test_tamper_evident_audit_log_and_phi_scrubbing PASSED [ 26%]
+tests/test_security_privacy_audit.py::test_login_rate_limiting_and_token_revocation PASSED [ 31%]
+tests/test_security_privacy_audit.py::test_no_unsafe_deserialization_calls_in_platform PASSED [ 36%]
+tests/test_phase1_p1_to_p9.py::test_p1_cli_uses_saved_model_and_matches_api_and_hybrid PASSED [ 42%]
+tests/test_phase1_p1_to_p9.py::test_p2_users_cli_and_login_after_existing_db PASSED [ 47%]
+tests/test_phase1_p1_to_p9.py::test_p3_scan_without_tesseract_fails_loudly_and_empty_scan_fails PASSED [ 52%]
+tests/test_phase1_p1_to_p9.py::test_p4_file_type_allowlist_rejects_exe_with_415 PASSED [ 57%]
+tests/test_phase1_p1_to_p9.py::test_p5_size_limits_413_and_300k_char_chunked_extraction PASSED [ 63%]
+tests/test_phase1_p1_to_p9.py::test_p6_document_date_extracted_from_text_and_anchors_relative_timex PASSED [ 68%]
+tests/test_phase1_p1_to_p9.py::test_p7_duplicate_upload_returns_existing_document_with_duplicate_of PASSED [ 73%]
+tests/test_phase1_p1_to_p9.py::test_p8_all_api_v1_routes_require_bearer_token_401 PASSED [ 78%]
+tests/test_phase1_p1_to_p9.py::test_p9_job_response_has_unified_error_filename_stage_progress PASSED [ 84%]
+tests/test_api_and_cli.py::test_full_api_lifecycle_rbac_and_institution_isolation PASSED [ 89%]
+tests/test_api_and_cli.py::test_frontend_assets_and_security_headers PASSED [ 94%]
+tests/test_api_and_cli.py::test_cli_commands_execution PASSED            [100%]
+
+=============================== warnings summary ===============================
+.venv-vision/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_phase1_p1_to_p9.py::test_p3_scan_without_tesseract_fails_loudly_and_empty_scan_fails
+tests/test_phase1_p1_to_p9.py::test_p5_size_limits_413_and_300k_char_chunked_extraction
+tests/test_phase1_p1_to_p9.py::test_p6_document_date_extracted_from_text_and_anchors_relative_timex
+tests/test_phase1_p1_to_p9.py::test_p7_duplicate_upload_returns_existing_document_with_duplicate_of
+tests/test_phase1_p1_to_p9.py::test_p9_job_response_has_unified_error_filename_stage_progress
+tests/test_api_and_cli.py::test_full_api_lifecycle_rbac_and_institution_isolation
+  /Users/guest777/Desktop/medical/.venv-vision/lib/python3.12/site-packages/torch/nn/modules/transformer.py:286: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+    warnings.warn(f"enable_nested_tensor is True, but self.use_nested_tensor is False because {why_not_sparsity_fast_path}")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 19 passed, 7 warnings in 96.30s (0:01:36) ===================
+PYTEST_EXIT=0
+=== CHECK SQLITE RATE LIMITER & HEADERS IN API ===
+medresearch_platform/interfaces/routers/system.py:24:from medresearch_platform.security.auth import SQLiteLoginRateLimiter, issue_access_token, verify_password
+medresearch_platform/interfaces/routers/system.py:30:    login_limiter = SQLiteLoginRateLimiter(service.db, max_attempts=10, window_seconds=300)
+Binary file medresearch_platform/interfaces/routers/__pycache__/system.cpython-312.pyc matches
+Binary file medresearch_platform/interfaces/__pycache__/api.cpython-312.pyc matches
+Binary file medresearch_platform/interfaces/__pycache__/api.cpython-313.pyc matches
+medresearch_platform/interfaces/api.py:90:                "Content-Security-Policy": (
+medresearch_platform/interfaces/api.py:94:                "X-Content-Type-Options": "nosniff",
+medresearch_platform/interfaces/api.py:114:                "Content-Security-Policy": (
+medresearch_platform/interfaces/api.py:118:                "X-Content-Type-Options": "nosniff",

@@ -1,0 +1,40 @@
+{
+  "evaluated_at_utc": "2026-11-19T19:03:14Z",
+  "note": "post-hoc (test seen) — 6-Model Diverse Hospital Ensemble (3x Kaggle GPU 128d + 3x Local 96d Partial-Label Marginal CRF with 4/6 supermajority consensus + Upgraded CRF v2)",
+  "pretrained_weights_used": false,
+  "ensemble_architecture": {
+    "models_96d": 3,
+    "models_128d_kaggle_cuda": 3,
+    "voting_rule": "4/6 supermajority (or mean_conf >= 0.94) + CRF v2 merge"
+  },
+  "splits": {
+    "realistic_llm_80": {
+      "num_docs": 80,
+      "strict_f1": 0.7224,
+      "lenient_f1": 0.8225,
+      "precision": 0.7561,
+      "recall": 0.6916
+    },
+    "open_clinical_test": {
+      "num_docs": 443,
+      "strict_f1": 0.6561,
+      "lenient_f1": 0.7387,
+      "precision": 0.6812,
+      "recall": 0.6328,
+      "by_corpus": {
+        "e3c_layer1": {
+          "strict_f1": 0.416206,
+          "lenient_f1": 0.556169
+        },
+        "maccrobat2020": {
+          "strict_f1": 0.540395,
+          "lenient_f1": 0.644973
+        },
+        "pxcorpus": {
+          "strict_f1": 0.939715,
+          "lenient_f1": 0.963829
+        }
+      }
+    }
+  }
+}

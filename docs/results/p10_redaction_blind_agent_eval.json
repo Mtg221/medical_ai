@@ -1,0 +1,450 @@
+{
+  "evaluated_at_utc": "2026-11-18T23:03:37Z",
+  "dataset": "docs/results/p10_redaction_blind_agent_dataset.jsonl",
+  "authored_by": "blind_agent_before_reading_redaction_code",
+  "owner_written": false,
+  "n_sentences": 60,
+  "n_phi_sentences": 50,
+  "n_non_phi_sentences": 10,
+  "n_phi_items": 112,
+  "tp": 93,
+  "fn": 19,
+  "fp_on_non_phi_sentences": 0,
+  "recall": 0.8304,
+  "strict_full_token_tp": 75,
+  "strict_full_token_fn": 37,
+  "strict_full_token_recall": 0.6696,
+  "partial_leaks_count": 18,
+  "precision": 1.0,
+  "by_type": {
+    "ADDRESS": {
+      "tp": 11,
+      "fn": 0,
+      "total": 11,
+      "recall": 1.0
+    },
+    "CLINICIAN": {
+      "tp": 15,
+      "fn": 1,
+      "total": 16,
+      "recall": 0.9375
+    },
+    "DOB": {
+      "tp": 6,
+      "fn": 6,
+      "total": 12,
+      "recall": 0.5
+    },
+    "EMAIL": {
+      "tp": 8,
+      "fn": 0,
+      "total": 8,
+      "recall": 1.0
+    },
+    "ID": {
+      "tp": 2,
+      "fn": 7,
+      "total": 9,
+      "recall": 0.2222
+    },
+    "IPP": {
+      "tp": 2,
+      "fn": 0,
+      "total": 2,
+      "recall": 1.0
+    },
+    "MRN": {
+      "tp": 2,
+      "fn": 0,
+      "total": 2,
+      "recall": 1.0
+    },
+    "NIR": {
+      "tp": 2,
+      "fn": 0,
+      "total": 2,
+      "recall": 1.0
+    },
+    "PERSON": {
+      "tp": 29,
+      "fn": 1,
+      "total": 30,
+      "recall": 0.9667
+    },
+    "PHONE": {
+      "tp": 15,
+      "fn": 4,
+      "total": 19,
+      "recall": 0.7895
+    },
+    "SSN": {
+      "tp": 1,
+      "fn": 0,
+      "total": 1,
+      "recall": 1.0
+    }
+  },
+  "by_language": {
+    "en": {
+      "tp": 42,
+      "fn": 12,
+      "fp": 0,
+      "recall": 0.7778
+    },
+    "fr": {
+      "tp": 51,
+      "fn": 7,
+      "fp": 0,
+      "recall": 0.8793
+    }
+  },
+  "missed": [
+    {
+      "id": "blind_02",
+      "language": "en",
+      "type": "PHONE",
+      "missed": "(415) 555-0194",
+      "text": "Please reach Mrs. Eleanor O'Connor at (415) 555-0194 or eleanor.oconnor@example.org regarding her biopsy results.",
+      "scrubbed": "Please reach [PATIENT_NAME_REDACTED] O'Connor at (415) 555-0194 or [EMAIL_REDACTED] regarding her biopsy results."
+    },
+    {
+      "id": "blind_04",
+      "language": "en",
+      "type": "PHONE",
+      "missed": "617-555-0148",
+      "text": "Follow-up scheduled with Dr. Marcus Vance on clinic line 617-555-0148.",
+      "scrubbed": "Follow-up scheduled with [CLINICIAN_NAME_REDACTED] on clinic line 617-555-0148."
+    },
+    {
+      "id": "blind_06",
+      "language": "en",
+      "type": "ID",
+      "missed": "P-551904",
+      "text": "Billing verified SSN 000-45-6789 and Health ID #P-551904 for outpatient dialysis authorization.",
+      "scrubbed": "Billing verified SSN [SSN_REDACTED] and Health ID #P-551904 for outpatient dialysis authorization."
+    },
+    {
+      "id": "blind_07",
+      "language": "en",
+      "type": "DOB",
+      "missed": "March 3, 1952",
+      "text": "Born March 3, 1952, Patricia Morales-Gomez has a 12-year history of poorly controlled type 2 diabetes.",
+      "scrubbed": "Born March 3, 1952, [PATIENT_NAME_REDACTED]Gomez has a 12-year history of poorly controlled type 2 diabetes."
+    },
+    {
+      "id": "blind_14",
+      "language": "en",
+      "type": "PHONE",
+      "missed": "312 555 0189",
+      "text": "Spoke with mother Brenda Holloway (mobile 312 555 0189) who consented to lumbar puncture.",
+      "scrubbed": "Spoke with mother [PATIENT_NAME_REDACTED] (mobile 312 555 0189) who consented to lumbar puncture."
+    },
+    {
+      "id": "blind_15",
+      "language": "en",
+      "type": "ID",
+      "missed": "2025-88412",
+      "text": "Case #2025-88412 assigned to oncology navigator Priya Subramanian (priya.sub@hospital-sim.org).",
+      "scrubbed": "Case #2025-88412 assigned to oncology navigator [PATIENT_NAME_REDACTED] ([EMAIL_REDACTED])."
+    },
+    {
+      "id": "blind_16",
+      "language": "en",
+      "type": "DOB",
+      "missed": "12/02/1963",
+      "text": "Mr. Ibrahim Dieng, born 12/02/1963, reports worsening orthopnea over the past two weeks.",
+      "scrubbed": "[PATIENT_NAME_REDACTED], born 12/02/1963, reports worsening orthopnea over the past two weeks."
+    },
+    {
+      "id": "blind_17",
+      "language": "en",
+      "type": "CLINICIAN",
+      "missed": "Dr. R. E. Lindqvist",
+      "text": "Faxed pulmonary function test to Dr. R. E. Lindqvist at fax (206) 555-0133.",
+      "scrubbed": "Faxed pulmonary function test to Dr. R. E. Lindqvist at fax (206) 555-0133."
+    },
+    {
+      "id": "blind_17",
+      "language": "en",
+      "type": "PHONE",
+      "missed": "(206) 555-0133",
+      "text": "Faxed pulmonary function test to Dr. R. E. Lindqvist at fax (206) 555-0133.",
+      "scrubbed": "Faxed pulmonary function test to Dr. R. E. Lindqvist at fax (206) 555-0133."
+    },
+    {
+      "id": "blind_18",
+      "language": "en",
+      "type": "ID",
+      "missed": "MED-77401928",
+      "text": "Insurance policy #MED-77401928 verified for patient Hannah Lindstrom prior to MRI.",
+      "scrubbed": "Insurance policy #MED-77401928 verified for patient [PATIENT_NAME_REDACTED] prior to MRI."
+    },
+    {
+      "id": "blind_21",
+      "language": "en",
+      "type": "ID",
+      "missed": "LAB-6620194",
+      "text": "Lab specimen barcode LAB-6620194 matched to patient Chidi Okonkwo (DOB: 29-Nov-1974).",
+      "scrubbed": "Lab specimen barcode LAB-6620194 matched to patient [PATIENT_NAME_REDACTED] (DOB: 29-Nov-1974)."
+    },
+    {
+      "id": "blind_21",
+      "language": "en",
+      "type": "DOB",
+      "missed": "29-Nov-1974",
+      "text": "Lab specimen barcode LAB-6620194 matched to patient Chidi Okonkwo (DOB: 29-Nov-1974).",
+      "scrubbed": "Lab specimen barcode LAB-6620194 matched to patient [PATIENT_NAME_REDACTED] (DOB: 29-Nov-1974)."
+    },
+    {
+      "id": "blind_32",
+      "language": "fr",
+      "type": "PERSON",
+      "missed": "Moussa K. Touré",
+      "text": "Moussa K. Touré, né le 7 août 1984, habite au 45 avenue Cheikh Anta Diop, Fann, Dakar.",
+      "scrubbed": "Moussa K. Touré, né le 7 août 1984, habite au [ADDRESS_REDACTED], Fann, Dakar."
+    },
+    {
+      "id": "blind_32",
+      "language": "fr",
+      "type": "DOB",
+      "missed": "7 août 1984",
+      "text": "Moussa K. Touré, né le 7 août 1984, habite au 45 avenue Cheikh Anta Diop, Fann, Dakar.",
+      "scrubbed": "Moussa K. Touré, né le 7 août 1984, habite au [ADDRESS_REDACTED], Fann, Dakar."
+    },
+    {
+      "id": "blind_40",
+      "language": "fr",
+      "type": "ID",
+      "missed": "1752198800412",
+      "text": "Identité vérifiée sur CNI 1752198800412 au nom de Mariama Gueye.",
+      "scrubbed": "Identité vérifiée sur CNI 1752198800412 au nom de [PATIENT_NAME_REDACTED]."
+    },
+    {
+      "id": "blind_42",
+      "language": "fr",
+      "type": "DOB",
+      "missed": "14 janvier 1995",
+      "text": "Bilan biologique de Mlle Camille Roche (date de naissance : 14 janvier 1995) revenu normal.",
+      "scrubbed": "Bilan biologique de [PATIENT_NAME_REDACTED] (date de naissance : 14 janvier 1995) revenu normal."
+    },
+    {
+      "id": "blind_44",
+      "language": "fr",
+      "type": "ID",
+      "missed": "77019482",
+      "text": "Dossier médical IEP 77019482 ouvert pour Yasmine Haddad à son arrivée aux urgences.",
+      "scrubbed": "Dossier médical IEP 77019482 ouvert pour [PATIENT_NAME_REDACTED] à son arrivée aux urgences."
+    },
+    {
+      "id": "blind_49",
+      "language": "fr",
+      "type": "ID",
+      "missed": "MUT-4481029",
+      "text": "Mutuelle n° MUT-4481029 enregistrée pour Agnès Fontaine, née le 21 mars 1972.",
+      "scrubbed": "Mutuelle n° MUT-4481029 enregistrée pour [PATIENT_NAME_REDACTED], née le 21 mars 1972."
+    },
+    {
+      "id": "blind_49",
+      "language": "fr",
+      "type": "DOB",
+      "missed": "21 mars 1972",
+      "text": "Mutuelle n° MUT-4481029 enregistrée pour Agnès Fontaine, née le 21 mars 1972.",
+      "scrubbed": "Mutuelle n° MUT-4481029 enregistrée pour [PATIENT_NAME_REDACTED], née le 21 mars 1972."
+    }
+  ],
+  "partial_leaks": [
+    {
+      "id": "blind_02",
+      "language": "en",
+      "type": "PERSON",
+      "target": "Eleanor O'Connor",
+      "leaked_tokens": [
+        "Connor"
+      ],
+      "scrubbed": "Please reach [PATIENT_NAME_REDACTED] O'Connor at (415) 555-0194 or [EMAIL_REDACTED] regarding her biopsy results."
+    },
+    {
+      "id": "blind_03",
+      "language": "en",
+      "type": "ADDRESS",
+      "target": "742 Evergreen Terrace, Apt 4B, Springfield, IL 62704",
+      "leaked_tokens": [
+        "742",
+        "Springfield",
+        "62704"
+      ],
+      "scrubbed": "Home address updated to 742 [PATIENT_NAME_REDACTED], Apt 4B, Springfield, IL 62704 prior to discharge."
+    },
+    {
+      "id": "blind_07",
+      "language": "en",
+      "type": "PERSON",
+      "target": "Patricia Morales-Gomez",
+      "leaked_tokens": [
+        "Gomez"
+      ],
+      "scrubbed": "Born March 3, 1952, [PATIENT_NAME_REDACTED]Gomez has a 12-year history of poorly controlled type 2 diabetes."
+    },
+    {
+      "id": "blind_09",
+      "language": "en",
+      "type": "ADDRESS",
+      "target": "1205 Oakwood Blvd, Suite 300, Boston, MA 02116",
+      "leaked_tokens": [
+        "300",
+        "Boston",
+        "02116"
+      ],
+      "scrubbed": "Discharge paperwork mailed to [ADDRESS_REDACTED], Suite 300, Boston, MA 02116."
+    },
+    {
+      "id": "blind_10",
+      "language": "en",
+      "type": "PERSON",
+      "target": "Carlos Mendez-Ruiz",
+      "leaked_tokens": [
+        "Ruiz"
+      ],
+      "scrubbed": "Next of kin [PATIENT_NAME_REDACTED]Ruiz confirmed allergy to penicillin; callback number [PHONE_REDACTED]."
+    },
+    {
+      "id": "blind_12",
+      "language": "en",
+      "type": "CLINICIAN",
+      "target": "Dr. Sarah Al-Mansoor",
+      "leaked_tokens": [
+        "Mansoor"
+      ],
+      "scrubbed": "Reviewed ECG with attending [CLINICIAN_NAME_REDACTED]Mansoor before transferring [PATIENT_NAME_REDACTED] to CCU."
+    },
+    {
+      "id": "blind_13",
+      "language": "en",
+      "type": "ADDRESS",
+      "target": "88 Maple Crescent, Toronto, ON M4W 1A8",
+      "leaked_tokens": [
+        "Toronto",
+        "M4W",
+        "1A8"
+      ],
+      "scrubbed": "Date of birth: [DOB_REDACTED]; patient resides at 88 [PATIENT_NAME_REDACTED], Toronto, ON M4W 1A8."
+    },
+    {
+      "id": "blind_19",
+      "language": "en",
+      "type": "ADDRESS",
+      "target": "19 Cedar Lane, Apt 2, Portland, OR 97205",
+      "leaked_tokens": [
+        "Portland",
+        "97205"
+      ],
+      "scrubbed": "Visiting nurse checked on [PATIENT_NAME_REDACTED] at [ADDRESS_REDACTED], Apt 2, Portland, OR 97205."
+    },
+    {
+      "id": "blind_22",
+      "language": "en",
+      "type": "CLINICIAN",
+      "target": "Dr. Owen McAllister",
+      "leaked_tokens": [
+        "McAllister"
+      ],
+      "scrubbed": "Dictated by [PATIENT_NAME_REDACTED], NP; copy sent to primary care physician [CLINICIAN_NAME_REDACTED] McAllister."
+    },
+    {
+      "id": "blind_23",
+      "language": "en",
+      "type": "EMAIL",
+      "target": "old.user99@example.com",
+      "leaked_tokens": [
+        "old"
+      ],
+      "scrubbed": "Patient phone number changed to [PHONE_REDACTED]; old email [EMAIL_REDACTED] bounced."
+    },
+    {
+      "id": "blind_24",
+      "language": "en",
+      "type": "ADDRESS",
+      "target": "514 Pine Street, Seattle, WA 98101",
+      "leaked_tokens": [
+        "Seattle",
+        "98101"
+      ],
+      "scrubbed": "Emergency room intake for [PATIENT_NAME_REDACTED], DOB [DOB_REDACTED], living at [ADDRESS_REDACTED], Seattle, WA 98101."
+    },
+    {
+      "id": "blind_27",
+      "language": "fr",
+      "type": "PERSON",
+      "target": "Jean-Luc Moreau",
+      "leaked_tokens": [
+        "Luc",
+        "Moreau"
+      ],
+      "scrubbed": "Joindre [PATIENT_NAME_REDACTED]-Luc Moreau au [PHONE_REDACTED] ou par courriel à [EMAIL_REDACTED]."
+    },
+    {
+      "id": "blind_31",
+      "language": "fr",
+      "type": "CLINICIAN",
+      "target": "Dr Claire-Marie Lefèvre",
+      "leaked_tokens": [
+        "Marie",
+        "Lefèvre"
+      ],
+      "scrubbed": "Compte rendu validé par le [CLINICIAN_NAME_REDACTED]Marie Lefèvre ([EMAIL_REDACTED])."
+    },
+    {
+      "id": "blind_32",
+      "language": "fr",
+      "type": "ADDRESS",
+      "target": "45 avenue Cheikh Anta Diop, Fann, Dakar",
+      "leaked_tokens": [
+        "Fann",
+        "Dakar"
+      ],
+      "scrubbed": "Moussa K. Touré, né le 7 août 1984, habite au [ADDRESS_REDACTED], Fann, Dakar."
+    },
+    {
+      "id": "blind_35",
+      "language": "fr",
+      "type": "ADDRESS",
+      "target": "Lot 14 Cité Keur Gorgui, Dakar",
+      "leaked_tokens": [
+        "Dakar"
+      ],
+      "scrubbed": "Ordonnance renouvelée pour [PATIENT_NAME_REDACTED] (tél[PHONE_REDACTED]), résidant au Lot 14 [PATIENT_NAME_REDACTED], Dakar."
+    },
+    {
+      "id": "blind_37",
+      "language": "fr",
+      "type": "ADDRESS",
+      "target": "3 impasse des Lilas, Bât. C, 31000 Toulouse",
+      "leaked_tokens": [
+        "31000",
+        "Toulouse"
+      ],
+      "scrubbed": "Adresse postale : [ADDRESS_REDACTED], Bât. C, 31000 Toulouse ; portable [PHONE_REDACTED]."
+    },
+    {
+      "id": "blind_38",
+      "language": "fr",
+      "type": "PERSON",
+      "target": "Hélène Mercier-Dupont",
+      "leaked_tokens": [
+        "Dupont"
+      ],
+      "scrubbed": "[PATIENT_NAME_REDACTED]Dupont, née le [DOB_REDACTED], a été hospitalisée sous IPP: [MEDICAL_RECORD_NUMBER_REDACTED]."
+    },
+    {
+      "id": "blind_45",
+      "language": "fr",
+      "type": "PERSON",
+      "target": "Chantal Petit-Jean",
+      "leaked_tokens": [
+        "Jean"
+      ],
+      "scrubbed": "[CLINICIAN_NAME_REDACTED] a revu l'IRM cérébrale avec [PATIENT_NAME_REDACTED]-Jean."
+    }
+  ],
+  "false_positives": []
+}

@@ -1,0 +1,19 @@
+approach: transformer
+eval_split: val
+data_dir: data/processed/v3_1
+output_root: experiments/runs/v3_1
+max_train_docs: null
+num_layers: 2
+num_heads: 4
+hidden_dim: 64
+bpe_merges: 256
+epochs: 18
+lr: 0.01
+patience: 5
+dropout: 0.1
+seeds:
+- 1
+- 2
+- 3
+- 4
+- 5

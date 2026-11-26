@@ -1,0 +1,1084 @@
+{
+  "dataset": "SYNTH-MED-V3.1",
+  "split": "test_iid",
+  "pages_per_language": {
+    "en": 60,
+    "fr": 60
+  },
+  "total_pages": 120,
+  "runtime_s": 549.87,
+  "overall": {
+    "pages": 120,
+    "mean_cer": 0.0862,
+    "mean_wer": 0.2112,
+    "mean_word_boxes": 76.0,
+    "classical_crf_clean_f1": 0.9978,
+    "classical_crf_ocr_f1": 0.9128,
+    "classical_crf_f1_drop": -0.085,
+    "hybrid_clean_f1": 0.9937,
+    "hybrid_ocr_f1": 0.8799,
+    "hybrid_f1_drop": -0.1139
+  },
+  "by_language": {
+    "en": {
+      "pages": 60,
+      "mean_cer": 0.0824,
+      "mean_wer": 0.1969,
+      "mean_word_boxes": 69.8,
+      "classical_crf_clean_f1": 0.9978,
+      "classical_crf_ocr_f1": 0.9285,
+      "classical_crf_f1_drop": -0.0693,
+      "hybrid_clean_f1": 0.9921,
+      "hybrid_ocr_f1": 0.8979,
+      "hybrid_f1_drop": -0.0942
+    },
+    "fr": {
+      "pages": 60,
+      "mean_cer": 0.0899,
+      "mean_wer": 0.2255,
+      "mean_word_boxes": 82.2,
+      "classical_crf_clean_f1": 0.9977,
+      "classical_crf_ocr_f1": 0.8965,
+      "classical_crf_f1_drop": -0.1013,
+      "hybrid_clean_f1": 0.9954,
+      "hybrid_ocr_f1": 0.8613,
+      "hybrid_f1_drop": -0.1341
+    }
+  },
+  "by_tier": {
+    "tier_1_300dpi_clean": {
+      "pages": 20,
+      "mean_cer": 0.0046,
+      "mean_wer": 0.0263,
+      "mean_word_boxes": 77.6,
+      "classical_crf_clean_f1": 0.9961,
+      "classical_crf_ocr_f1": 0.9961,
+      "classical_crf_f1_drop": 0.0,
+      "hybrid_clean_f1": 0.9923,
+      "hybrid_ocr_f1": 0.9859,
+      "hybrid_f1_drop": -0.0064
+    },
+    "tier_2_200dpi_mild_skew_jpeg": {
+      "pages": 20,
+      "mean_cer": 0.0056,
+      "mean_wer": 0.0316,
+      "mean_word_boxes": 81.5,
+      "classical_crf_clean_f1": 0.9974,
+      "classical_crf_ocr_f1": 0.9857,
+      "classical_crf_f1_drop": -0.0117,
+      "hybrid_clean_f1": 0.9961,
+      "hybrid_ocr_f1": 0.9804,
+      "hybrid_f1_drop": -0.0157
+    },
+    "tier_3_phone_perspective_light": {
+      "pages": 20,
+      "mean_cer": 0.0092,
+      "mean_wer": 0.0605,
+      "mean_word_boxes": 71.8,
+      "classical_crf_clean_f1": 1.0,
+      "classical_crf_ocr_f1": 0.9834,
+      "classical_crf_f1_drop": -0.0166,
+      "hybrid_clean_f1": 0.9931,
+      "hybrid_ocr_f1": 0.9574,
+      "hybrid_f1_drop": -0.0357
+    },
+    "tier_4_two_col_table_stamps": {
+      "pages": 20,
+      "mean_cer": 0.0275,
+      "mean_wer": 0.1103,
+      "mean_word_boxes": 75.2,
+      "classical_crf_clean_f1": 0.9987,
+      "classical_crf_ocr_f1": 0.9049,
+      "classical_crf_f1_drop": -0.0939,
+      "hybrid_clean_f1": 0.9975,
+      "hybrid_ocr_f1": 0.8852,
+      "hybrid_f1_drop": -0.1122
+    },
+    "tier_5_table_multifont_skew5": {
+      "pages": 20,
+      "mean_cer": 0.3673,
+      "mean_wer": 0.5397,
+      "mean_word_boxes": 79.9,
+      "classical_crf_clean_f1": 0.9972,
+      "classical_crf_ocr_f1": 0.7754,
+      "classical_crf_f1_drop": -0.2218,
+      "hybrid_clean_f1": 0.9931,
+      "hybrid_ocr_f1": 0.7489,
+      "hybrid_f1_drop": -0.2442
+    },
+    "tier_6_150dpi_heavy_blur_noise": {
+      "pages": 20,
+      "mean_cer": 0.1027,
+      "mean_wer": 0.4988,
+      "mean_word_boxes": 70.0,
+      "classical_crf_clean_f1": 0.997,
+      "classical_crf_ocr_f1": 0.7988,
+      "classical_crf_f1_drop": -0.1983,
+      "hybrid_clean_f1": 0.9896,
+      "hybrid_ocr_f1": 0.6881,
+      "hybrid_f1_drop": -0.3015
+    }
+  },
+  "pages": [
+    {
+      "doc_id": "v3_1_test_iid_en_0001",
+      "language": "en",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 138
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0002",
+      "language": "en",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 62
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0003",
+      "language": "en",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0026,
+      "wer": 0.0182,
+      "word_boxes": 55
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0004",
+      "language": "en",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 47
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0005",
+      "language": "en",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 66
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0006",
+      "language": "en",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.002,
+      "wer": 0.0145,
+      "word_boxes": 69
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0007",
+      "language": "en",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 131
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0008",
+      "language": "en",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 73
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0009",
+      "language": "en",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 42
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0010",
+      "language": "en",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0026,
+      "wer": 0.0164,
+      "word_boxes": 61
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0001",
+      "language": "fr",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0097,
+      "wer": 0.0484,
+      "word_boxes": 124
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0002",
+      "language": "fr",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0141,
+      "wer": 0.0667,
+      "word_boxes": 60
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0003",
+      "language": "fr",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0111,
+      "wer": 0.0682,
+      "word_boxes": 44
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0004",
+      "language": "fr",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0091,
+      "wer": 0.0548,
+      "word_boxes": 73
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0005",
+      "language": "fr",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.006,
+      "wer": 0.0441,
+      "word_boxes": 68
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0006",
+      "language": "fr",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0089,
+      "wer": 0.0633,
+      "word_boxes": 79
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0007",
+      "language": "fr",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0041,
+      "wer": 0.0208,
+      "word_boxes": 144
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0008",
+      "language": "fr",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0089,
+      "wer": 0.0357,
+      "word_boxes": 84
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0009",
+      "language": "fr",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0051,
+      "wer": 0.0357,
+      "word_boxes": 56
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0010",
+      "language": "fr",
+      "tier": "tier_1_300dpi_clean",
+      "cer": 0.0069,
+      "wer": 0.0395,
+      "word_boxes": 76
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0011",
+      "language": "en",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0046,
+      "wer": 0.0189,
+      "word_boxes": 53
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0012",
+      "language": "en",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 52
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0013",
+      "language": "en",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0034,
+      "wer": 0.0227,
+      "word_boxes": 132
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0014",
+      "language": "en",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0017,
+      "wer": 0.0127,
+      "word_boxes": 79
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0015",
+      "language": "en",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 54
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0016",
+      "language": "en",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0027,
+      "wer": 0.0175,
+      "word_boxes": 57
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0017",
+      "language": "en",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.005,
+      "wer": 0.0204,
+      "word_boxes": 49
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0018",
+      "language": "en",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0053,
+      "wer": 0.0294,
+      "word_boxes": 68
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0019",
+      "language": "en",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0052,
+      "wer": 0.018,
+      "word_boxes": 111
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0020",
+      "language": "en",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0034,
+      "wer": 0.026,
+      "word_boxes": 77
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0011",
+      "language": "fr",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0025,
+      "wer": 0.0167,
+      "word_boxes": 60
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0012",
+      "language": "fr",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0051,
+      "wer": 0.038,
+      "word_boxes": 79
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0013",
+      "language": "fr",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0076,
+      "wer": 0.0301,
+      "word_boxes": 166
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0014",
+      "language": "fr",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0066,
+      "wer": 0.029,
+      "word_boxes": 69
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0015",
+      "language": "fr",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.008,
+      "wer": 0.0492,
+      "word_boxes": 61
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0016",
+      "language": "fr",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.009,
+      "wer": 0.0526,
+      "word_boxes": 76
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0017",
+      "language": "fr",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0038,
+      "wer": 0.0278,
+      "word_boxes": 72
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0018",
+      "language": "fr",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0078,
+      "wer": 0.0476,
+      "word_boxes": 84
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0019",
+      "language": "fr",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0127,
+      "wer": 0.068,
+      "word_boxes": 148
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0020",
+      "language": "fr",
+      "tier": "tier_2_200dpi_mild_skew_jpeg",
+      "cer": 0.0182,
+      "wer": 0.1071,
+      "word_boxes": 84
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0021",
+      "language": "en",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0085,
+      "wer": 0.0588,
+      "word_boxes": 34
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0022",
+      "language": "en",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0087,
+      "wer": 0.0345,
+      "word_boxes": 58
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0023",
+      "language": "en",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 73
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0024",
+      "language": "en",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 87
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0025",
+      "language": "en",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.001,
+      "wer": 0.0074,
+      "word_boxes": 135
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0026",
+      "language": "en",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 76
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0027",
+      "language": "en",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0097,
+      "wer": 0.1,
+      "word_boxes": 41
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0028",
+      "language": "en",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0241,
+      "wer": 0.1148,
+      "word_boxes": 61
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0029",
+      "language": "en",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.013,
+      "wer": 0.102,
+      "word_boxes": 49
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0030",
+      "language": "en",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0,
+      "wer": 0.0,
+      "word_boxes": 60
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0021",
+      "language": "fr",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.02,
+      "wer": 0.1373,
+      "word_boxes": 51
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0022",
+      "language": "fr",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0056,
+      "wer": 0.0309,
+      "word_boxes": 97
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0023",
+      "language": "fr",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0103,
+      "wer": 0.0755,
+      "word_boxes": 53
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0024",
+      "language": "fr",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0057,
+      "wer": 0.0526,
+      "word_boxes": 77
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0025",
+      "language": "fr",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0116,
+      "wer": 0.0667,
+      "word_boxes": 151
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0026",
+      "language": "fr",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0086,
+      "wer": 0.0482,
+      "word_boxes": 83
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0027",
+      "language": "fr",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0311,
+      "wer": 0.2,
+      "word_boxes": 38
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0028",
+      "language": "fr",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0103,
+      "wer": 0.0571,
+      "word_boxes": 70
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0029",
+      "language": "fr",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0068,
+      "wer": 0.0469,
+      "word_boxes": 64
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0030",
+      "language": "fr",
+      "tier": "tier_3_phone_perspective_light",
+      "cer": 0.0097,
+      "wer": 0.0779,
+      "word_boxes": 77
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0031",
+      "language": "en",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0144,
+      "wer": 0.0991,
+      "word_boxes": 109
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0032",
+      "language": "en",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0146,
+      "wer": 0.0882,
+      "word_boxes": 65
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0033",
+      "language": "en",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.1316,
+      "wer": 0.25,
+      "word_boxes": 32
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0034",
+      "language": "en",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0161,
+      "wer": 0.0656,
+      "word_boxes": 59
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0035",
+      "language": "en",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0135,
+      "wer": 0.0638,
+      "word_boxes": 46
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0036",
+      "language": "en",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0067,
+      "wer": 0.0556,
+      "word_boxes": 53
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0037",
+      "language": "en",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.008,
+      "wer": 0.0472,
+      "word_boxes": 128
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0038",
+      "language": "en",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0092,
+      "wer": 0.087,
+      "word_boxes": 67
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0039",
+      "language": "en",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0324,
+      "wer": 0.1,
+      "word_boxes": 38
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0040",
+      "language": "en",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0158,
+      "wer": 0.0577,
+      "word_boxes": 51
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0031",
+      "language": "fr",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0107,
+      "wer": 0.0542,
+      "word_boxes": 165
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0032",
+      "language": "fr",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0477,
+      "wer": 0.15,
+      "word_boxes": 75
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0033",
+      "language": "fr",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0164,
+      "wer": 0.1053,
+      "word_boxes": 38
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0034",
+      "language": "fr",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0717,
+      "wer": 0.1765,
+      "word_boxes": 83
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0035",
+      "language": "fr",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.028,
+      "wer": 0.1493,
+      "word_boxes": 64
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0036",
+      "language": "fr",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0221,
+      "wer": 0.1522,
+      "word_boxes": 91
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0037",
+      "language": "fr",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0244,
+      "wer": 0.1429,
+      "word_boxes": 147
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0038",
+      "language": "fr",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0289,
+      "wer": 0.1304,
+      "word_boxes": 89
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0039",
+      "language": "fr",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0144,
+      "wer": 0.0889,
+      "word_boxes": 45
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0040",
+      "language": "fr",
+      "tier": "tier_4_two_col_table_stamps",
+      "cer": 0.0229,
+      "wer": 0.1429,
+      "word_boxes": 59
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0041",
+      "language": "en",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.2009,
+      "wer": 0.4355,
+      "word_boxes": 55
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0042",
+      "language": "en",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.2579,
+      "wer": 0.4154,
+      "word_boxes": 80
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0043",
+      "language": "en",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.5508,
+      "wer": 0.8727,
+      "word_boxes": 115
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0044",
+      "language": "en",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.4272,
+      "wer": 0.5909,
+      "word_boxes": 63
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0045",
+      "language": "en",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.4557,
+      "wer": 0.7,
+      "word_boxes": 75
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0046",
+      "language": "en",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.2433,
+      "wer": 0.3696,
+      "word_boxes": 52
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0047",
+      "language": "en",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.459,
+      "wer": 0.7391,
+      "word_boxes": 66
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0048",
+      "language": "en",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.4357,
+      "wer": 0.6316,
+      "word_boxes": 57
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0049",
+      "language": "en",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.4138,
+      "wer": 0.5328,
+      "word_boxes": 100
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0050",
+      "language": "en",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.1964,
+      "wer": 0.3678,
+      "word_boxes": 91
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0041",
+      "language": "fr",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.1995,
+      "wer": 0.5254,
+      "word_boxes": 75
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0042",
+      "language": "fr",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.4973,
+      "wer": 0.6494,
+      "word_boxes": 57
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0043",
+      "language": "fr",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.4479,
+      "wer": 0.5211,
+      "word_boxes": 81
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0044",
+      "language": "fr",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.368,
+      "wer": 0.6591,
+      "word_boxes": 119
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0045",
+      "language": "fr",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.6921,
+      "wer": 0.7463,
+      "word_boxes": 73
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0046",
+      "language": "fr",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.406,
+      "wer": 0.4487,
+      "word_boxes": 62
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0047",
+      "language": "fr",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.3765,
+      "wer": 0.4828,
+      "word_boxes": 47
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0048",
+      "language": "fr",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.2187,
+      "wer": 0.3288,
+      "word_boxes": 66
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0049",
+      "language": "fr",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.2356,
+      "wer": 0.3741,
+      "word_boxes": 164
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0050",
+      "language": "fr",
+      "tier": "tier_5_table_multifont_skew5",
+      "cer": 0.2643,
+      "wer": 0.4026,
+      "word_boxes": 100
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0051",
+      "language": "en",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.0927,
+      "wer": 0.42,
+      "word_boxes": 53
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0052",
+      "language": "en",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.1194,
+      "wer": 0.5435,
+      "word_boxes": 49
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0053",
+      "language": "en",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.0802,
+      "wer": 0.4655,
+      "word_boxes": 60
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0054",
+      "language": "en",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.0746,
+      "wer": 0.4545,
+      "word_boxes": 56
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0055",
+      "language": "en",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.1074,
+      "wer": 0.4516,
+      "word_boxes": 128
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0056",
+      "language": "en",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.102,
+      "wer": 0.4576,
+      "word_boxes": 61
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0057",
+      "language": "en",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.1095,
+      "wer": 0.5366,
+      "word_boxes": 43
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0058",
+      "language": "en",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.0828,
+      "wer": 0.3846,
+      "word_boxes": 55
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0059",
+      "language": "en",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.084,
+      "wer": 0.4423,
+      "word_boxes": 55
+    },
+    {
+      "doc_id": "v3_1_test_iid_en_0060",
+      "language": "en",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.0855,
+      "wer": 0.4583,
+      "word_boxes": 77
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0051",
+      "language": "fr",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.1311,
+      "wer": 0.5526,
+      "word_boxes": 39
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0052",
+      "language": "fr",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.1143,
+      "wer": 0.5323,
+      "word_boxes": 63
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0053",
+      "language": "fr",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.0862,
+      "wer": 0.5333,
+      "word_boxes": 61
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0054",
+      "language": "fr",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.1095,
+      "wer": 0.6027,
+      "word_boxes": 78
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0055",
+      "language": "fr",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.1161,
+      "wer": 0.5412,
+      "word_boxes": 177
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0056",
+      "language": "fr",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.0957,
+      "wer": 0.5065,
+      "word_boxes": 79
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0057",
+      "language": "fr",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.11,
+      "wer": 0.4783,
+      "word_boxes": 68
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0058",
+      "language": "fr",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.1185,
+      "wer": 0.4918,
+      "word_boxes": 63
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0059",
+      "language": "fr",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.1188,
+      "wer": 0.5439,
+      "word_boxes": 57
+    },
+    {
+      "doc_id": "v3_1_test_iid_fr_0060",
+      "language": "fr",
+      "tier": "tier_6_150dpi_heavy_blur_noise",
+      "cer": 0.1157,
+      "wer": 0.5789,
+      "word_boxes": 79
+    }
+  ]
+}

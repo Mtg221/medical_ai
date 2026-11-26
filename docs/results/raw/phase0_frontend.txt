@@ -1,0 +1,76 @@
+=== FRONTEND BUILD ===
+
+> medresearch-react-ui@2.0.0 build
+> tsc --noEmit && vite build
+
+vite v6.4.6 building for production...
+transforming...
+✓ 2228 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                              0.51 kB │ gzip:   0.34 kB
+dist/assets/pdf.worker.min-CIqJB0yW.mjs  1,271.92 kB
+dist/assets/index-BPJPw_JM.css              43.49 kB │ gzip:   8.16 kB
+dist/assets/index-CcsOTVPL.js            1,428.44 kB │ gzip: 422.98 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 6.50s
+BUILD_EXIT=0
+=== FRONTEND TEST ===
+
+> medresearch-react-ui@2.0.0 test
+> vitest run src --run
+
+
+ RUN  v5.1.0 /Users/guest777/Desktop/medical/frontend
+
+ ✓ src/utils/entityStyles.test.ts (3 tests) 8ms
+stdout | src/__tests__/pages.test.tsx
+🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+
+stderr | src/__tests__/pages.test.tsx
+Warning: Please use the `legacy` build in Node.js environments.
+
+stderr | src/__tests__/pages.test.tsx > Phase 11 frontend pages > renders CorpusExplorerPage with SYNTH-MED-V3 split summary
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/__tests__/pages.test.tsx > Phase 11 frontend pages > renders ErrorTaxonomyPage
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/__tests__/pages.test.tsx > Phase 11 frontend pages > renders AblationPage
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/__tests__/pages.test.tsx > Phase 11 frontend pages > renders VisionBenchmarkPage
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/__tests__/pages.test.tsx (10 tests) 164ms
+
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+   Start at  19:23:21
+   Duration  3.18s (environment 71%, import 23%, tests 4%, transform 2%)
+
+TEST_EXIT=0

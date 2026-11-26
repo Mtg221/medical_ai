@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "phase-*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  fresh-clone-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Tesseract OCR (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-fra
+      - name: Install Tesseract OCR (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install tesseract --no-progress
+          $tessData = "C:\Program Files\Tesseract-OCR\tessdata"
+          if (Test-Path $tessData) {
+            Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata_fast/raw/main/fra.traineddata" -OutFile "$tessData\fra.traineddata"
+          }
+          "C:\Program Files\Tesseract-OCR" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Install package and dev tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Verify clean checkout has no data/processed or models
+        shell: bash
+        run: |
+          test ! -d data/processed
+          test ! -d models
+      - name: Run pytest on clean checkout (no pre-built data or models)
+        run: pytest -q
+
+  backend:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Tesseract OCR (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-fra
+      - name: Install Tesseract OCR (macOS)
+        if: runner.os == 'macOS'
+        run: brew install tesseract tesseract-lang
+      - name: Install Tesseract OCR (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install tesseract --no-progress
+          $tessData = "C:\Program Files\Tesseract-OCR\tessdata"
+          if (Test-Path $tessData) {
+            Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata_fast/raw/main/fra.traineddata" -OutFile "$tessData\fra.traineddata"
+          }
+          "C:\Program Files\Tesseract-OCR" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Install package and dev tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Build and test frontend assets
+        run: |
+          npm --prefix frontend ci
+          npm --prefix frontend test -- --run
+          npm --prefix frontend run build
+      - name: Lint with ruff
+        run: ruff check medresearch_platform tests scripts
+      - name: Type check with mypy
+        run: mypy medresearch_platform
+      - name: Build & audit SYNTH-MED-V3 / V3.1 corpus
+        run: |
+          medextract data build --config configs/data/v3.yaml
+          python scripts/audit_corpus.py --data-dir data/processed/v3 --fail-on-doubled
+          medextract data build --config configs/data/v3_1.yaml
+          python scripts/audit_corpus.py --data-dir data/processed/v3_1 --fail-on-doubled
+      - name: Run pytest with coverage
+        run: pytest --cov=medresearch_platform --cov-report=term-missing
+      - name: Check docs have no file:/// links
+        run: pytest tests/test_no_file_uri_in_docs.py -q
+      - name: Run Text + CC0 Image Acceptance Suite
+        run: python scripts/acceptance_test.py
+      - name: Run Playwright E2E against real backend
+        if: runner.os == 'Linux' && matrix.python-version == '3.12'
+        run: |
+          npx --prefix frontend playwright install chromium
+          python scripts/run_frontend_e2e_and_lighthouse.py --skip-lighthouse

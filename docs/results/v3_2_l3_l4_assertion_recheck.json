@@ -1,0 +1,73 @@
+{
+  "splits": {
+    "val": {
+      "hybrid_v2_seed1": {
+        "overall_assertion_macro_f1": 0.7782,
+        "en_assertion_macro_f1": 0.8285,
+        "fr_assertion_macro_f1": 0.7407
+      },
+      "classical_crf_seed1": {
+        "overall_assertion_macro_f1": 0.778,
+        "en_assertion_macro_f1": 0.8282,
+        "fr_assertion_macro_f1": 0.7407
+      },
+      "rule_based": {
+        "overall_assertion_macro_f1": 0.4581,
+        "en_assertion_macro_f1": 0.7492,
+        "fr_assertion_macro_f1": 0.5131
+      }
+    },
+    "test_iid": {
+      "hybrid_v2_seed1": {
+        "overall_assertion_macro_f1": 0.7289,
+        "en_assertion_macro_f1": 0.7715,
+        "fr_assertion_macro_f1": 0.7131
+      },
+      "classical_crf_seed1": {
+        "overall_assertion_macro_f1": 0.7334,
+        "en_assertion_macro_f1": 0.7715,
+        "fr_assertion_macro_f1": 0.7233
+      },
+      "rule_based": {
+        "overall_assertion_macro_f1": 0.6295,
+        "en_assertion_macro_f1": 0.6408,
+        "fr_assertion_macro_f1": 0.7808
+      }
+    },
+    "test_unseen_terms": {
+      "hybrid_v2_seed1": {
+        "overall_assertion_macro_f1": 0.7674,
+        "en_assertion_macro_f1": 0.8131,
+        "fr_assertion_macro_f1": 0.7499
+      },
+      "classical_crf_seed1": {
+        "overall_assertion_macro_f1": 0.7701,
+        "en_assertion_macro_f1": 0.8177,
+        "fr_assertion_macro_f1": 0.7407
+      },
+      "rule_based": {
+        "overall_assertion_macro_f1": 0.6835,
+        "en_assertion_macro_f1": 0.7892,
+        "fr_assertion_macro_f1": 0.5718
+      }
+    },
+    "test_unseen_templates": {
+      "hybrid_v2_seed1": {
+        "overall_assertion_macro_f1": 0.6524,
+        "en_assertion_macro_f1": 0.7114,
+        "fr_assertion_macro_f1": 0.6095
+      },
+      "classical_crf_seed1": {
+        "overall_assertion_macro_f1": 0.6548,
+        "en_assertion_macro_f1": 0.7132,
+        "fr_assertion_macro_f1": 0.6128
+      },
+      "rule_based": {
+        "overall_assertion_macro_f1": 0.582,
+        "en_assertion_macro_f1": 0.4986,
+        "fr_assertion_macro_f1": 0.6097
+      }
+    }
+  },
+  "runtime_s": 29.04
+}

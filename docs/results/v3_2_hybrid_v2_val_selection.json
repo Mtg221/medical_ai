@@ -1,0 +1,107 @@
+{
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "winner": "crf_on_ctx_nofusion",
+  "candidates": {
+    "v3_1_baseline": {
+      "strict_f1_mean": 0.9942,
+      "strict_f1_seed_std": 0.0033,
+      "strict_f1_doc_ci95": [
+        0.9974,
+        0.9988
+      ],
+      "lenient_f1_mean": 0.9974,
+      "assertion_macro_f1_mean": 0.735,
+      "relation_f1_mean": 0.8937,
+      "timex_f1_mean": 1.0,
+      "timex_norm_acc_mean": 1.0,
+      "total_5seed_runtime_s": 764.44,
+      "config": {
+        "use_crf_ensemble": false,
+        "use_assertion_bilstm": true,
+        "use_transformer_fusion": true
+      }
+    },
+    "crf_off_ctx_nofusion": {
+      "strict_f1_mean": 0.9942,
+      "strict_f1_seed_std": 0.0033,
+      "strict_f1_doc_ci95": [
+        0.9974,
+        0.9988
+      ],
+      "lenient_f1_mean": 0.9974,
+      "assertion_macro_f1_mean": 0.7536,
+      "relation_f1_mean": 0.8937,
+      "timex_f1_mean": 1.0,
+      "timex_norm_acc_mean": 1.0,
+      "total_5seed_runtime_s": 615.35,
+      "config": {
+        "use_crf_ensemble": false,
+        "use_assertion_bilstm": false,
+        "use_transformer_fusion": false
+      }
+    },
+    "crf_on_bilstm_fusion": {
+      "strict_f1_mean": 0.9966,
+      "strict_f1_seed_std": 0.0009,
+      "strict_f1_doc_ci95": [
+        0.9962,
+        0.998
+      ],
+      "lenient_f1_mean": 0.9987,
+      "assertion_macro_f1_mean": 0.7364,
+      "relation_f1_mean": 0.8916,
+      "timex_f1_mean": 1.0,
+      "timex_norm_acc_mean": 1.0,
+      "total_5seed_runtime_s": 946.71,
+      "config": {
+        "use_crf_ensemble": true,
+        "use_assertion_bilstm": true,
+        "use_transformer_fusion": true
+      }
+    },
+    "crf_on_ctx_fusion": {
+      "strict_f1_mean": 0.9966,
+      "strict_f1_seed_std": 0.0009,
+      "strict_f1_doc_ci95": [
+        0.9962,
+        0.998
+      ],
+      "lenient_f1_mean": 0.9987,
+      "assertion_macro_f1_mean": 0.7567,
+      "relation_f1_mean": 0.8916,
+      "timex_f1_mean": 1.0,
+      "timex_norm_acc_mean": 1.0,
+      "total_5seed_runtime_s": 663.21,
+      "config": {
+        "use_crf_ensemble": true,
+        "use_assertion_bilstm": false,
+        "use_transformer_fusion": true
+      }
+    },
+    "crf_on_ctx_nofusion": {
+      "strict_f1_mean": 0.9966,
+      "strict_f1_seed_std": 0.0009,
+      "strict_f1_doc_ci95": [
+        0.9945,
+        0.9984
+      ],
+      "lenient_f1_mean": 0.9987,
+      "assertion_macro_f1_mean": 0.7567,
+      "relation_f1_mean": 0.8916,
+      "timex_f1_mean": 1.0,
+      "timex_norm_acc_mean": 1.0,
+      "total_5seed_runtime_s": 603.77,
+      "config": {
+        "use_crf_ensemble": true,
+        "use_assertion_bilstm": false,
+        "use_transformer_fusion": false
+      }
+    }
+  }
+}

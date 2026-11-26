@@ -1,0 +1,123 @@
+{
+  "evaluated_at_utc": "2026-11-19T12:38:28Z",
+  "pretrained_weights_used": false,
+  "self_supervised_artifact": "models/e3c_self_supervised_en_fr.npz",
+  "experiments": {
+    "open_clinical::crf_morph_bigrams": {
+      "elapsed_s": 56.32,
+      "strict_f1": 0.647458,
+      "lenient_f1": 0.736897,
+      "en_f1": 0.482001,
+      "fr_f1": 0.856132,
+      "by_corpus": {
+        "e3c_layer1": {
+          "strict_f1": 0.457723,
+          "lenient_f1": 0.640361
+        },
+        "maccrobat2020": {
+          "strict_f1": 0.490105,
+          "lenient_f1": 0.605424
+        },
+        "pxcorpus": {
+          "strict_f1": 0.949442,
+          "lenient_f1": 0.968773
+        }
+      }
+    },
+    "open_clinical::crf_morph_bigrams_e3c_ss": {
+      "elapsed_s": 85.34,
+      "strict_f1": 0.650593,
+      "lenient_f1": 0.737652,
+      "en_f1": 0.489024,
+      "fr_f1": 0.854615,
+      "by_corpus": {
+        "e3c_layer1": {
+          "strict_f1": 0.442697,
+          "lenient_f1": 0.633708
+        },
+        "maccrobat2020": {
+          "strict_f1": 0.498167,
+          "lenient_f1": 0.607187
+        },
+        "pxcorpus": {
+          "strict_f1": 0.950966,
+          "lenient_f1": 0.970282
+        }
+      }
+    },
+    "open_clinical::crf_morph_bigrams_e3c_ss_ocraug": {
+      "elapsed_s": 146.3,
+      "strict_f1": 0.648211,
+      "lenient_f1": 0.734918,
+      "en_f1": 0.482468,
+      "fr_f1": 0.857988,
+      "by_corpus": {
+        "e3c_layer1": {
+          "strict_f1": 0.445205,
+          "lenient_f1": 0.634703
+        },
+        "maccrobat2020": {
+          "strict_f1": 0.491683,
+          "lenient_f1": 0.600294
+        },
+        "pxcorpus": {
+          "strict_f1": 0.951745,
+          "lenient_f1": 0.971789
+        }
+      }
+    },
+    "synth::crf_synth_upgraded": {
+      "elapsed_s": 48.88,
+      "val_clean_strict_f1": 0.996606,
+      "val_ocr_strict_f1": 0.967401,
+      "ocr_drop": -0.0292,
+      "llm80_strict_f1": 0.649852,
+      "llm80_lenient_f1": 0.764837,
+      "llm80_doc_acc": 0.7625
+    },
+    "synth::crf_synth_upgraded_ocraug": {
+      "elapsed_s": 62.09,
+      "val_clean_strict_f1": 0.997794,
+      "val_ocr_strict_f1": 0.982785,
+      "ocr_drop": -0.015,
+      "llm80_strict_f1": 0.668899,
+      "llm80_lenient_f1": 0.766369,
+      "llm80_doc_acc": 0.7625
+    },
+    "unseen_terms::bilstm_crf_rand": {
+      "elapsed_s": 199.61,
+      "strict_f1": 0.858508,
+      "lenient_f1": 0.877966
+    },
+    "unseen_terms::bilstm_crf_e3c_ss": {
+      "elapsed_s": 142.35,
+      "strict_f1": 0.808348,
+      "lenient_f1": 0.834483
+    },
+    "unseen_terms::transformer_rand": {
+      "elapsed_s": 240.96,
+      "strict_f1": 0.517564,
+      "lenient_f1": 0.690935
+    },
+    "unseen_terms::transformer_e3c_ss": {
+      "elapsed_s": 221.04,
+      "strict_f1": 0.501047,
+      "lenient_f1": 0.679235
+    },
+    "stage3b_calibrated_gating_val": {
+      "elapsed_s": 255.28,
+      "without_bilstm_assert_macro_f1": 0.77501,
+      "with_calibrated_bilstm_assert_macro_f1": 0.701936,
+      "delta": -0.0731,
+      "calibrated_class_thresholds": {
+        "present": 0.5,
+        "absent": 0.65,
+        "possible": 0.65,
+        "hypothetical": 0.65,
+        "family": 0.65,
+        "historical": 0.65
+      }
+    }
+  },
+  "total_elapsed_s": 1458.56
+}

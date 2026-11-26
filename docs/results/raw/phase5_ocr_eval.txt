@@ -1,0 +1,88 @@
+=== OCR PYTEST SUITE ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /Users/guest777/Desktop/medical/.venv-vision/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/guest777/Desktop/medical
+configfile: pyproject.toml
+plugins: platformdirs-4.14.5, cov-7.1.0, anyio-4.16.0
+collecting ... ERROR: file or directory not found: tests/test_ocr_alignment.py
+
+collected 0 items
+
+============================ no tests ran in 0.01s =============================
+=== OCR BENCHMARK JSON SUMMARY ===
+{
+  "dataset": "SYNTH-MED-V3.1",
+  "split": "test_iid",
+  "total_pages": 120,
+  "overall": {
+    "pages": 120,
+    "mean_cer": 0.0862,
+    "mean_wer": 0.2112,
+    "mean_word_boxes": 76.0,
+    "classical_crf_clean_f1": 0.9978,
+    "classical_crf_ocr_f1": 0.9128,
+    "classical_crf_f1_drop": -0.085,
+    "hybrid_clean_f1": 0.9937,
+    "hybrid_ocr_f1": 0.8799,
+    "hybrid_f1_drop": -0.1139
+  },
+  "by_language": {
+    "en": {
+      "pages": 60,
+      "mean_cer": 0.0824,
+      "mean_wer": 0.1969,
+      "mean_word_boxes": 69.8,
+      "classical_crf_clean_f1": 0.9978,
+      "classical_crf_ocr_f1": 0.9285,
+      "classical_crf_f1_drop": -0.0693,
+      "hybrid_clean_f1": 0.9921,
+      "hybrid_ocr_f1": 0.8979,
+      "hybrid_f1_drop": -0.0942
+    },
+    "fr": {
+      "pages": 60,
+      "mean_cer": 0.0899,
+      "mean_wer": 0.2255,
+      "mean_word_boxes": 82.2,
+      "classical_crf_clean_f1": 0.9977,
+      "classical_crf_ocr_f1": 0.8965,
+      "classical_crf_f1_drop": -0.1013,
+      "hybrid_clean_f1": 0.9954,
+      "hybrid_ocr_f1": 0.8613,
+      "hybrid_f1_drop": -0.1341
+    }
+  },
+  "by_tier": {
+    "tier_1_300dpi_clean": {
+      "cer": 0.0046,
+      "wer": 0.0263,
+      "hybrid_drop": -0.0064
+    },
+    "tier_2_200dpi_mild_skew_jpeg": {
+      "cer": 0.0056,
+      "wer": 0.0316,
+      "hybrid_drop": -0.0157
+    },
+    "tier_3_phone_perspective_light": {
+      "cer": 0.0092,
+      "wer": 0.0605,
+      "hybrid_drop": -0.0357
+    },
+    "tier_4_two_col_table_stamps": {
+      "cer": 0.0275,
+      "wer": 0.1103,
+      "hybrid_drop": -0.1122
+    },
+    "tier_5_table_multifont_skew5": {
+      "cer": 0.3673,
+      "wer": 0.5397,
+      "hybrid_drop": -0.2442
+    },
+    "tier_6_150dpi_heavy_blur_noise": {
+      "cer": 0.1027,
+      "wer": 0.4988,
+      "hybrid_drop": -0.3015
+    }
+  }
+}

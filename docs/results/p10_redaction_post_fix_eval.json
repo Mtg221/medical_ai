@@ -1,0 +1,117 @@
+{
+  "evaluated_at_utc": "2026-11-18T23:29:28Z",
+  "dataset": "docs/results/p10_redaction_blind_agent_dataset.jsonl",
+  "authored_by": "blind_agent_before_reading_redaction_code",
+  "evaluation_mode": "post_hoc_seen_after_fix",
+  "blind": false,
+  "owner_written": false,
+  "n_sentences": 60,
+  "n_phi_sentences": 50,
+  "n_non_phi_sentences": 10,
+  "n_phi_items": 112,
+  "tp": 112,
+  "fn": 0,
+  "fp_on_non_phi_sentences": 0,
+  "recall": 1.0,
+  "strict_full_token_tp": 111,
+  "strict_full_token_fn": 1,
+  "strict_full_token_recall": 0.9911,
+  "partial_leaks_count": 1,
+  "precision": 1.0,
+  "by_type": {
+    "ADDRESS": {
+      "tp": 11,
+      "fn": 0,
+      "total": 11,
+      "recall": 1.0
+    },
+    "CLINICIAN": {
+      "tp": 16,
+      "fn": 0,
+      "total": 16,
+      "recall": 1.0
+    },
+    "DOB": {
+      "tp": 12,
+      "fn": 0,
+      "total": 12,
+      "recall": 1.0
+    },
+    "EMAIL": {
+      "tp": 8,
+      "fn": 0,
+      "total": 8,
+      "recall": 1.0
+    },
+    "ID": {
+      "tp": 9,
+      "fn": 0,
+      "total": 9,
+      "recall": 1.0
+    },
+    "IPP": {
+      "tp": 2,
+      "fn": 0,
+      "total": 2,
+      "recall": 1.0
+    },
+    "MRN": {
+      "tp": 2,
+      "fn": 0,
+      "total": 2,
+      "recall": 1.0
+    },
+    "NIR": {
+      "tp": 2,
+      "fn": 0,
+      "total": 2,
+      "recall": 1.0
+    },
+    "PERSON": {
+      "tp": 30,
+      "fn": 0,
+      "total": 30,
+      "recall": 1.0
+    },
+    "PHONE": {
+      "tp": 19,
+      "fn": 0,
+      "total": 19,
+      "recall": 1.0
+    },
+    "SSN": {
+      "tp": 1,
+      "fn": 0,
+      "total": 1,
+      "recall": 1.0
+    }
+  },
+  "by_language": {
+    "en": {
+      "tp": 54,
+      "fn": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "fr": {
+      "tp": 58,
+      "fn": 0,
+      "fp": 0,
+      "recall": 1.0
+    }
+  },
+  "missed": [],
+  "partial_leaks": [
+    {
+      "id": "blind_23",
+      "language": "en",
+      "type": "EMAIL",
+      "target": "old.user99@example.com",
+      "leaked_tokens": [
+        "old"
+      ],
+      "scrubbed": "Patient phone number changed to [PHONE_REDACTED]; old email [EMAIL_REDACTED] bounced."
+    }
+  ],
+  "false_positives": []
+}

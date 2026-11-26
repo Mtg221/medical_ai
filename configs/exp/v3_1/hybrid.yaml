@@ -1,0 +1,16 @@
+approach: hybrid
+eval_split: val
+data_dir: data/processed/v3_1
+output_root: experiments/runs/v3_1
+max_train_docs: null
+hidden_dim: 32
+epochs: 10
+aux_epochs: 6
+lr: 0.018
+rerank_threshold: 0.25
+seeds:
+- 1
+- 2
+- 3
+- 4
+- 5

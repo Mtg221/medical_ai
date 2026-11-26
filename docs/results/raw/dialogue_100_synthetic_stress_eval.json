@@ -1,0 +1,220 @@
+{
+  "evaluated_at_utc": "2026-11-25T22:54:38Z",
+  "provenance": "synthetic_doctor_patient_dialogue_stress_test",
+  "synthetic": true,
+  "owner_written": false,
+  "seed": 2026,
+  "dataset_path": "data/synthetic/dialogues_100/eval.jsonl",
+  "dataset_sha256": "51ec8786e31e65f81fd71fcc0624edfe5aec91ba1c15f7b8aa4312deb7f76f15",
+  "n_dialogues": 100,
+  "languages": {
+    "en": 50,
+    "fr": 50
+  },
+  "gold_counts": {
+    "entities": 1500,
+    "relations": 700
+  },
+  "models": {
+    "hybrid_v2": {
+      "elapsed_seconds": 4.95,
+      "ms_per_dialogue": 49.5,
+      "overall": {
+        "strict_span": {
+          "precision": 0.786792,
+          "recall": 0.834,
+          "f1": 0.809709,
+          "tp": 1251.0,
+          "fp": 339.0,
+          "fn": 249.0,
+          "macro_f1": 0.72111
+        },
+        "lenient_span": {
+          "precision": 0.834591,
+          "recall": 0.884667,
+          "f1": 0.8589,
+          "tp": 1327.0,
+          "fp": 263.0,
+          "fn": 173.0
+        },
+        "assertion": {
+          "accuracy": 0.852918,
+          "macro_f1": 0.879924,
+          "support": 1251
+        },
+        "relations": {
+          "precision": 0.739691,
+          "recall": 0.41,
+          "f1": 0.527574,
+          "tp": 287.0,
+          "fp": 101.0,
+          "fn": 413.0
+        }
+      },
+      "en": {
+        "strict_span": {
+          "precision": 0.78882,
+          "recall": 0.846667,
+          "f1": 0.81672,
+          "tp": 635.0,
+          "fp": 170.0,
+          "fn": 115.0,
+          "macro_f1": 0.720874
+        },
+        "lenient_span": {
+          "precision": 0.816149,
+          "recall": 0.876,
+          "f1": 0.845016,
+          "tp": 657.0,
+          "fp": 148.0,
+          "fn": 93.0
+        },
+        "assertion": {
+          "accuracy": 0.826772,
+          "macro_f1": 0.866291,
+          "support": 635
+        },
+        "relations": {
+          "precision": 0.843137,
+          "recall": 0.491429,
+          "f1": 0.620939,
+          "tp": 172.0,
+          "fp": 32.0,
+          "fn": 178.0
+        }
+      },
+      "fr": {
+        "strict_span": {
+          "precision": 0.784713,
+          "recall": 0.821333,
+          "f1": 0.802606,
+          "tp": 616.0,
+          "fp": 169.0,
+          "fn": 134.0,
+          "macro_f1": 0.701268
+        },
+        "lenient_span": {
+          "precision": 0.853503,
+          "recall": 0.893333,
+          "f1": 0.872964,
+          "tp": 670.0,
+          "fp": 115.0,
+          "fn": 80.0
+        },
+        "assertion": {
+          "accuracy": 0.87987,
+          "macro_f1": 0.895418,
+          "support": 616
+        },
+        "relations": {
+          "precision": 0.625,
+          "recall": 0.328571,
+          "f1": 0.430712,
+          "tp": 115.0,
+          "fp": 69.0,
+          "fn": 235.0
+        }
+      }
+    },
+    "classical_crf": {
+      "elapsed_seconds": 0.7,
+      "ms_per_dialogue": 7.0,
+      "overall": {
+        "strict_span": {
+          "precision": 0.829067,
+          "recall": 0.669333,
+          "f1": 0.740686,
+          "tp": 1004.0,
+          "fp": 207.0,
+          "fn": 496.0,
+          "macro_f1": 0.636646
+        },
+        "lenient_span": {
+          "precision": 0.90256,
+          "recall": 0.728667,
+          "f1": 0.806345,
+          "tp": 1093.0,
+          "fp": 118.0,
+          "fn": 407.0
+        },
+        "assertion": {
+          "accuracy": 0.866534,
+          "macro_f1": 0.896815,
+          "support": 1004
+        },
+        "relations": {
+          "precision": 0.451977,
+          "recall": 0.342857,
+          "f1": 0.389927,
+          "tp": 240.0,
+          "fp": 291.0,
+          "fn": 460.0
+        }
+      },
+      "en": {
+        "strict_span": {
+          "precision": 0.855721,
+          "recall": 0.688,
+          "f1": 0.762749,
+          "tp": 516.0,
+          "fp": 87.0,
+          "fn": 234.0,
+          "macro_f1": 0.62662
+        },
+        "lenient_span": {
+          "precision": 0.888889,
+          "recall": 0.714667,
+          "f1": 0.792313,
+          "tp": 536.0,
+          "fp": 67.0,
+          "fn": 214.0
+        },
+        "assertion": {
+          "accuracy": 0.835271,
+          "macro_f1": 0.879147,
+          "support": 516
+        },
+        "relations": {
+          "precision": 0.454545,
+          "recall": 0.357143,
+          "f1": 0.4,
+          "tp": 125.0,
+          "fp": 150.0,
+          "fn": 225.0
+        }
+      },
+      "fr": {
+        "strict_span": {
+          "precision": 0.802632,
+          "recall": 0.650667,
+          "f1": 0.718704,
+          "tp": 488.0,
+          "fp": 120.0,
+          "fn": 262.0,
+          "macro_f1": 0.6098
+        },
+        "lenient_span": {
+          "precision": 0.916118,
+          "recall": 0.742667,
+          "f1": 0.820324,
+          "tp": 557.0,
+          "fp": 51.0,
+          "fn": 193.0
+        },
+        "assertion": {
+          "accuracy": 0.89959,
+          "macro_f1": 0.917361,
+          "support": 488
+        },
+        "relations": {
+          "precision": 0.449219,
+          "recall": 0.328571,
+          "f1": 0.379538,
+          "tp": 115.0,
+          "fp": 141.0,
+          "fn": 235.0
+        }
+      }
+    }
+  }
+}

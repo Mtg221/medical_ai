@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /Users/guest777/Desktop/medical/.venv-vision/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/guest777/Desktop/medical
+configfile: pyproject.toml
+plugins: platformdirs-4.14.5, cov-7.1.0, anyio-4.16.0
+collecting ... collected 14 items
+
+tests/test_human_realistic_protocol_strict.py::test_strict_import_rejects_missing_explicit_metadata[doc_id] PASSED [  7%]
+tests/test_human_realistic_protocol_strict.py::test_strict_import_rejects_missing_explicit_metadata[language] PASSED [ 14%]
+tests/test_human_realistic_protocol_strict.py::test_strict_import_rejects_missing_explicit_metadata[doc_type] PASSED [ 21%]
+tests/test_human_realistic_protocol_strict.py::test_strict_import_rejects_missing_explicit_metadata[document_date] PASSED [ 28%]
+tests/test_human_realistic_protocol_strict.py::test_strict_import_rejects_unadjudicated_disagreement PASSED [ 35%]
+tests/test_human_realistic_protocol_strict.py::test_strict_import_accepts_explicitly_adjudicated_gold_and_computes_iaa_on_independent PASSED [ 42%]
+tests/test_human_realistic_protocol_strict.py::test_strict_protocol_rejects_incomplete_or_imbalanced_sets PASSED [ 50%]
+tests/test_human_realistic_protocol_strict.py::test_strict_protocol_passes_valid_80_fixture_and_freeze_manifest_detects_tampering PASSED [ 57%]
+tests/test_iaa_and_realistic_relations.py::test_import_parses_relations_and_normalized_timex PASSED [ 64%]
+tests/test_iaa_and_realistic_relations.py::test_import_rejects_unknown_relation_and_dangling_region PASSED [ 71%]
+tests/test_iaa_and_realistic_relations.py::test_double_annotation_iaa_metrics PASSED [ 78%]
+tests/test_iaa_and_realistic_relations.py::test_human_phi_redaction_runner_on_template PASSED [ 85%]
+tests/test_realistic_import_and_labels.py::test_import_rejects_unknown_labels_like_problem_or_test PASSED [ 92%]
+tests/test_realistic_import_and_labels.py::test_import_accepts_canonical_labels PASSED [100%]
+
+============================== 14 passed in 0.22s ==============================
+EXIT=0

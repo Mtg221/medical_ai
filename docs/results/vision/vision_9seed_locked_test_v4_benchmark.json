@@ -1,0 +1,57 @@
+{
+  "evaluated_at_utc": "2026-11-24T15:55:26Z",
+  "elapsed_seconds": 2165.18,
+  "split": "configs/vision/locked_test_v4.txt",
+  "pretrained_weights_used": false,
+  "exact_sha256_duplicates_vs_train": 0,
+  "w_convnext": 0.05,
+  "n_locked_test_v4": 1611,
+  "overall_calibrated": {
+    "n": 1611,
+    "malignant": 741,
+    "benign": 870,
+    "auroc": 0.9348,
+    "sens_at_90_spec": 0.7962,
+    "ece": 0.0333,
+    "brier": 0.1015
+  },
+  "by_modality_calibrated": {
+    "dermoscopic": {
+      "n": 690,
+      "malignant": 296,
+      "benign": 394,
+      "auroc": 0.9727,
+      "sens_at_90_spec": 0.9291,
+      "ece": 0.0403,
+      "brier": 0.0662
+    },
+    "clinical": {
+      "n": 571,
+      "malignant": 345,
+      "benign": 226,
+      "auroc": 0.8805,
+      "sens_at_90_spec": 0.5826,
+      "ece": 0.0339,
+      "brier": 0.1295
+    },
+    "tbp_tile": {
+      "n": 350,
+      "malignant": 100,
+      "benign": 250,
+      "auroc": 0.8768,
+      "sens_at_90_spec": 0.7,
+      "ece": 0.1017,
+      "brier": 0.1256
+    }
+  },
+  "low_uncertainty_subset": {
+    "threshold_std": 0.12,
+    "n": 1263,
+    "malignant": 599,
+    "benign": 664,
+    "auroc": 0.9483,
+    "sens_at_90_spec": 0.8347,
+    "ece": 0.0322,
+    "brier": 0.0874
+  }
+}

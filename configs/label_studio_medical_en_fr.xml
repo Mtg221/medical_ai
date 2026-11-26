@@ -1,0 +1,42 @@
+<View>
+  <Header value="Bilingual Medical IE Annotation (EN / FR) — Exact Schema Labels"/>
+  <Text name="text" value="$text"/>
+  <Labels name="entities" toName="text">
+    <Label value="SYMPTOM" background="#e11d48"/>
+    <Label value="DIAGNOSIS" background="#dc2626"/>
+    <Label value="MEDICATION" background="#2563eb"/>
+    <Label value="DOSAGE" background="#0891b2"/>
+    <Label value="FREQUENCY" background="#0d9488"/>
+    <Label value="ROUTE" background="#059669"/>
+    <Label value="DURATION" background="#65a30d"/>
+    <Label value="LAB_TEST" background="#7c3aed"/>
+    <Label value="LAB_VALUE" background="#9333ea"/>
+    <Label value="LAB_UNIT" background="#a855f7"/>
+    <Label value="PROCEDURE" background="#ea580c"/>
+    <Label value="ANATOMY" background="#d97706"/>
+    <Label value="DATE" background="#475569"/>
+    <Label value="PATIENT_ID" background="#334155"/>
+  </Labels>
+  <Labels name="timex" toName="text">
+    <Label value="RELATIVE" background="#64748b"/>
+  </Labels>
+  <Choices name="assertion" toName="text" perRegion="true" choice="single">
+    <Choice value="present"/>
+    <Choice value="absent"/>
+    <Choice value="possible"/>
+    <Choice value="hypothetical"/>
+    <Choice value="family"/>
+    <Choice value="historical"/>
+  </Choices>
+  <Relations>
+    <Relation value="TREATS"/>
+    <Relation value="HAS_DOSAGE"/>
+    <Relation value="HAS_FREQUENCY"/>
+    <Relation value="HAS_ROUTE"/>
+    <Relation value="HAS_VALUE"/>
+    <Relation value="HAS_UNIT"/>
+    <Relation value="REVEALS"/>
+    <Relation value="CAUSES"/>
+    <Relation value="LOCATED_IN"/>
+  </Relations>
+</View>

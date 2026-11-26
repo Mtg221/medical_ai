@@ -1,0 +1,239 @@
+=== DEV (val.jsonl) METRICS BEFORE PHASE 4 FIXES ===
+{
+  "documents_evaluated": 160,
+  "strict_span": {
+    "precision": 0.992879,
+    "recall": 0.993553,
+    "f1": 0.993216,
+    "tp": 2928.0,
+    "fp": 21.0,
+    "fn": 19.0,
+    "macro_f1": 0.993719
+  },
+  "lenient_span": {
+    "precision": 0.994914,
+    "recall": 0.995589,
+    "f1": 0.995251,
+    "tp": 2934.0,
+    "fp": 15.0,
+    "fn": 13.0
+  },
+  "per_entity_type": {
+    "ANATOMY": {
+      "precision": 1.0,
+      "recall": 0.980769,
+      "f1": 0.990291,
+      "tp": 102.0,
+      "fp": 0.0,
+      "fn": 2.0
+    },
+    "DATE": {
+      "precision": 1.0,
+      "recall": 0.972603,
+      "f1": 0.986111,
+      "tp": 355.0,
+      "fp": 0.0,
+      "fn": 10.0
+    },
+    "DIAGNOSIS": {
+      "precision": 0.980488,
+      "recall": 0.990148,
+      "f1": 0.985294,
+      "tp": 402.0,
+      "fp": 8.0,
+      "fn": 4.0
+    },
+    "DOSAGE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 210.0,
+      "fp": 0.0,
+      "fn": 0.0
+    },
+    "DURATION": {
+      "precision": 0.933333,
+      "recall": 1.0,
+      "f1": 0.965517,
+      "tp": 140.0,
+      "fp": 10.0,
+      "fn": 0.0
+    },
+    "FREQUENCY": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 210.0,
+      "fp": 0.0,
+      "fn": 0.0
+    },
+    "LAB_TEST": {
+      "precision": 0.98773,
+      "recall": 0.98773,
+      "f1": 0.98773,
+      "tp": 161.0,
+      "fp": 2.0,
+      "fn": 2.0
+    },
+    "LAB_UNIT": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 148.0,
+      "fp": 0.0,
+      "fn": 0.0
+    },
+    "LAB_VALUE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 148.0,
+      "fp": 0.0,
+      "fn": 0.0
+    },
+    "MEDICATION": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 215.0,
+      "fp": 0.0,
+      "fn": 0.0
+    },
+    "PATIENT_ID": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 163.0,
+      "fp": 0.0,
+      "fn": 0.0
+    },
+    "PROCEDURE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 118.0,
+      "fp": 0.0,
+      "fn": 0.0
+    },
+    "ROUTE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 210.0,
+      "fp": 0.0,
+      "fn": 0.0
+    },
+    "SYMPTOM": {
+      "precision": 0.997118,
+      "recall": 0.997118,
+      "f1": 0.997118,
+      "tp": 346.0,
+      "fp": 1.0,
+      "fn": 1.0
+    }
+  },
+  "per_language": {
+    "en": {
+      "precision": 0.992782,
+      "recall": 0.993434,
+      "f1": 0.993108,
+      "tp": 1513.0,
+      "fp": 11.0,
+      "fn": 10.0
+    },
+    "fr": {
+      "precision": 0.992982,
+      "recall": 0.99368,
+      "f1": 0.993331,
+      "tp": 1415.0,
+      "fp": 10.0,
+      "fn": 9.0
+    }
+  },
+  "per_doc_type": {
+    "consultation": {
+      "precision": 0.990361,
+      "recall": 0.992754,
+      "f1": 0.991556,
+      "tp": 411.0,
+      "fp": 4.0,
+      "fn": 3.0
+    },
+    "discharge_summary": {
+      "precision": 0.994742,
+      "recall": 0.995789,
+      "f1": 0.995266,
+      "tp": 946.0,
+      "fp": 5.0,
+      "fn": 4.0
+    },
+    "lab_report": {
+      "precision": 0.990099,
+      "recall": 0.990099,
+      "f1": 0.990099,
+      "tp": 400.0,
+      "fp": 4.0,
+      "fn": 4.0
+    },
+    "operative_note": {
+      "precision": 0.992042,
+      "recall": 0.994681,
+      "f1": 0.99336,
+      "tp": 374.0,
+      "fp": 3.0,
+      "fn": 2.0
+    },
+    "prescription": {
+      "precision": 0.998102,
+      "recall": 0.998102,
+      "f1": 0.998102,
+      "tp": 526.0,
+      "fp": 1.0,
+      "fn": 1.0
+    },
+    "radiology_report": {
+      "precision": 0.985455,
+      "recall": 0.981884,
+      "f1": 0.983666,
+      "tp": 271.0,
+      "fp": 4.0,
+      "fn": 5.0
+    }
+  },
+  "assertion": {
+    "accuracy": 0.94877,
+    "macro_f1": 0.79884,
+    "support": 2928
+  },
+  "relations": {
+    "precision": 0.940039,
+    "recall": 0.947368,
+    "f1": 0.943689,
+    "tp": 972.0,
+    "fp": 62.0,
+    "fn": 54.0
+  },
+  "timex": {
+    "precision": 0.98892,
+    "recall": 0.998601,
+    "f1": 0.993737,
+    "tp": 714.0,
+    "fp": 8.0,
+    "fn": 1.0,
+    "normalization_accuracy": 1.0
+  },
+  "doc_classification": {
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "support": 160
+  },
+  "calibration": {
+    "ece": 0.005973,
+    "brier": 0.005904
+  }
+}
+
+=== TEMPORAL AMBIGUITY & OCR REPAIR POLICY PROBES ===
+Traceback (most recent call last):
+  File "<stdin>", line 27, in <module>
+AttributeError: 'dict' object has no attribute 'normalized'

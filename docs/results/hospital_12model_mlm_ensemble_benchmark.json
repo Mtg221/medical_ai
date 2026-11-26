@@ -1,0 +1,135 @@
+{
+  "evaluated_at_utc": "2026-11-23T01:31:49Z",
+  "note": "post-hoc (test seen) \u2014 12-Model Hybrid MLM + Multi-Capacity Hospital Ensemble (3x96d + 3x128d + 3x160d + 3x MLM-pretrained 160d/192d, 8/12 supermajority + CRF v2)",
+  "pretrained_weights_used": false,
+  "self_supervised_mlm_from_scratch": true,
+  "ensemble_architecture": {
+    "total_models": 12,
+    "models_96d": 3,
+    "models_128d_kaggle_cuda": 3,
+    "models_160d_kaggle_cuda": 3,
+    "models_mlm_160d_192d_kaggle_cuda": 3,
+    "voting_rule": "8/12 supermajority (or mean_conf >= 0.94) + CRF v2 merge"
+  },
+  "splits": {
+    "open_clinical_test": {
+      "torch_12model_only": {
+        "num_docs": 443,
+        "strict_f1": 0.661974,
+        "lenient_f1": 0.725701,
+        "precision": 0.704336,
+        "recall": 0.624418,
+        "assertion_macro_f1": 0.220671,
+        "doc_acc": 1.0,
+        "en_f1": 0.537406,
+        "fr_f1": 0.819223,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.397578,
+            "lenient_f1": 0.498486
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.550382,
+            "lenient_f1": 0.636553
+          },
+          "pxcorpus": {
+            "strict_f1": 0.928648,
+            "lenient_f1": 0.944425
+          }
+        }
+      },
+      "hospital_ensemble_12model": {
+        "num_docs": 443,
+        "strict_f1": 0.670982,
+        "lenient_f1": 0.747213,
+        "precision": 0.690941,
+        "recall": 0.652144,
+        "assertion_macro_f1": 0.217905,
+        "doc_acc": 1.0,
+        "en_f1": 0.556714,
+        "fr_f1": 0.818332,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.421152,
+            "lenient_f1": 0.553352
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.570027,
+            "lenient_f1": 0.669492
+          },
+          "pxcorpus": {
+            "strict_f1": 0.927143,
+            "lenient_f1": 0.945
+          }
+        },
+        "uncertainty_stats": {
+          "total_torch_entities": 3805,
+          "high_uncertainty_count": 1715,
+          "high_uncertainty_rate": 0.4507,
+          "mean_confidence_variance": 0.1393
+        }
+      }
+    },
+    "realistic_llm_80": {
+      "torch_12model_only": {
+        "num_docs": 80,
+        "strict_f1": 0.696291,
+        "lenient_f1": 0.776662,
+        "precision": 0.778066,
+        "recall": 0.63007,
+        "assertion_macro_f1": 0.624622,
+        "doc_acc": 0.75,
+        "en_f1": 0.691561,
+        "fr_f1": 0.701361
+      },
+      "hospital_ensemble_12model": {
+        "num_docs": 80,
+        "strict_f1": 0.721347,
+        "lenient_f1": 0.815818,
+        "precision": 0.75711,
+        "recall": 0.688811,
+        "assertion_macro_f1": 0.629654,
+        "doc_acc": 0.75,
+        "en_f1": 0.721678,
+        "fr_f1": 0.720984,
+        "uncertainty_stats": {
+          "total_torch_entities": 1158,
+          "high_uncertainty_count": 655,
+          "high_uncertainty_rate": 0.5656,
+          "mean_confidence_variance": 0.1883
+        }
+      }
+    },
+    "synth_unseen_terms": {
+      "torch_12model_only": {
+        "num_docs": 160,
+        "strict_f1": 0.920886,
+        "lenient_f1": 0.944225,
+        "precision": 0.953447,
+        "recall": 0.890475,
+        "assertion_macro_f1": 0.77206,
+        "doc_acc": 1.0,
+        "en_f1": 0.915825,
+        "fr_f1": 0.926146
+      },
+      "hospital_ensemble_12model": {
+        "num_docs": 160,
+        "strict_f1": 0.934526,
+        "lenient_f1": 0.96085,
+        "precision": 0.950566,
+        "recall": 0.919018,
+        "assertion_macro_f1": 0.773636,
+        "doc_acc": 1.0,
+        "en_f1": 0.930909,
+        "fr_f1": 0.938297,
+        "uncertainty_stats": {
+          "total_torch_entities": 2814,
+          "high_uncertainty_count": 634,
+          "high_uncertainty_rate": 0.2253,
+          "mean_confidence_variance": 0.0775
+        }
+      }
+    }
+  },
+  "elapsed_seconds": 214.85
+}

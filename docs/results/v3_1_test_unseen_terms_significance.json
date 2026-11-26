@@ -1,0 +1,608 @@
+{
+  "dataset": "SYNTH-MED-V3.1",
+  "split": "test_unseen_terms",
+  "num_eval_docs": 160,
+  "num_seeds": 5,
+  "method": "Cluster-paired document bootstrap pooled across 5 seeds",
+  "n_resamples": 10000,
+  "correction": "Holm-Bonferroni across all 21 pairwise comparisons",
+  "summary_table": {
+    "rule_based": {
+      "strict_f1": {
+        "mean": 0.3233,
+        "std": 0.0,
+        "ci95_low": 0.3233,
+        "ci95_high": 0.3233
+      },
+      "lenient_f1": {
+        "mean": 0.3385,
+        "std": 0.0,
+        "ci95_low": 0.3385,
+        "ci95_high": 0.3385
+      },
+      "assertion_macro_f1": {
+        "mean": 0.6602,
+        "std": 0.0,
+        "ci95_low": 0.6602,
+        "ci95_high": 0.6602
+      },
+      "relation_f1": {
+        "mean": 0.0368,
+        "std": 0.0,
+        "ci95_low": 0.0368,
+        "ci95_high": 0.0368
+      },
+      "timex_f1": {
+        "mean": 0.5096,
+        "std": 0.0,
+        "ci95_low": 0.5096,
+        "ci95_high": 0.5096
+      },
+      "timex_norm_acc": {
+        "mean": 0.2072,
+        "std": 0.0,
+        "ci95_low": 0.2072,
+        "ci95_high": 0.2072
+      },
+      "doc_type_acc": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "strict_f1_pooled_boot_ci95": {
+        "mean": 0.3233,
+        "ci95_low": 0.2966,
+        "ci95_high": 0.3488
+      }
+    },
+    "classical_ml": {
+      "strict_f1": {
+        "mean": 0.8441,
+        "std": 0.0,
+        "ci95_low": 0.8441,
+        "ci95_high": 0.8441
+      },
+      "lenient_f1": {
+        "mean": 0.9353,
+        "std": 0.0,
+        "ci95_low": 0.9353,
+        "ci95_high": 0.9353
+      },
+      "assertion_macro_f1": {
+        "mean": 0.7446,
+        "std": 0.0,
+        "ci95_low": 0.7446,
+        "ci95_high": 0.7446
+      },
+      "relation_f1": {
+        "mean": 0.6701,
+        "std": 0.0,
+        "ci95_low": 0.6701,
+        "ci95_high": 0.6701
+      },
+      "timex_f1": {
+        "mean": 0.7179,
+        "std": 0.0,
+        "ci95_low": 0.7179,
+        "ci95_high": 0.7179
+      },
+      "timex_norm_acc": {
+        "mean": 0.1265,
+        "std": 0.0,
+        "ci95_low": 0.1265,
+        "ci95_high": 0.1265
+      },
+      "doc_type_acc": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "strict_f1_pooled_boot_ci95": {
+        "mean": 0.8441,
+        "ci95_low": 0.8261,
+        "ci95_high": 0.8617
+      }
+    },
+    "classical_crf": {
+      "strict_f1": {
+        "mean": 0.9169,
+        "std": 0.0,
+        "ci95_low": 0.9169,
+        "ci95_high": 0.9169
+      },
+      "lenient_f1": {
+        "mean": 0.9319,
+        "std": 0.0,
+        "ci95_low": 0.9319,
+        "ci95_high": 0.9319
+      },
+      "assertion_macro_f1": {
+        "mean": 0.7511,
+        "std": 0.0,
+        "ci95_low": 0.7511,
+        "ci95_high": 0.7511
+      },
+      "relation_f1": {
+        "mean": 0.7197,
+        "std": 0.0,
+        "ci95_low": 0.7197,
+        "ci95_high": 0.7197
+      },
+      "timex_f1": {
+        "mean": 0.7179,
+        "std": 0.0,
+        "ci95_low": 0.7179,
+        "ci95_high": 0.7179
+      },
+      "timex_norm_acc": {
+        "mean": 0.1265,
+        "std": 0.0,
+        "ci95_low": 0.1265,
+        "ci95_high": 0.1265
+      },
+      "doc_type_acc": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "strict_f1_pooled_boot_ci95": {
+        "mean": 0.9169,
+        "ci95_low": 0.9046,
+        "ci95_high": 0.9286
+      }
+    },
+    "bilstm": {
+      "strict_f1": {
+        "mean": 0.7859,
+        "std": 0.0102,
+        "ci95_low": 0.777,
+        "ci95_high": 0.7949
+      },
+      "lenient_f1": {
+        "mean": 0.8588,
+        "std": 0.0069,
+        "ci95_low": 0.8528,
+        "ci95_high": 0.8648
+      },
+      "assertion_macro_f1": {
+        "mean": 0.7411,
+        "std": 0.0148,
+        "ci95_low": 0.7281,
+        "ci95_high": 0.7541
+      },
+      "relation_f1": {
+        "mean": 0.6655,
+        "std": 0.0216,
+        "ci95_low": 0.6466,
+        "ci95_high": 0.6844
+      },
+      "timex_f1": {
+        "mean": 0.6994,
+        "std": 0.0061,
+        "ci95_low": 0.6941,
+        "ci95_high": 0.7047
+      },
+      "timex_norm_acc": {
+        "mean": 0.123,
+        "std": 0.0029,
+        "ci95_low": 0.1205,
+        "ci95_high": 0.1256
+      },
+      "doc_type_acc": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "strict_f1_pooled_boot_ci95": {
+        "mean": 0.7859,
+        "ci95_low": 0.7639,
+        "ci95_high": 0.8077
+      }
+    },
+    "bilstm_crf": {
+      "strict_f1": {
+        "mean": 0.8141,
+        "std": 0.0064,
+        "ci95_low": 0.8085,
+        "ci95_high": 0.8197
+      },
+      "lenient_f1": {
+        "mean": 0.8416,
+        "std": 0.0115,
+        "ci95_low": 0.8315,
+        "ci95_high": 0.8517
+      },
+      "assertion_macro_f1": {
+        "mean": 0.7209,
+        "std": 0.023,
+        "ci95_low": 0.7007,
+        "ci95_high": 0.741
+      },
+      "relation_f1": {
+        "mean": 0.7018,
+        "std": 0.0125,
+        "ci95_low": 0.6909,
+        "ci95_high": 0.7128
+      },
+      "timex_f1": {
+        "mean": 0.7123,
+        "std": 0.0054,
+        "ci95_low": 0.7076,
+        "ci95_high": 0.717
+      },
+      "timex_norm_acc": {
+        "mean": 0.1222,
+        "std": 0.0046,
+        "ci95_low": 0.1182,
+        "ci95_high": 0.1262
+      },
+      "doc_type_acc": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "strict_f1_pooled_boot_ci95": {
+        "mean": 0.8141,
+        "ci95_low": 0.7941,
+        "ci95_high": 0.8334
+      }
+    },
+    "transformer": {
+      "strict_f1": {
+        "mean": 0.5241,
+        "std": 0.0104,
+        "ci95_low": 0.515,
+        "ci95_high": 0.5333
+      },
+      "lenient_f1": {
+        "mean": 0.698,
+        "std": 0.009,
+        "ci95_low": 0.69,
+        "ci95_high": 0.7059
+      },
+      "assertion_macro_f1": {
+        "mean": 0.7075,
+        "std": 0.0202,
+        "ci95_low": 0.6898,
+        "ci95_high": 0.7252
+      },
+      "relation_f1": {
+        "mean": 0.3984,
+        "std": 0.0288,
+        "ci95_low": 0.3732,
+        "ci95_high": 0.4237
+      },
+      "timex_f1": {
+        "mean": 0.4505,
+        "std": 0.0289,
+        "ci95_low": 0.4252,
+        "ci95_high": 0.4759
+      },
+      "timex_norm_acc": {
+        "mean": 0.1578,
+        "std": 0.0069,
+        "ci95_low": 0.1518,
+        "ci95_high": 0.1638
+      },
+      "doc_type_acc": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "strict_f1_pooled_boot_ci95": {
+        "mean": 0.5241,
+        "ci95_low": 0.4997,
+        "ci95_high": 0.5493
+      }
+    },
+    "hybrid": {
+      "strict_f1": {
+        "mean": 0.8277,
+        "std": 0.0234,
+        "ci95_low": 0.8072,
+        "ci95_high": 0.8482
+      },
+      "lenient_f1": {
+        "mean": 0.8452,
+        "std": 0.0214,
+        "ci95_low": 0.8265,
+        "ci95_high": 0.864
+      },
+      "assertion_macro_f1": {
+        "mean": 0.6672,
+        "std": 0.0744,
+        "ci95_low": 0.602,
+        "ci95_high": 0.7324
+      },
+      "relation_f1": {
+        "mean": 0.8127,
+        "std": 0.0559,
+        "ci95_low": 0.7638,
+        "ci95_high": 0.8617
+      },
+      "timex_f1": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "timex_norm_acc": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "doc_type_acc": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "strict_f1_pooled_boot_ci95": {
+        "mean": 0.8277,
+        "ci95_low": 0.8084,
+        "ci95_high": 0.8464
+      }
+    }
+  },
+  "pairwise_comparisons": [
+    {
+      "model_a": "rule_based",
+      "model_b": "classical_ml",
+      "f1_a": 0.323282,
+      "f1_b": 0.84412,
+      "delta_f1": 0.520838,
+      "ci95_low": 0.499268,
+      "ci95_high": 0.543813,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "rule_based",
+      "model_b": "classical_crf",
+      "f1_a": 0.323282,
+      "f1_b": 0.916908,
+      "delta_f1": 0.593627,
+      "ci95_low": 0.571967,
+      "ci95_high": 0.616705,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "rule_based",
+      "model_b": "bilstm",
+      "f1_a": 0.323282,
+      "f1_b": 0.785941,
+      "delta_f1": 0.462659,
+      "ci95_low": 0.444645,
+      "ci95_high": 0.481695,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "rule_based",
+      "model_b": "bilstm_crf",
+      "f1_a": 0.323282,
+      "f1_b": 0.814149,
+      "delta_f1": 0.490868,
+      "ci95_low": 0.474134,
+      "ci95_high": 0.509203,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "rule_based",
+      "model_b": "transformer",
+      "f1_a": 0.323282,
+      "f1_b": 0.524058,
+      "delta_f1": 0.200776,
+      "ci95_low": 0.176827,
+      "ci95_high": 0.226978,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "rule_based",
+      "model_b": "hybrid",
+      "f1_a": 0.323282,
+      "f1_b": 0.82779,
+      "delta_f1": 0.504509,
+      "ci95_low": 0.486675,
+      "ci95_high": 0.523956,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "classical_ml",
+      "model_b": "classical_crf",
+      "f1_a": 0.84412,
+      "f1_b": 0.916908,
+      "delta_f1": 0.072788,
+      "ci95_low": 0.059544,
+      "ci95_high": 0.08626,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "classical_ml",
+      "model_b": "bilstm",
+      "f1_a": 0.84412,
+      "f1_b": 0.785941,
+      "delta_f1": -0.058179,
+      "ci95_low": -0.071981,
+      "ci95_high": -0.044679,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "classical_ml",
+      "model_b": "bilstm_crf",
+      "f1_a": 0.84412,
+      "f1_b": 0.814149,
+      "delta_f1": -0.029971,
+      "ci95_low": -0.043663,
+      "ci95_high": -0.016974,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "classical_ml",
+      "model_b": "transformer",
+      "f1_a": 0.84412,
+      "f1_b": 0.524058,
+      "delta_f1": -0.320062,
+      "ci95_low": -0.338642,
+      "ci95_high": -0.301827,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "classical_ml",
+      "model_b": "hybrid",
+      "f1_a": 0.84412,
+      "f1_b": 0.82779,
+      "delta_f1": -0.01633,
+      "ci95_low": -0.029994,
+      "ci95_high": -0.0032,
+      "raw_p_value": 0.01459854,
+      "holm_p_value": 0.01459854,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "classical_crf",
+      "model_b": "bilstm",
+      "f1_a": 0.916908,
+      "f1_b": 0.785941,
+      "delta_f1": -0.130968,
+      "ci95_low": -0.147061,
+      "ci95_high": -0.115108,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "classical_crf",
+      "model_b": "bilstm_crf",
+      "f1_a": 0.916908,
+      "f1_b": 0.814149,
+      "delta_f1": -0.102759,
+      "ci95_low": -0.11732,
+      "ci95_high": -0.088978,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "classical_crf",
+      "model_b": "transformer",
+      "f1_a": 0.916908,
+      "f1_b": 0.524058,
+      "delta_f1": -0.39285,
+      "ci95_low": -0.414014,
+      "ci95_high": -0.371389,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "classical_crf",
+      "model_b": "hybrid",
+      "f1_a": 0.916908,
+      "f1_b": 0.82779,
+      "delta_f1": -0.089118,
+      "ci95_low": -0.103529,
+      "ci95_high": -0.075309,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "bilstm",
+      "model_b": "bilstm_crf",
+      "f1_a": 0.785941,
+      "f1_b": 0.814149,
+      "delta_f1": 0.028209,
+      "ci95_low": 0.02041,
+      "ci95_high": 0.035965,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "bilstm",
+      "model_b": "transformer",
+      "f1_a": 0.785941,
+      "f1_b": 0.524058,
+      "delta_f1": -0.261883,
+      "ci95_low": -0.280128,
+      "ci95_high": -0.243579,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "bilstm",
+      "model_b": "hybrid",
+      "f1_a": 0.785941,
+      "f1_b": 0.82779,
+      "delta_f1": 0.04185,
+      "ci95_low": 0.032851,
+      "ci95_high": 0.050618,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "bilstm_crf",
+      "model_b": "transformer",
+      "f1_a": 0.814149,
+      "f1_b": 0.524058,
+      "delta_f1": -0.290091,
+      "ci95_low": -0.306536,
+      "ci95_high": -0.272727,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "bilstm_crf",
+      "model_b": "hybrid",
+      "f1_a": 0.814149,
+      "f1_b": 0.82779,
+      "delta_f1": 0.013641,
+      "ci95_low": 0.008196,
+      "ci95_high": 0.019158,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    },
+    {
+      "model_a": "transformer",
+      "model_b": "hybrid",
+      "f1_a": 0.524058,
+      "f1_b": 0.82779,
+      "delta_f1": 0.303732,
+      "ci95_low": 0.286647,
+      "ci95_high": 0.319938,
+      "raw_p_value": 0.00019998,
+      "holm_p_value": 0.00419958,
+      "significant_alpha_0_05": true
+    }
+  ]
+}

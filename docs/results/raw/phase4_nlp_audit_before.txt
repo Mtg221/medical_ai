@@ -1,0 +1,43 @@
+=== 1. SEVEN REQUIRED ASSERTION SENTENCES (EN + FR) ON hybrid_v2 ===
+  [en] 'No fever.' -> [('SYMPTOM', 'fever', 'absent', 'current', 'patient', 'absent')]
+  [fr] 'Pas de fièvre.' -> [('SYMPTOM', 'fièvre', 'absent', 'current', 'patient', 'absent')]
+  [en] 'Possible pneumonia.' -> [('DIAGNOSIS', 'pneumonia', 'possible', 'current', 'patient', 'uncertain')]
+  [fr] 'Pneumonie possible.' -> [('DIAGNOSIS', 'Pneumonie', 'possible', 'current', 'patient', 'uncertain')]
+  [en] 'History of asthma.' -> [('DIAGNOSIS', 'asthma', 'confirmed', 'historical', 'patient', 'present')]
+  [fr] "Antécédent d'asthme." -> [('DIAGNOSIS', 'asthme', 'confirmed', 'historical', 'patient', 'present')]
+  [en] 'Mother has diabetes.' -> [('DIAGNOSIS', 'diabetes', 'confirmed', 'current', 'family', 'family_history')]
+  [fr] 'Sa mère a un diabète.' -> [('DIAGNOSIS', 'diabète', 'confirmed', 'current', 'family', 'family_history')]
+  [en] 'Previous scan showed a lesion.' -> [('MEDICATION', 'lesion', 'confirmed', 'historical', 'patient', 'present')]
+  [fr] 'Le scanner précédent montrait une lésion.' -> [('PROCEDURE', 'scanner précédent montrait', 'confirmed', 'current', 'patient', 'present'), ('MEDICATION', 'lésion', 'confirmed', 'historical', 'patient', 'present')]
+  [en] 'Current scan does not show the lesion.' -> [('PROCEDURE', 'scan does', 'confirmed', 'current', 'patient', 'present'), ('ANATOMY', 'lesion', 'absent', 'current', 'patient', 'absent')]
+  [fr] 'Le scanner actuel ne montre pas la lésion.' -> [('PROCEDURE', 'scanner actuel', 'confirmed', 'current', 'patient', 'present'), ('MEDICATION', 'lésion', 'confirmed', 'current', 'patient', 'present')]
+  [en] 'No evidence of recurrent disease.' -> [('DIAGNOSIS', 'recurrent disease', 'absent', 'current', 'patient', 'absent')]
+  [fr] 'Aucun signe de récidive.' -> [('MEDICATION', 'récidive', 'absent', 'current', 'patient', 'absent')]
+
+=== 2. MULTI-ENTITY & 9 RELATION TYPES PROBES ON hybrid_v2 ===
+Traceback (most recent call last):
+  File "<stdin>", line 41, in <module>
+AttributeError: 'ExtractionResult' object has no attribute 'relationships'
+
+=== 2B. MULTI-ENTITY & 9 RELATION TYPES PROBES ON hybrid_v2 ===
+  [en] ENTS=[('MEDICATION', 'metformin'), ('DOSAGE', '500 mg'), ('FREQUENCY', 'BID'), ('ROUTE', 'PO'), ('DURATION', 'for 14 days'), ('SYMPTOM', 'diabetes'), ('MEDICATION', 'lisinopril'), ('DOSAGE', '10 mg'), ('ROUTE', 'PO'), ('DIAGNOSIS', 'hypertension')]
+  [en] RELS=[('HAS_DOSAGE', 'MEDICATION:metformin', 'DOSAGE:500 mg'), ('HAS_FREQUENCY', 'MEDICATION:metformin', 'FREQUENCY:BID'), ('HAS_ROUTE', 'MEDICATION:metformin', 'ROUTE:PO'), ('HAS_DOSAGE', 'MEDICATION:metformin', 'DOSAGE:10 mg'), ('HAS_ROUTE', 'MEDICATION:metformin', 'ROUTE:PO'), ('HAS_FREQUENCY', 'MEDICATION:lisinopril', 'FREQUENCY:BID'), ('HAS_ROUTE', 'MEDICATION:lisinopril', 'ROUTE:PO'), ('HAS_DOSAGE', 'MEDICATION:lisinopril', 'DOSAGE:10 mg'), ('HAS_ROUTE', 'MEDICATION:lisinopril', 'ROUTE:PO')]
+  [en] ENTS=[('LAB_TEST', 'HbA1c'), ('LAB_UNIT', '%'), ('MEDICATION', 'creatinine'), ('DOSAGE', '1.2 mg'), ('LAB_UNIT', '/dL'), ('PROCEDURE', 'Chest CT'), ('DIAGNOSIS', 'pneumonia'), ('MEDICATION', 'located'), ('ANATOMY', 'right lower lobe'), ('MEDICATION', 'Amoxicillin'), ('SYMPTOM', 'causes rash')]
+  [en] RELS=[('HAS_UNIT', 'LAB_TEST:HbA1c', 'LAB_UNIT:/dL'), ('HAS_DOSAGE', 'MEDICATION:creatinine', 'DOSAGE:1.2 mg'), ('LOCATED_IN', 'DIAGNOSIS:pneumonia', 'ANATOMY:right lower lobe')]
+  [fr] ENTS=[('MEDICATION', 'metformine'), ('DOSAGE', '500 mg'), ('FREQUENCY', '2x/j'), ('ROUTE', 'PO'), ('DIAGNOSIS', 'diabète'), ('MEDICATION', 'lisinopril'), ('DOSAGE', '10 mg'), ('FREQUENCY', '1x/j'), ('ROUTE', 'PO'), ('DIAGNOSIS', 'hypertension')]
+  [fr] RELS=[('HAS_DOSAGE', 'MEDICATION:metformine', 'DOSAGE:500 mg'), ('HAS_FREQUENCY', 'MEDICATION:metformine', 'FREQUENCY:2x/j'), ('HAS_ROUTE', 'MEDICATION:metformine', 'ROUTE:PO'), ('HAS_DOSAGE', 'MEDICATION:metformine', 'DOSAGE:10 mg'), ('HAS_ROUTE', 'MEDICATION:lisinopril', 'ROUTE:PO'), ('HAS_DOSAGE', 'MEDICATION:lisinopril', 'DOSAGE:10 mg'), ('HAS_FREQUENCY', 'MEDICATION:lisinopril', 'FREQUENCY:1x/j'), ('HAS_ROUTE', 'MEDICATION:lisinopril', 'ROUTE:PO')]
+
+=== 3. TEMPORAL EXTRACTION VS NORMALIZATION ON DEV (val.jsonl) ===
+Traceback (most recent call last):
+  File "<stdin>", line 37, in <module>
+AttributeError: 'ExtractionService' object has no attribute '_load_hybrid'. Did you mean: '_get_hybrid'?
+
+=== 3B. TEMPORAL EXTRACTION VS NORMALIZATION ON DEV (val.jsonl) ===
+Traceback (most recent call last):
+  File "<stdin>", line 12, in <module>
+AttributeError: 'HybridPipeline' object has no attribute 'predict'
+
+=== 3C. DEV (val.jsonl) METRICS BEFORE PHASE 4 FIXES ===
+Traceback (most recent call last):
+  File "<stdin>", line 16, in <module>
+KeyError: 'entities'

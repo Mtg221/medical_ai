@@ -1,0 +1,185 @@
+{
+  "evaluated_at_utc": "2026-11-19T17:42:49Z",
+  "note": "post-hoc (test seen) \u2014 Hospital 3-seed Partial-Label Marginal Char-CNN-BiLSTM-CRF trained from scratch on 3408 EN+FR docs",
+  "pretrained_weights_used": false,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "train_source_counts": {
+    "synthetic_v3_1": 600,
+    "maccrobat2020": 138,
+    "pxcorpus": 1386,
+    "e3c_layer1": 121,
+    "bc5cdr": 570,
+    "ncbi_disease": 593
+  },
+  "hyperparams": {
+    "word_emb_dim": 48,
+    "char_emb_dim": 16,
+    "char_filters": 16,
+    "hidden_dim": 96,
+    "num_layers": 2,
+    "epochs": 12,
+    "batch_size": 24,
+    "lr": 0.003
+  },
+  "models": [
+    {
+      "seed": 1,
+      "training_device": "cpu",
+      "train_seconds": 1243.28,
+      "initial_weights_sha256": "f574f7ebebdc6197ce685f5578fe8259bb5a08b68fb253b83743b0a15d8f49e0",
+      "trained_weights_sha256": "625921737a777239853e752a0a4d704d87bc497b2d556400385070dc14376eed",
+      "saved_dir": "models/hospital_v2_biomed/hospital_char_cnn_bilstm_crf_seed1"
+    },
+    {
+      "seed": 2,
+      "training_device": "cpu",
+      "train_seconds": 850.52,
+      "initial_weights_sha256": "614bc64db291e82ab7481d8496f11058bf5d2a8a32838084034dea18c5120263",
+      "trained_weights_sha256": "470963a746c83a2e0be17119b5014ab1918fae6adadac4f3a8e0330b6939bf80",
+      "saved_dir": "models/hospital_v2_biomed/hospital_char_cnn_bilstm_crf_seed2"
+    },
+    {
+      "seed": 3,
+      "training_device": "cpu",
+      "train_seconds": 973.53,
+      "initial_weights_sha256": "91706713ede7871839ca622da4f8ed34103238392548da8a41a494228126b2a1",
+      "trained_weights_sha256": "def826d2fefed97f68abba0d6b136f7fb5c87f95a0efa024cafd105bade66d9b",
+      "saved_dir": "models/hospital_v2_biomed/hospital_char_cnn_bilstm_crf_seed3"
+    }
+  ],
+  "initial_weights_sha256": "f574f7ebebdc6197ce685f5578fe8259bb5a08b68fb253b83743b0a15d8f49e0",
+  "trained_weights_sha256": "625921737a777239853e752a0a4d704d87bc497b2d556400385070dc14376eed",
+  "torch_train_seconds": 3067.62,
+  "crf_train_seconds": 124.1,
+  "splits": {
+    "synth_val": {
+      "torch_partial_crf": {
+        "num_docs": 160,
+        "strict_f1": 0.992696,
+        "lenient_f1": 0.996433,
+        "precision": 0.993878,
+        "recall": 0.991517,
+        "assertion_macro_f1": 0.778752,
+        "doc_acc": 1.0,
+        "en_f1": 0.994091,
+        "fr_f1": 0.9912
+      },
+      "hospital_ensemble_torch_plus_crf": {
+        "num_docs": 160,
+        "strict_f1": 0.997624,
+        "lenient_f1": 0.999321,
+        "precision": 0.997963,
+        "recall": 0.997285,
+        "assertion_macro_f1": 0.778241,
+        "doc_acc": 1.0,
+        "en_f1": 0.997374,
+        "fr_f1": 0.997892
+      }
+    },
+    "synth_unseen_terms": {
+      "torch_partial_crf": {
+        "num_docs": 160,
+        "strict_f1": 0.914286,
+        "lenient_f1": 0.945546,
+        "precision": 0.926115,
+        "recall": 0.902755,
+        "assertion_macro_f1": 0.778191,
+        "doc_acc": 1.0,
+        "en_f1": 0.905361,
+        "fr_f1": 0.923497
+      },
+      "hospital_ensemble_torch_plus_crf": {
+        "num_docs": 160,
+        "strict_f1": 0.932999,
+        "lenient_f1": 0.961069,
+        "precision": 0.939435,
+        "recall": 0.926651,
+        "assertion_macro_f1": 0.779359,
+        "doc_acc": 1.0,
+        "en_f1": 0.931885,
+        "fr_f1": 0.934148
+      }
+    },
+    "open_clinical_test": {
+      "torch_partial_crf": {
+        "num_docs": 443,
+        "strict_f1": 0.611953,
+        "lenient_f1": 0.711931,
+        "precision": 0.579002,
+        "recall": 0.648882,
+        "assertion_macro_f1": 0.219311,
+        "doc_acc": 1.0,
+        "en_f1": 0.493804,
+        "fr_f1": 0.778602,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.332797,
+            "lenient_f1": 0.485531
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.506299,
+            "lenient_f1": 0.634252
+          },
+          "pxcorpus": {
+            "strict_f1": 0.930166,
+            "lenient_f1": 0.955364
+          }
+        }
+      },
+      "hospital_ensemble_torch_plus_crf": {
+        "num_docs": 443,
+        "strict_f1": 0.629294,
+        "lenient_f1": 0.724397,
+        "precision": 0.591552,
+        "recall": 0.672181,
+        "assertion_macro_f1": 0.21868,
+        "doc_acc": 1.0,
+        "en_f1": 0.516754,
+        "fr_f1": 0.788517,
+        "by_corpus": {
+          "e3c_layer1": {
+            "strict_f1": 0.368379,
+            "lenient_f1": 0.516996
+          },
+          "maccrobat2020": {
+            "strict_f1": 0.529975,
+            "lenient_f1": 0.650264
+          },
+          "pxcorpus": {
+            "strict_f1": 0.93065,
+            "lenient_f1": 0.955084
+          }
+        }
+      }
+    },
+    "realistic_llm_80": {
+      "torch_partial_crf": {
+        "num_docs": 80,
+        "strict_f1": 0.68358,
+        "lenient_f1": 0.790698,
+        "precision": 0.68892,
+        "recall": 0.678322,
+        "assertion_macro_f1": 0.631675,
+        "doc_acc": 0.75,
+        "en_f1": 0.691127,
+        "fr_f1": 0.675131
+      },
+      "hospital_ensemble_torch_plus_crf": {
+        "num_docs": 80,
+        "strict_f1": 0.719778,
+        "lenient_f1": 0.823,
+        "precision": 0.713109,
+        "recall": 0.726573,
+        "assertion_macro_f1": 0.628118,
+        "doc_acc": 0.75,
+        "en_f1": 0.718421,
+        "fr_f1": 0.721287
+      }
+    }
+  },
+  "total_elapsed_s": 3229.59
+}

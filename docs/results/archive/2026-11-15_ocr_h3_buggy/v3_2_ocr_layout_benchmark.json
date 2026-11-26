@@ -1,0 +1,61 @@
+{
+  "total_pages": 120,
+  "runtime_s": 276.51,
+  "overall": {
+    "mean_cer": 0.1061,
+    "mean_wer": 0.2318,
+    "classical_crf_clean_f1": 0.9978,
+    "classical_crf_ocr_f1": 0.5919,
+    "classical_crf_f1_drop": -0.4058
+  },
+  "by_tier": {
+    "tier_1_300dpi_clean": {
+      "pages": 20,
+      "mean_cer": 0.0046,
+      "mean_wer": 0.0263,
+      "classical_crf_clean_f1": 0.9961,
+      "classical_crf_ocr_f1": 0.611,
+      "classical_crf_f1_drop": -0.3851
+    },
+    "tier_2_200dpi_mild_skew_jpeg": {
+      "pages": 20,
+      "mean_cer": 0.0056,
+      "mean_wer": 0.0316,
+      "classical_crf_clean_f1": 0.9974,
+      "classical_crf_ocr_f1": 0.6319,
+      "classical_crf_f1_drop": -0.3655
+    },
+    "tier_3_phone_perspective_light": {
+      "pages": 20,
+      "mean_cer": 0.0092,
+      "mean_wer": 0.0605,
+      "classical_crf_clean_f1": 1.0,
+      "classical_crf_ocr_f1": 0.663,
+      "classical_crf_f1_drop": -0.337
+    },
+    "tier_4_two_col_table_stamps": {
+      "pages": 20,
+      "mean_cer": 0.1474,
+      "mean_wer": 0.2338,
+      "classical_crf_clean_f1": 0.9987,
+      "classical_crf_ocr_f1": 0.595,
+      "classical_crf_f1_drop": -0.4038
+    },
+    "tier_5_table_multifont_skew5": {
+      "pages": 20,
+      "mean_cer": 0.3673,
+      "mean_wer": 0.5397,
+      "classical_crf_clean_f1": 0.9972,
+      "classical_crf_ocr_f1": 0.512,
+      "classical_crf_f1_drop": -0.4852
+    },
+    "tier_6_150dpi_heavy_blur_noise": {
+      "pages": 20,
+      "mean_cer": 0.1027,
+      "mean_wer": 0.4988,
+      "classical_crf_clean_f1": 0.997,
+      "classical_crf_ocr_f1": 0.5208,
+      "classical_crf_f1_drop": -0.4762
+    }
+  }
+}

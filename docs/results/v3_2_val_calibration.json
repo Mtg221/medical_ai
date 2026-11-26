@@ -1,0 +1,144 @@
+{
+  "split": "val",
+  "total_predicted_entities": 2947,
+  "overall_ece": 0.0019,
+  "reliability_bins": [
+    {
+      "bin": "[0.0, 0.1]",
+      "count": 1,
+      "precision": 1.0
+    },
+    {
+      "bin": "[0.1, 0.2]",
+      "count": 0,
+      "precision": null
+    },
+    {
+      "bin": "[0.2, 0.3]",
+      "count": 0,
+      "precision": null
+    },
+    {
+      "bin": "[0.3, 0.4]",
+      "count": 1,
+      "precision": 1.0
+    },
+    {
+      "bin": "[0.4, 0.5]",
+      "count": 1,
+      "precision": 1.0
+    },
+    {
+      "bin": "[0.5, 0.6]",
+      "count": 3,
+      "precision": 0.6667
+    },
+    {
+      "bin": "[0.6, 0.7]",
+      "count": 2,
+      "precision": 1.0
+    },
+    {
+      "bin": "[0.7, 0.8]",
+      "count": 8,
+      "precision": 1.0
+    },
+    {
+      "bin": "[0.8, 0.9]",
+      "count": 13,
+      "precision": 0.8462
+    },
+    {
+      "bin": "[0.9, 1.0]",
+      "count": 2918,
+      "precision": 0.9986
+    }
+  ],
+  "selected_review_threshold": 0.6,
+  "per_entity_type": {
+    "ANATOMY": {
+      "count": 103,
+      "precision": 1.0,
+      "mean_conf": 0.9758,
+      "ece": 0.0242
+    },
+    "DATE": {
+      "count": 365,
+      "precision": 1.0,
+      "mean_conf": 0.9989,
+      "ece": 0.0011
+    },
+    "DIAGNOSIS": {
+      "count": 406,
+      "precision": 0.9926,
+      "mean_conf": 0.989,
+      "ece": 0.0089
+    },
+    "DOSAGE": {
+      "count": 210,
+      "precision": 1.0,
+      "mean_conf": 0.9995,
+      "ece": 0.0005
+    },
+    "DURATION": {
+      "count": 140,
+      "precision": 1.0,
+      "mean_conf": 0.9995,
+      "ece": 0.0005
+    },
+    "FREQUENCY": {
+      "count": 210,
+      "precision": 1.0,
+      "mean_conf": 0.9995,
+      "ece": 0.0005
+    },
+    "LAB_TEST": {
+      "count": 164,
+      "precision": 0.9817,
+      "mean_conf": 0.995,
+      "ece": 0.0133
+    },
+    "LAB_UNIT": {
+      "count": 148,
+      "precision": 1.0,
+      "mean_conf": 0.9986,
+      "ece": 0.0014
+    },
+    "LAB_VALUE": {
+      "count": 148,
+      "precision": 1.0,
+      "mean_conf": 0.9995,
+      "ece": 0.0005
+    },
+    "MEDICATION": {
+      "count": 215,
+      "precision": 1.0,
+      "mean_conf": 0.9993,
+      "ece": 0.0007
+    },
+    "PATIENT_ID": {
+      "count": 163,
+      "precision": 1.0,
+      "mean_conf": 0.9995,
+      "ece": 0.0005
+    },
+    "PROCEDURE": {
+      "count": 117,
+      "precision": 1.0,
+      "mean_conf": 0.9846,
+      "ece": 0.0154
+    },
+    "ROUTE": {
+      "count": 210,
+      "precision": 1.0,
+      "mean_conf": 0.9995,
+      "ece": 0.0005
+    },
+    "SYMPTOM": {
+      "count": 348,
+      "precision": 0.9971,
+      "mean_conf": 0.9963,
+      "ece": 0.0008
+    }
+  }
+}

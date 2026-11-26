@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+.venv-vision/
+venv/
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+npm-debug.log*
+
+# Runtime data, raw/processed datasets, trained weights & local databases
+var/
+data/raw/
+data/processed/
+data/router_real/
+models/
+experiments/runs/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+
+# Environment & secrets
+.env
+.env.*
+*.pem
+*.key
+
+# macOS / IDE
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MedResearch Platform — Bilingual (EN/FR) Research Workspace</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <a href="#view" class="skip-link" data-i18n="skip">Skip to main content / Aller au contenu principal</a>
+
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <h1 data-i18n="title">MedResearch Intelligence Platform</h1>
+      <p class="sub" data-i18n="subtitle">Bilingual (EN/FR) medical information extraction &amp; research workspace</p>
+    </div>
+    <div class="topbar-actions">
+      <label for="lang-select" class="visually-hidden" data-i18n="language">Language</label>
+      <select id="lang-select" aria-label="Language / Langue">
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+      </select>
+      <span id="user-badge" class="user-badge" hidden></span>
+      <button id="logout-btn" type="button" class="btn btn-secondary" hidden data-i18n="logout">Sign out</button>
+    </div>
+  </header>
+
+  <div class="safety-banner" role="note">
+    <span lang="en">RESEARCH &amp; INFORMATION EXTRACTION SUPPORT ONLY — NOT FOR AUTONOMOUS CLINICAL DIAGNOSIS OR TREATMENT.</span><br />
+    <span lang="fr">PLATEFORME DE RECHERCHE UNIQUEMENT — NON DESTINÉE AU DIAGNOSTIC OU AU TRAITEMENT MÉDICAL AUTONOME.</span>
+  </div>
+
+  <div class="layout">
+    <nav id="nav" class="nav" aria-label="Workspaces" hidden></nav>
+    <main id="view" class="view" tabindex="-1" aria-live="polite"></main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

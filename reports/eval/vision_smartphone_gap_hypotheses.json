@@ -1,0 +1,122 @@
+{
+  "val_v3": {
+    "clinical": {
+      "n": 352,
+      "malignant": 202,
+      "malignant_rate": 0.5739,
+      "sources": {
+        "fitzpatrick17k": 209,
+        "isic": 143
+      },
+      "images_analyzed": 352,
+      "median_w": 469.0,
+      "median_h": 384.0,
+      "mean_luminance": 137.1,
+      "std_luminance": 28.1,
+      "mean_contrast": 33.8,
+      "median_laplacian_var": 419.2,
+      "median_ita_deg": 38.7,
+      "ita_dark_lt10_n": 145,
+      "ita_med_10_41_n": 33,
+      "ita_light_gt41_n": 174
+    },
+    "dermoscopic": {
+      "n": 850,
+      "malignant": 350,
+      "malignant_rate": 0.4118,
+      "sources": {
+        "isic": 850
+      },
+      "images_analyzed": 850,
+      "median_w": 512.0,
+      "median_h": 342.0,
+      "mean_luminance": 150.6,
+      "std_luminance": 26.1,
+      "mean_contrast": 25.5,
+      "median_laplacian_var": 105.5,
+      "median_ita_deg": 56.3,
+      "ita_dark_lt10_n": 177,
+      "ita_med_10_41_n": 145,
+      "ita_light_gt41_n": 528
+    },
+    "tbp_tile": {
+      "n": 295,
+      "malignant": 45,
+      "malignant_rate": 0.1525,
+      "sources": {
+        "isic": 295
+      },
+      "images_analyzed": 295,
+      "median_w": 127.0,
+      "median_h": 127.0,
+      "mean_luminance": 149.3,
+      "std_luminance": 22.6,
+      "mean_contrast": 12.8,
+      "median_laplacian_var": 54.7,
+      "median_ita_deg": 53.5,
+      "ita_dark_lt10_n": 48,
+      "ita_med_10_41_n": 49,
+      "ita_light_gt41_n": 198
+    }
+  },
+  "locked_test_v4": {
+    "clinical": {
+      "n": 571,
+      "malignant": 345,
+      "malignant_rate": 0.6042,
+      "sources": {
+        "fitzpatrick17k": 368,
+        "isic": 203
+      },
+      "images_analyzed": 571,
+      "median_w": 484.0,
+      "median_h": 384.0,
+      "mean_luminance": 132.5,
+      "std_luminance": 28.8,
+      "mean_contrast": 33.5,
+      "median_laplacian_var": 425.2,
+      "median_ita_deg": 15.3,
+      "ita_dark_lt10_n": 276,
+      "ita_med_10_41_n": 69,
+      "ita_light_gt41_n": 226
+    },
+    "dermoscopic": {
+      "n": 690,
+      "malignant": 296,
+      "malignant_rate": 0.429,
+      "sources": {
+        "isic": 690
+      },
+      "images_analyzed": 690,
+      "median_w": 512.0,
+      "median_h": 384.0,
+      "mean_luminance": 149.9,
+      "std_luminance": 25.4,
+      "mean_contrast": 28.1,
+      "median_laplacian_var": 121.4,
+      "median_ita_deg": 52.8,
+      "ita_dark_lt10_n": 177,
+      "ita_med_10_41_n": 95,
+      "ita_light_gt41_n": 418
+    },
+    "tbp_tile": {
+      "n": 350,
+      "malignant": 100,
+      "malignant_rate": 0.2857,
+      "sources": {
+        "isic": 350
+      },
+      "images_analyzed": 350,
+      "median_w": 127.0,
+      "median_h": 127.0,
+      "mean_luminance": 145.6,
+      "std_luminance": 22.0,
+      "mean_contrast": 14.1,
+      "median_laplacian_var": 56.8,
+      "median_ita_deg": 50.4,
+      "ita_dark_lt10_n": 70,
+      "ita_med_10_41_n": 63,
+      "ita_light_gt41_n": 217
+    }
+  }
+}

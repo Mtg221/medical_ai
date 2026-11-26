@@ -1,0 +1,18 @@
+dataset_name: SYNTH-MED-V3
+version: "3.0.0"
+generator: v3
+seed: 42
+output_dir: data/processed/v3
+v3_splits_per_language:
+  train: 300
+  val: 80
+  test_iid: 80
+  test_unseen_terms: 80
+  test_unseen_templates: 80
+leakage_check:
+  minhash_threshold: 0.85
+  num_perm: 64
+  shingle_size: 5
+render_samples:
+  enabled: false
+  count_per_language: 0

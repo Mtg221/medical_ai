@@ -1,0 +1,15 @@
+dataset_name: SYNTH-MED-V3.1
+generator: v3_1
+seed: 42
+output_dir: data/processed/v3_1
+v3_splits_per_language:
+  train: 300
+  val: 80
+  test_iid: 80
+  test_unseen_terms: 80
+  test_unseen_templates: 80
+leakage_check:
+  jaccard_threshold: 0.70
+  shingle_size: 5
+render_samples:
+  enabled: false

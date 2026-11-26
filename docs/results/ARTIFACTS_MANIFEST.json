@@ -1,0 +1,341 @@
+{
+  "generated_at_utc": "2026-11-24T15:16:06Z",
+  "summary": {
+    "nlp_checkpoints_found": 20,
+    "vision_checkpoints_found": 10,
+    "total_verified_ok": 30,
+    "total_invalid": 0,
+    "total_pretrained_used": 0,
+    "total_size_mb": 344.6
+  },
+  "nlp_artifacts": [
+    {
+      "dir": "hybrid_v2_seed1",
+      "model_type": "hybrid",
+      "pretrained_weights_used": false,
+      "manifest_sha256": "a27eeabd5e863e5443d11b9f7897e894515195d3fdbef08f7cbc3120ee3a6e1f",
+      "size_bytes": 2928318,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "classical_crf_seed1",
+      "model_type": "classical_crf",
+      "pretrained_weights_used": false,
+      "manifest_sha256": "eb80b679e3f9a7aabc873066fa4fcc43c0171272526bcd5e63be6ec7d6a7e624",
+      "size_bytes": 895103,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed1",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "04273a0a082de655c66466dba91833a119dedf6570eaa394de264fa5e9d28e63",
+      "manifest_sha256": "2adcb7806fb1dd9d0628c24616863beb479fdb4ca3deea0c1237cc3aa2e8886b",
+      "size_bytes": 7257779,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed2",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "6df4cd2af32c49597133934ae40ab0b1100acee98da88928d3fcf925dfb14d75",
+      "manifest_sha256": "c37862d616d074e86fba2aeac5cb70ff258e44bb855172ac0e9fe2f63da70c6c",
+      "size_bytes": 7257844,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed3",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "32ca8d9fbb2f90595a8a342f939714ea3c3421af070d9aeaaa56759d360f9d17",
+      "manifest_sha256": "6ad7f0aa2fdf53d121c719c33894bea185e599666b006b8fdd3fc30f7536e967",
+      "size_bytes": 7257736,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed4",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "6a096c408a5b80be269a28a470357cb141993fb4d8d2ab624fbb555f0739ffae",
+      "manifest_sha256": "7cd5cd33d0294a77410bdea89a346fe62860fef33be72641edb91246b9f55dfb",
+      "size_bytes": 10054511,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed5",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "88c146fa02ea6286b7469a4d7d52f01cd2829fab2754615b5a1778399294f966",
+      "manifest_sha256": "b3610cf4b02d3169ada8a8639768db10d58da3a50e4af82343a02fdb32b32048",
+      "size_bytes": 10054613,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed6",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "2d1d1f4de82d574aef2d3aa6d060e0eedb845a4904c022b535613029fcfb8587",
+      "manifest_sha256": "b83e74103da47e2cf59fa755917de0fdb8a851335324150e43e34355d98700b7",
+      "size_bytes": 10054428,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed7",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "4fc92e080880f8bfbdb66feb4df0c10b0739abc0a89ac1b631f049026a644663",
+      "manifest_sha256": "ec0834f93cf8b536b7b56bd47c16f2c2dbb4699fc8cc24228a41b31b55bdccfa",
+      "size_bytes": 11609510,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed8",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "347f107b5e4f67bd1fa6b7d5ce5d01df6450de5f7a127fcfb63574d026406df2",
+      "manifest_sha256": "066d1b5b2cc2037b163b79103147861646e49b9228616108fd7ebfaf20493b1a",
+      "size_bytes": 11609521,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed9",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "087f34561cfc996c33e3f708175cd56536ebea32d10697a883ac18a0724ab44a",
+      "manifest_sha256": "bf2625505b2664c9594b4a1db9b1592f8da29b0e48427948443ca898e9469b05",
+      "size_bytes": 11609594,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed10",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "1cbb4e9d8980d45dd2a376e176ffe4f6b914134c251dc33ac7d272c0eeace3e9",
+      "manifest_sha256": "1e6004191b564bdabe732e4905d269a16ab07a4e61cd854789bbc27a8b2dbb10",
+      "size_bytes": 11609762,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed11",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "18af3065abab8ac4ed25b8e90833aa63e07b48d7067d092ca42163e018eb40a3",
+      "manifest_sha256": "9dff4458d73d5757818092cc2fb92b8a24a242df63edc889b04817274fc7159c",
+      "size_bytes": 13284004,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed12",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "3d14acb10e52f006a373440eb487e4fb5c0acc390562f76dd46b2b078b999440",
+      "manifest_sha256": "a51eabfec92985019f90031427687f207f5a969ad1b48fff7bbdaffad2f00c53",
+      "size_bytes": 13283827,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed13",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "a6cef60de1900980e28f7fd4e418a1e18cd0dbf42fcd1d92320fa31e0ed3fe49",
+      "manifest_sha256": "24bd9a29d16e2abf7b16e5f2153d2b6ff3e1a4ac11ef810d3bd34e89bd5a63bd",
+      "size_bytes": 16552521,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed14",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "321007255f86c59eb5eaf090f78dc13a1a236af05bebd3e027f0f39840213967",
+      "manifest_sha256": "8ae678330875c61aaa2504c72b71e013da113590372ab5d953f586ea5be64017",
+      "size_bytes": 18522068,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed15",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "621ef218663ac1641e885fcadc49f7eb5109ae82a2f4ba3be0b578e938a0dc15",
+      "manifest_sha256": "1e3ef4a1495e25b69144725d28b2ebf9257c44978e3c43f092ab26e7e7889e1a",
+      "size_bytes": 18521995,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed16",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "9380b24afb94cc27ee67c18934abbdc8bf2f390c255a2abfa86173d2c07b79e6",
+      "manifest_sha256": "d2c1c52b16c8ae7f2d33a948fd0ed8ffafc12d8c0fd2c05a06d78352ca788f8b",
+      "size_bytes": 23700404,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed17",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "50d334f08161ce18509dda4b562b88e3a9c6454e1ee89381c15aec83723628a5",
+      "manifest_sha256": "f9434417df8ea161609c3228dbb9edb49dc5cdd72d4d664f6a4bbac80845914e",
+      "size_bytes": 23700513,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "hospital_char_cnn_bilstm_crf_seed18",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "char_cnn_bilstm_crf.pt",
+      "trained_weights_sha256": "d9028e185928fb77c77ab6446b65608ffec8b2f82790dabb3537ad51b128d9c8",
+      "manifest_sha256": "55af461e144c1ab0f325c95489394f0f0de64fae27e9fec0bfb163e69b606a98",
+      "size_bytes": 30994304,
+      "valid": true,
+      "status": "OK"
+    }
+  ],
+  "vision_artifacts": [
+    {
+      "dir": "vision_router_v1",
+      "model_type": "pytorch",
+      "pretrained_weights_used": false,
+      "weight_file": "router_torch.pt",
+      "trained_weights_sha256": "704a4316735179e5f570f1ab437691f39abb8bcfb061ca77cb609566a1ae944c",
+      "manifest_sha256": "f59ac5bb393238145d0cc3dde197452e67a9d1f4e0a2598bebab136e8df0077e",
+      "size_bytes": 406068,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "derm_cnn_bsdrop40_seed1",
+      "model_type": "resnet_v2_se",
+      "pretrained_weights_used": false,
+      "weight_file": "weights_torch.pt",
+      "trained_weights_sha256": "76134db2c756d908ee80747fe2d071ceaaaa71b497cfc33acf30917e869403bb",
+      "manifest_sha256": "bd659b80a1ec8a69a91d0336f2b4c1d71cf6c7e8dab539f7432e5f3c535056fc",
+      "size_bytes": 11450641,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "derm_cnn_seed2",
+      "model_type": "resnet_v2_se",
+      "pretrained_weights_used": false,
+      "weight_file": "weights_torch.pt",
+      "trained_weights_sha256": "9c0f522beafaba5d4f7b42230cb76bfa1ca5bc06e99e1b9ccb1531a2b1013725",
+      "manifest_sha256": "4263928c520fec27ac91ba28eac648ad171c7dd92df9a057fe79423c212a6b89",
+      "size_bytes": 11450635,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "derm_cnn_seed3",
+      "model_type": "resnet_v2_se",
+      "pretrained_weights_used": false,
+      "weight_file": "weights_torch.pt",
+      "trained_weights_sha256": "d06a17df1574c6230d90e2b06cdc503d9b1f4e73a4956900fdd37f566046aa7a",
+      "manifest_sha256": "617c6ffe3d8130a2200a54328536c099ed57c3d9558c12925e6c179ce1b1285b",
+      "size_bytes": 11450630,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "derm_cnn_seed4",
+      "model_type": "resnet_v2_se",
+      "pretrained_weights_used": false,
+      "weight_file": "weights_torch.pt",
+      "trained_weights_sha256": "9e12d61ac2820340aaf24d60d4b45bc7c7f8db652c4fb55ea7612d3b6beb8b61",
+      "manifest_sha256": "709d2edd1efe5f8464b6577c129f88bac6dcb49bf2151d2a8478391c516ab351",
+      "size_bytes": 11450410,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "derm_cnn_seed5",
+      "model_type": "resnet_v2_se",
+      "pretrained_weights_used": false,
+      "weight_file": "weights_torch.pt",
+      "trained_weights_sha256": "8fd7558dfd53771d56d4b1fe04f2597808d17f698f918b55ebf582e56b28796d",
+      "manifest_sha256": "2660c100122a38cb51041f177d3168c2099a0abcfaa2307a3df524f07b6a0de5",
+      "size_bytes": 11450414,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "derm_cnn_clinical_seed6",
+      "model_type": "resnet_v2_se",
+      "pretrained_weights_used": false,
+      "weight_file": "weights_torch.pt",
+      "trained_weights_sha256": "01be9e698ffc842688bc8eaa96ee1f1eb091043955a59224f6c9e88b4ad978f8",
+      "manifest_sha256": "4fc998cb2a8b638c1cc3c70aa41a82d29bbe3317801faf7c710546acc3871aeb",
+      "size_bytes": 11450859,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "derm_cnn_clinical_seed7",
+      "model_type": "resnet_v2_se",
+      "pretrained_weights_used": false,
+      "weight_file": "weights_torch.pt",
+      "trained_weights_sha256": "08caa67b3fb4e4d36a90dc9cd4bdd270955ffa5aa4a753119e12f125caf16512",
+      "manifest_sha256": "6a0ae37cde5e79ac5257c18b6847a2ed6b015da0c7ca07f6038946bb193bc5a2",
+      "size_bytes": 11451153,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "derm_convnext_seed10",
+      "model_type": "convnext_derm",
+      "pretrained_weights_used": false,
+      "weight_file": "weights_torch.pt",
+      "trained_weights_sha256": "e7165a3d8d7eed9b4f65514a4542ccb53ea75beefc6bbad214e02ff6c99d772d",
+      "manifest_sha256": "1415b78da2070d200047197854c54070ec77957c4e837034e16033fe4f43647d",
+      "size_bytes": 10010734,
+      "valid": true,
+      "status": "OK"
+    },
+    {
+      "dir": "derm_convnext_seed11",
+      "model_type": "convnext_derm",
+      "pretrained_weights_used": false,
+      "weight_file": "weights_torch.pt",
+      "trained_weights_sha256": "2508a2a9200d6112c24c24146ed3109c0f81f24354ea7b65c06666dce6b37219",
+      "manifest_sha256": "8484a5b39dbdcc683719f16439142370f65f77665d24d257d945f966f96e17b1",
+      "size_bytes": 10011178,
+      "valid": true,
+      "status": "OK"
+    }
+  ]
+}
