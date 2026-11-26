@@ -414,16 +414,18 @@ def detect_clinical_contradictions(
         if rec.entity_type != "MEDICATION":
             continue
         med_key = _canon_clinical_concept(rec.original_text)
+        rec_start = rec.char_start if rec.char_start is not None else 0
+        rec_end = rec.char_end if rec.char_end is not None else rec_start
         for rel in rec.relationships:
             if rel.relation_type == "HAS_DOSAGE":
-                med_doses.setdefault(med_key, []).append((rel.target_value.strip().lower(), rec.char_start, rec.char_end))
+                med_doses.setdefault(med_key, []).append((rel.target_value.strip().lower(), rec_start, rec_end))
         # Also scan same line for alternative dose mentions (e.g., "10 mg daily; patient says 5 mg")
-        line_end = text.find("\n", rec.char_end)
-        line_txt = text[rec.char_start : (line_end if line_end != -1 else len(text))]
+        line_end = text.find("\n", rec_end)
+        line_txt = text[rec_start : (line_end if line_end != -1 else len(text))]
         for dm in re.finditer(r"\b(\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|units?))\b", line_txt, re.IGNORECASE):
             d_norm = re.sub(r"\s+", " ", dm.group(1).strip().lower())
             med_doses.setdefault(med_key, []).append(
-                (d_norm, rec.char_start + dm.start(), rec.char_start + dm.end())
+                (d_norm, rec_start + dm.start(), rec_start + dm.end())
             )
     for med_key, items in med_doses.items():
         distinct: dict[str, tuple[int, int]] = {}
@@ -989,9 +991,9 @@ class ExtractionService:
                     med_meta["medication_status"] = "uncertain"
                 else:
                     med_meta["medication_status"] = "active"
-                for rel in rels_by_head.get((ent.start, ent.end), []):
-                    if rel.relation_type == "HAS_FREQUENCY":
-                        norm_f = _FREQ_NORM_MAP.get(rel.target_value.strip().lower())
+                for erel in rels_by_head.get((ent.start, ent.end), []):
+                    if erel.relation_type == "HAS_FREQUENCY":
+                        norm_f = _FREQ_NORM_MAP.get(erel.target_value.strip().lower())
                         if norm_f:
                             med_meta["normalized_frequency"] = norm_f
             elif ent.type == "FREQUENCY":
