@@ -1,0 +1,93 @@
+{
+  "en_single": {
+    "ms": 98.6,
+    "n_records": 14,
+    "n_contradictions": 0,
+    "ocr_flagged": [],
+    "family_entities": [
+      [
+        "migraine",
+        "mother"
+      ]
+    ]
+  },
+  "fr_single": {
+    "ms": 28.4,
+    "n_records": 11,
+    "n_contradictions": 0,
+    "ocr_flagged": [],
+    "family_entities": [
+      [
+        "migraines",
+        "mother"
+      ]
+    ]
+  },
+  "noisy_ocr": {
+    "ms": 21.7,
+    "n_records": 11,
+    "n_contradictions": 1,
+    "ocr_flagged": [
+      "15B",
+      "25O. SpO2 9A"
+    ],
+    "family_entities": []
+  },
+  "noise_0027": {
+    "ms": 582.7,
+    "n_records": 205,
+    "n_contradictions": 1,
+    "ocr_flagged": [
+      "age 5O",
+      "8B",
+      "17O",
+      "decreased sensation? left fingers",
+      "2?1",
+      "2O1",
+      "m1U/L",
+      "Low-normal B12?",
+      "m1U/L"
+    ],
+    "family_entities": [
+      [
+        "migraine",
+        "mother"
+      ],
+      [
+        "age 5O",
+        "brother"
+      ],
+      [
+        "\u2019",
+        "brother"
+      ]
+    ]
+  },
+  "noise_0038": {
+    "ms": 1070.0,
+    "n_records": 361,
+    "n_contradictions": 6,
+    "ocr_flagged": [
+      "HbA1c",
+      "9O",
+      "kg?",
+      "17?",
+      "2O",
+      "24?",
+      "1?8",
+      "HbA1c",
+      "6.?",
+      "infection? \n8",
+      "CARDI0LOGY\"",
+      "2O",
+      "15B",
+      "9A",
+      "\"\n- \"M3tformin\"\n- \"Aml0dipine\"",
+      "ST elevat1on",
+      "6O"
+    ],
+    "family_entities": []
+  },
+  "total_batch_ms": 1803.4,
+  "peak_rss_mb": 178.1
+}
