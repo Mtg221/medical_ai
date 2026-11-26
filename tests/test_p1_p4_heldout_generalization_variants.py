@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from medresearch_platform.approaches.context_negex import classify_assertion_attributes
@@ -11,6 +13,8 @@ from medresearch_platform.serving.extractor import ExtractionService, detect_cli
 
 @pytest.fixture(scope="module")
 def extractor() -> ExtractionService:
+    if not Path("models/hybrid_v2_seed1/manifest.json").exists():
+        pytest.skip("Saved hybrid_v2_seed1 checkpoint not present in fresh-clone environment")
     return ExtractionService()
 
 
