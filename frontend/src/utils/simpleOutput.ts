@@ -11,12 +11,20 @@ const MERGEABLE_REL_TYPES = new Set([
 
 export function isEntityApproved(status: string | undefined): boolean {
   const st = String(status || "").toUpperCase();
-  return st === "APPROVED" || st === "APPROVE_AS_GROUND_TRUTH" || st === "CORRECTED";
+  return (
+    st === "APPROVED" ||
+    st === "APPROVED_GROUND_TRUTH" ||
+    st === "APPROVE_AS_GROUND_TRUTH" ||
+    st === "CORRECTED" ||
+    st === "CORRECTED_GROUND_TRUTH" ||
+    st.startsWith("APPROVED_") ||
+    st.startsWith("CORRECTED_")
+  );
 }
 
 export function isEntityRejected(status: string | undefined): boolean {
   const st = String(status || "").toUpperCase();
-  return st === "REJECTED" || st === "REJECT";
+  return st === "REJECTED" || st === "REJECT" || st.startsWith("REJECTED_");
 }
 
 export function buildSimpleKeyValueLines(
