@@ -436,63 +436,148 @@ export function ReviewQueuePage() {
             </form>
           )}
 
+          {/* Clear, explicit 1-line decision legend */}
+          <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="font-semibold text-slate-900 dark:text-slate-100">Quick Guide:</span>
+            <span>
+              <strong className="text-emerald-700 dark:text-emerald-400">✓ Approve</strong> = extraction is correct
+            </span>
+            <span>
+              <strong className="text-rose-700 dark:text-rose-400">✗ Reject</strong> = wrong / false positive
+            </span>
+            <span>
+              <strong className="text-sky-700 dark:text-sky-400">✎ Edit</strong> = fix type, negation, or span
+            </span>
+            <span>
+              <strong className="text-amber-700 dark:text-amber-400">⚑ Flag</strong> = second opinion needed
+            </span>
+          </div>
+
           {/* Entity list */}
           {entities.length === 0 ? (
             <p className="text-xs text-slate-500 py-6 text-center">No entities match the current filter.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {entities.map((ent, idx) => {
                 const isFocused = idx === focusedIdx;
                 const labelText = getEntityText(ent);
+                const statusUpper = String(ent.review_status || "").toUpperCase();
+                const isApproved = statusUpper === "APPROVED";
+                const isRejected = statusUpper === "REJECTED";
+                const isCorrected = statusUpper === "CORRECTED";
+                const isFlagged = statusUpper === "FLAGGED";
+
+                const cardTone = isApproved
+                  ? "border-emerald-300 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/25"
+                  : isRejected
+                  ? "border-rose-300 bg-rose-50/50 dark:border-rose-800 dark:bg-rose-950/25"
+                  : isCorrected
+                  ? "border-sky-300 bg-sky-50/50 dark:border-sky-800 dark:bg-sky-950/25"
+                  : isFocused
+                  ? "border-sky-500 bg-sky-50/30 dark:border-sky-400 dark:bg-sky-950/30"
+                  : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/40";
+
+                const statusLabel = isApproved
+                  ? "✓ Approved"
+                  : isRejected
+                  ? "✗ Rejected"
+                  : isCorrected
+                  ? "✎ Corrected"
+                  : isFlagged
+                  ? "⚑ Flagged"
+                  : "Pending Review";
+
+                const statusTone = isApproved
+                  ? "emerald"
+                  : isRejected
+                  ? "rose"
+                  : isCorrected
+                  ? "sky"
+                  : "amber";
+
+                const certaintyText =
+                  ent.certainty === "absent" || ent.assertion_status === "NEGATED"
+                    ? "Absent / Negated"
+                    : ent.certainty === "possible" || ent.assertion_status === "UNCERTAIN"
+                    ? "Possible / Uncertain"
+                    : "Confirmed";
+
+                const contextParts = [
+                  certaintyText,
+                  ent.temporality === "historical" ? "Historical" : "Current",
+                  ent.experiencer === "family" ? "Family History" : "Patient",
+                ];
+
                 return (
                   <div
                     key={ent.entity_id}
                     onClick={() => setFocusedIdx(idx)}
-                    className={`rounded border p-3 flex flex-wrap items-center justify-between gap-3 text-xs cursor-pointer ${
-                      isFocused
-                        ? "border-sky-500 bg-sky-50/40 dark:border-sky-400 dark:bg-sky-950/30"
-                        : "border-slate-200 dark:border-slate-700"
-                    }`}
+                    className={`rounded-lg border p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs cursor-pointer transition-colors ${cardTone}`}
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100">{labelText}</span>
-                        <Badge tone="sky">{ent.entity_type}</Badge>
-                        <Badge tone={ent.assertion_status === "AFFIRMED" ? "emerald" : "amber"}>
-                          {ent.assertion_status}
-                        </Badge>
-                        {ent.certainty || ent.temporality || ent.experiencer ? (
-                          <span className="text-[10px] font-mono text-slate-600 dark:text-slate-300">
-                            {ent.certainty ?? "confirmed"}/{ent.temporality ?? "current"}/{ent.experiencer ?? "patient"}
-                          </span>
-                        ) : null}
-                        <span className="text-slate-500 dark:text-slate-400">
-                          conf {(ent.confidence * 100).toFixed(1)}%
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`text-sm font-semibold ${
+                            isRejected
+                              ? "line-through text-rose-800 dark:text-rose-300"
+                              : "text-slate-900 dark:text-slate-100"
+                          }`}
+                        >
+                          “{labelText}”
                         </span>
+                        <Badge tone="sky">{ent.entity_type}</Badge>
+                        <Badge tone={statusTone}>{statusLabel}</Badge>
                       </div>
-                      <div className="text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                        <span>Offsets [{ent.char_start}, {ent.char_end}] · Status:</span>
-                        <Badge tone={ent.review_status === "needs_review" ? "amber" : "slate"}>
-                          {ent.review_status === "needs_review" ? "needs review" : ent.review_status}
-                        </Badge>
+                      <div className="text-slate-600 dark:text-slate-300 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span>{contextParts.join(" · ")}</span>
+                        <span className="text-slate-400">•</span>
+                        <span>Confidence: <strong>{(ent.confidence * 100).toFixed(0)}%</strong></span>
+                        <span className="text-slate-400">•</span>
+                        <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                          chars {ent.char_start}–{ent.char_end}
+                        </span>
                         {ent.review_reason ? (
-                          <span className="text-amber-700 dark:text-amber-300">({ent.review_reason})</span>
+                          <span className="text-amber-700 dark:text-amber-300 font-medium">
+                            ({ent.review_reason})
+                          </span>
                         ) : null}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="outline"
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={reviewMutation.isPending}
                         onClick={(ev) => {
                           ev.stopPropagation();
                           reviewMutation.mutate({ entity_id: ent.entity_id, action: "approve", rationale: "Approved in UI" });
                         }}
                         aria-label={`Approve ${labelText}`}
+                        className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          isApproved
+                            ? "bg-emerald-700 text-white ring-2 ring-emerald-400"
+                            : "bg-emerald-600 text-white hover:bg-emerald-700"
+                        } disabled:opacity-50`}
                       >
-                        <Check className="h-3.5 w-3.5 text-emerald-700" />
+                        <Check className="h-3.5 w-3.5" />
                         Approve
-                      </Button>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={reviewMutation.isPending}
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          reviewMutation.mutate({ entity_id: ent.entity_id, action: "reject", rationale: "Rejected in UI" });
+                        }}
+                        aria-label={`Reject ${labelText}`}
+                        className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          isRejected
+                            ? "bg-rose-700 text-white ring-2 ring-rose-400"
+                            : "bg-rose-600 text-white hover:bg-rose-700"
+                        } disabled:opacity-50`}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        Reject
+                      </button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -503,7 +588,7 @@ export function ReviewQueuePage() {
                         aria-label={`Correct ${labelText}`}
                       >
                         <Edit3 className="h-3.5 w-3.5 text-sky-700" />
-                        Correct
+                        Edit
                       </Button>
                       <Button
                         size="sm"
@@ -516,18 +601,6 @@ export function ReviewQueuePage() {
                       >
                         <Flag className="h-3.5 w-3.5 text-amber-600" />
                         Flag
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          reviewMutation.mutate({ entity_id: ent.entity_id, action: "reject", rationale: "Rejected in UI" });
-                        }}
-                        aria-label={`Reject ${labelText}`}
-                      >
-                        <X className="h-3.5 w-3.5 text-rose-600" />
-                        Reject
                       </Button>
                     </div>
                   </div>
