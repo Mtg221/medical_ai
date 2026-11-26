@@ -111,6 +111,7 @@ def _convert_conversation_record(rec: dict[str, Any]) -> tuple[AnnotatedDocument
 
     entities: list[EntitySpan] = []
     timex: list[TimexSpan] = []
+    orthogonal_spans: dict[str, dict[str, Any]] = {}
     valid_eids: set[str] = set()
     occupied: list[tuple[int, int]] = []
 
@@ -131,6 +132,20 @@ def _convert_conversation_record(rec: dict[str, Any]) -> tuple[AnnotatedDocument
         if any(max(s, os_) < min(e, oe_) for os_, oe_ in occupied):
             continue
         canon_assert, canon_temp = _map_assertion_and_temporality(sp)
+        raw_ev = sp.get("evidence")
+        ev_obj: dict[str, Any] = raw_ev if isinstance(raw_ev, dict) else {}
+        orthogonal_spans[eid] = {
+            "start": s,
+            "end": e,
+            "type": mapped_type,
+            "assertion": str(sp.get("assertion", "present")).strip().lower(),
+            "temporality": str(sp.get("temporality", "current")).strip().lower(),
+            "experiencer": str(sp.get("experiencer", "patient")).strip().lower(),
+            "ocr_corrupted": bool(sp.get("ocr_corrupted", False)),
+            "speaker_role": str(ev_obj.get("role") or ""),
+            "turn_id": str(ev_obj.get("turn_id") or ""),
+            "section": str(ev_obj.get("section") or ""),
+        }
         entities.append(
             EntitySpan(
                 id=eid,
@@ -189,6 +204,7 @@ def _convert_conversation_record(rec: dict[str, Any]) -> tuple[AnnotatedDocument
             "specialty": str(rec.get("specialty") or "general_medicine"),
             "n_contradictions": len(ann.get("contradictions") or []),
             "n_ocr_corrupted_spans": len([sp for sp in raw_spans if sp.get("ocr_corrupted")]),
+            "orthogonal_spans": orthogonal_spans,
         },
     )
     errs = doc.validate_spans()
